@@ -293,7 +293,7 @@ function applyTheme(t){
 }
 let theme = null;
 try { theme = localStorage.getItem("dbm-theme"); } catch(e){}
-if (theme !== "light" && theme !== "dark") theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+if (theme !== "light" && theme !== "dark") theme = "dark";
 applyTheme(theme);
 ["thLight","thDark"].forEach(id => $(id).addEventListener("click", () => {
   const t = id === "thDark" ? "dark" : "light";
