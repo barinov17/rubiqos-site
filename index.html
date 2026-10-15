@@ -58,9 +58,9 @@ col.c-name{width:var(--namew)} col.c-ctry{width:76px} col.c-area{width:60px} col
 th,td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:0;vertical-align:middle;background:var(--panel)}
 thead th{position:sticky;z-index:5;background:var(--rail)}
 thead tr.fam th{top:0;height:26px;font-family:var(--font-cond);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 4px;border-bottom:1px solid var(--line-strong);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-thead tr.cols th{top:26px;height:88px;vertical-align:bottom;padding:0;overflow:hidden}
+thead tr.cols th{top:26px;height:100px;vertical-align:bottom;padding:0;overflow:hidden}
 thead tr.cols th .rot{writing-mode:vertical-rl;transform:rotate(180deg);height:80px;padding:4px 0;font-weight:500;font-size:11.5px;white-space:nowrap;display:block;margin:0 auto;color:var(--fg);text-align:left;max-height:80px;overflow:hidden;text-overflow:ellipsis}
-thead tr.tot th{top:114px;height:24px;font-family:var(--font-body);font-size:10px;overflow:hidden;color:var(--muted);text-align:center;border-bottom:2px solid var(--line-strong)}
+thead tr.tot th{top:126px;height:24px;font-family:var(--font-body);font-size:10px;overflow:hidden;color:var(--muted);text-align:center;border-bottom:2px solid var(--line-strong)}
 th.name{left:0;z-index:7;text-align:left;padding:0 8px}
 th.ctry{left:var(--namew);z-index:7;text-align:left;padding:0 6px;border-right:2px solid var(--line-strong)}
 thead th.name,thead th.ctry{z-index:9}
@@ -89,6 +89,8 @@ thead tr.cols th.pm.area .rot{color:var(--accent-ink)}
 thead tr.cols th.pm:hover{background:var(--hover)}
 thead tr.cols th.pm.sorted .rot{color:var(--accent)}
 thead tr.cols th.pm .arrow{display:block;font-size:9px;line-height:10px;color:var(--accent);height:10px;text-align:center}
+thead tr.cols th.pm .sum{display:block;height:12px;line-height:12px;margin-top:0;font-size:10px;font-weight:600;color:var(--fg);text-align:center;white-space:nowrap;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+thead tr.cols th.pm .rot{height:78px;max-height:78px;font-size:11.5px}
 td.pm .na{color:var(--line-strong)}
 td.pm .est{color:var(--muted);font-style:italic}
 td.pm.area strong{font-weight:500;color:var(--accent-ink)}
@@ -235,8 +237,8 @@ select.sts option{color:var(--fg);background:var(--panel)}
   <div class="mzoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
 </div>
 <div class="notes mat-only">
-  <span class="biz-only">Third row: median and count of marks; clusters and portfolios excluded.</span><span class="tgt-only">Third row: medians; clusters and portfolios excluded.</span>
-  <span><i>Italic</i> = estimate or model. <span class="na">·</span> = no data.</span><span>Opex = model: staff × regional cost per employee ÷ 45% labour share.</span>
+  <span>Header: totals on top, medians below<span class="biz-only"> with counts of marks</span>; clusters and portfolios excluded.</span>
+  <span><i>Italic</i> = estimate or model. <span class="na">·</span> = no data.</span><span>Opex = staff × regional cost per employee ÷ 45%.</span>
 </div>
 
 
@@ -276,11 +278,11 @@ applyTheme(theme);
 const esc = s => String(s??"").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const PARAMS = [
   {k:"area",   label:"Area, ha", cls:"area"},
-  {k:"keys",   label:"Keys"},
-  {k:"guests", label:"Guests/day"},
-  {k:"staff",  label:"Staff"},
   {k:"ops",    label:"Operators"},
-  {k:"opex",   label:"Opex, $M/yr", cls:"last"},
+  {k:"keys",   label:"Keys", sum:true},
+  {k:"guests", label:"Guests/day", sum:true},
+  {k:"staff",  label:"Staff", sum:true},
+  {k:"opex",   label:"Opex, $M/yr", cls:"last", sum:true},
 ];
 const num = v => { if (v==null||v==="") return null; if (typeof v==="number") return v; const m = String(v).replace(/~/g,"").match(/\d[\d,]*(\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g,"")) : null; };
 const fmt = v => v==null ? "" : (v>=100 ? Math.round(v).toLocaleString("en-US") : v.toLocaleString("en-US",{maximumFractionDigits:1}));
@@ -412,6 +414,11 @@ function render(){
   const arrow = key => state.sort.k===key ? (state.sort.dir>0?"▲":"▼") : "";
   const ariaSort = key => ` aria-sort="${k===key ? (d>0?"ascending":"descending") : "none"}"`;
   const mrows = rows.filter(r => r.g!=="Cluster" && r.g!=="Portfolio");
+  const sums = {}, sumN = {};
+  PARAMS.filter(p => p.sum).forEach(p => { const v = mrows.map(r => num(r.p[p.k])).filter(x => x!=null); sums[p.k] = v.reduce((a,b)=>a+b, 0); sumN[p.k] = v.length; });
+  const short = v => v>=1e6 ? (v/1e6).toFixed(v>=1e7?0:1)+"M" : v>=1e4 ? Math.round(v/1e3)+"K" : v>=1e3 ? (v/1e3).toFixed(1)+"K" : String(Math.round(v));
+  const sumTxt = p => p.k==="opex" ? "$"+(sums.opex>=1e3 ? (sums.opex/1e3).toFixed(1)+"B" : Math.round(sums.opex)+"M") : short(sums[p.k]);
+  const sumTip = p => `${p.label}: total ${p.k==="opex" ? "$"+fmt(sums.opex)+"M per year" : fmt(sums[p.k])} across ${sumN[p.k]} of ${mrows.length} projects with data; clusters and portfolios excluded to avoid double counting`;
 
   let h = `<colgroup><col class="c-name"><col class="c-ctry">${PARAMS.map(p=>`<col class="${p.k==="area"?"c-area":"c-pm"}">`).join("")}`
         + (tgt ? TGT.map(c=>`<col${c.w?` style="width:${c.w}px"`:""}>`).join("") : colIdx.map(()=>"<col>").join("")) + `</colgroup><thead>`;
@@ -419,7 +426,7 @@ function render(){
      + (tgt ? `<th colspan="${TGT.length}">Targeting</th>` : fams.map(f=>`<th colspan="${f.n}">${esc(f.fam)}</th>`).join("")) + "</tr>";
   h += `<tr class="cols"><th class="name"><div class="hlbl">Project</div></th>`
      + `<th class="ctry sortable${k==="country"?" sorted":""}" data-sort="country"${ariaSort("country")} title="Sort by country"><div class="hlbl lbl">Country ${arrow("country")}</div></th>`
-     + PARAMS.map(p=>`<th class="pm${p.cls?" "+p.cls:""}${k===p.k?" sorted":""}" data-sort="${p.k}"${ariaSort(p.k)} title="Sort by ${esc(p.label)}"><span class="arrow">${arrow(p.k)}</span><span class="rot">${esc(p.label)}</span></th>`).join("")
+     + PARAMS.map(p=>`<th class="pm${p.cls?" "+p.cls:""}${k===p.k?" sorted":""}" data-sort="${p.k}"${ariaSort(p.k)} title="Sort by ${esc(p.label)}"><span class="sum"${p.sum?` title="${esc(sumTip(p))}"`:""}>${p.sum?sumTxt(p):""}</span><span class="arrow">${arrow(p.k)}</span><span class="rot">${esc(p.label)}</span></th>`).join("")
      + (tgt ? TGT.map(c=>`<th class="th-tg${k===c.k?" sorted":""}${c.num?" num":""}${c.help?" has-help":""}" data-sort="${c.k}"${ariaSort(c.k)} title="Sort by ${esc(c.label)}"><span class="lbl">${esc(c.label)} ${arrow(c.k)}</span>${c.help ? helpPop(c.help) : ""}</th>`).join("")
             : colIdx.map(i=>`<th data-col="${i}" title="${esc(DATA.cols[i].full || DATA.cols[i].name)}"><span class="rot">${esc(DATA.cols[i].name)}</span></th>`).join("")) + "</tr>";
   h += `<tr class="tot"><th class="name" style="text-align:left;font-family:var(--font-body);font-size:11.5px;color:var(--muted)" title="Medians over ${mrows.length} projects: clusters and portfolios excluded">${rows.length}${rows.length<DATA.rows.length?" of "+DATA.rows.length:""} projects · ${tgt?"median":"median / count"}</th><th class="ctry"></th>`
