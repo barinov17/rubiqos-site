@@ -346,10 +346,9 @@ function renderChips(base){
   const allOn = state.off.size === 0;
   $("chips").innerHTML = `<button class="chip mini${allOn?" on":""}" data-g="__all">All</button>`
     + ORDER.map(g => `<button class="chip t" data-g="${g}" aria-pressed="${!state.off.has(g)}" aria-label="${esc(TAGS[g].name)}">${tagHtml(g)}</button>`).join("")
-    + '<button class="chip mini" data-g="__core">Core</button><button class="chip mini" data-g="__none">None</button>'
     + `<span class="help"><button class="qbtn" type="button" aria-label="What the archetype tags mean" aria-describedby="helppop">?</button>`
     + `<span class="pop" id="helppop" role="tooltip">${ORDER.map(g => `<span class="pr">${tagHtml(g)}<span><b>${esc(TAGS[g].name)}.</b> ${esc(HELP[g])}</span></span>`).join("")}`
-    + `<span class="pnote">Core = MULTI, CLUB, IR and GIGA.</span></span></span>`;
+    + `</span></span>`;
 }
 const STAGES = ["Design","Expanding","Construction","Operating"];
 const STAGE_HELP = {
