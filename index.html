@@ -999,6 +999,30 @@ let autoCam = true, camFocus = null, camDist = 260, overview = false;
 function focus(f, dist = 220) { camFocus = f; camDist = dist; overview = false; }
 function setAutoCam(v) { autoCam = v; $('bCam').classList.toggle('on', v); }
 controls.addEventListener('start', () => { if (autoCam) setAutoCam(false); });
+// Blender-style trackpad: two-finger swipe orbits, Shift + swipe pans parallel to the ground, pinch / Ctrl + swipe zooms.
+// A mouse wheel (large vertical steps, no horizontal component) still zooms.
+controls.enableZoom = false;
+canvas.addEventListener('wheel', e => {
+  e.preventDefault(); if (autoCam) setAutoCam(false); fly = null;
+  const off = camera.position.clone().sub(controls.target), dist = off.length();
+  const px = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1, dx = e.deltaX * px, dy = e.deltaY * px;
+  const wheelMouse = e.deltaX === 0 && Math.abs(dy) >= 50 && Number.isInteger(dy);
+  if (e.ctrlKey || e.metaKey || wheelMouse) {                               // zoom (pinch sends ctrlKey)
+    off.multiplyScalar(THREE.MathUtils.clamp(Math.exp(dy * (wheelMouse ? 0.0012 : 0.004)), 0.5, 2));
+    const d = THREE.MathUtils.clamp(off.length(), controls.minDistance, controls.maxDistance); off.setLength(d);
+    camera.position.copy(controls.target).add(off);
+  } else if (e.shiftKey) {                                                   // pan along the ground plane
+    const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
+    const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+    const k = dist * 0.0014; const move = right.multiplyScalar(dx * k).add(fwd.multiplyScalar(-dy * k));
+    controls.target.add(move); camera.position.add(move);
+  } else {                                                                   // orbit
+    const sph = new THREE.Spherical().setFromVector3(off);
+    sph.theta -= dx * 0.0045; sph.phi = THREE.MathUtils.clamp(sph.phi - dy * 0.0045, 0.06, controls.maxPolarAngle);
+    off.setFromSpherical(sph); camera.position.copy(controls.target).add(off);
+  }
+  camera.lookAt(controls.target);
+}, { passive: false });
 const camTarget = new THREE.Vector3(), camWant = new THREE.Vector3();
 function directCamera(dt) {
   if (fly) { fly.t = Math.min(1, fly.t + dt / fly.dur); const e = fly.t < 0.5 ? 2 * fly.t * fly.t : 1 - Math.pow(-2 * fly.t + 2, 2) / 2; controls.target.lerpVectors(fly.fromT, fly.target, e); camera.position.lerpVectors(fly.fromP, fly.pos, e); if (fly.t >= 1) fly = null; return; }
