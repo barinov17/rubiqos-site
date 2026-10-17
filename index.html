@@ -905,6 +905,7 @@ const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k 
     }
   }
   const pca = pts => { const n = pts.length, mx = pts.reduce((s, q) => s + q[0], 0) / n, mz = pts.reduce((s, q) => s + q[1], 0) / n; let sxx = 0, szz = 0, sxz = 0; for (const [x, z] of pts) { sxx += (x - mx) ** 2; szz += (z - mz) ** 2; sxz += (x - mx) * (z - mz); } return 0.5 * Math.atan2(2 * sxz, sxx - szz); };
+  const ALONG_PADS = new Set(['event hall museum.001 | service drop-off']);
   const pads = []; model.traverse(o => { if (o.isMesh && /guest drop-off$|service drop-off$|^Drop-off \| DO-\d+/.test(o.name)) pads.push(o); });
   const fixed = [];
   for (const m of pads) {
@@ -919,7 +920,7 @@ const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k 
     const ca = Math.cos(padAng), sa = Math.sin(padAng);
     const us = pts.map(([x, z]) => (x - cx) * ca + (z - cz) * sa), vs = pts.map(([x, z]) => -(x - cx) * sa + (z - cz) * ca);
     let L = (Math.max(...us) - Math.min(...us)) * 0.8367, Wd = (Math.max(...vs) - Math.min(...vs)) * 0.8367; if (L < Wd) [L, Wd] = [Wd, L];
-    const ang = service ? roadAng + Math.PI / 2 : roadAng;
+    const ang = service && !ALONG_PADS.has(m.name) ? roadAng + Math.PI / 2 : roadAng;   // founder 2026-10-17: the Rotunda service pad lies along the passing road
     const top = Math.max(...Array.from({ length: pos.count }, (_, i) => v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).y));
     m.geometry.dispose(); m.geometry = new THREE.BoxGeometry(L, 0.06, Wd);
     const world = new THREE.Matrix4().makeTranslation(cx, top - 0.03, cz).multiply(new THREE.Matrix4().makeRotationY(-ang));
