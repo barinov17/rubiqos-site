@@ -695,7 +695,7 @@ function surfaceGrid(meshes, cell, gap = 12) {
   return { route, nearest, posOf, cellOf, ok, cell, y, W, H, ox, oz, count: y.filter(v => !isNaN(v)).length };
 }
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
-const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|^Hotel Lobby road \| access road$/.test(n)).flatMap(meshOf);
+const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|service drop-off$|^Hotel Lobby road \| access road$/.test(n)).flatMap(meshOf);
 const roadR = surfaceGrid([...meshOf('ROADS_SERVICE surface'), ...meshOf('ROADS_SERVICE (block) surface'), ...meshOf('loading zone surface'), ...padMeshes], 3);
 const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...padMeshes.filter(m => !/\(BOH\)/.test(m.name))], 2.5, 30);   // people may cross up to 30 m of lawn between walkway pieces
 $('stats').textContent = `model ${manifest.version} (${manifest.exported}) · ${top.length} objects · loaded in ${timeStat} s · road grid ${roadR.count} cells · walk grid ${walkR.count} cells`;
@@ -849,10 +849,10 @@ const walk = (from, to) => walkR.route(from, to) || (() => { const a = walkR.nea
     }
   }
   const pca = pts => { const n = pts.length, mx = pts.reduce((s, q) => s + q[0], 0) / n, mz = pts.reduce((s, q) => s + q[1], 0) / n; let sxx = 0, szz = 0, sxz = 0; for (const [x, z] of pts) { sxx += (x - mx) ** 2; szz += (z - mz) ** 2; sxz += (x - mx) * (z - mz); } return 0.5 * Math.atan2(2 * sxz, sxx - szz); };
-  const pads = []; model.traverse(o => { if (o.isMesh && /guest drop-off$|^Drop-off \| DO-\d+/.test(o.name)) pads.push(o); });
+  const pads = []; model.traverse(o => { if (o.isMesh && /guest drop-off$|service drop-off$|^Drop-off \| DO-\d+/.test(o.name)) pads.push(o); });
   const fixed = [];
   for (const m of pads) {
-    m.userData.origMat = m.userData.origMat || m.material; m.material = /\(BOH\)/.test(m.name) ? bohPadMat : guestPadMat;
+    m.userData.origMat = m.userData.origMat || m.material; m.material = /\(BOH\)|service drop-off$/.test(m.name) ? bohPadMat : guestPadMat;   // e015: access-road pads of the club, hotel and residences are service drop-offs
     m.updateWorldMatrix(true, false);
     const pos = m.geometry.attributes.position, pts = []; const v = new THREE.Vector3();
     for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); pts.push([v.x, v.z]); }
@@ -890,6 +890,7 @@ const PRODUCTS = [
   { fp: ['branded residence BR2 | tower'], name: 'Residences BR2', zone: 'Z10', p: topOfPrefix('branded residence BR2', 8), kpi: { 'Apartments': 104, 'In rental pool': 63, 'Residents at peak': 143, 'Staff': 47, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
   { fp: ['restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
   { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
+  { fp: ['gym.001', 'gym.002', 'tennis court', 'pickleball'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['marina support.001', 'Terminal'], name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.011', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
@@ -1157,7 +1158,7 @@ addPoi('marina', 'Marina pontoons', A.basin.clone().setZ(A.basin.z - 150)); addP
 { const pm = meshOf('PROMENADE surface')[0]; if (pm) { const b = bboxOf(pm); addPoi('promenade', 'Promenade west', new THREE.Vector3(b.min.x + 30, 0, b.getCenter(new THREE.Vector3()).z)); addPoi('promenade', 'Promenade centre', b.getCenter(new THREE.Vector3())); addPoi('promenade', 'Promenade east', new THREE.Vector3(b.max.x - 30, 0, b.getCenter(new THREE.Vector3()).z)); } }
 for (const v of villas) addPoi('villa', v.name, v.p);
 for (const r of residences) { const k = 'branded residence ' + r.name.split(' ')[1];   // ground-level spots per building: entrance link and drop-off, not the tower centre
-  let n = 0; for (const part of ['entrance link', 'guest drop-off']) if (has(`${k} | ${part}`)) { addPoi('residence', `${r.name} ${part}`, centreOf(`${k} | ${part}`)); n++; }
+  let n = 0; for (const part of ['entrance link', 'service drop-off']) if (has(`${k} | ${part}`)) { addPoi('residence', `${r.name} ${part}`, centreOf(`${k} | ${part}`)); n++; }
   if (!n) addPoi('residence', r.name, r.p); }
 addPoi('hotel', 'Beach Hotel lobby', A.hotel); for (const n of [...byName.keys()].filter(n => /^Hotel 2\.\d+ \| plinth$/.test(n))) addPoi('hotel', 'Hill Hotel ' + n.split(' | ')[0].replace('Hotel 2.', 'block '), centreOf(n));
 addPoi('staff', 'Staff accommodation', has('Infrastructure zone | SA staff accommodation courtyard') ? centreOf('Infrastructure zone | SA staff accommodation courtyard') : A.boh);
