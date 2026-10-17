@@ -62,8 +62,8 @@
   #bApp.on { background: #fff; color: var(--navy); }
   /* guest app: slides in from the right and narrows the map; iPhone proportions 390 x 844, full visible height */
   #appPanel { flex: 0 0 auto; width: 0; height: 100%; overflow: hidden; background: #e9e4da; transition: width 0.35s cubic-bezier(.2,.8,.2,1); }
-  #appPanel.open { width: calc((100vh - var(--navh, 0px) - 24px) * 0.4621 + 24px); }
-  #appPanel iframe { width: calc((100vh - var(--navh, 0px) - 24px) * 0.4621 + 24px); height: 100%; border: 0; display: block; }
+  #appPanel.open { width: var(--appw, 420px); }   /* --appw set by JS from the row height: iPhone 390 x 844 + 24 px margin, at most 45 % of the row */
+  #appPanel iframe { width: var(--appw, 420px); height: 100%; border: 0; display: block; }
   #stage.app #feed { display: none; }
   @media (max-width: 900px) { #stageRow { position: relative; } #appPanel { position: absolute; right: 0; top: 0; z-index: 5; } #bApp { z-index: 6; } }   /* small screens: the app covers the map */
   #feed { position: absolute; top: 12px; right: 12px; width: 230px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
@@ -1340,9 +1340,10 @@ const pins = [];
 let simT = 0, speedMul = 1, playing = true;
 const MOTION = 2, MOTION_PEOPLE = 6;          // vehicles 2x, people 6x: a 2 km walk takes ~15 simulated minutes
 const clockText = () => { const m = START_MIN + Math.floor(simT); return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+const SHOW_MAP_NOTES = false;   // founder 2026-10-17: no pop-up notes on the map until a new principle is agreed; the log keeps every event
 function notify({ icon, tag, title, body, anchor, accent }) {
   logAll.push({ t: clockText(), title: `${icon} ${tag} · ${title}`, body });
-  if (anchor) { const el = document.createElement('div'); el.className = 'pin' + (accent ? ' accent' : ''); el.textContent = title; stage.appendChild(el); pins.push({ el, anchor, until: simT + 5.5 }); }
+  if (anchor && SHOW_MAP_NOTES) { const el = document.createElement('div'); el.className = 'pin' + (accent ? ' accent' : ''); el.textContent = title; stage.appendChild(el); pins.push({ el, anchor, until: simT + 5.5 }); }
 }
 const anchorPos = a => (typeof a === 'string' ? actors[a].mesh.position.clone().add(new THREE.Vector3(0, 16, 0)) : a.clone().add(new THREE.Vector3(0, 22, 0)));
 const waiters = [];
@@ -1469,7 +1470,8 @@ async function loop() {
 }
 
 // ---------- controls
-{ const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').textContent = v ? 'Close guest app' : 'Guest app';
+{ const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
+  const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').textContent = v ? 'Close guest app' : 'Guest app';
     if (v && !$('appFrame').src) $('appFrame').src = 'guest-app.html?embed=1'; };
   $('bApp').onclick = () => setApp(!$('appPanel').classList.contains('open')); }
 $('bPlay').onclick = () => { playing = !playing; $('bPlay').textContent = playing ? 'Pause' : 'Play'; $('bPlay').classList.toggle('on', playing); };
