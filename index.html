@@ -456,23 +456,47 @@ function showFootprint(meshes) {
   clearFootprint(); const fp = footprintOf(meshes);
   for (const { ring, y } of fp.parts) {
     const shape = new THREE.Shape(ring.map(q => new THREE.Vector2(q[0], q[1])));
-    const g = new THREE.ShapeGeometry(shape); g.rotateX(Math.PI / 2);                 // shape in XY → XZ (z = -y, so mirror back)
-    const mesh = new THREE.Mesh(g, fpMat); mesh.scale.z = -1; mesh.position.y = y + 0.12; mesh.renderOrder = 6; fpGroup.add(mesh);
+    const g = new THREE.ShapeGeometry(shape); g.rotateX(Math.PI / 2);                 // shape in XY → XZ: shape y lands on world z
+    const mesh = new THREE.Mesh(g, fpMat); mesh.position.y = y + 0.12; mesh.renderOrder = 6; fpGroup.add(mesh);   // no mirror: rotateX(+90°) already puts shape y on world z
     const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(ring.map(q => new THREE.Vector3(q[0], y + 0.14, q[1]))), fpEdge); fpGroup.add(line);
   }
   return fp.area;
 }
 function clearFootprint() { for (const c of [...fpGroup.children]) { c.geometry.dispose(); fpGroup.remove(c); } }
 const meshesUnder = o => { const out = []; o.traverse(m => { if (m.isMesh && m.userData.group !== 'zoning') out.push(m); }); return out; };
+const FLAT = /drop-off|access road|path|green strip|service yard|link|pool deck|field|surface/;
+function footprintMeshes(o) {                                                    // the building the cursor is on, not the whole parcel
+  const t = topOf(o), all = meshesUnder(t);
+  if (all.length <= 12 || !o.name.includes(' | ')) return all.filter(m => !FLAT.test(m.name));
+  const stem = o.name.replace(/ (roof|podium|glass|slabs|walls|roof garden|pergola|planters?)$/, '');
+  const own = all.filter(m => m.name === stem || m.name.startsWith(stem + ' '));
+  return own.length ? own : [o];
+}
+// self-check (runs at load): draws every footprint exactly as hover does and checks the drawn outline sits under its object.
+// It tests the rendered result, so a transform error (like the old z mirror) is caught, not only a wrong calculation.
+function checkFootprints(list) {
+  const bad = []; const gb = new THREE.Box3(), ob = new THREE.Box3(), gc = new THREE.Vector3(), oc = new THREE.Vector3();
+  for (const [label, meshes] of list) {
+    if (!meshes.length) continue; showFootprint(meshes); if (!fpGroup.children.length) continue;
+    gb.makeEmpty(); fpGroup.children.forEach(ch => gb.expandByObject(ch)); ob.makeEmpty(); meshes.forEach(m => ob.expandByObject(m));
+    gb.getCenter(gc); ob.getCenter(oc);
+    const tol = 3 + 0.1 * Math.max(ob.max.x - ob.min.x, ob.max.z - ob.min.z);
+    if (Math.abs(gc.x - oc.x) > tol || Math.abs(gc.z - oc.z) > tol) bad.push(`${label} (off by ${Math.round(Math.hypot(gc.x - oc.x, gc.z - oc.z))} m)`);
+  }
+  clearFootprint();
+  if (bad.length) console.error('footprint drawn away from its object:', bad); else console.info('footprints checked:', list.length, 'all under their objects');
+  return bad;
+}
 const topOf = o => { let g = o; while (g.parent && g.parent !== model) g = g.parent; return g; };
 function card(o) {
   const t = topOf(o), tu = t.userData;
-  return `<b>${t.name.split(' | ')[0]}</b><div>${tu.use || tu.function || ''}</div><div class="k">${tu.zone_id} · ${tu.zone_name}</div>`;
+  const title = t.name === 'Infrastructure zone' && o.name.includes(' | ') ? o.name.split(' | ')[1].replace(/ (roof|walls)$/, '') : t.name.split(' | ')[0];
+  return `<b>${title}</b><div>${tu.use || tu.function || ''}</div><div class="k">${tu.zone_id} · ${tu.zone_name}</div>`;
 }
 function setHover(o) {
-  hovered = o; const sel = pinned ? [pinned] : o ? [topOf(o)] : [];
+  hovered = o; const sel = pinned ? [pinned] : o ? footprintMeshes(o) : [];   // outline the building under the cursor, not the whole parcel
   outline.selectedObjects = sel;
-  if (!pinned) { if (o) { const area = showFootprint(meshesUnder(topOf(o))); tip.innerHTML = card(o) + `<div class="k">footprint ≈ ${Math.round(area).toLocaleString()} m²</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); } else { clearFootprint(); tip.style.display = 'none'; } }
+  if (!pinned) { if (o) { const area = showFootprint(footprintMeshes(o)); tip.innerHTML = card(o) + `<div class="k">footprint ≈ ${Math.round(area).toLocaleString()} m²</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); } else { clearFootprint(); tip.style.display = 'none'; } }
 }
 function placeTip(x, y) {
   const tw = tip.offsetWidth, th = tip.offsetHeight;
@@ -769,7 +793,7 @@ const walk = (from, to) => walkR.route(from, to) || (() => { const a = walkR.nea
 
 // ===== drop-off pads (founder 2026-10-17): every drop-off is red; each pad turned so its long side runs along the adjoining road
 {
-  const redMat = (() => { let m = null; model.traverse(o => { if (!m && o.isMesh && /^Drop-off \| DO-\d+ \(BOH\)$/.test(o.name)) m = o.material; }); return m; })();
+  const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x9cc9e8, roughness: 0.85 }), bohPadMat = new THREE.MeshStandardMaterial({ color: 0x9a4e3c, roughness: 0.9 });   // founder 2026-10-17
   const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
   for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', 'Hotel Lobby road | access road']) for (const m of meshOf(n)) {
@@ -784,7 +808,7 @@ const walk = (from, to) => walkR.route(from, to) || (() => { const a = walkR.nea
   const pads = []; model.traverse(o => { if (o.isMesh && /guest drop-off$|^Drop-off \| DO-\d+/.test(o.name)) pads.push(o); });
   const fixed = [];
   for (const m of pads) {
-    if (redMat && m.material !== redMat) { m.userData.origMat = m.material; m.material = redMat; }
+    m.userData.origMat = m.userData.origMat || m.material; m.material = /\(BOH\)/.test(m.name) ? bohPadMat : guestPadMat;
     m.updateWorldMatrix(true, false);
     const pos = m.geometry.attributes.position, pts = []; const v = new THREE.Vector3();
     for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); pts.push([v.x, v.z]); }
@@ -845,7 +869,8 @@ const PIN_SVG = c => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11
 const gpins = [];
 function makePin(d, cls, colour) {
   if (!d.p) return;
-  const fpMeshes = () => { const out = []; for (const pre of (d.fp || [])) byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh && !/drop-off|access road|path|pool deck|guest drop/.test(n)) out.push(o); }); return out; };
+  const fpMeshes = () => { const out = []; for (const pre of (d.fp || [])) byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh && !FLAT.test(n)) out.push(o); }); return out; };
+  d.fpMeshes = fpMeshes;
   const el = document.createElement('div'); el.className = 'gpin ' + cls; el.innerHTML = PIN_SVG(colour) + `<span>${d.name}</span>`; stage.appendChild(el);
   const html = `<b>${d.name}</b>${d.zone ? `<div class="k">${d.zone} · ${zoneInfo[d.zone].zone_name}</div>` : '<div class="k">Back of house · service</div>'}<div class="dash">${Object.entries(d.kpi).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}${d.load !== undefined ? `<div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div><span>Load today</span><span>${d.load} %</span>` : ''}</div>`;
   el.onpointerenter = e => { if (pinned) return; const ms = fpMeshes(); const area = ms.length ? showFootprint(ms) : 0; tip.innerHTML = html + (area ? `<div class="k" style="margin-top:4px">footprint ≈ ${Math.round(area).toLocaleString()} m²</div>` : ''); tip.style.display = 'block'; const q = stageXY(e); placeTip(q.x, q.y); outline.selectedObjects = []; };
@@ -855,6 +880,7 @@ function makePin(d, cls, colour) {
 }
 for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
 for (const d of SERVICES) makePin(d, 'svc', '#5a6672');
+{ const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))])); window.__fpBad = checkFootprints(list); window.__fpCheck = () => checkFootprints(list); window.__fpGroup = fpGroup; }
 function updatePins() { for (const g of gpins) { const sc = toScreen(g.p); if (!sc) { g.el.style.display = 'none'; continue; } g.el.style.display = ''; g.el.style.left = sc[0] + 'px'; g.el.style.top = sc[1] + 'px'; } }
 
 // ===== Marina Village: four clusters are the F&B outlets of the retail zone (vault: Resort Population and Guest Day)
