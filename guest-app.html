@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guest App · RubiqOS demo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Guest app of the RubiqOS live demo, built by resort-glb/build_guest_app.py from the prototype rose-island-guest-app.html. Edit guest_app_data.js or the builder, not this file. */
+:root{
+  color-scheme:light;
+  --sea-bg1:#7fd3df; --sea-bg2:#1f93a8; --sea-bg3:#0f6a7c;
+  --bg:#1f93a8; --fg:#ffffff; --muted:rgba(255,255,255,.75); --panel:rgba(255,255,255,.14); --line:rgba(255,255,255,.28);
+  /* Design language. Ground: warm sand; cards: white on sand. Coral = the one action color (Book, Transfer, Key, Butler).
+     Ink = selected navigation. Green + check = done / booked status, never a button. Aqua = water, info, places.
+     Cards are rows: photo flush to the left edge, text left-aligned, chevron when the row opens a page. */
+  --p-bg:#f3eee6; --p-card:#ffffff; --p-fg:#1f2a2e; --p-muted:#73818a; --p-line:#e7e0d5; --p-sand:#f4f0e9; --p-chip:#efe9df;
+  --sea:#5db7c1; --sea-deep:#3a929d; --sea-soft:#e4f2f4; --sea-ink:#2b6f78;
+  --sun:#e9806d; --sun-deep:#d66a56; --sun-soft:#fbe9e4; --sun-ink:#ffffff;
+  --palm:#4a9a7a; --ok:#2f8f6a; --ok-soft:#e3f3ec;
+  --water:#c3e4e8; --water2:#9fd2d9; --land:#f6ebd7; --land2:#e6d7b9; --reef:#86c9d0;
+  --display:"Fraunces", Georgia, "Times New Roman", serif; --ui:"Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);background-image:radial-gradient(120% 90% at 50% -10%,var(--sea-bg1),var(--sea-bg2) 55%,var(--sea-bg3) 100%);background-attachment:fixed;color:var(--fg);font-family:var(--ui);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+img{max-width:100%}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--p-muted);font-weight:500}
+.num{font-variant-numeric:tabular-nums}
+svg.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Page ---------- */
+.wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px 16px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.btn{padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:#fff;font-weight:500;font-size:13px}
+.btn.primary{background:#fff;color:var(--sea-bg3);border-color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.tools small{color:var(--muted);font-size:12px}
+
+/* ---------- Phone ---------- */
+.phone{width:390px;max-width:100%;height:clamp(640px,calc(100dvh - 110px),844px);background:#121417;border-radius:50px;padding:12px;box-shadow:0 40px 90px rgba(6,40,48,.45),inset 0 0 0 1.5px rgba(255,255,255,.07);position:relative;flex:none}
+.screen{position:relative;height:100%;border-radius:40px;overflow:clip;background:var(--p-bg);color:var(--p-fg);display:flex;flex-direction:column;font-size:13px}
+.statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;font-size:13px;font-weight:600;flex:none;position:relative;z-index:3}
+.statusbar::after{content:"";position:absolute;left:50%;top:10px;transform:translateX(-50%);width:110px;height:28px;border-radius:20px;background:#121417}
+.statusbar .icons i{display:block;width:16px;height:9px;border:1.5px solid currentColor;border-radius:3px;position:relative;opacity:.9}
+.statusbar .icons i::after{content:"";position:absolute;inset:1.5px;right:3px;background:currentColor;border-radius:1px}
+.view{position:absolute;inset:44px 0 0 0;overflow-y:auto;overscroll-behavior:contain;padding:4px 18px 120px;scrollbar-width:none}
+.view::-webkit-scrollbar{display:none}
+
+/* Header with key chip + avatar */
+.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0 14px}
+.ph h1{font-family:var(--display);font-weight:300;font-size:26px;letter-spacing:-.01em;line-height:1.1;white-space:nowrap}
+.hdr{display:flex;align-items:center;gap:8px;flex:none}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--sea-soft);color:var(--sea-ink);display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+.keychip{height:36px;padding:0 12px 0 10px;border-radius:999px;background:var(--sun);color:var(--sun-ink);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;box-shadow:0 8px 20px rgba(233,128,109,.3)}
+.keychip svg{font-size:15px}
+
+/* Now line */
+.now{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 16px}
+.now span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.now svg{font-size:17px;color:var(--p-muted);flex:none}
+.now svg.dir{font-size:12px;color:var(--p-fg);transform:rotate(var(--deg,0deg))}
+.now b{font-weight:500;font-size:14px}
+.now small{color:var(--p-muted);font-size:12px}
+
+/* Hero: now / next up */
+.hero{border-radius:24px;padding:16px 16px 14px;background:var(--p-card);border:1px solid var(--p-line);margin-bottom:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 30px rgba(31,42,46,.05);transition:background .4s}
+.hero .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hero .eyebrow{display:block;margin-bottom:4px}
+.hero h2{font-family:var(--display);font-weight:400;font-size:22px;line-height:1.15}
+.hero .sub{color:var(--p-muted);font-size:12.5px;margin-top:4px}
+.hero .big{text-align:right;flex:none}
+.hero .big b{display:block;font-family:var(--display);font-weight:300;font-size:34px;line-height:1}
+.hero .big small{display:block;color:var(--p-muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-top:4px}
+.hero .acts{display:flex;gap:8px;flex-wrap:wrap}
+.hero .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}
+.hero .bar i{display:block;height:100%;background:#fff;width:0;transition:width 1s linear}
+.hero.live{background:linear-gradient(135deg,var(--sun),var(--sun-deep));border-color:transparent;color:#fff;box-shadow:0 16px 40px rgba(214,106,86,.3)}
+.hero.live .eyebrow,.hero.live .sub,.hero.live .big small{color:rgba(255,255,255,.85)}
+.hero.live .pill{background:#fff;color:var(--sun-deep)}
+.hero.live .pill.ghost{background:rgba(255,255,255,.18);color:#fff}
+.pill{padding:9px 14px;border-radius:999px;background:var(--sun);color:var(--sun-ink);font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px}
+.pill.ghost{background:var(--p-chip);color:var(--p-fg);font-weight:500}
+.pill svg{font-size:15px}
+
+/* Section head */
+.sh{display:flex;align-items:baseline;justify-content:space-between;margin:6px 0 10px}
+.sh h2{font-size:16px;font-weight:600}
+.sh small{color:var(--p-muted);font-size:11.5px}
+.sh .eyebrow{display:block;margin-bottom:2px}
+
+/* Day timeline with Butler ideas inline */
+.day{display:flex;flex-direction:column;margin-bottom:22px}
+.day .it{display:grid;grid-template-columns:44px 14px 1fr;gap:8px;align-items:start;padding:5px 0}
+.day .it .tm{font-weight:600;font-size:12.5px;padding-top:10px}
+.day .it .ln{display:flex;flex-direction:column;align-items:center;align-self:stretch}
+.day .it .ln i{width:9px;height:9px;border-radius:50%;background:var(--p-fg);margin-top:13px;flex:none}
+.day .it .ln::after{content:"";width:1px;flex:1;background:var(--p-line);margin-top:4px}
+.day .it:last-child .ln::after{display:none}
+.day .it .c{background:var(--p-card);border:1px solid var(--p-line);border-radius:14px;padding:10px 12px}
+.day .it .c b{font-weight:500;font-size:13px;display:block}
+.day .it .c small{color:var(--p-muted);font-size:11.5px}
+.day .it.past{opacity:.55}
+.day .it.open .ln i{background:transparent;border:1.5px dashed var(--p-muted)}
+.day .it.open .c{background:transparent;border-style:dashed}
+.day .it.open .c b{font-weight:400;color:var(--p-muted);font-style:italic;font-family:var(--display);font-size:14px}
+.ideas{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ideas button{display:inline-flex;align-items:center;gap:6px;padding:6px 10px 6px 8px;border-radius:999px;background:var(--p-card);border:1px solid var(--p-line);font-size:11.5px;color:var(--p-fg);font-weight:500}
+.ideas button i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--sun-soft);color:var(--sun-deep);display:grid;place-items:center;font-size:12px;font-weight:600}
+.day .it.move .ln i{background:var(--sea)}
+.day .it.move .c{border-color:transparent;background:var(--sea-soft)}
+.day .it.move .c small{color:var(--sea-ink)}
+.day .it.flash .c{animation:flash 1.2s ease}
+
+/* Accommodation block: the stay card on top, the access list attached under it */
+.stayblock{background:var(--p-card);border:1px solid var(--p-line);border-radius:22px;overflow:hidden;margin:0 0 22px;box-shadow:0 12px 30px rgba(31,42,46,.06)}
+.villa .photo{aspect-ratio:2.2/1;max-width:100%;background:var(--p-sand)}
+.villa .photo img{display:block;width:100%;height:100%;object-fit:cover}
+.villa .vbody{padding:14px;display:flex;flex-direction:column;gap:14px}
+.villa h2{font-family:var(--display);font-weight:400;font-size:21px;margin-top:2px;line-height:1.15}
+.villa .meta{color:var(--p-muted);font-size:12.5px;margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 8px}
+.villa .meta i{font-style:normal;color:var(--palm);font-weight:500}
+/* Three equal actions: Transfer · door sign (empty by default) · Key */
+.villa .vact{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.villa .vact .pill{justify-content:center;padding:10px 6px;white-space:nowrap;min-width:0;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.villa .vact .pill.key{box-shadow:0 8px 20px rgba(233,128,109,.3)}
+.pill.sign.ph{background:transparent;border:1px dashed var(--p-muted);color:var(--p-muted);font-weight:500;padding:9px 6px}
+.pill.sign.mur{background:var(--sea-soft);color:var(--sea-ink);font-weight:600}
+.pill.sign.dnd{background:var(--p-fg);color:#fff;font-weight:600}
+.signopts{display:flex;flex-direction:column;gap:8px;align-self:stretch}
+.signopts button{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-radius:14px;border:1px solid var(--p-line);background:var(--p-card);font-size:14px;font-weight:500;text-align:left}
+.signopts button small{display:block;color:var(--p-muted);font-size:11.5px;font-weight:400}
+.signopts button svg{font-size:18px;color:var(--ok);visibility:hidden}
+.signopts button.on{border-color:var(--ok)}
+.signopts button.on svg{visibility:visible}
+.signopts button.clear{border-style:dashed;color:var(--p-muted)}
+.accesshd{display:flex;justify-content:space-between;align-items:baseline;padding:12px 14px 2px;border-top:1px solid var(--p-line)}
+.accesshd small{color:var(--p-muted);font-size:11.5px}
+
+/* Access list */
+.access{display:flex;flex-direction:column;padding:0 14px 4px}
+.access .ac{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--p-line)}
+.access .ac:last-child{border-bottom:0}
+.access .ac b{font-weight:500;font-size:13.5px;display:block}
+.access .ac small{color:var(--p-muted);font-size:11.5px}
+.access .ac.flash b{color:var(--sun)}
+.access .acts{display:flex;gap:6px;flex:none}
+.ib{width:36px;height:32px;border-radius:10px;border:1px solid var(--p-line);background:var(--p-card);display:grid;place-items:center;color:var(--p-fg);font-size:16px}
+.ib:hover{border-color:var(--p-muted)}
+
+/* Explore: two section tiles, map, row cards */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.two button{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:8px;row-gap:1px;align-items:center;padding:9px 12px;border-radius:14px;background:var(--p-card);border:1px solid var(--p-line);text-align:left;color:var(--p-fg)}
+.two button svg{font-size:17px;color:var(--sea-ink);grid-row:1/3}
+.two button b{font-weight:600;font-size:13.5px;line-height:1.2}
+.two button small{color:var(--p-muted);font-size:11px;line-height:1.2}
+.two button.on{background:var(--p-fg);border-color:var(--p-fg);color:#fff}
+.two button.on svg{color:#fff}
+.two button.on small{color:rgba(255,255,255,.7)}
+.map{position:relative;border-radius:20px;overflow:hidden;background:var(--water);margin-bottom:14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
+.map svg{display:block;width:100%;height:auto}
+.pin{cursor:pointer}
+.map .z{fill:var(--land);stroke:var(--land2);stroke-width:.6;stroke-linejoin:round}
+.map .z.beach{fill:#f9f1e0}
+.map .z.green{fill:#dfe6cf}
+.map .z.boh{fill:#e9e2d4;opacity:.8}
+.pin circle.o{fill:var(--sea-deep);stroke:#fff;stroke-width:1.5}
+.pin circle.i{fill:#fff}
+.pin text{font-family:var(--ui);font-size:7.5px;fill:var(--p-fg);pointer-events:none;font-weight:500}
+.pin.booked circle.o{fill:var(--sun)}
+.pin.home circle.o{fill:var(--p-fg)}
+.pin.home text{font-weight:600}
+.rows{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:104px 1fr auto;gap:0 12px;align-items:center;background:var(--p-card);border:1px solid var(--p-line);border-radius:16px;overflow:hidden;text-align:left;width:100%;min-height:86px;cursor:pointer;transition:border-color .3s}
+.row .th{width:104px;height:100%;min-height:86px;background:var(--p-sand);position:relative;flex:none;align-self:stretch}
+.row .th img{display:block;width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.row .th .time{position:absolute;left:7px;bottom:7px;background:rgba(255,255,255,.94);color:#1f2a2e;border-radius:999px;padding:2px 7px;font-size:10.5px;font-weight:600}
+.row .tx{min-width:0;display:flex;flex-direction:column;gap:2px;padding:10px 0}
+.row .tx b{font-weight:600;font-size:13.5px;line-height:1.2}
+.row .tx small{color:var(--p-muted);font-size:11.5px;line-height:1.3}
+.row .tx .d2{color:var(--p-fg);opacity:.8;font-size:11.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .r{display:flex;align-items:center;gap:6px;padding-right:10px;flex:none}
+.row .chev{color:var(--p-muted);font-size:20px;line-height:1}
+.row .book{padding:8px 13px;border-radius:999px;background:var(--sun);font-size:12px;font-weight:600;color:var(--sun-ink)}
+.row .book.dim{background:var(--p-chip);color:var(--p-muted)}
+.status{display:inline-flex;align-items:center;gap:5px;padding:5px 9px 5px 7px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--ok-soft);color:var(--ok);white-space:nowrap}
+.status svg{font-size:13px;stroke-width:2.2}
+.tag{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:10.5px;font-weight:600;background:var(--sea-soft);color:var(--sea-ink);letter-spacing:.02em}
+.tag.members{background:var(--sun-soft);color:var(--sun-deep)}
+.row.booked{border-color:var(--ok)}
+.row.flash{animation:flash 1.2s ease}
+.daygroup{margin:12px 0 6px}
+.daygroup:first-child{margin-top:0}
+
+/* Detail page (place or experience) */
+.detail{position:absolute;inset:0;z-index:7;background:var(--p-bg);color:var(--p-fg);display:flex;flex-direction:column;animation:slidein .32s cubic-bezier(.2,.8,.2,1)}
+.detail .scrollr{flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding-bottom:110px}
+.detail .scrollr::-webkit-scrollbar{display:none}
+.gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;gap:0}
+.gallery::-webkit-scrollbar{display:none}
+.gallery img{flex:none;width:100%;aspect-ratio:4/3;object-fit:cover;scroll-snap-align:start;display:block}
+.gallery.small{gap:8px;padding:0 18px;margin-bottom:18px}
+.gallery.small img{width:72%;aspect-ratio:3/2;border-radius:14px}
+.detail .back{position:absolute;left:14px;top:52px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.9);color:#1f2a2e;display:grid;place-items:center;font-size:18px;z-index:2;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+.dbody{padding:16px 18px 0;display:flex;flex-direction:column;gap:14px}
+.dbody h1{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.1}
+.dbody .meta{display:flex;flex-wrap:wrap;gap:6px}
+.dbody .meta span{padding:5px 10px;border-radius:999px;background:var(--p-chip);font-size:11.5px;font-weight:500;display:inline-flex;align-items:center;gap:5px}
+.dbody .meta span.on{background:var(--sea-soft);color:var(--sea-ink)}
+.dbody .meta span.members{background:var(--sun-soft);color:var(--sun-deep)}
+.dbody p{margin:0;color:var(--p-fg);font-size:13.5px;line-height:1.55;max-width:60ch}
+.dbody .facts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dbody .facts div{background:var(--p-card);border:1px solid var(--p-line);border-radius:14px;padding:9px 12px}
+.dbody .facts small{display:block;color:var(--p-muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.dbody .facts b{font-weight:500;font-size:13px}
+.menu{display:flex;flex-direction:column;border-top:1px solid var(--p-line)}
+.menu .mi{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--p-line)}
+.menu .mi b{font-weight:500;font-size:13px;display:block}
+.menu .mi small{color:var(--p-muted);font-size:11.5px}
+.menu .mi .cap{color:var(--p-muted);font-size:11.5px;white-space:nowrap}
+/* Catalogue, three levels: Explore = today only (one filter row) · place page = full menu in collapsible groups · Butler = search by intent */
+.filters{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters button{padding:6px 12px;border-radius:999px;background:var(--p-card);border:1px solid var(--p-line);font-size:12px;white-space:nowrap;color:var(--p-fg);font-weight:500}
+.filters button.on{background:var(--p-fg);border-color:var(--p-fg);color:#fff}
+.mgroups{display:flex;flex-direction:column;gap:8px}
+.msec{margin:6px 2px 0}
+.mg{background:var(--p-card);border:1px solid var(--p-line);border-radius:14px;overflow:hidden}
+.mg summary{list-style:none;display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer}
+.mg summary::-webkit-details-marker{display:none}
+.mg summary b{font-weight:600;font-size:13.5px;flex:1}
+.mg summary small{color:var(--p-muted);font-size:11.5px}
+.mg summary .chev{color:var(--p-muted);font-size:18px;line-height:1;transition:transform .2s}
+.mg[open] summary .chev{transform:rotate(90deg)}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--p-line)}
+.mrow b{font-weight:500;font-size:13px;display:block}
+.mrow small{color:var(--p-muted);font-size:11.5px}
+.mbook{flex:none;padding:7px 12px;border-radius:999px;background:var(--sun);color:var(--sun-ink);font-size:12px;font-weight:600}
+.mrow .status,.sug .status{flex:none}
+.sugs{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.sug{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:var(--p-card);border:1px solid var(--p-line)}
+.sug b{font-weight:600;font-size:12.5px;display:block}
+.sug small{color:var(--p-muted);font-size:11px}
+.cam{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/9;max-width:100%;background:#000}
+.cam img{display:block;width:100%;height:100%;object-fit:cover;filter:saturate(.85) contrast(1.05)}
+.cam::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.06) 0 1px,transparent 1px 3px);pointer-events:none}
+.cam .live{position:absolute;left:10px;top:10px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:4px 9px 4px 7px;font-size:10.5px;font-weight:600;letter-spacing:.06em}
+.cam .live::before{content:"";width:7px;height:7px;border-radius:50%;background:#ff4d4d;animation:blink 1.4s infinite}
+.cam .stamp{position:absolute;right:10px;bottom:8px;color:#fff;font-size:10.5px;opacity:.9;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.cam .cond{position:absolute;left:10px;bottom:8px;color:#fff;font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.dbar{position:absolute;left:0;right:0;bottom:0;padding:12px 18px calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,transparent,var(--p-bg) 30%);display:flex;gap:8px;z-index:2}
+.dbar .pill{flex:1;justify-content:center;padding:13px 14px;font-size:13.5px}
+.dbar .pill.ghost{flex:0 0 auto}
+.linkrow{display:flex;align-items:center;gap:10px;background:var(--p-card);border:1px solid var(--p-line);border-radius:14px;padding:8px;text-align:left;width:100%}
+.linkrow img{width:56px;height:44px;border-radius:9px;object-fit:cover;flex:none}
+.linkrow b{font-weight:600;font-size:13px;display:block}
+.linkrow small{color:var(--p-muted);font-size:11.5px}
+.linkrow .chev{margin-left:auto;color:var(--p-muted);font-size:18px;padding-right:4px}
+
+/* Tab bar + orb capsule */
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:82px;background:var(--p-card);border-top:1px solid var(--p-line);display:grid;grid-template-columns:1fr 1fr 1fr;align-items:start;padding:10px 10px 0;z-index:5}
+.tabbar.haslive{grid-template-columns:72px 1fr 72px}
+.tabbar>button[data-tab]{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--p-muted);font-weight:500;padding-top:4px}
+.tabbar>button[data-tab] svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tabbar>button[data-tab] svg .rose{fill:var(--sun);stroke:var(--sun)}
+.tabbar>button[data-tab].on{color:var(--p-fg)}
+.tabbar>button[data-tab].on svg{stroke-width:2}
+.orb{position:absolute;left:50%;top:-30px;transform:translateX(-50%);width:74px;height:74px;border-radius:40px;background:var(--sun);color:var(--sun-ink);display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 14px 34px rgba(233,128,109,.42),0 0 0 7px var(--p-card);padding:0;transition:width .4s cubic-bezier(.2,.8,.2,1),height .4s,top .4s,background .3s;overflow:hidden;white-space:nowrap}
+.orb::before{content:"";position:absolute;inset:-7px;border-radius:50px;border:2px solid var(--sun);opacity:0;animation:pulse 2.6s ease-out infinite;pointer-events:none}
+.orb .wave{display:flex;gap:4px;align-items:center;height:22px}
+.orb .wave i{width:4px;border-radius:2px;background:#fff;height:9px;animation:wave 1.6s ease-in-out infinite}
+.orb .wave i:nth-child(2){height:20px;animation-delay:.2s}.orb .wave i:nth-child(3){height:13px;animation-delay:.4s}.orb .wave i:nth-child(4){height:17px;animation-delay:.6s}
+.orb.wide{width:236px;height:64px;top:-26px;justify-content:flex-start;padding:0 14px 0 9px}
+.orb.wide::before{display:none}
+.orb .lv{display:none;align-items:center;gap:10px;flex:1;min-width:0}
+.orb.wide .lv{display:flex}
+.orb .ring{position:relative;width:46px;height:46px;flex:none;display:grid;place-items:center}
+.orb .ring svg.r{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.orb .ring svg.r circle{fill:none;stroke-width:3}
+.orb .ring svg.r .bg{stroke:rgba(255,255,255,.3)}
+.orb .ring svg.r .fg{stroke:#fff;stroke-dasharray:126;stroke-dashoffset:126;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.orb .ring svg.i{font-size:20px}
+.orb .lv .tx{display:flex;flex-direction:column;text-align:left;min-width:0;flex:1;line-height:1.2}
+.orb .lv .tx b{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.orb .lv .tx small{font-size:11px;opacity:.9;overflow:hidden;text-overflow:ellipsis}
+.orb .lv .eta{text-align:right;flex:none;line-height:1}
+.orb .lv .eta b{font-size:18px;font-weight:600;display:block}
+.orb .lv .eta small{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.orb.on{background:var(--p-fg);box-shadow:0 10px 26px rgba(0,0,0,.25),0 0 0 7px var(--p-card)}
+.orb.on::before{display:none}
+
+/* Butler sheet */
+.sheet{position:absolute;left:0;right:0;bottom:0;top:58px;background:var(--p-card);color:var(--p-fg);border-radius:30px 30px 40px 40px;z-index:8;display:flex;flex-direction:column;transform:translateY(104%);transition:transform .38s cubic-bezier(.2,.8,.2,1);box-shadow:0 -20px 60px rgba(0,0,0,.22);background-image:linear-gradient(180deg,var(--sun-soft),transparent 150px)}
+.sheet.open{transform:translateY(0)}
+.sheet .hd{padding:16px 16px 8px;display:flex;align-items:center;gap:12px;flex:none}
+.sheet .hd .handle{position:absolute;left:50%;top:8px;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:rgba(0,0,0,.12)}
+.sheet .hd .orbmini{width:40px;height:40px;border-radius:50%;background:var(--sun);display:grid;place-items:center;box-shadow:0 8px 18px rgba(233,128,109,.35);flex:none}
+.sheet .hd .orbmini .wave{display:flex;gap:3px;align-items:center;height:14px}
+.sheet .hd .orbmini .wave i{width:3px;border-radius:2px;background:#fff;height:6px;animation:wave 1.6s ease-in-out infinite}
+.sheet .hd .orbmini .wave i:nth-child(2){height:13px;animation-delay:.2s}.sheet .hd .orbmini .wave i:nth-child(3){height:9px;animation-delay:.4s}
+.sheet .hd .who{flex:1;display:flex;flex-direction:column;line-height:1.2}
+.sheet .hd .who b{font-family:var(--display);font-weight:500;font-size:18px}
+.sheet .hd .who small{color:var(--p-muted);font-size:11.5px;display:flex;gap:6px;align-items:center}
+.sheet .hd .who small::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--palm)}
+.sheet .hd .x{width:32px;height:32px;border-radius:50%;background:var(--p-chip);display:grid;place-items:center;font-size:16px}
+.progress{margin:4px 16px 6px;background:linear-gradient(135deg,var(--sun),var(--sun-deep));color:#fff;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;font-size:12.5px;animation:up .3s ease}
+.progress .d{width:7px;height:7px;border-radius:50%;background:#fff}
+.progress b{font-weight:600}
+.progress small{margin-left:auto;white-space:nowrap;opacity:.9}
+.chat{flex:1;overflow-y:auto;padding:6px 16px 10px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none;overscroll-behavior:contain}
+.chat::-webkit-scrollbar{display:none}
+.msg{max-width:86%;padding:10px 13px;border-radius:18px;font-size:13.5px;line-height:1.45;animation:up .25s ease}
+.msg.b{align-self:flex-start;background:var(--p-sand);border-bottom-left-radius:6px}
+.msg.me{align-self:flex-end;background:var(--sun);color:var(--sun-ink);border-bottom-right-radius:6px}
+.msg p{margin:0}
+.msg p+p{margin-top:6px}
+.typing{display:flex;gap:4px;padding:12px 14px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--p-muted);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+.intents{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;animation:up .3s ease}
+.intents button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:var(--p-card);border:1px solid var(--p-line);border-radius:14px;padding:10px;text-align:left}
+.intents button b{font-weight:600;font-size:12px}
+.intents button small{color:var(--p-muted);font-size:10.5px;line-height:1.3}
+.intents button svg{font-size:16px;color:var(--sea-ink)}
+.opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opt{display:grid;grid-template-columns:18px 42px 1fr;gap:8px;align-items:center;text-align:left;padding:9px 10px;border-radius:12px;background:var(--p-card);border:1px solid var(--p-line);color:var(--p-fg);font-size:12.5px}
+.opt .ck{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--p-muted);display:grid;place-items:center;font-size:10px}
+.opt .tm{font-weight:600;font-size:12px}
+.opt small{display:block;color:var(--p-muted);font-size:11px}
+.opt.on{background:var(--sea-soft);border-color:transparent}
+.opt.on .ck{background:var(--sun);border-color:var(--sun);color:#fff}
+.opt.dis{opacity:.5;pointer-events:none}
+.card{margin-top:8px;background:var(--p-card);border:1px solid var(--p-line);color:var(--p-fg);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center}
+.card b{font-weight:600;font-size:13px}
+.card small{color:var(--p-muted);font-size:11.5px;grid-column:1}
+.card .st{grid-row:1/3;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--sea-ink);background:var(--sea-soft);padding:4px 8px;border-radius:999px;font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:4px 16px 8px;flex:none;min-height:40px}
+.chip{padding:9px 14px;border-radius:999px;background:var(--p-card);border:1px solid var(--p-line);color:var(--p-fg);font-size:12.5px;font-weight:500;animation:up .25s ease}
+.chip.primary{background:var(--sun);border-color:var(--sun);color:var(--sun-ink);font-weight:600}
+.chip:disabled{opacity:.45;cursor:default}
+.input{margin:0 14px 16px;flex:none;display:flex;align-items:center;gap:8px;background:var(--p-card);border:1px solid var(--p-line);border-radius:999px;padding:6px 6px 6px 16px}
+.input input{flex:1;min-width:0;background:none;border:0;color:var(--p-fg);font:inherit;font-size:13.5px;outline:none}
+.input input::placeholder{color:var(--p-muted)}
+.input .mic{width:36px;height:36px;border-radius:50%;background:var(--sun);display:grid;place-items:center;color:#fff;font-size:16px}
+
+/* Key modal */
+.keymodal{position:absolute;inset:0;z-index:9;background:rgba(21,40,45,.45);display:grid;place-items:end center;padding:0 10px 10px;animation:fade .25s ease}
+.keymodal .panel{width:100%;background:var(--p-card);color:var(--p-fg);border-radius:30px 30px 36px 36px;padding:20px 18px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;animation:up .3s ease}
+.keymodal .panel .hd{align-self:stretch;display:flex;justify-content:space-between;align-items:center}
+.keymodal .panel .hd b{font-weight:600;font-size:15px}
+.keymodal .panel .hd small{display:block;color:var(--p-muted);font-size:12px}
+.keymodal .panel .x{width:30px;height:30px;border-radius:50%;background:var(--p-chip);display:grid;place-items:center}
+.hold{position:relative;width:170px;height:170px;border-radius:50%;display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
+.hold>svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.hold>svg circle{fill:none;stroke-width:5}
+.hold>svg .bg{stroke:var(--p-line)}
+.hold>svg .fg{stroke:var(--sun);stroke-dasharray:502;stroke-dashoffset:502;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.hold .core{width:124px;height:124px;border-radius:50%;background:var(--sun);display:grid;place-items:center;transition:background .3s,transform .2s;box-shadow:0 14px 30px rgba(233,128,109,.35);color:#fff;font-size:36px}
+.hold.ok .core{background:var(--palm);box-shadow:0 14px 30px rgba(74,154,122,.35)}
+.hold:active .core{transform:scale(.96)}
+.keymodal .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--p-muted);font-weight:600}
+.keymodal .lbl.ok{color:var(--palm)}
+.keymodal .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-self:stretch}
+.keymodal .meta div{background:var(--p-sand);border-radius:14px;padding:9px 12px}
+.keymodal .meta small{display:block;color:var(--p-muted);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.keymodal .meta b{font-weight:500;font-size:13px}
+
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes slidein{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+@keyframes wave{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1.1)}}
+@keyframes pulse{0%{transform:scale(.9);opacity:.7}100%{transform:scale(1.35);opacity:0}}
+@keyframes flash{0%{box-shadow:0 0 0 0 rgba(233,128,109,.55)}100%{box-shadow:0 0 0 14px rgba(233,128,109,0)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.embed body,body.embed{background:transparent!important}.embed .tools{display:none}.embed .wrap{padding:6px;min-height:100vh;justify-content:flex-start}.embed .phone{height:calc(100vh - 12px);max-height:844px;width:min(390px,100%)}
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Lucide icons (ISC): lock-open, lock, key-round, car, house, compass -->
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+    <symbol id="i-locked" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+    <symbol id="i-buggy" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></symbol>
+    <symbol id="i-boat" viewBox="0 0 24 24"><path d="M3 15l2 4h14l2-4M4 15l8-3 8 3M12 12V5l5 3"/></symbol>
+    <symbol id="i-dining" viewBox="0 0 24 24"><path d="M4 18h16M6 18a6 6 0 0 1 12 0M12 12v-1"/></symbol>
+    <symbol id="i-house" viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11M9 20v-6h6v6"/></symbol>
+    <symbol id="i-spa" viewBox="0 0 24 24"><path d="M12 20c-4 0-7-3-7-7 0-3 2-5 4-6 1 2 3 3 3 6 0-3 2-4 3-6 2 1 4 3 4 6 0 4-3 7-7 7z"/></symbol>
+    <symbol id="i-ask" viewBox="0 0 24 24"><path d="M12 18h.01M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7"/></symbol>
+    <symbol id="i-temp" viewBox="0 0 24 24"><path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a3.5 3.5 0 1 1-4 0z"/><path d="M12 10v7"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h10a2.5 2.5 0 1 0-2.5-2.5M3 12h14a2.5 2.5 0 1 1-2.5 2.5M3 16h7a2 2 0 1 1-2 2"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M12 20V4M6 10l6-6 6 6"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 11c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/></symbol>
+    <symbol id="i-sunset" viewBox="0 0 24 24"><path d="M17 17a5 5 0 0 0-10 0M12 8V3M4.5 9.5l1.5 1.5M19.5 9.5 18 11M3 17h2M19 17h2M3 21h18"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6.5 6.5l2.5 2.5M15 15l2.5 2.5M6.5 17.5 9 15M15 9l2.5-2.5"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path class="rose" d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <div class="phone" id="phone">
+    <div class="screen">
+      <div class="statusbar"><span>9:41</span><span class="icons"><i></i></span></div>
+
+      <!-- Home -->
+      <section class="view" id="view-today">
+        <header class="ph">
+          <div><span class="eyebrow">Tuesday, Apr 21</span><h1>Hello, Harry</h1></div>
+          <div class="hdr"><button class="keychip" data-key aria-label="Digital key"><svg class="i"><use href="#i-key"/></svg>Room 212</button><div class="avatar">H</div></div>
+        </header>
+        <div class="now" aria-label="Island now">
+          <span title="Air temperature"><svg class="i"><use href="#i-temp"/></svg><b>28°</b></span>
+          <span title="Wind"><svg class="i"><use href="#i-wind"/></svg><b>12 kn</b><svg class="i dir" style="--deg:45deg"><use href="#i-arrow"/></svg><small>NE</small></span>
+          <span title="Sea state"><svg class="i"><use href="#i-wave"/></svg><b>Calm</b></span>
+          <span title="Sunset"><svg class="i"><use href="#i-sunset"/></svg><b>18:42</b></span>
+        </div>
+        <div class="hero" id="hero"></div>
+        <div class="sh"><h2>Your day</h2><small id="dayCount"></small></div>
+        <div class="day" id="day"></div>
+
+        <div class="sh"><h2>Your accommodation</h2><small>Apr 18 – 24</small></div>
+        <div class="stayblock">
+          <div class="villa">
+            <div class="photo"><img src="guest-img/villa-1.jpg" alt="Beach Hotel"></div>
+            <div class="vbody">
+              <div><span class="eyebrow">Beach Hotel · south shore</span><h2>Room 212 · Sea view</h2><div class="meta"><i>Checked in</i><span>Made up 10:15</span><span>Butler: Thomas</span></div></div>
+              <div class="vact">
+                <button class="pill ghost" id="callBuggy"><svg class="i"><use href="#i-buggy"/></svg>Transfer</button>
+                <button class="pill sign ph" id="doorToggle" aria-label="Door sign"><span id="doorLbl2">Door sign</span></button>
+                <button class="pill key" data-key aria-label="Digital key"><svg class="i"><use href="#i-key"/></svg>Key</button>
+              </div>
+            </div>
+          </div>
+          <div class="accesshd"><span class="eyebrow">Access</span><small>Beach Hotel guest · shared with 1 guest</small></div>
+          <div class="access" id="access"></div>
+        </div>
+      </section>
+
+      <!-- Explore -->
+      <section class="view" id="view-island" hidden>
+        <header class="ph">
+          <div><span class="eyebrow">Explore</span><h1>The island</h1></div>
+          <div class="hdr"><button class="keychip" data-key aria-label="Digital key"><svg class="i"><use href="#i-key"/></svg>Room 212</button><div class="avatar">H</div></div>
+        </header>
+        <div class="now" aria-label="Island now">
+          <span title="Air temperature"><svg class="i"><use href="#i-temp"/></svg><b>28°</b></span>
+          <span title="Wind"><svg class="i"><use href="#i-wind"/></svg><b>12 kn</b><svg class="i dir" style="--deg:45deg"><use href="#i-arrow"/></svg><small>NE</small></span>
+          <span title="Sea state"><svg class="i"><use href="#i-wave"/></svg><b>Calm</b></span>
+          <span title="Sunset"><svg class="i"><use href="#i-sunset"/></svg><b>18:42</b></span>
+        </div>
+        <div class="two" id="seg" role="tablist">
+          <button data-x="places" class="on" role="tab"><svg class="i"><use href="#i-pin"/></svg><b>Places</b><small id="pCount">9 on the island</small></button>
+          <button data-x="events" role="tab"><svg class="i"><use href="#i-sparkle"/></svg><b>Experiences</b><small id="xCount">7 today</small></button>
+        </div>
+
+        <div id="xPlaces">
+          
+          <div class="rows" id="places"></div>
+        </div>
+
+        <div id="xEvents" hidden>
+          <div class="filters" id="filters"><button data-f="all" class="on">All</button><button data-f="Wellness">Wellness</button><button data-f="Marine">Marine</button><button data-f="Dining">Dining</button><button data-f="Evening">Evening</button></div>
+          <div class="rows" id="events"></div>
+        </div>
+      </section>
+
+      <!-- Detail page -->
+      <div class="detail" id="detail" hidden></div>
+
+      <!-- Tab bar: Explore · Butler capsule · Home -->
+      <nav class="tabbar" aria-label="Tabs">
+        <button data-tab="island"><svg><use href="#i-compass"/></svg>Explore</button>
+        <span></span>
+        <button data-tab="today" class="on"><svg><use href="#i-home"/></svg>Home</button>
+        <button class="orb" id="orb" aria-label="Butler">
+          <div class="wave" id="orbIdle"><i></i><i></i><i></i><i></i></div>
+          <div class="lv" id="orbLive"></div>
+        </button>
+      </nav>
+
+      <!-- Butler sheet -->
+      <div class="sheet" id="sheet" aria-label="Butler">
+        <div class="hd"><div class="handle"></div><div class="orbmini"><div class="wave"><i></i><i></i><i></i></div></div><div class="who"><b>Butler</b><small>Online · at your service</small></div><button class="x" id="closeSheet" aria-label="Close">×</button></div>
+        <div id="progress"></div>
+        <div class="chat" id="chat"></div>
+        <div class="chips" id="chips"></div>
+        <form class="input" id="form"><input id="inp" placeholder="Ask me anything…" autocomplete="off"><button class="mic" type="submit" aria-label="Send"><svg class="i"><use href="#i-mic"/></svg></button></form>
+      </div>
+
+      <!-- Key -->
+      <div class="keymodal" id="keyModal" hidden>
+        <div class="panel">
+          <div class="hd"><div><b id="keyTitle">Room 212 · Door</b><small>In range · works offline</small></div><button class="x" id="closeKey" aria-label="Close">×</button></div>
+          <div class="hold" id="hold">
+            <svg viewBox="0 0 170 170"><circle class="bg" cx="85" cy="85" r="80"/><circle class="fg" id="ring" cx="85" cy="85" r="80"/></svg>
+            <div class="core"><svg class="i"><use id="lockUse" href="#i-locked"/></svg></div>
+          </div>
+          <div class="lbl" id="holdLbl">Hold to unlock</div>
+          <div class="meta">
+            <div><small>Last unlocked</small><b>Today, 8:42</b></div>
+            <div id="doorBtn"><small>Door sign</small><b id="doorLbl">None</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Door sign chooser -->
+      <div class="keymodal" id="signModal" hidden>
+        <div class="panel">
+          <div class="hd"><div><b>Door sign</b><small>Shown on the door and to housekeeping</small></div><button class="x" id="closeSign" aria-label="Close">×</button></div>
+          <div class="signopts" id="signOpts">
+            <button data-sign="mur"><span>Make up my room<small>Housekeeping comes while you are out</small></span><svg class="i"><use href="#i-check"/></svg></button>
+            <button data-sign="dnd"><span>Do not disturb<small>No one knocks; requests wait</small></span><svg class="i"><use href="#i-check"/></svg></button>
+            <button data-sign="" class="clear" id="signClear"><span>No sign</span><svg class="i"><use href="#i-check"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="tools"><button class="btn primary" id="play">Play scenario</button><button class="btn" id="reset">Reset</button><small>Autoplay: what's on → spa + live music → for two → transfers arranged.</small></div>
+</div>
+
+<script>
+if(new URLSearchParams(location.search).has('embed'))document.documentElement.classList.add('embed');
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const T=ms=>reduced?40:ms;
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const toMin=t=>{const [h,m]=t.split(':').map(Number);return h*60+m};
+const fromMin=x=>String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');
+const minus=(t,m)=>fromMin(toMin(t)-m);
+const NOW='09:41';
+const HOME='Room 212';
+const ic=id=>`<svg class="i"><use href="#i-${id}"/></svg>`;
+
+/* ---------- Data: the generic island resort of the live demo (rubiqos.com · Proforma concepts and services) ---------- */
+const P='guest-img/';
+const IMG={
+  members:[P+'pool-2.jpg',P+'pool-1.jpg'],
+  iconic:[P+'dinner-2.jpg',P+'dinner-1.jpg'],
+  hummingbird:[P+'pool-1.jpg',P+'bfast-2.jpg'],
+  goodies:[P+'reef-1.jpg',P+'dive-1.jpg'],
+  garden:[P+'donut-1.jpg',P+'coralline-1.jpg'],
+  arrivals:[P+'marina-2.jpg'],
+  marina:[P+'marina-2.jpg',P+'dive-2.jpg'],
+  village:[P+'dinner-1.jpg',P+'coralline-2.jpg'],
+  beach:[P+'dunes-2.jpg',P+'villa-2.jpg'],
+  spa:[P+'spa-1.jpg',P+'spa-2.jpg'],
+  hotel:[P+'villa-1.jpg'],
+  residence:[P+'villa-2.jpg'],
+  yoga:[P+'dunes-1.jpg',P+'villa-2.jpg'],
+  bfast:[P+'bfast-2.jpg',P+'pool-1.jpg'],
+  dive:[P+'dive-1.jpg',P+'reef-2.jpg'],
+  spaE:[P+'spa-2.jpg',P+'spa-1.jpg'],
+  sunset:[P+'pool-2.jpg',P+'donut-1.jpg'],
+  dinner:[P+'dinner-2.jpg',P+'dinner-1.jpg'],
+  music:[P+'donut-1.jpg',P+'pool-2.jpg'],
+};
+/* Guest-facing products of the resort. `members` = needs member access (hotel guests get day access through the Butler).
+   Internal ids are kept from the app prototype; names and content are this resort's. */
+const PLACES={
+  arrivals:{name:'Guest dock',kind:'Arrival',zone:'Z04 · Marina',line:'Shuttle boat to the mainland · reception',img:'arrivals',cam:'Guest dock · camera',
+    desc:'The first touch of the island: the guest dock in the marina, where the shuttle boats from the mainland come in. Guest pods wait at the marina stop; bags go by a delivery robot. Guest and supply routes never share a path.',
+    facts:[['Next shuttle boat','15:00 to the mainland'],['Crossing','30 min'],['Reception','7:00 – 22:00'],['To the hotel','5 min by guest pod']],
+    menu:[['Shuttle boat W1','two lines · hourly'],['Luggage','delivery robot'],['Reception','check-in · lost & found']],
+    ask:'The next shuttle boat to the mainland leaves the guest dock at 15:00 and takes about 30 minutes. Shall I hold two seats?'},
+  members:{name:'Members Club',kind:'Club · beach',zone:'Z01 · Beach front',line:'Arc building, pavilion, members pool, sunset deck',img:'members',cam:'Sunset deck · camera',members:true,
+    desc:'The members club on the beach next to the Beach Hotel: the arc building, the pavilion and the members pool. Four hundred members, 160 seats. Hotel guests join with a day access the Butler can arrange.',
+    facts:[['Access','Members · day access'],['Sunset today','18:42'],['Seats','160'],['Members','400']],
+    menu:[['Pavilion bar','60 seats'],['Arc building lounge','100 seats'],['Members pool','cabanas'],['Sunset deck','event programme']],
+    ask:'The Members Club is open to you today with a day access. Shall I arrange it for the afternoon?'},
+  iconic:{name:'Restaurant',kind:'Restaurant · Hill Hotel',zone:'Z02 · Hill',line:'The view restaurant · dinner from 19:00',img:'iconic',cam:'Terrace · camera',
+    desc:'The signature restaurant on the hill next to the Hill Hotel, with the view over the marina and the sea. 220 seats, a terrace and a private room.',
+    facts:[['Open','12:00 – 15:00 · 19:00 – 23:00'],['Seats','220 · terrace 80'],['Tonight','Terrace open'],['Dress','Smart casual']],
+    menu:[['Main room','140 seats'],['Terrace','80 seats'],['Private room','12 seats']],
+    ask:'Dinner at the Restaurant is open from 19:00 tonight. Shall I keep a terrace table for two?'},
+  hummingbird:{name:'Beach Club',kind:'Beach club',zone:'Z11 · Beach Club',line:'Restaurant, bar, pool, 180 sunbeds',img:'hummingbird',cam:'Pool deck · camera',
+    desc:'The beach club on the south shore: restaurant, bar, a pool and 180 sunbeds on the sand. Breakfast for Beach Hotel guests is served on its terrace.',
+    facts:[['Open','7:00 – 23:00'],['Sunbeds','180'],['Covers a day','450'],['Cabanas','6']],
+    menu:[['Restaurant','breakfast · lunch'],['Bar','40 seats'],['Pool & cabanas','6 cabanas'],['Shop','beachwear · essentials']],
+    ask:'Your breakfast table at the Beach Club is held for 10:00. Shall I move it, or add a cabana by the pool for the afternoon?'},
+  goodies:{name:'Water sports',kind:'Kiosk · Beach Club',zone:'Z11 · Beach Club',line:'Snorkel, paddle boards, kayaks',img:'goodies',cam:'Kiosk · camera',
+    desc:'The water sports kiosk at the Beach Club: guided snorkelling on the reef, paddle boards, kayaks and snorkel sets.',
+    facts:[['Open','9:00 – sunset'],['Paddle boards','8'],['Kayaks','6'],['Reef','5 min by water']],
+    menu:[['Guided snorkel','90 min'],['Paddle board','1 h'],['Kayak','1 h'],['Snorkel set','half day']],
+    ask:'The reef is clear today. Shall I reserve two snorkel sets at the kiosk for 11:30?'},
+  spa:{name:'Spa & Wellness',kind:'Spa',zone:'Z06 · Wellness',line:'24 treatment rooms, heat and water, movement',img:'spa',cam:'Spa garden · camera',
+    desc:'The spa of the island: 24 treatment rooms, a heat and water circuit, a gym and a yoga deck. Open to every guest on the island.',
+    facts:[['Open','8:00 – 21:00'],['Treatment rooms','24'],['Treatments a day','260'],['Booking','In the app or the Butler']],
+    menu:[['Massage','60 · 90 min'],['Face & body','30 – 60 min'],['Heat & water','circuit · 2 h'],['Movement','yoga · stretch']],
+    ask:'Spa & Wellness has the spa afternoon from 16:00, or a massage at 11:00. Which would you like?'},
+  garden:{name:'Events Rotunda',kind:'Events',zone:'Z07 · Events',line:'Ring hall and courtyard · 3 events a day',img:'garden',cam:'Courtyard · camera',
+    desc:'The round event hall of the island with a courtyard: talks, exhibitions, concerts and private events. Three events a day, up to 300 guests in the hall.',
+    facts:[['Hall','300 guests'],['Courtyard','120 guests'],['Today','3 events'],['Tickets','In the app']],
+    menu:[['Ring hall','300 seats'],['Courtyard','120 standing'],['Private events','on request']],
+    ask:'Tonight at the Events Rotunda there is live music from 21:00. Shall I keep two seats?'},
+  marina:{name:'Marina',kind:'Harbour',zone:'Z04 · Marina',line:'90 berths · excursion boats · story yacht',img:'marina',cam:'Pontoons · camera',
+    desc:'The marina of the island: 90 berths in three sizes (50 small, 32 medium, 8 large), the guest dock for the shuttle boats and the excursion dock. Pontoons are for berth holders; the promenade is open to all.',
+    facts:[['Berths','90 · S 15 m · M 35 m · L 80 m'],['Harbour master','On duty'],['Excursion boats','3'],['Fuel & water','Face dock']],
+    menu:[['Excursion boat','by the programme'],['Story yacht','sunset cruise'],['Day charter','from 4 h'],['Dive boat','11:30 daily']],
+    ask:'The excursion boat leaves the excursion dock at 14:00, or I can book the story yacht for the sunset cruise. Which would you like?'},
+  village:{name:'Marina Village',kind:'Village',zone:'Z03 · Marina Village',line:'17 shops, 4 restaurants, the promenade',img:'village',cam:'Promenade · camera',
+    desc:'The village along the marina: 17 shops, four restaurants and cafés, and the promenade where yacht owners, hotel guests, residents and members meet.',
+    facts:[['Open','10:00 – 23:00'],['Shops','17'],['Restaurants','4'],['From the hotel','6 min by guest pod']],
+    menu:[['Restaurants & cafés','4'],['Boutiques','17'],['Services','barber · tailor']],
+    ask:'Marina Village is six minutes from the hotel by guest pod. Shall I book a promenade table for lunch?'},
+  beach:{name:'The Beach',kind:'Beach',zone:'Z01 · Beach front',line:'Open to everyone on the island',img:'beach',cam:'Main beach · camera',
+    desc:'The main beach in front of the Beach Hotel and the Members Club. Open to all guests; service comes from the Beach Club and the hotel.',
+    facts:[['Lifeguard','8:00 – 18:00'],['Water','28°'],['Loungers','On request'],['Sunrise yoga','7:30']],
+    menu:[['Loungers & towels','from the Beach Club'],['Sunrise yoga','7:30 daily'],['Snorkelling','from the kiosk']],
+    ask:'The beach is calm and the lifeguard is on until 18:00. Shall I set two loungers near the Beach Club?'},
+};
+/* Accommodation of the resort. Not Places: the guest sees only their own, on Home. */
+const STAYS={
+  hotel:{name:'Beach Hotel',unit:'Room 212 · Sea view',img:'hotel',access:[{name:'Room 212 · Door',sub:'Beach Hotel · 2nd floor',place:'hotel'},{name:'Hotel pool',sub:'Hotel guests · 7:00 – 21:00',place:'hotel'}]},
+  bungalow:{name:'Branded Residences',unit:'BR1 · Apartment 41',img:'residence',access:[{name:'BR1 · Apartment 41',sub:'Residents',place:'residence'},{name:'Members Club',sub:'Full member access',place:'members'}]},
+};
+/* Second level of the catalogue: every place carries its full menu in groups.
+   Item: n name · d duration/hours · note · ev = links to a today's experience · info = not bookable · tags = words the Butler matches. */
+const I=(n,d,note,x={})=>({n,d,note,...x});
+const MENUS={
+  spa:[
+    {name:'Massage',items:[
+      I('Deep tissue','60 · 90 min','back, shoulders, tension',{tags:'back neck shoulders tension sport muscles'}),
+      I('Island stone massage','75 min','warm stones',{tags:'relax back warm stones calm'}),
+      I('Lymphatic','60 min','light, after the flight',{tags:'light flight jetlag legs relax'}),
+      I('Four hands','60 min','two therapists',{tags:'relax back luxury couple'})]},
+    {name:'Face & body',items:[
+      I('Reef-safe facial','60 min','hydration, sun repair',{tags:'face skin sun facial'}),
+      I('Sea-clay body wrap','45 min','detox, soft skin',{tags:'body skin detox'}),
+      I('After-sun ritual','30 min','aloe, cooling',{tags:'sun burn cooling skin'})]},
+    {name:'Heat & water',items:[
+      I('Spa afternoon','2 h','hammam · sauna · pools · ice bath',{ev:'spa',tags:'heat circuit relax afternoon'}),
+      I('Hammam ritual','60 min','scrub, foam, rest',{tags:'heat hammam steam relax scrub'}),
+      I('Sauna session','20 min','every hour from 11:00',{tags:'heat sauna'}),
+      I('Ice bath & pools','45 min','contrast circuit',{tags:'cold contrast recovery sport'})]},
+    {name:'Movement',items:[
+      I('Sunrise yoga','60 min','daily 7:30 on the Beach',{ev:'yoga',tags:'yoga morning stretch'}),
+      I('Breathwork','30 min','on the yoga deck',{tags:'breath calm stress sleep'}),
+      I('Mobility & stretch','45 min','one to one',{tags:'stretch back stiffness mobility'})]},
+  ],
+  members:[
+    {name:'Pool & cabanas',items:[
+      I('Members pool cabana','half day · full day','4 cabanas',{tags:'cabana pool shade'}),
+      I('Beach cabana','full day','in front of the club',{tags:'cabana beach shade'})]},
+    {name:'Bar & evenings',items:[
+      I('Pavilion bar','12:00 – late','60 seats',{info:true}),
+      I('Sunset session','18:15','Sunset deck',{ev:'sunset',tags:'sunset evening music'})]},
+  ],
+  iconic:[
+    {name:'Lunch',items:[I('Lunch on the terrace','12:00 – 15:00','catch of the day, light plates',{slots:['13:00','14:00'],tags:'lunch fish'})]},
+    {name:'Dinner',items:[
+      I('Dinner on the terrace','19:00 – 23:00','the view over the marina',{ev:'dinner',tags:'dinner romantic'}),
+      I('Dinner in the main room','19:00 – 23:00','',{slots:['19:30','21:00'],tags:'dinner'})]},
+    {name:'Private',items:[
+      I("Chef's table",'3 h','up to 8 guests',{slots:['19:30','20:00'],tags:'chef tasting private dinner'}),
+      I('Private room','evening','up to 12 guests',{slots:['19:00','20:00'],tags:'group event private dinner'})]},
+  ],
+  hummingbird:[
+    {name:'Breakfast',items:[
+      I('Breakfast on the terrace','7:00 – 11:00','table held for 10:00',{ev:'bfast',tags:'breakfast morning'}),
+      I('Breakfast by the pool','7:00 – 11:00','cabana service',{slots:['09:30','10:30'],tags:'breakfast pool'})]},
+    {name:'Lunch & bar',items:[
+      I('Lunch by the pool','12:00 – 16:00','',{slots:['12:30','14:00'],tags:'lunch pool'}),
+      I('Bar','12:00 – 23:00','40 seats',{info:true})]},
+    {name:'Pool & sunbeds',items:[I('Pool cabana','half day · full day','6 cabanas',{slots:['11:00','14:00'],tags:'cabana pool shade'}),I('Sunbeds','all day','180 on the sand',{info:true})]},
+  ],
+  goodies:[
+    {name:'In the water',items:[
+      I('Guided reef snorkel','90 min','11:30 daily',{ev:'dive',tags:'snorkel reef fish turtle'}),
+      I('Paddle board','1 h','8 boards',{slots:['11:00','16:00'],tags:'paddle sup water sport'}),
+      I('Kayak','1 h','6 kayaks',{slots:['11:00','16:00'],tags:'kayak water sport'}),
+      I('Snorkel set','half day','self-guided',{slots:['11:00','14:00'],tags:'snorkel reef'})]},
+  ],
+  garden:[
+    {name:'Today',items:[
+      I('Talk: the island and its systems','45 min','11:00 in the ring hall',{slots:['11:00'],tags:'talk island'}),
+      I('Exhibition','10:00 – 18:00','courtyard',{info:true}),
+      I('Live music','21:00','ring hall',{ev:'music',tags:'music evening band concert'})]},
+    {name:'Private',items:[I('Private event','evening','up to 300 guests, on request',{slots:['19:00','20:00'],tags:'event private group'})]},
+  ],
+  marina:[
+    {name:'Boats',items:[
+      I('Excursion boat','3 h','from the excursion dock',{slots:['10:00','14:00'],tags:'excursion boat trip'}),
+      I('Sunset cruise · story yacht','2 h','departs 17:00',{slots:['17:00'],tags:'sunset cruise boat yacht'}),
+      I('Half-day charter','4 h','up to 8 guests',{slots:['10:30','14:00'],tags:'charter boat yacht'})]},
+    {name:'Diving',items:[I('Discover scuba','2 h','no certification',{slots:['10:00','14:00'],tags:'dive scuba beginner'}),I('Reef dive','90 min','certified divers',{slots:['11:30','14:30'],tags:'dive scuba reef'})]},
+  ],
+  village:[
+    {name:'Dining',items:[I('Promenade lunch','12:00 – 16:00','4 restaurants',{slots:['13:00','14:00'],tags:'lunch'}),I('Promenade dinner','19:00 – 23:00','',{slots:['19:30','20:30'],tags:'dinner'})]},
+    {name:'Shops',items:[I('Boutiques','10:00 – 20:00','17 shops',{info:true})]},
+    {name:'Services',items:[I('Barber & grooming','45 min','',{slots:['11:00','16:00'],tags:'barber haircut grooming'}),I('Tailor & pressing','same day','',{slots:['11:00','16:00'],tags:'tailor pressing laundry'})]},
+  ],
+  arrivals:[
+    {name:'Shuttle boat to the mainland',items:[I('Shuttle boat W1','30 min','13:00 · 15:00 · 17:00 · 19:00',{slots:['13:00','15:00'],tags:'shuttle mainland boat'}),I('Private boat transfer','25 min','on request',{slots:['12:00','16:00'],tags:'private boat mainland airport'})]},
+    {name:'Services',items:[I('Luggage by robot','on request','to and from your room',{slots:['12:00','16:00'],tags:'luggage bags'}),I('Reception','7:00 – 22:00','lost & found, visitors',{info:true})]},
+  ],
+  beach:[
+    {name:'On the sand',items:[I('Loungers & towels','8:00 – 18:00','set where you like',{slots:['10:30','14:00'],tags:'lounger beach towel shade'}),I('Sunrise yoga','60 min','daily 7:30',{ev:'yoga',tags:'yoga morning'})]},
+    {name:'In the water',items:[I('Guided reef snorkel','90 min','from the kiosk',{ev:'dive',tags:'snorkel reef'}),I('Lifeguard','8:00 – 18:00','',{info:true})]},
+  ],
+};
+const ITEMS=Object.entries(MENUS).flatMap(([pid,gs])=>gs.flatMap((g,gi)=>g.items.map((it,ii)=>({pid,gi,ii,it,g,k:`${pid}|${gi}|${ii}`}))));
+const itemCount=pid=>(MENUS[pid]||[]).reduce((a,g)=>a+g.items.length,0);
+
+const EVENTS=[
+  {id:'yoga',time:'07:30',dur:'60 min',title:'Sunrise yoga on the Beach',place:'The Beach',pin:'beach',cat:'Wellness',img:'yoga',
+   desc:'A slow vinyasa on the main beach as the sun comes up. Mats, water and towels are waiting; come as you are.',facts:[['Level','All levels'],['Group','Up to 8'],['Bring','Nothing'],['Led by','Spa & Wellness']]},
+  {id:'bfast',time:'10:00',dur:'open',title:'Breakfast at the Beach Club',place:'Beach Club · terrace',pin:'hummingbird',cat:'Dining',img:'bfast',
+   desc:'Breakfast for Beach Hotel guests is served on the Beach Club terrace until 11:00. Your table is held; the Butler can move it.',facts:[['Table','For two · terrace'],['Served','7:00 – 11:00'],['Dress','Relaxed'],['Dietary','On file']]},
+  {id:'dive',time:'11:30',dur:'90 min',title:'Reef snorkelling',place:'Water sports · kiosk',pin:'goodies',cat:'Marine',img:'dive',
+   desc:'A guided snorkel on the reef, straight from the water sports kiosk at the Beach Club. Visibility over 25 metres today. Sets are fitted at the kiosk.',facts:[['Level','Confident swimmers'],['Depth','2 – 6 m'],['Visibility','Excellent'],['Group','Up to 6']]},
+  {id:'spa',time:'16:00',dur:'2 h',title:'Spa afternoon',place:'Spa & Wellness',pin:'spa',cat:'Wellness',img:'spaE',
+   desc:'Two hours at Spa & Wellness: hammam, sauna, the pools and an ice bath, then rest in the garden.',facts:[['Includes','Hammam · sauna · pools · ice bath'],['Duration','2 h'],['Guests','1 – 2'],['Transfer','Guest pod on request']]},
+  {id:'sunset',time:'18:15',dur:'60 min',title:'Sunset session at the Members Club',place:'Members Club · sunset deck',pin:'members',cat:'Evening',img:'sunset',members:true,
+   desc:'An acoustic set on the sunset deck of the Members Club. Sunset at 18:42.',facts:[['Sunset','18:42'],['Programme','Acoustic set'],['Who','Members & guests with access'],['Seats','Limited']]},
+  {id:'dinner',time:'19:30',dur:'open',title:'Dinner at the Restaurant',place:'Restaurant · terrace',pin:'iconic',cat:'Dining',img:'dinner',
+   desc:'Dinner on the terrace of the hill restaurant, with the view over the marina. Catch of the day and a short wine list.',facts:[['Served','19:00 – 23:00'],['Tables','Terrace · main room'],['Dress','Smart casual'],['Transfer','Guest pod on request']]},
+  {id:'music',time:'21:00',dur:'open',title:'Live music at the Events Rotunda',place:'Events Rotunda · ring hall',pin:'garden',cat:'Evening',img:'music',
+   desc:'A trio plays in the ring hall of the Events Rotunda from 21:00. A guest pod waits whenever you want to go back.',facts:[['Starts','21:00'],['Who','All guests'],['Seating','Hall · courtyard'],['Return','Guest pod on request']]},
+];
+const INTENTS=[
+  {id:'buggy',name:'Guest pod',sub:'Driverless · on demand',icon:'buggy'},
+  {id:'shuttle',name:'Shuttle boat',sub:'To the mainland · next 15:00',icon:'boat'},
+  {id:'dining',name:'In-room dining',sub:'Delivered by robot',icon:'dining'},
+  {id:'housekeeping',name:'Housekeeping',sub:'Turndown · linens',icon:'house'},
+  {id:'spa',name:'Spa & wellness',sub:'Spa & Wellness',icon:'spa'},
+  {id:'other',name:'Anything else',sub:'Just ask',icon:'ask'},
+];
+const WINDOWS=[
+  {id:'w-mid',label:'Late morning open',from:'11:00',to:'14:00',at:'11:00'},
+  {id:'w-pm',label:'Afternoon open',from:'14:00',to:'18:00',at:'14:00'},
+  {id:'w-eve',label:'Evening open',from:'18:00',to:'23:59',at:'18:00'},
+];
+
+let S;
+function freshState(){
+  return {
+    tab:'today', sheetOpen:false, xtab:'places', filter:'all', booked:new Set(['bfast']), mbooked:new Set(), stay:'hotel',
+    day:[{time:'10:00',title:'Breakfast at the Beach Club',sub:'Beach Club · table for two · terrace',kind:'event',id:'bfast'}],
+    access:STAYS.hotel.access.map(a=>({...a})),
+    live:null, selected:new Set(), chatStarted:false, flow:null, busy:false, detail:null,
+  };
+}
+
+/* ---------- Render: Explore rows ---------- */
+const firstSentence=s=>s.split('. ')[0].replace(/\.$/,'');
+function evRow(e){
+  const b=S.booked.has(e.id), past=toMin(e.time)+60<toMin(NOW);
+  const right=b?`<span class="status">${ic('check')}Booked</span>`:`<button class="book ${past?'dim':''}" data-book="${e.id}">${past?'Tomorrow':'Book'}</button>`;
+  return `<div class="row ${b?'booked':''}" data-ev="${e.id}" data-open-ev="${e.id}" style="${past?'opacity:.6':''}">
+    <span class="th"><img src="${IMG[e.img][0]}" alt=""><span class="time num">${e.time}</span></span>
+    <span class="tx"><b>${e.title}</b><small>${e.place.split(' · ')[0]} · ${e.dur}${e.members?' · <span class="tag members">day access</span>':''}</small><span class="d2">${firstSentence(e.desc)}</span></span>
+    <span class="r">${right}<span class="chev">›</span></span></div>`;
+}
+function renderEvents(){
+  const groups=[['Morning',e=>toMin(e.time)<12*60],['Afternoon',e=>toMin(e.time)>=12*60&&toMin(e.time)<18*60],['Evening',e=>toMin(e.time)>=18*60]];
+  const pool=EVENTS.filter(e=>S.filter==='all'||e.cat===S.filter);
+  $('#events').innerHTML=groups.map(([g,f])=>{const l=pool.filter(f);return l.length?`<div class="sh daygroup"><h2>${g}</h2><small>${l.length} today</small></div>${l.map(evRow).join('')}`:''}).join('');
+  $('#xCount').textContent=`${EVENTS.length} today · ${S.booked.size} booked`;
+  $('#pCount').textContent=`${Object.keys(PLACES).length} on the island`;
+  $('#places').innerHTML=Object.entries(PLACES).map(([id,p])=>`<div class="row" data-open-place="${id}" role="button" tabindex="0">
+    <span class="th"><img src="${IMG[p.img][0]}" alt=""></span>
+    <span class="tx"><b>${p.name}</b><small>${p.kind}${p.members?' · <span class="tag members">members</span>':''}</small><span class="d2">${p.line}</span></span>
+    <span class="r"><span class="chev">›</span></span></div>`).join('');
+  $$('.pin[data-place]').forEach(p=>p.classList.toggle('booked',EVENTS.some(e=>e.pin===p.dataset.place&&S.booked.has(e.id))));
+}
+function setX(x){S.xtab=x;$('#xPlaces').hidden=x!=='places';$('#xEvents').hidden=x!=='events';$$('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.x===x))}
+
+/* ---------- Detail pages ---------- */
+const WALK={arrivals:'5 min by guest pod',members:'2 min walk',iconic:'7 min by guest pod',hummingbird:'6 min by guest pod',goodies:'Beach Club · 6 min by guest pod',spa:'8 min by guest pod',garden:'7 min by guest pod',marina:'5 min by guest pod',village:'6 min by guest pod',beach:'1 min walk',hotel:'Your hotel'};
+const walk=id=>WALK[id]||'';
+const hasAccess=id=>S.access.some(a=>a.place===id);
+function renderMenu(pid,opts={}){
+  const gs=MENUS[pid]; if(!gs)return '';
+  const open=opts.open||1;
+  return `<div class="sh" id="menuHd" style="margin-bottom:0"><h2>Menu</h2><small>${itemCount(pid)} things · ${gs.length} groups</small></div><div class="mgroups">${gs.map((g,gi)=>`${g.sec?`<span class="eyebrow msec">${g.sec}</span>`:''}<details class="mg" ${gi<open?'open':''}><summary><b>${g.name}</b><small>${g.items.length}</small><span class="chev">›</span></summary>${g.items.map((it,ii)=>{const k=`${pid}|${gi}|${ii}`, b=S.mbooked.has(k)||(it.ev&&S.booked.has(it.ev));return `<div class="mrow"><div><b>${it.n}</b><small>${[it.d,it.note].filter(Boolean).join(' · ')}</small></div>${it.info?'':b?`<span class="status">${ic('check')}Booked</span>`:`<button class="mbook" data-mbook="${k}">Book</button>`}</div>`}).join('')}</details>`).join('')}</div>`;
+}
+function openDetail(type,id,opts={}){
+  S.detail={type,id}; const d=$('#detail'); d.hidden=false;
+  if(type==='place'){
+    const p=PLACES[id]; const here=EVENTS.filter(e=>e.pin===id&&toMin(e.time)>toMin(NOW)-60);
+    const acc=p.members?(hasAccess(id)?`<span class="on">${ic('check')} Access today</span>`:`<span class="members">${ic('key')} Members · day access</span>`):`<span class="on">Open to all guests</span>`;
+    d.innerHTML=`<button class="back" data-back aria-label="Back">‹</button><div class="scrollr">
+      <div class="gallery">${IMG[p.img].map(s=>`<img src="${s}" alt="${p.name}">`).join('')}</div>
+      <div class="dbody">
+        <div><span class="eyebrow">${p.zone}</span><h1>${p.name}</h1></div>
+        <div class="meta"><span>${ic('pin')} ${walk(id)}</span>${acc}</div>
+        <p>${p.desc}</p>
+        <div class="facts">${p.facts.map(([k,v])=>`<div><small>${k}</small><b>${v}</b></div>`).join('')}</div>
+        ${renderMenu(id,opts)}
+        <div class="sh" style="margin-bottom:0"><h2>Live view</h2><small>${p.cam}</small></div>
+        <div class="cam"><img src="${IMG[p.img][IMG[p.img].length-1]}" alt=""><span class="live">LIVE</span><span class="cond">28° · calm · light wind</span><span class="stamp num">${NOW} · updated now</span></div>
+        ${here.length?`<div class="sh" style="margin-bottom:0"><h2>Here today</h2></div><div class="rows">${here.map(evRow).join('')}</div>`:''}
+      </div></div>
+      <div class="dbar"><button class="pill" data-ride-name="${p.name}">${ic('buggy')}Transfer there</button><button class="pill ghost" data-ask-place="${id}">${ic('ask')}Ask the Butler</button></div>`;
+  } else {
+    const e=EVENTS.find(x=>x.id===id), p=PLACES[e.pin], b=S.booked.has(id);
+    d.innerHTML=`<button class="back" data-back aria-label="Back">‹</button><div class="scrollr">
+      <div class="gallery">${IMG[e.img].map(s=>`<img src="${s}" alt="${e.title}">`).join('')}</div>
+      <div class="dbody">
+        <div><span class="eyebrow">${e.cat}</span><h1>${e.title}</h1></div>
+        <div class="meta"><span class="num">${ic('clock')} ${e.time} · ${e.dur}</span><span>${ic('pin')} ${p.name}</span>${e.members?(hasAccess(e.pin)?`<span class="on">${ic('check')} Access today</span>`:`<span class="members">${ic('key')} Day access via the Butler</span>`):''}${b?`<span class="status">${ic('check')}Booked</span>`:''}</div>
+        <p>${e.desc}</p>
+        <div class="facts">${e.facts.map(([k,v])=>`<div><small>${k}</small><b>${v}</b></div>`).join('')}</div>
+        <div class="sh" style="margin-bottom:0"><h2>More at ${p.name}</h2></div>
+        <button class="linkrow" data-open-place="${e.pin}"><img src="${IMG[p.img][0]}" alt=""><span><b>${p.name}</b><small>${MENUS[e.pin]?`Full menu · ${itemCount(e.pin)} things`:p.kind} · ${walk(e.pin)}</small></span><span class="chev">›</span></button>
+      </div>
+      <div class="gallery small" style="margin-top:14px">${IMG[p.img].map(s=>`<img src="${s}" alt="${p.name}">`).join('')}</div></div>
+      <div class="dbar">${b?`<span class="status" style="flex:1;justify-content:center;padding:12px 14px;font-size:13.5px">${ic('check')}Booked · ${e.time}</span><button class="pill ghost" data-ask-place="${e.pin}">Change</button>`:`<button class="pill" data-book="${id}">Book for two</button><button class="pill ghost" data-ask-place="${e.pin}">${ic('ask')}Ask</button>`}</div>`;
+  }
+  const sc=d.querySelector('.scrollr'); sc.scrollTop=0;
+  if(opts.scroll){const h=d.querySelector('#menuHd'); if(h) sc.scrollTop=h.offsetTop-70;}
+}
+function closeDetail(){S.detail=null;$('#detail').hidden=true;$('#detail').innerHTML=''}
+$('#detail').onclick=e=>{
+  if(e.target.closest('[data-back]'))return closeDetail();
+  const mb=e.target.closest('[data-mbook]'); if(mb)return run(()=>bookItem(...mb.dataset.mbook.split('|')));
+  const bk=e.target.closest('[data-book]'); if(bk)return run(()=>bookOne(bk.dataset.book));
+  const pl=e.target.closest('[data-open-place]'); if(pl)return openDetail('place',pl.dataset.openPlace);
+  const ev=e.target.closest('[data-open-ev]'); if(ev)return openDetail('event',ev.dataset.openEv);
+  const r=e.target.closest('[data-ride-name]'); if(r)return run(()=>rideTo(r.dataset.rideName));
+  const a=e.target.closest('[data-ask-place]'); if(a)return run(()=>place(a.dataset.askPlace));
+};
+
+/* ---------- Render: Home ---------- */
+function renderDay(){
+  const items=[...S.day];
+  WINDOWS.forEach(w=>{
+    const busy=items.some(d=>d.kind==='event'&&toMin(d.time)>=toMin(w.from)&&toMin(d.time)<toMin(w.to));
+    if(busy)return;
+    const ideas=EVENTS.filter(e=>!S.booked.has(e.id)&&toMin(e.time)>=toMin(w.from)&&toMin(e.time)<toMin(w.to)).slice(0,2);
+    items.push({time:w.at,kind:'open',id:w.id,title:ideas.length?`${w.label} · the Butler has ideas`:`${w.label} · time to yourself`,ideas});
+  });
+  items.sort((a,b)=>toMin(a.time)-toMin(b.time)||(a.kind==='open'?1:-1));
+  $('#day').innerHTML=items.map(d=>`<div class="it ${d.kind} ${d.flash?'flash':''} ${d.kind==='event'&&toMin(d.time)+90<toMin(NOW)?'past':''}" data-day="${d.id}">
+    <span class="tm num">${d.kind==='open'?'':d.time}</span><span class="ln"><i></i></span>
+    <div class="c"><b>${d.title}</b>${d.sub?`<small>${d.sub}</small>`:''}${d.ideas&&d.ideas.length?`<div class="ideas">${d.ideas.map(e=>`<button data-idea="${e.id}"><i>+</i><span class="num">${e.time}</span> ${e.title.replace(/ at the .*| on the .*| from .*/,'')}</button>`).join('')}</div>`:''}</div></div>`).join('');
+  S.day.forEach(d=>delete d.flash);
+  $('#dayCount').textContent=`${S.day.filter(d=>d.kind==='event').length} booked`;
+}
+function renderAccess(){
+  $('#access').innerHTML=S.access.map((a,i)=>`<div class="ac ${a.flash?'flash':''}"><div><b>${a.name}</b><small>${a.sub||''}</small></div><span class="acts"><button class="ib" data-unlock="${i}" aria-label="Unlock ${a.name}" title="Unlock">${ic('key')}</button><button class="ib" data-ride="${i}" aria-label="Transfer to ${a.name}" title="Transfer">${ic('buggy')}</button></span></div>`).join('');
+  S.access.forEach(a=>delete a.flash);
+}
+function renderHero(){
+  const h=$('#hero'), l=S.live;
+  if(l&&l.eta!=null){
+    const arrived=l.eta===0, mm=Math.floor(l.eta/60), ss=String(l.eta%60).padStart(2,'0'), pct=Math.round(100*(1-l.eta/l.total));
+    h.className='hero live';
+    h.innerHTML=`<div class="top"><div><span class="eyebrow">${arrived?'Now':'On its way'}</span><h2>${arrived?(l.arrived||'At your door'):l.title}</h2><div class="sub">${l.sub}</div></div><div class="big"><b class="num">${arrived?'Here':`${mm}:${ss}`}</b><small>${arrived?'now':'min'}</small></div></div><div class="bar"><i style="width:${pct}%"></i></div><div class="acts"><button class="pill" data-open-butler>Message the Butler</button><button class="pill ghost" data-cancel-live>Cancel</button></div>`;
+    return;
+  }
+  const next=[...S.day].filter(d=>toMin(d.time)>=toMin(NOW)-30).sort((a,b)=>toMin(a.time)-toMin(b.time))[0];
+  h.className='hero';
+  if(!next){h.innerHTML=`<div class="top"><div><span class="eyebrow">Today</span><h2>Nothing planned yet</h2><div class="sub">The sea is calm. Ask the Butler what is on.</div></div></div><div class="acts"><button class="pill" data-open-butler>${ic('ask')}Ask the Butler</button></div>`;return}
+  const diff=toMin(next.time)-toMin(NOW);
+  const when=diff<=0?'Now':diff<60?`in ${diff} min`:`in ${Math.floor(diff/60)} h ${diff%60?diff%60+' min':''}`;
+  const placeName=(next.sub||'').split(' · ')[0];
+  h.innerHTML=`<div class="top"><div><span class="eyebrow">Next up · ${when}</span><h2>${next.title}</h2><div class="sub">${next.sub||''}${next.kind==='event'&&placeName?` · a transfer can be at your door ${minus(next.time,10)}`:''}</div></div><div class="big"><b class="num">${next.time}</b></div></div><div class="acts">${next.kind==='event'?`<button class="pill" data-ride-name="${placeName}">${ic('buggy')}Transfer there</button>`:''}<button class="pill ghost" data-open-butler>Ask the Butler</button></div>`;
+}
+let liveTimer=null;
+function setLive(l){
+  S.live=l; clearInterval(liveTimer); liveTimer=null;
+  if(l&&l.eta!=null){l.total=l.eta;liveTimer=setInterval(()=>{l.eta=Math.max(0,l.eta-(reduced?60:10));renderLive();if(l.eta===0){clearInterval(liveTimer);setTimeout(()=>{if(S.live===l)setLive(null)},T(6000))}},1000)}
+  renderLive();
+}
+function renderLive(){
+  const l=S.live, orb=$('#orb');
+  renderHero();
+  $('.tabbar').classList.toggle('haslive',!!l);
+  if(!l){orb.classList.remove('wide');$('#orbIdle').hidden=false;$('#orbLive').innerHTML='';$('#progress').innerHTML='';return}
+  orb.classList.add('wide'); $('#orbIdle').hidden=true;
+  const timed=l.eta!=null, arrived=timed&&l.eta===0, mm=timed?Math.floor(l.eta/60):0, ss=timed?String(l.eta%60).padStart(2,'0'):'';
+  const pct=timed?1-l.eta/l.total:0;
+  const title=arrived?(l.arrived||'At your door'):l.title;
+  $('#orbLive').innerHTML=`<span class="ring"><svg class="r" viewBox="0 0 46 46"><circle class="bg" cx="23" cy="23" r="20"/><circle class="fg" cx="23" cy="23" r="20" style="stroke-dashoffset:${126-126*pct}"/></svg>${ic(l.icon||'buggy')}</span><span class="tx"><b>${title}</b><small>${l.sub}</small></span><span class="eta">${timed?(arrived?'<b>Here</b><small>now</small>':`<b class="num">${mm}:${ss}</b><small>min</small>`):`<b class="num">${l.at}</b><small>today</small>`}</span>`;
+  $('#progress').innerHTML=`<div class="progress"><span class="d"></span><b>${title}</b><small>${timed?(arrived?'now':`${mm}:${ss} min`):l.at}</small></div>`;
+}
+function renderAll(){renderEvents();renderDay();renderAccess();renderLive()}
+
+/* ---------- Tabs / sheet ---------- */
+function setTab(t){
+  S.tab=t; $('#view-today').hidden=t!=='today'; $('#view-island').hidden=t!=='island';
+  $$('.tabbar [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); closeDetail();
+}
+function openSheet(){
+  S.sheetOpen=true; $('#sheet').classList.add('open'); $('#orb').classList.add('on');
+  if(!S.chatStarted){S.chatStarted=true;greet()}
+}
+function closeSheet(){S.sheetOpen=false;$('#sheet').classList.remove('open');$('#orb').classList.remove('on')}
+
+/* ---------- Chat primitives ---------- */
+const chat=$('#chat');
+function scroll(){chat.scrollTop=chat.scrollHeight}
+function msg(role,html){const el=document.createElement('div');el.className='msg '+role;el.innerHTML=html;chat.appendChild(el);scroll();return el}
+function me(text){msg('me',`<p>${text}</p>`)}
+/* PACE slows the Butler's typing during the autoplay demo so a viewer can follow; manual taps stay snappy */
+let PACE=1;
+async function butler(html,ms=900){
+  const t=document.createElement('div');t.className='msg b typing';t.innerHTML='<i></i><i></i><i></i>';chat.appendChild(t);scroll();
+  await sleep(T(ms*PACE)); t.remove(); return msg('b',html);
+}
+function chips(list){
+  $('#chips').innerHTML='';
+  list.forEach(c=>{const b=document.createElement('button');b.className='chip'+(c.primary?' primary':'');b.textContent=c.label;b.disabled=!!c.disabled;b.onclick=()=>{if(S.busy)return;c.action()};$('#chips').appendChild(b)});
+}
+function card(e,guests,st='Confirmed'){return `<div class="card"><b>${e.title}</b><span class="st">${st}</span><small class="num">${e.time} · ${e.place.split(' · ')[0]} · ${guests} guest${guests>1?'s':''}</small></div>`}
+async function run(fn){if(S.busy)return;S.busy=true;try{await fn()}finally{S.busy=false}}
+
+/* ---------- Main scenario ---------- */
+async function greet(){
+  chips([]);
+  await butler(`<p>Good morning, Harry. The sea is calm and it's 28° at the marina. Breakfast is held for 10:00 at the Beach Club.</p><p>Shall I tell you what's on today?</p>`,700);
+  const g=document.createElement('div'); g.className='intents';
+  g.innerHTML=INTENTS.map(q=>`<button data-intent="${q.id}">${ic(q.icon)}<b>${q.name}</b><small>${q.sub}</small></button>`).join('');
+  g.onclick=e=>{const b=e.target.closest('[data-intent]');if(b)run(()=>quick(b.dataset.intent))};
+  chat.appendChild(g); scroll();
+  chips([{label:"What's on today?",primary:true,action:()=>run(askToday)},{label:'Something for my back',action:()=>run(async()=>{me('Something for my back, please.');chips([]);await suggest('back','For the back, these three work best:')})},{label:'A guest pod, please',action:()=>run(()=>quick('buggy'))}]);
+}
+async function askToday(fromText){
+  if(!fromText) me("What's on today?");
+  chips([]); $$('.opt').forEach(o=>o.classList.add('dis'));
+  const open=EVENTS.filter(e=>!S.booked.has(e.id)&&toMin(e.time)>toMin(NOW));
+  const el=await butler(`<p>A good day for it. Here is what's open to you:</p><div class="opts">${open.map(e=>`<button class="opt" data-opt="${e.id}"><span class="ck"></span><span class="tm num">${e.time}</span><span>${e.title}<small>${e.place}${e.members?' · day access':''}</small></span></button>`).join('')}</div><p>Which of these would you like?</p>`,1100);
+  S.selected=new Set(); S.flow='choose';
+  el.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    if(S.flow!=='choose')return;
+    const id=b.dataset.opt; b.classList.toggle('on'); S.selected.has(id)?S.selected.delete(id):S.selected.add(id); chooseChips();
+  });
+  chooseChips();
+}
+function chooseChips(){
+  const n=S.selected.size;
+  chips([{label:n?`Book ${n===1?'this':'these '+n}`:'Choose above',primary:true,disabled:!n,action:()=>run(choose)},{label:'The spa and the music',action:()=>run(()=>{S.selected=new Set(['spa','music']);return choose()})},{label:'Nothing today, thank you',action:()=>run(nothing)}]);
+}
+const shortTitle=e=>e.title.toLowerCase().replace(/ at the .*| on the .*| from .*/,'');
+async function choose(){
+  const sel=EVENTS.filter(e=>S.selected.has(e.id));
+  if(!sel.length)return;
+  S.flow='confirm'; chips([]);
+  $$('.opt').forEach(o=>{o.classList.toggle('on',S.selected.has(o.dataset.opt));o.classList.add('dis')});
+  me(sel.length===1?`${sel[0].title}, please.`:`The ${sel.map(shortTitle).join(' and the ')}, please.`);
+  const needs=sel.some(e=>e.members&&!hasAccess('members'));
+  await butler(`<p>Lovely choice. ${sel.map(e=>`${e.title} at ${e.time}`).join(', then ')}.${needs?' The Members Club needs a day access; I will add it to your key.':''}</p><p>For two?</p>`,1000);
+  chips([{label:'Confirm for two',primary:true,action:()=>run(()=>confirm(2))},{label:'Just for me',action:()=>run(()=>confirm(1))},{label:'Change times',action:()=>run(changeTimes)}]);
+}
+async function changeTimes(){
+  me('Could we go a little later?');
+  await butler(`<p>Of course. The SPA pavilion has 17:00 free as well, and the music runs until late. Shall I move the spa to 17:00?</p>`,900);
+  chips([{label:'Yes, 17:00 for two',primary:true,action:()=>run(()=>{EVENTS.find(e=>e.id==='spa').time='17:00';renderEvents();return confirm(2)})},{label:'Keep 16:00, for two',action:()=>run(()=>confirm(2))}]);
+}
+async function confirm(n){
+  me(n===2?'Confirm for two, please.':'Just for me, thank you.'); chips([]); S.flow='done';
+  const sel=EVENTS.filter(e=>S.selected.has(e.id));
+  sel.forEach(e=>S.booked.add(e.id)); renderEvents();
+  await butler(`<p>Done.</p>${sel.map(e=>card(e,n,e.cat==='Evening'?'Reserved':'Confirmed')).join('')}`,1200);
+  if(PACE>1) await sleep(T(2200));                         // autoplay: let the confirmation cards be read
+  sel.forEach(e=>S.day.push({time:e.time,title:e.title,sub:`${e.place.split(' · ')[0]} · ${n} guest${n>1?'s':''}`,kind:'event',id:e.id,flash:true}));
+  if(sel.some(e=>e.members)&&!hasAccess('members')){const first=sel.filter(e=>e.members).sort((a,b)=>toMin(a.time)-toMin(b.time))[0];S.access.push({name:'Members Club',sub:`Day access · today from ${minus(first.time,15)}`,place:'members',flash:true})}
+  renderDay(); renderAccess();
+  await sleep(T(500));
+  const legs=[];
+  if(S.selected.has('spa')){
+    const dep=minus(EVENTS.find(e=>e.id==='spa').time,15);
+    legs.push(`a transfer will collect you from the hotel at ${dep} and bring you back after the spa`);
+    S.day.push({time:dep,title:'Guest pod · Hotel → Spa & Wellness',sub:'Arrives 5 min before · return whenever you like',kind:'move',id:'buggy-spa',flash:true});
+    setLive({title:'Guest pod to Spa & Wellness',sub:`Hotel → Spa & Wellness · pod P-04`,at:dep});
+  }
+  if(S.selected.has('music')||S.selected.has('sunset')){
+    const t=S.selected.has('sunset')?'18:00':'20:45';
+    legs.push(`another will take you to the ${S.selected.has('sunset')?'Members Club':'Events Rotunda'} at ${t}`);
+    S.day.push({time:t,title:`Guest pod · Hotel → ${S.selected.has('sunset')?'Members Club':'Events Rotunda'}`,sub:'Return on request · the Butler is on duty',kind:'move',id:'buggy-eve',flash:true});
+    if(!S.live)setLive({title:'Guest pod on its way',sub:`Hotel → ${S.selected.has('sunset')?'Members Club':'Events Rotunda'} · pod P-07`,at:t});
+  }
+  if(S.selected.has('dive'))legs.push('the water sports kiosk will have two snorkel sets fitted at 11:15');
+  if(S.selected.has('dinner'))legs.push('your terrace table at the Restaurant is held for 19:30');
+  if(S.selected.has('yoga'))legs.push('a mat and water will be waiting on the beach');
+  renderDay(); renderHero();
+  await butler(`<p>${legs.length?cap(legs.join(', and '))+'.':'Everything is set.'}</p><p>I've added it all to your day. ${n===2?'Your guest has the details as well.':''}</p>`,1300);
+  chips([{label:'Show my day',primary:true,action:()=>run(showDay)},{label:'Perfect, thank you',action:()=>run(thanks)}]);
+}
+async function showDay(){me('Show my day.');chips([]);await sleep(T(400));closeSheet();setTab('today');$('#view-today').scrollTo({top:0,behavior:reduced?'auto':'smooth'});chips([{label:'Anything else?',action:()=>run(anythingElse)}])}
+async function thanks(){me('Perfect, thank you.');await butler(`<p>My pleasure. I'll be here if anything changes.</p>`,800);chips([{label:'Show my day',action:()=>run(showDay)},{label:'A guest pod, please',action:()=>run(()=>quick('buggy'))}])}
+async function nothing(){me('Nothing today, thank you.');S.flow=null;$$('.opt').forEach(o=>o.classList.add('dis'));await butler(`<p>Of course. A quiet day, then. Your breakfast is held for 10:00. I'll stay out of the way.</p>`,900);chips([{label:"Actually, what's on?",action:()=>run(askToday)},{label:'A guest pod, please',action:()=>run(()=>quick('buggy'))}])}
+async function anythingElse(){chips([]);await butler(`<p>Anything else I can arrange?</p>`,600);chips([{label:'A guest pod, please',action:()=>run(()=>quick('buggy'))},{label:'Dinner tonight',action:()=>run(()=>bookOne('dinner'))},{label:'No, thank you',action:()=>run(thanks)}])}
+
+/* ---------- Single booking (list, map, idea card, detail page) ---------- */
+async function bookOne(id){
+  const e=EVENTS.find(x=>x.id===id);
+  closeDetail(); openSheet(); await sleep(T(S.chatStarted?0:900));
+  me(`Book ${shortTitle(e)}, please.`); S.selected=new Set([id]); S.flow='confirm'; chips([]);
+  await butler(`<p>${e.title} at ${e.time}.${e.members&&!hasAccess('members')?' It is in the Members Club; I will add a day access to your key.':''} For two?</p>`,900);
+  chips([{label:'Confirm for two',primary:true,action:()=>run(()=>confirm(2))},{label:'Just for me',action:()=>run(()=>confirm(1))}]);
+}
+
+/* ---------- Menu items: booking from a place page, and the Butler as the search ---------- */
+const ITEM_SLOTS=['11:00','15:00'];
+async function bookItem(pid,gi,ii){
+  const p=PLACES[pid], it=MENUS[pid][+gi].items[+ii];
+  if(it.ev) return bookOne(it.ev);
+  closeDetail(); openSheet(); await sleep(T(S.chatStarted?0:900));
+  me(`${it.n} at ${p.name}, please.`); chips([]); S.flow='item';
+  const slots=it.slots||ITEM_SLOTS, acc=p.members&&!hasAccess(pid)?' It is in the Members Club; I will add a day access to your key.':'';
+  await butler(`<p>With pleasure. ${it.n}, ${it.d}.${acc} Shall I book ${slots[0]} or ${slots[1]}?</p>`,900);
+  chips([...slots.map((t,k)=>({label:`${t}, for two`,primary:k===0,action:()=>run(()=>confirmItem(pid,+gi,+ii,t,2))})),{label:`${slots[0]}, just me`,action:()=>run(()=>confirmItem(pid,+gi,+ii,slots[0],1))}]);
+}
+async function confirmItem(pid,gi,ii,t,n){
+  const p=PLACES[pid], it=MENUS[pid][gi].items[ii], k=`${pid}|${gi}|${ii}`, onFoot=/walk/.test(walk(pid)), dep=minus(t,15);
+  me(n===2?`${t}, for two.`:`${t}, just me.`); chips([]);
+  S.mbooked.add(k);
+  S.day.push({time:t,title:it.n,sub:`${p.name} · ${n} guest${n>1?'s':''}`,kind:'event',id:'m-'+k,flash:true});
+  if(p.members&&!hasAccess(pid))S.access.push({name:p.name,sub:`Day access · today from ${dep}`,place:pid,flash:true});
+  if(!onFoot){S.day.push({time:dep,title:`Transfer · Hotel → ${p.name}`,sub:'Arrives 5 min before · return whenever you like',kind:'move',id:'mv-'+k,flash:true});if(!S.live)setLive({title:`Transfer to ${p.name}`,sub:`Hotel → ${p.name} · B-04`,at:dep})}
+  renderDay(); renderAccess(); renderHero();
+  await butler(`<p>Done.</p><div class="card"><b>${it.n}</b><span class="st">Confirmed</span><small class="num">${t} · ${p.name} · ${n} guest${n>1?'s':''}</small></div><p>${onFoot?`It is ${walk(pid)} from the hotel.`:`A transfer will be at the hotel at ${dep}.`}</p>`,1100);
+  chips([{label:'Show my day',primary:true,action:()=>run(showDay)},{label:'Perfect, thank you',action:()=>run(thanks)}]);
+}
+const STOP=new Set(['something','for','the','and','please','with','some','want','would','like','could','have','can','you','book','need','today','minutes','min','after','that','this','what','any']);
+async function showSugs(list,intro){
+  const el=await butler(`<p>${intro}</p><div class="sugs">${list.map(x=>{const b=S.mbooked.has(x.k)||(x.it.ev&&S.booked.has(x.it.ev));return `<div class="sug"><div><b>${x.it.n}</b><small>${PLACES[x.pid].name} · ${x.it.d}</small></div>${b?`<span class="status">${ic('check')}Booked</span>`:`<button class="mbook" data-mbook="${x.k}">Book</button>`}</div>`}).join('')}</div>`,1000);
+  el.querySelectorAll('[data-mbook]').forEach(b=>b.onclick=()=>run(()=>bookItem(...b.dataset.mbook.split('|'))));
+  const pids=[...new Set(list.map(x=>x.pid))];
+  chips([...pids.slice(0,2).map(pid=>({label:`See the full ${PLACES[pid].name} menu`,action:()=>{closeSheet();setTab('island');openDetail('place',pid,{open:(MENUS[pid]||[]).length,scroll:true})}})),{label:"What's on today?",action:()=>run(askToday)}]);
+}
+async function suggest(q,intro){
+  const words=q.toLowerCase().split(/[^a-z]+/).filter(w=>w.length>2&&!STOP.has(w));
+  const list=ITEMS.filter(x=>!x.it.info).map(x=>{const h=`${x.it.n} ${x.it.note||''} ${x.it.tags||''} ${x.g.name}`.toLowerCase();return {...x,s:words.reduce((a,w)=>a+(h.includes(w)?1:0),0)}}).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,3);
+  if(!list.length){await butler(`<p>Of course. I'll see to it and confirm here shortly.</p>`,900);chips([{label:"What's on today?",action:()=>run(askToday)},{label:'Thank you',action:()=>run(thanks)}]);return}
+  return showSugs(list,intro||'Here is what I would suggest:');
+}
+async function suggestSpa(fromText){
+  closeDetail(); openSheet(); await sleep(T(S.chatStarted?0:900));
+  if(!fromText) me('Something at the spa, please.'); chips([]);
+  const pick=['Deep tissue','Hammam ritual','Spa afternoon'].map(n=>ITEMS.find(x=>x.pid==='spa'&&x.it.n===n));
+  return showSugs(pick,'Spa & Wellness is open to every guest. Three I would suggest today:');
+}
+
+/* ---------- Quick intents, rides, places ---------- */
+/* opts: [label, reply, live|null, bookEventId?] ; live.eta (seconds) starts a countdown, live.at is a scheduled time. Transfers are autonomous buggies: no driver anywhere. */
+const FLOWS={
+  buggy:{ask:'A guest pod, please.',q:'Of course. Where to, and when?',opts:[['To the guest dock, now','A guest pod is on its way to the hotel drop-off, about 4 minutes. No driver; it waits for you there.',{title:'Guest pod on its way',sub:'Hotel → guest dock · pod P-02',eta:240,arrived:'Your guest pod is at the drop-off'}],['Beach Club at 9:50','Booked. A guest pod will be at the hotel drop-off at 9:50 for breakfast.',{title:'Guest pod to the Beach Club',sub:'Hotel → Beach Club · pod P-02',at:'09:50'}]]},
+  shuttle:{ask:'A seat on the shuttle boat, please.',q:'The next shuttle boat leaves the guest dock at 15:00 and takes about 30 minutes to the mainland. For two?',opts:[['Two seats at 15:00','Two seats held on the 15:00 shuttle. A guest pod will take you to the dock at 14:45.',{title:'Shuttle boat W1',sub:'Guest dock → mainland · 2 seats · transfer 14:45',at:'15:00',icon:'boat'}],['Just me, 15:00','One seat held on the 15:00 shuttle. A guest pod will take you to the dock at 14:45.',{title:'Shuttle boat W1',sub:'Guest dock → mainland · 1 seat · transfer 14:45',at:'15:00',icon:'boat'}]]},
+  dining:{ask:'Breakfast in the room instead, please.',q:'Certainly. I will release the table at the Beach Club. The usual, or shall I send the menu?',opts:[['The usual, for two','On its way. Coffee, fruit and eggs for two, by delivery robot to Room 212 in about 25 minutes.',{title:'Breakfast on its way',sub:'In-room dining · for two',eta:1500,arrived:'Breakfast is at your door',icon:'dining'}],['Send the menu','The menu is in your messages. Tell me once you have chosen.',null]]},
+  housekeeping:{ask:'Could housekeeping come by?',q:'Of course. Now, or while you are out this afternoon?',opts:[['While I am out','Arranged. Housekeeping will come while you are out and leave before you return.',null],['Now, please','Housekeeping will be with you in about 10 minutes.',{title:'Housekeeping on its way',sub:'Room 212 · turndown & linens',eta:600,arrived:'Housekeeping has arrived',icon:'house'}]]},
+  spa:{ask:'Something at the spa, please.',q:'With pleasure. Spa & Wellness has the spa afternoon from 16:00, or a massage at 11:00. Which would you like?',opts:[['The spa afternoon',null,null,'spa'],['A massage at 11:00','Booked. A 60-minute massage at 11:00 at Spa & Wellness. A guest pod will be at the hotel at 10:45.',{title:'Guest pod to Spa & Wellness',sub:'Hotel → Spa & Wellness · pod P-04',at:'10:45'}]]},
+  other:{ask:'I have a request.',q:'Of course. Tell me what you have in mind, and I will arrange it.',opts:[]},
+};
+async function quick(id){
+  if(id==='spa') return suggestSpa();
+  const f=FLOWS[id]; closeDetail(); openSheet(); await sleep(T(S.chatStarted?0:900));
+  me(f.ask); chips([]); S.flow='quick';
+  await butler(`<p>${f.q}</p>`,900);
+  if(!f.opts.length){chips([{label:"What's on today?",action:()=>run(askToday)},{label:'A guest pod, please',action:()=>run(()=>quick('buggy'))}]);return}
+  chips(f.opts.map(([label,reply,live,ev])=>({label,primary:true,action:()=>run(async()=>{
+    if(ev){S.selected=new Set([ev]);return bookOne(ev)}
+    me(label); chips([]);
+    await butler(`<p>${reply}</p>`,1000);
+    if(live)setLive({...live});
+    
+    chips([{label:'Thank you',action:()=>run(thanks)},{label:"What's on today?",action:()=>run(askToday)}]);
+  })})));
+}
+async function rideTo(name){
+  closeDetail(); openSheet(); await sleep(T(S.chatStarted?0:900));
+  const home=/Room 212|Hotel/.test(name), short=name.split(' · ')[0];
+  me(home?'A transfer back to the hotel, please.':`A transfer to ${short}, please.`); chips([]);
+  await butler(`<p>Of course. A buggy will be with you in about 5 minutes${home?' and take you back to the hotel':''}.</p>`,900);
+  setLive({title:home?'Transfer back to the hotel':`Transfer to ${short}`,sub:`${home?'→ Hotel':'Hotel → '+short} · B-02`,eta:300,arrived:'Your transfer is here'});
+  chips([{label:'Thank you',action:()=>run(thanks)},{label:"What's on today?",action:()=>run(askToday)}]);
+}
+async function place(id){
+  const p=PLACES[id]; closeDetail(); openSheet(); await sleep(T(S.chatStarted?0:900));
+  me(`Tell me about the ${p.name}.`); chips([]);
+  await butler(`<p>${p.ask}</p>`,900);
+  const ev=EVENTS.find(e=>e.pin===id&&!S.booked.has(e.id)&&toMin(e.time)>toMin(NOW));
+  chips([ev?{label:`Book ${ev.time}, for two`,primary:true,action:()=>run(()=>bookOne(ev.id))}:{label:'Yes, please',primary:true,action:()=>run(async()=>{me('Yes, please.');chips([]);await butler('<p>Done. I will confirm here in a moment.</p>',800);chips([{label:'Thank you',action:()=>run(thanks)}])})},{label:"What's on today?",action:()=>run(askToday)}]);
+}
+
+/* ---------- Free text ---------- */
+$('#form').onsubmit=e=>{
+  e.preventDefault(); const v=$('#inp').value.trim(); if(!v||S.busy)return; $('#inp').value='';
+  me(v); const t=v.toLowerCase();
+  run(async()=>{
+    if(/what|today|on\b|program/.test(t))return askToday(true);
+    if(S.flow==='choose'&&/spa|music|snorkel|dive|dinner|sunset|yoga/.test(t)){S.selected=new Set(EVENTS.filter(e=>!S.booked.has(e.id)&&new RegExp(e.id==='dive'?'snorkel|dive':e.id).test(t)).map(e=>e.id));if(S.selected.size)return choose()}
+    if(S.flow==='confirm'&&/two|yes|confirm|both/.test(t))return confirm(2);
+    if(S.flow==='confirm'&&/me|one|alone/.test(t))return confirm(1);
+    if(/buggy|car|transfer|transport|ride/.test(t))return quick('buggy');
+    if(/\bspa\b/.test(t))return suggestSpa(true);
+    if(/back|neck|shoulder|massage|relax|facial|skin|sun|heat|sauna|hammam|stretch|breath|paddle|kayak|fish|charter|cruise|picnic|cabana|scuba|snorkel|barber|tailor/.test(t))return suggest(t);
+    if(/shuttle|boat|nassau/.test(t))return quick('shuttle');
+    if(/breakfast|dinner|food|eat|menu/.test(t))return quick('dining');
+    if(/clean|towel|housekeep|linen/.test(t))return quick('housekeeping');
+    await butler(`<p>Of course. I'll see to it and confirm here shortly.</p>`,900);
+    chips([{label:"What's on today?",action:()=>run(askToday)},{label:'Thank you',action:()=>run(thanks)}]);
+  });
+};
+
+/* ---------- Key ---------- */
+let holdTimer=null, holdStart=0, unlocked=false;
+const ring=$('#ring'), hold=$('#hold');
+function setRing(p){ring.style.strokeDashoffset=502-502*p}
+function startHold(e){if(unlocked)return;e.preventDefault();holdStart=performance.now();tick()}
+function tick(){const p=Math.min(1,(performance.now()-holdStart)/(reduced?200:1300));setRing(p);if(p>=1){unlock();return}holdTimer=requestAnimationFrame(tick)}
+function endHold(){if(unlocked)return;cancelAnimationFrame(holdTimer);setRing(0)}
+function unlock(){
+  unlocked=true;hold.classList.add('ok');$('#holdLbl').textContent='Unlocked';$('#holdLbl').classList.add('ok');$('#lockUse').setAttribute('href','#i-lock');
+  setTimeout(()=>{unlocked=false;hold.classList.remove('ok');setRing(0);$('#holdLbl').textContent='Hold to unlock';$('#holdLbl').classList.remove('ok');$('#lockUse').setAttribute('href','#i-locked')},T(4000));
+}
+hold.addEventListener('pointerdown',startHold);['pointerup','pointerleave','pointercancel'].forEach(ev=>hold.addEventListener(ev,endHold));
+function openKey(name){$('#keyTitle').textContent=name;$('#keyModal').hidden=false}
+$$('[data-key]').forEach(b=>b.onclick=()=>openKey('Room 212 · Door'));
+$('#closeKey').onclick=()=>{$('#keyModal').hidden=true};
+$('#keyModal').addEventListener('click',e=>{if(e.target.id==='keyModal')$('#keyModal').hidden=true});
+/* Door sign: empty by default; the guest picks one of the two standard signs in a small sheet */
+const SIGNS={mur:'Make up room',dnd:'Do not disturb'};
+let sign='';
+function setSign(v){
+  sign=v||''; const b=$('#doorToggle');
+  b.classList.remove('ph','mur','dnd'); b.classList.add(sign||'ph');
+  $('#doorLbl2').textContent=sign?SIGNS[sign]:'Door sign'; $('#doorLbl').textContent=sign?SIGNS[sign]:'None';
+  $$('#signOpts button').forEach(x=>x.classList.toggle('on',x.dataset.sign===sign)); $('#signClear').hidden=!sign;
+}
+const openSign=()=>{setSign(sign);$('#signModal').hidden=false};
+$('#doorToggle').onclick=openSign;
+$('#doorBtn').onclick=()=>{$('#keyModal').hidden=true;openSign()};
+$('#signOpts').onclick=e=>{const b=e.target.closest('[data-sign]');if(!b)return;setSign(b.dataset.sign);setTimeout(()=>{$('#signModal').hidden=true},T(250))};
+$('#closeSign').onclick=()=>{$('#signModal').hidden=true};
+$('#signModal').addEventListener('click',e=>{if(e.target.id==='signModal')$('#signModal').hidden=true});
+
+/* ---------- Wiring ---------- */
+$$('.tabbar [data-tab]').forEach(b=>b.onclick=()=>{closeSheet();setTab(b.dataset.tab)});
+$('#orb').onclick=()=>S.sheetOpen?closeSheet():openSheet();
+$('#closeSheet').onclick=closeSheet;
+$('#callBuggy').onclick=()=>run(()=>quick('buggy'));
+$('#hero').onclick=e=>{
+  if(e.target.closest('[data-open-butler]'))return openSheet();
+  const r=e.target.closest('[data-ride-name]'); if(r)return run(()=>rideTo(r.dataset.rideName));
+  if(e.target.closest('[data-cancel-live]'))setLive(null);
+};
+$('#day').onclick=e=>{const b=e.target.closest('[data-idea]');if(b)run(()=>bookOne(b.dataset.idea))};
+$('#access').onclick=e=>{
+  const u=e.target.closest('[data-unlock]'), r=e.target.closest('[data-ride]');
+  if(u)openKey(S.access[+u.dataset.unlock].name);
+  if(r)run(()=>rideTo(S.access[+r.dataset.ride].name));
+};
+$('#seg').onclick=e=>{const b=e.target.closest('[data-x]');if(b)setX(b.dataset.x)};
+$('#filters').onclick=e=>{const b=e.target.closest('[data-f]');if(!b)return;S.filter=b.dataset.f;$$('#filters button').forEach(x=>x.classList.toggle('on',x===b));renderEvents()};
+$('#events').onclick=e=>{
+  const bk=e.target.closest('[data-book]'); if(bk){e.stopPropagation();return run(()=>bookOne(bk.dataset.book))}
+  const o=e.target.closest('[data-open-ev]'); if(o)openDetail('event',o.dataset.openEv);
+};
+$('#places').onclick=e=>{const b=e.target.closest('[data-open-place]');if(b)openDetail('place',b.dataset.openPlace)};
+$('#map')&&$('#map').addEventListener('click',e=>{const g=e.target.closest('.pin');if(!g)return;if(g.dataset.place)openDetail('place',g.dataset.place);else{setTab('today')}});
+
+/* ---------- Autoplay ---------- */
+let playing=false;
+async function waitIdle(){while(S.busy)await sleep(50)}
+$('#play').onclick=async()=>{
+  if(playing)return; playing=true; $('#play').disabled=true; $('#play').textContent='Playing…';
+  reset(false); setTab('today'); PACE=1.8;
+  /* pauses are reading time: roughly how long a guest looks at the screen before the next tap */
+  await sleep(T(2500));                                   // Home: next up, the day
+  openSheet(); await waitIdle(); await sleep(T(3500));    // the Butler's greeting and intents
+  await run(askToday); await sleep(T(4500));              // read the list of today
+  const spa=$('.opt[data-opt="spa"]'), mus=$('.opt[data-opt="music"]');
+  if(spa){spa.click();await sleep(T(1400))} if(mus){mus.click();await sleep(T(1800))}
+  await run(choose); await sleep(T(3500));                // "For two?"
+  await run(()=>confirm(2)); await sleep(T(5000));        // confirmations, transfers, access
+  await run(showDay); await sleep(T(2500));
+  const v=$('#view-today'), day=$('#day');
+  if(day&&!reduced) v.scrollTo({top:day.offsetTop-80,behavior:'smooth'});
+  PACE=1; playing=false; $('#play').disabled=false; $('#play').textContent='Play again';
+};
+function reset(clear=true){
+  EVENTS.find(e=>e.id==='spa').time='16:00';
+  clearInterval(liveTimer);
+  S=freshState(); chat.innerHTML=''; chips([]); $('#progress').innerHTML=''; $('#inp').value='';
+  closeSheet(); closeDetail(); $('#keyModal').hidden=true; $('#signModal').hidden=true; setSign(''); setTab('today'); setX('places'); $$('#filters button').forEach(x=>x.classList.toggle('on',x.dataset.f==='all')); renderAll();
+  if(clear){$('#play').textContent='Play scenario';$('#play').disabled=false;playing=false;PACE=1}
+}
+$('#reset').onclick=()=>reset(true);
+reset(true);
+</script>
+</body></html>

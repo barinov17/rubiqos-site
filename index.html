@@ -1,17 +1,17 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261017c">
+<link rel="stylesheet" href="/site.css?v=20261017d">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --navy: #15304a; --accent: #e0795f; --sand: #f1e7d3; --ink: #16222b; --muted: #6b7680;
     --card: rgba(255, 255, 255, 0.88); --line: rgba(21, 48, 74, 0.12);
-    --display: "Fraunces", Georgia, serif; --body: "Inter", system-ui, sans-serif;
+    --display: "Manrope", "Inter", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -54,9 +54,17 @@
   #layers .row button:hover:not(.on), #controls button:hover:not(.on) { background: rgba(21, 48, 74, 0.06); }
   #layers .muted { color: var(--muted); font-size: 11px; }
 
-  #controls { left: 16px; bottom: 16px; padding: 8px; display: flex; gap: 6px; flex-wrap: wrap; max-width: calc(100vw - 32px); }
+  #controls { right: 12px; top: 12px; padding: 4px; display: flex; gap: 3px; border-radius: 10px; }   /* small, top-right inside the map */
+  #controls button { font-size: 11px; padding: 4px 8px; border-radius: 7px; }
 
-  #feed { position: absolute; top: 16px; right: 16px; width: 230px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  #bApp { right: 12px; bottom: 12px; font: 600 12px var(--body); color: #fff; background: var(--navy); border-color: var(--navy); padding: 8px 14px; cursor: pointer; z-index: 4; }   /* guest app: bottom-right of the map */
+  #bApp.on { background: #fff; color: var(--navy); }
+  #appPanel { right: 12px; top: 52px; bottom: 56px; width: min(410px, calc(100% - 24px)); display: none; overflow: hidden; z-index: 4; background: rgba(255, 255, 255, 0.55); }
+  #appPanel.open { display: block; }
+  #appPanel iframe { width: 100%; height: 100%; border: 0; display: block; }
+  #appClose { position: absolute; top: 6px; right: 8px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--navy); font-size: 16px; line-height: 1; cursor: pointer; }
+  #stage.app #feed { display: none; }
+  #feed { position: absolute; top: 52px; right: 12px; width: 230px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   .note { pointer-events: auto; display: grid; grid-template-columns: 24px 1fr; gap: 8px; padding: 7px 9px; border-radius: 10px;
           background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line);
           box-shadow: 0 6px 20px rgba(21, 48, 74, 0.12); animation: in 0.45s cubic-bezier(.2,.8,.2,1); transition: opacity 0.6s, transform 0.6s; }
@@ -131,7 +139,11 @@
   .actor .desc { display: none; position: absolute; left: 0; top: calc(100% + 6px); width: 280px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.4; color: #3b4852; z-index: 5; box-shadow: 0 8px 24px rgba(21, 48, 74, 0.14); }
   .actor:hover .desc { display: block; }
   #dash .two { grid-column: 1 / -1; display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: stretch; }
-  @media (max-width: 900px) { #dash .two { grid-template-columns: 1fr; } }
+  #dash .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+  #dash .pair td small { color: var(--muted); }
+  #dash .lb { display: flex; align-items: center; gap: 6px; } #dash .lb .bar { width: 54px; margin: 0; flex: none; }
+  @media (max-width: 900px) { #dash .two, #dash .pair { grid-template-columns: 1fr; } }
+  .ticker .d { color: #3b4852; font-size: 12px; margin-top: 1px; }
   .ticker { max-height: 360px; overflow: auto; scroll-behavior: smooth; font-size: 12.5px; }
   .ticker > div { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(21, 48, 74, 0.06); animation: in 0.4s; }
   .ticker > div > span { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -142,7 +154,7 @@
 </style>
 </head>
 <body>
-<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS<small>destination operating system</small></a><nav><a href="/" class="on">Live demo</a><a href="/proforma/">Proforma</a><a href="/pitch/">Pitch deck</a><a href="/market/">Resort market view</a></nav><span class="spacer"></span><span class="tag">working materials · 2026</span></div></div>
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/proforma/">Proforma</a><a href="/physical-ai/">Physical AI</a><a href="/pitch/">Pitch deck</a><a href="/market/">Resort market view</a></nav><span></span></div></div>
 <div id="stage">
 <canvas id="c"></canvas>
 <div id="load">Loading the master plan<small id="loadInfo">resort-masterplan.glb · Draco</small></div>
@@ -160,6 +172,8 @@
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
 <div id="tip" class="panel"></div>
+<button id="bApp" class="panel">Guest app</button>
+<div id="appPanel" class="panel"><button id="appClose" aria-label="Close">×</button><iframe id="appFrame" title="Guest app"></iframe></div>
 </div>
 <section id="dash">
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
@@ -168,6 +182,10 @@
   <div class="card"><h2>Staff<small>on shift</small></h2><div class="big" id="dStaffTotal">—</div><div class="kv" id="dStaff"></div></div>
   <div class="card"><h2>Today<small>operations counters</small></h2><div class="kv" id="dOps"></div></div>
   <div class="card"><h2>Zones<small>people now</small></h2><div id="dZones"></div></div>
+  <div class="pair">
+    <div class="card"><h2>Products<small>guests now · staff on shift</small></h2><table id="dProducts"><thead><tr><th>Product</th><th>Guests</th><th>Staff</th></tr></thead><tbody></tbody></table></div>
+    <div class="card"><h2>Services<small>base parameters · load today</small></h2><table id="dServices"><thead><tr><th>Service</th><th>Base parameters</th><th>Load</th></tr></thead><tbody></tbody></table></div>
+  </div>
   <div class="two">
     <div class="card"><h2>Fleet<small>plan vs demo</small></h2><table id="dFleet"><thead><tr><th>Type</th><th>Plan</th><th>Demo</th><th>Moving</th><th>Charging</th><th>Battery</th></tr></thead><tbody></tbody></table></div>
     <div class="card"><h2>Operations log<small>live, newest at the bottom</small></h2><div class="ticker" id="dLog"></div></div>
@@ -440,15 +458,37 @@ function hull2(pts) {                                                           
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
 function footprintOf(meshes) {
+  // building footprint = the area the object covers on the ground (union of its parts), NOT the sum of floors / parts.
+  // 1) one convex ring per mesh (its lowest 1.2 m); 2) rings inside a larger ring (stacked floors, roofs, glass) dropped;
+  // 3) the area is the union, counted on a 0.5 m raster, so overlapping parts (towers + bridge) are counted once.
   const key = meshes.map(m => m.uuid).join('|'); if (fpCache.has(key)) return fpCache.get(key);
-  const parts = []; let area = 0; const v = new THREE.Vector3();
+  const rings = []; const v = new THREE.Vector3();
   for (const m of meshes) {
     const pos = m.geometry.attributes.position; if (!pos) continue; m.updateWorldMatrix(true, false);
     let ymin = Infinity; const pts = []; for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); pts.push([v.x, v.z, v.y]); if (v.y < ymin) ymin = v.y; }
     const ring = hull2(pts.filter(q => q[2] < ymin + 1.2).map(q => [q[0], q[1]]));
     if (ring.length < 3) continue;
     let a = 0; for (let i = 0; i < ring.length; i++) { const p = ring[i], q = ring[(i + 1) % ring.length]; a += p[0] * q[1] - q[0] * p[1]; } a = Math.abs(a) / 2;
-    if (a < 4) continue; area += a; parts.push({ ring, y: ymin });
+    if (a < 4) continue; rings.push({ ring, y: ymin, a });
+  }
+  const inRing = (pt, ring) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > pt[1]) !== (zj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - zi) / (zj - zi) + xi) c = !c; } return c; };
+  // per column: a ring with another ring below it at the same spot is an upper floor, roof or eave — drop it.
+  // Works for buildings on a slope too (each block keeps its own base, whatever its height above sea level).
+  const cen = r => [r.ring.reduce((s, q) => s + q[0], 0) / r.ring.length, r.ring.reduce((s, q) => s + q[1], 0) / r.ring.length];
+  for (const r of rings) { const c = cen(r); r.upper = rings.some(q => q !== r && q.y < r.y - 1.5 && (inRing(c, q.ring) || inRing(cen(q), r.ring))); }
+  for (let i = rings.length - 1; i >= 0; i--) if (rings[i].upper) rings.splice(i, 1);
+  rings.sort((p, q) => q.a - p.a);
+  const parts = [];
+  for (const r of rings) { const cx = r.ring.reduce((s, q) => s + q[0], 0) / r.ring.length, cz = r.ring.reduce((s, q) => s + q[1], 0) / r.ring.length;
+    if (parts.some(P => r.ring.filter(q => inRing(q, P.ring)).length >= r.ring.length * 0.9 && inRing([cx, cz], P.ring))) continue;   // nested in a larger ring
+    parts.push(r); }
+  let area = 0;
+  if (parts.length === 1) area = parts[0].a;
+  else if (parts.length) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const P of parts) for (const [x, z] of P.ring) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+    const d = Math.max(0.5, Math.max(x1 - x0, z1 - z0) / 900); let n = 0;
+    for (let z = z0 + d / 2; z < z1; z += d) for (let x = x0 + d / 2; x < x1; x += d) if (parts.some(P => inRing([x, z], P.ring))) n++;
+    area = n * d * d;
   }
   const r = { parts, area }; fpCache.set(key, r); return r;
 }
@@ -464,7 +504,7 @@ function showFootprint(meshes) {
 }
 function clearFootprint() { for (const c of [...fpGroup.children]) { c.geometry.dispose(); fpGroup.remove(c); } }
 const meshesUnder = o => { const out = []; o.traverse(m => { if (m.isMesh && m.userData.group !== 'zoning') out.push(m); }); return out; };
-const FLAT = /drop-off|access road|path|green strip|service yard|link|pool deck|field|surface/;
+const FLAT = /drop-off|access road|path|green strip|service yard|link|pool|deck|terrace|field|surface|garden|planters?|courtyard|yard|fence|canopy|post|ground/;   // not part of the building on the ground
 function footprintMeshes(o) {                                                    // the building the cursor is on, not the whole parcel
   const t = topOf(o), all = meshesUnder(t);
   if (all.length <= 12 || !o.name.includes(' | ')) return all.filter(m => !FLAT.test(m.name));
@@ -859,11 +899,11 @@ const SERVICES = [
   { name: 'WH-2 Prep kitchen', fp: ['Infrastructure zone | WH-2 warehouse prep kitchen'], p: topOfObj('Infrastructure zone | WH-2 warehouse prep kitchen roof', 5), kpi: { 'Meals prepared': '4,100 a day', 'Staff canteen': '1,000 meals' }, load: 90 },
   { name: 'WH-3 Cold storage', fp: ['Infrastructure zone | WH-3 warehouse cold storage'], p: topOfObj('Infrastructure zone | WH-3 warehouse cold storage roof', 5), kpi: { 'Cold rooms': '600 m²', 'Food throughput': '4.5 t a day', 'Load today': '4.47 t', 'Next supply call': 'Thursday 08:00' }, load: 99 },
   { name: 'WH-4 Dry storage', fp: ['Infrastructure zone | WH-4 warehouse storage'], p: topOfObj('Infrastructure zone | WH-4 warehouse storage roof', 5), kpi: { 'Dry store': '900 m²', 'Autonomy': '6 days' }, load: 80 },
-  { name: 'FH Fleet Hub', fp: ['Infrastructure zone | FH fleet hub'], p: topOfObj('Infrastructure zone | FH fleet hub roof', 5), kpi: { 'Charging posts': 30, 'Guest pods': '40 planned', 'Shuttles': 5, 'Service vehicles': 22 }, load: 70 },
+  { name: 'FH Fleet Hub', fp: ['Infrastructure zone | FH fleet hub'], p: topOfPrefix('Infrastructure zone | FH fleet hub', 5), kpi: { 'Charging posts': 30, 'Guest pods': '40 planned', 'Shuttles': 5, 'Service vehicles': 22 }, load: 70 },
   { name: 'OFF Office', fp: ['Infrastructure zone | OFF office'], p: topOfObj('Infrastructure zone | OFF office roof', 5), kpi: { 'Dispatch and admin': '27 on the morning shift', 'Operator console': 'RubiqOS' }, load: 60 },
-  { name: 'SA Staff accommodation', fp: ['Infrastructure zone | SA staff accommodation'], p: topOfObj('Infrastructure zone | SA staff accommodation roof', 5), kpi: { 'Beds': 420, 'Canteen': '1,000 meals a day', 'Shifts': '07 · 15 · 23' }, load: 85 },
-  { name: 'W Waste management', fp: ['Infrastructure zone | W waste management'], p: topOfObj('Infrastructure zone | W waste management roof', 5), kpi: { 'Waste a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, load: 84 },
-  { name: 'IF Water, power, sewage', fp: ['Infrastructure zone | IF infrastructure (water, power, sewage)'], p: topOfObj('Infrastructure zone | IF infrastructure (water, power, sewage) roof', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
+  { name: 'SA Staff accommodation', fp: ['Infrastructure zone | SA'], p: topOfPrefix('Infrastructure zone | SA', 5), kpi: { 'Beds': 420, 'Canteen': '1,000 meals a day', 'Shifts': '07 · 15 · 23' }, load: 85 },
+  { name: 'W Waste management', fp: ['Infrastructure zone | W waste management'], p: topOfPrefix('Infrastructure zone | W waste management', 5), kpi: { 'Waste a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, load: 84 },
+  { name: 'IF Water, power, sewage', fp: ['Infrastructure zone | IF'], p: topOfPrefix('Infrastructure zone | IF', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
 ];
 const PIN_SVG = c => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="11.4" r="4" fill="#fff"/></svg>`;
 const gpins = [];
@@ -906,14 +946,21 @@ const venues = [{ name: 'Marina Village', p: A.village }, { name: 'Beach hotel',
 const homes = [...villas, ...residences, ...hotels];
 const stopNear = p => nearestStop(p);
 const CHARGE = { L1: { name: 'Fleet Hub', p: A.fleet }, L2: { name: 'Fleet Hub', p: A.fleet }, L3: { name: 'Fleet Hub', p: A.fleet }, L5: { name: 'robot dock at the warehouse', p: A.boh }, L4: { name: 'truck chargers at the warehouse', p: A.boh } };
-const DRAIN = { L1: 0.09, L2: 0.06, L3: 0.07, L4: 0.05, L5: 0.11 };          // % per simulated minute on the move (electric land fleet)
+const DRAIN = { L1: 0.22, L2: 0.16, L3: 0.18, L4: 0.14, L5: 0.24 };          // % per motion-minute: ~2.5 simulated hours of driving from 100 to 30 %
+const CHARGE_MIN = 40, CHARGE_RATE = 2.0;                                      // 40 simulated minutes, 20 → 100 %: about a fifth of the fleet charges at any time
+// bays in the fenced Fleet Hub yard: two rows under the charging canopies; robots and trucks use the warehouse chargers
+const BAYS = (() => { const y = byName.get('Infrastructure zone | FH fleet hub yard'); if (!y) return []; const b = bboxOf(y), out = [];
+  for (const t of [0.12, 0.88]) for (let k = 0; k < 9; k++) out.push(new THREE.Vector3(THREE.MathUtils.lerp(b.min.x + 6, b.max.x - 6, k / 8), b.max.y + 0.05, THREE.MathUtils.lerp(b.min.z, b.max.z, t)));
+  return out; })();
+const bayUsed = new Set();
+const takeBay = () => { const i = BAYS.findIndex((_, i) => !bayUsed.has(i)); if (i >= 0) bayUsed.add(i); return i; };
 const pickNot = (arr, not) => { const c = arr.filter(x => x !== not); return c.length ? anyOf(c) : arr[0]; };
 
 const TYPE_COL = { L1: 0xe0795f, L2: 0xf3c06b, L3: 0x9fcb7c, L4: 0x15304a, L5: 0x6f9fd8, W1: 0xf5f5f2, W2: 0xc0504d, W3: 0xf2efe6, Y2: 0x86aee0 };
 function follower(type, label, medium, speed, next, home) {
   const mesh = fleetModel(type); scene.add(mesh); movers.push(mesh); mesh.visible = false;
   const mk = beacon(TYPE_COL[type] || 0xffffff); mk.scale.set(0.014, 0.014, 1); mk.position.y = (FM[type] ? FM[type].height_m : 2) + 4; mk.name = 'marker'; mesh.add(mk);
-  const f = { id: label, type, mesh, medium, speed, next, path: null, wait: rand() * 8, battery: 45 + Math.floor(rand() * 55), task: '', place: home || null };
+  const f = { id: label, type, mesh, medium, speed, next, path: null, wait: rand() * 8, battery: 22 + Math.floor(rand() * 78), task: '', place: home || null, bay: -1 };
   if (home) { placeAt(f, medium === 'water' ? home : roadR.posOf(...roadR.nearest(home))); f.task = 'Standby'; }
   mesh.traverse(o => { o.userData.vehicle = f; }); ambient.push(f); return f;
 }
@@ -1075,11 +1122,12 @@ function stepAmbient(dt) {
       }
       continue;
     }
-    if (f.charging > 0) { f.charging -= dt; f.battery = Math.min(100, f.battery + dt * 2.5); f.task = `Charging at the ${CHARGE[f.type].name} · ${Math.round(f.battery)} %`; if (f.charging <= 0) { f.battery = 100; f.wait = 2; } continue; }
-    if (f.toCharge) { f.toCharge = false; f.charging = 40; continue; }
+    if (f.charging > 0) { f.charging -= dt; f.battery = Math.min(100, f.battery + dt * CHARGE_RATE); f.task = `Charging at the ${CHARGE[f.type].name}${f.bay >= 0 ? ' · bay ' + (f.bay + 1) : ''} · ${Math.round(f.battery)} %`;
+      if (f.charging <= 0) { f.battery = 100; f.wait = 1; if (f.bay >= 0) { bayUsed.delete(f.bay); f.bay = -1; placeAt(f, roadR.posOf(...roadR.nearest(A.fleet))); f.place = A.fleet; } } continue; }
+    if (f.toCharge) { f.toCharge = false; f.charging = CHARGE_MIN; f.bay = CHARGE[f.type] && CHARGE[f.type].name === 'Fleet Hub' ? takeBay() : -1; if (f.bay >= 0) placeAt(f, BAYS[f.bay], Math.PI / 2); continue; }
     f.wait -= dt; if (f.wait > 0) continue;
     let pts = null;
-    if (DRAIN[f.type] && f.battery < 20) { const c = CHARGE[f.type]; pts = trip(f, f.place || c.p, c.p, `Battery ${Math.round(f.battery)} % · to the ${c.name} to charge`); f.toCharge = true; if (!pts) { f.charging = 40; f.toCharge = false; continue; } }
+    if (DRAIN[f.type] && f.battery < 30) { const c = CHARGE[f.type]; pts = trip(f, f.place || c.p, c.p, `Battery ${Math.round(f.battery)} % · to the ${c.name} to charge`); f.toCharge = true; if (!pts) { f.charging = CHARGE_MIN; f.toCharge = false; continue; } }
     else pts = f.next(f);
     if (pts && pts.length > 1) { setPath(f, pts); f.mesh.visible = fleetOn; } else if (f.wait <= 0) f.wait = 6;
     const mk = f.mesh.getObjectByName('marker'); if (mk) mk.visible = !!f.path;
@@ -1104,9 +1152,11 @@ addPoi('event', 'Events Rotunda', A.rotunda);
 addPoi('marina', 'Marina pontoons', A.basin.clone().setZ(A.basin.z - 150)); addPoi('terminal', 'Guest dock', A.guestDock); addPoi('excursion', 'Excursion dock', A.excDock);
 { const pm = meshOf('PROMENADE surface')[0]; if (pm) { const b = bboxOf(pm); addPoi('promenade', 'Promenade west', new THREE.Vector3(b.min.x + 30, 0, b.getCenter(new THREE.Vector3()).z)); addPoi('promenade', 'Promenade centre', b.getCenter(new THREE.Vector3())); addPoi('promenade', 'Promenade east', new THREE.Vector3(b.max.x - 30, 0, b.getCenter(new THREE.Vector3()).z)); } }
 for (const v of villas) addPoi('villa', v.name, v.p);
-for (const r of residences) addPoi('residence', r.name, r.p);
+for (const r of residences) { const k = 'branded residence ' + r.name.split(' ')[1];   // ground-level spots per building: entrance link and drop-off, not the tower centre
+  let n = 0; for (const part of ['entrance link', 'guest drop-off']) if (has(`${k} | ${part}`)) { addPoi('residence', `${r.name} ${part}`, centreOf(`${k} | ${part}`)); n++; }
+  if (!n) addPoi('residence', r.name, r.p); }
 addPoi('hotel', 'Beach Hotel lobby', A.hotel); for (const n of [...byName.keys()].filter(n => /^Hotel 2\.\d+ \| plinth$/.test(n))) addPoi('hotel', 'Hill Hotel ' + n.split(' | ')[0].replace('Hotel 2.', 'block '), centreOf(n));
-addPoi('staff', 'Staff accommodation', has('Infrastructure zone | SA staff accommodation') ? centreOf('Infrastructure zone | SA staff accommodation') : A.boh);
+addPoi('staff', 'Staff accommodation', has('Infrastructure zone | SA staff accommodation courtyard') ? centreOf('Infrastructure zone | SA staff accommodation courtyard') : A.boh);
 addPoi('boh', 'Warehouse', A.boh); addPoi('boh', 'Hotel back of house', A.stopHotel); addPoi('boh', 'Village kitchens', A.village); addPoi('boh', 'Beach Club service', POI.beach[0].p); addPoi('boh', 'Spa service', A.spa);
 addPoi('stop', 'Marina stop', A.stopMarina);
 addPoi('club', 'Members Club', has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : POI.beach[0].p);
@@ -1181,19 +1231,30 @@ function person(i, type, home) {
   f.baseSpeed = f.speed; setType(f, type); people.push(f); return f;
 }
 function setType(f, type) { f.type = type; f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < 0.15; crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true; }
-const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.5 ? poiAny('villa') : poiAny('residence')), hotel: () => poiAny('hotel'), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina') };
+const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.22 ? poiAny('villa') : poiAny('residence')), hotel: () => poiAny('hotel'), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina') };   // residents 80 villa : 285 residence (vault: Resort Population)
 for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   const type = i < 50 ? 'staff' : i < 120 ? 'resident' : i < 240 ? 'hotel' : i < 255 ? 'yachtguest' : i < 290 ? 'day' : 'member';
   const f = person(i, type, HOME[type]());
   if (type === 'day' || type === 'member') { f.idle = true; f.visible = false; }                   // they come by the shuttle
 }
 const ops = { buggyTrips: 0, deliveries: 0, truckRuns: 0, workOrders: 0, arrivals: 0, departures: 0, eventsAttended: 0 };
-function startWalk(f, to, text) { const pts = walkBetween(f.poi, to); f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; }
+function startWalk(f, to, text) { let pts = walkBetween(f.poi, to); if (f.pos && pts.length && f.pos.distanceTo(pts[0]) > 1.5) pts = [f.pos.clone(), ...pts]; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; }
+const MILL = { village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
 function stepPeople(dt) {
   for (const f of people) {
     if (f.idle) continue;
     if (!f.path) {
-      f.wait -= dt; if (f.wait > 0) continue;
+      f.wait -= dt;
+      if (f.wait > 6 && f.pos && f.type !== 'staff' || (f.type === 'staff' && f.wait > 6 && f.pos && f.at !== 'staff')) {   // stroll around the place
+        f.stroll = (f.stroll ?? rand() * 12) - dt;
+        if (f.stroll <= 0) {
+          f.stroll = 8 + rand() * 18;
+          const R = MILL[f.at] || 25, c = f.poi.p, a = rand() * Math.PI * 2, r = R * Math.sqrt(rand());
+          const cell = walkR.nearest(new THREE.Vector3(c.x + Math.cos(a) * r, c.y, c.z + Math.sin(a) * r));
+          if (cell) { const q = walkR.posOf(...cell); if (q.distanceTo(c) < R * 1.6) { const pts = [f.pos.clone(), q]; f.path = pts; f.cum = [0, pts[0].distanceTo(q)]; f.len = f.cum[1]; f.s = 0; f.goal = f.poi; f.strolling = true; f.speed = f.baseSpeed * 0.6; } }
+        }
+      }
+      if (f.wait > 0) continue;
       if (f.leaving) { f.idle = true; f.visible = false; f.leaving = false; continue; }          // boarded a buggy / took the shuttle home
       const cat = wantCat(f); const to = cat === 'home' ? f.home : poiAny(cat); if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
       if ((f.type === 'day' || f.type === 'member') && cat === 'home') f.leaving = true;             // walks to the Terminal and leaves on the shuttle
@@ -1208,7 +1269,8 @@ function stepPeople(dt) {
     const ux = (b.x - a.x) / seg, uz = (b.z - a.z) / seg;
     _pp.set(a.x + (b.x - a.x) * t - uz * f.off, a.y + (b.y - a.y) * t + 0.1, a.z + (b.z - a.z) * t + ux * f.off);
     f.heading = Math.atan2(-uz, ux); f.pos = _pp.clone();
-    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.wait = f.leaving ? 2 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300; }   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
+    if (f.s >= f.len && f.strolling) { f.path = null; f.strolling = false; f.speed = f.baseSpeed; continue; }
+    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300; }   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
 }
 function drawPeople() {
@@ -1255,7 +1317,17 @@ function updateDash() {
   const rows = {}; for (const f of ambient) { const k = f.type; const r = rows[k] ||= { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
   $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = rows[k] || { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; return `<tr><td>${TYPES[k] ? TYPES[k].title : k}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.nb ? Math.round(r.bat / r.nb) + ' %' : '—'}</td></tr>`; }).join('');
   const lg = $('dLog'), stick = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
-  if (lg.dataset.n !== String(logAll.length)) { lg.dataset.n = String(logAll.length); lg.innerHTML = logAll.slice(-80).map(l => `<div><span>${l.t}</span><div><b>${l.title}</b> · ${l.body}</div></div>`).join(''); if (stick) lg.scrollTop = lg.scrollHeight; }
+  if (lg.dataset.n !== String(logAll.length)) { lg.dataset.n = String(logAll.length); lg.innerHTML = logAll.slice(-80).map(l => `<div><span>${l.t}</span><div><b>${l.title}</b><div class="d">${l.body}</div></div></div>`).join(''); if (stick) lg.scrollTop = lg.scrollHeight; }
+  // products: guests at each product now (sim, scaled to the plan), staff on shift (proforma staff x share of the shift)
+  const prodOf = f => { const c = f.at, n = (f.poi && f.poi.name) || '';
+    return c === 'hotel' ? (n.startsWith('Hill') ? 'Hill Hotel' : 'Beach Hotel') : c === 'residence' ? (n.includes('BR2') ? 'Residences BR2' : 'Residences BR1') : c === 'villa' ? 'Villas'
+      : c === 'restaurant' ? 'Restaurant' : c === 'event' ? 'Events Rotunda' : c === 'spa' ? 'Spa & Wellness' : c === 'marina' || c === 'terminal' || c === 'excursion' ? 'Marina'
+      : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? 'Beach Club' : c === 'club' ? 'Members Club' : null; };
+  const pg = {}; for (const f of guests) { if (f.path && !f.strolling) continue; const k = prodOf(f); if (k) pg[k] = (pg[k] || 0) + 1; }
+  const shiftShare = onShift / 625, villaN = PRODUCTS.filter(d => d.small).length;
+  const prows = PRODUCTS.filter(d => !d.small).map(d => [d.name, d.kpi.Staff || 0]).concat([['Villas', villaN * 4]]);
+  $('dProducts').querySelector('tbody').innerHTML = prows.map(([n, st]) => `<tr><td>${n}</td><td>${Math.round((pg[n] || 0) * scale)}</td><td>${Math.round(st * shiftShare)}</td></tr>`).join('');
+  $('dServices').querySelector('tbody').innerHTML = SERVICES.map(d => `<tr><td>${d.name}</td><td><small>${Object.entries(d.kpi).slice(0, 2).map(([k, v]) => `${k} ${v}`).join(' · ')}</small></td><td><div class="lb"><div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div>${d.load} %</div></td></tr>`).join('');
   updateActorCounts();
 }
 
@@ -1393,6 +1465,9 @@ async function loop() {
 }
 
 // ---------- controls
+{ const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').textContent = v ? 'Close guest app' : 'Guest app';
+    if (v && !$('appFrame').src) $('appFrame').src = 'guest-app.html?embed=1'; };
+  $('bApp').onclick = () => setApp(!$('appPanel').classList.contains('open')); $('appClose').onclick = () => setApp(false); }
 $('bPlay').onclick = () => { playing = !playing; $('bPlay').textContent = playing ? 'Pause' : 'Play'; $('bPlay').classList.toggle('on', playing); };
 $('bSpeed').onclick = () => { speedMul = speedMul === 1 ? 2 : speedMul === 2 ? 4 : speedMul === 4 ? 8 : 1; $('bSpeed').textContent = `Speed ${speedMul}×`; };
 let fleetOn = true;
@@ -1426,7 +1501,7 @@ loop();
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people });
 </script>
 </body>
 </html>
