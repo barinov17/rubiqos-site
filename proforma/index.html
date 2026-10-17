@@ -8,58 +8,50 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css?v=20261017c">
+<style>
+  body.site .pf { max-width: none; padding: 0 20px; }
+  body.site .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  body.site .con { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  body.site .con .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  body.site .con h3 { font-family: var(--display); font-weight: 600; font-size: 18px; color: var(--navy); margin: 0; }
+  body.site .con .zone { font: 500 11px var(--body); color: var(--muted); white-space: nowrap; }
+  body.site .con .zone i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  body.site .con p { margin: 0; font-size: 12.5px; color: #3b4852; }
+  body.site .con .cap { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 4px; }
+  body.site .con .kv { grid-template-columns: 1fr auto; font-size: 12.5px; }
+  body.site .con .fleet { display: flex; flex-wrap: wrap; gap: 5px; }
+  body.site .con .fleet span { font: 500 11px var(--body); color: var(--navy); border: 1px solid var(--line); border-radius: 7px; padding: 3px 7px; background: #faf8f4; }
+  body.site .svc .kv span:nth-child(2n) { color: #1a7f52; }
+  body.site .bal .bar { height: 8px; border-radius: 4px; background: rgba(21, 48, 74, 0.08); overflow: hidden; }
+  body.site .bal .bar i { display: block; height: 100%; background: var(--navy); }
+  body.site .bal .bar i.over { background: #c0504d; }
+  body.site .bal td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
+</style>
 </head>
 <body class="site">
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS<small>destination operating system</small></a><nav><a href="/">Live demo</a><a href="/proforma/" class="on">Proforma</a><a href="/pitch/">Pitch deck</a><a href="/market/">Resort market view</a></nav><span class="spacer"></span><span class="tag">working materials · 2026</span></div></div>
-<div class="wrap">
-  <div class="hero">
-    <h1>Proforma: what the project consists of.</h1>
-    <p>RubiqOS (working name DestinationOS) is the operating system of a resort or a mixed-use destination: a guest app, an agent layer that dispatches people and machines, and physical AI on the roads and the water. This site collects what the project consists of today: the master plan, the operating model, the product concepts, the market, the live demo and the pitch.</p>
-    <div class="cta"><a class="btn primary" href="/">Open the live demo</a><a class="btn" href="/pitch/">Pitch deck</a><a class="btn" href="/market/">Resort market view</a></div>
+<div class="wrap pf">
+  <div class="hero" style="padding-bottom:10px">
+    <h1>Proforma.</h1>
+    <p>Every product concept of the island as a card: what it is, how big it is, what it needs to run — staff, storage, fleet, water, energy, sewage. Below them the services that supply those needs, and the balance between demand and capacity. Numbers are planning ratios for a luxury island resort on master plan v024; replace them with the operator's own as they arrive.</p>
   </div>
 
-  <section id="shape">
-    <h2>The shape of the project</h2>
-    <p class="lead">Seven kinds of objects. Everything on this site is one of them.</p>
-    <div class="grid">
-      <div class="card"><h3>Places<small>master plan</small></h3><p>A generic luxury island, 2.7 × 1.4 km, 380 ha, modelled in Blender from the CAD master plan. Eleven functional zones, every building with a function and a zone id.</p><ul><li>Beach Hotel, Hill Hotel, East Villas, Branded Residences</li><li>Marina Village, Marina and Terminal, Beach Club, Spa and sport</li><li>Events Rotunda, Arrival and Fleet, Back of House</li></ul></div>
-      <div class="card"><h3>People<small>population</small></h3><div class="num">≈ 1,000<small>guests at peak</small></div><div class="kv"><span>Beach Hotel keys</span><span>240</span><span>Hill Hotel keys</span><span>120</span><span>Branded residences</span><span>208</span><span>Villas</span><span>18</span><span>Staff positions</span><span>≈ 900</span><span>On shift, morning</span><span>330</span></div></div>
-      <div class="card"><h3>Product concepts<small>what earns</small></h3><ul><li>Hotels, villas and branded residences (60 % in the rental pool)</li><li>Marina with berth and service membership</li><li>Members Club and Beach Club day passes</li><li>Residence Club (fractional villas and apartments)</li><li>Longevity clinic, family academy, chef residency</li><li>Corporate retreats, private-island buy-out</li><li>RubiqOS itself, licensed to other destinations</li></ul></div>
-      <div class="card"><h3>Infrastructure<small>back of house</small></h3><ul><li>Service dock and supply vessel, 2 calls a week</li><li>Warehouse bar: laundry, prep kitchen, cold storage, storage</li><li>Fleet Hub with 30 charging posts, robot docks</li><li>Staff accommodation, office, waste management</li><li>Power, desalination, sewage: the island is autonomous</li><li>Roads for machines, walkways for people, never mixed</li></ul></div>
-      <div class="card"><h3>Subsystems<small>the operating system</small></h3><ul><li>Guest app: curation, Butler, map, bookings</li><li>Agent layer: Butler AI, operator console, dispatcher</li><li>Physical AI: 28 buggies, 6 trucks, 24 delivery robots, 16 service carts, 13 boats</li><li>Routing on the real road and walkway network</li><li>Battery, charging and work-order management</li></ul></div>
-      <div class="card"><h3>Programmes<small>time</small></h3><ul><li>A guest day: breakfast, beach, lunch waves, spa, sunset, dinner</li><li>Staff shifts 07 / 15 / 23 and the shift-change walk</li><li>Event programme: 16 events a day on 8 venues</li><li>Logistics calendar: supply vessel, linen, waste at night</li><li>Arrivals and departures by tender</li></ul></div>
-      <div class="card"><h3>Market<small>who buys</small></h3><div class="num">298<small>destinations in the matrix</small></div><p>Operating resorts and the pipeline, base parameters, business mix and a targeting view. One market in opex a year: about $51B TAM, $12B SAM, $4B SOM.</p><p><a href="/market/">Open the Resort market view →</a></p></div>
-    </div>
+  <section id="concepts">
+    <h2>Product concepts</h2>
+    <p class="lead">Revenue-generating units. Capacity and daily demand at peak occupancy.</p>
+    <div class="cards" id="conceptCards"></div>
   </section>
 
-  <section id="zones">
-    <h2>Places, one by one</h2>
-    <p class="lead">Each zone of the master plan with its role, its product, the operations it generates and the programme that runs in it. The live demo lets you filter the model by zone.</p>
-    <table class="t">
-      <thead><tr><th>Zone</th><th>Role in the plan</th><th>Product</th><th>Operations</th><th>Programme</th></tr></thead>
-      <tbody>
-        <tr><td><i class="sw" style="background:#E8D9B0"></i>Z01 Beach Hotel</td><td>Three 6-floor blocks on the beach with a round lobby, pool and restaurant. The social and F&B core of the hotel side.</td><td>240 keys, suites 60–90 m², restaurant 220 seats</td><td>Guest drop-off on the lobby road, linen runs, room service by robot, housekeeping routes</td><td>Breakfast and dinner peaks, wine tasting, arrivals and check-outs</td></tr>
-        <tr><td><i class="sw" style="background:#C9B27C"></i>Z02 Hill Hotel</td><td>Eleven low blocks on the central hill, boutique scale, views over the island.</td><td>120 keys, large rooms</td><td>Buggy transfers up the hill, robot deliveries, work orders</td><td>Low-season buy-outs: corporate retreats</td></tr>
-        <tr><td><i class="sw" style="background:#D98C5F"></i>Z03 Marina Village</td><td>Pedestrian quarter of 21 clusters between the ring road and the marina.</td><td>4 F&B outlets, shops, apart-hotel for management</td><td>Kitchen restock by truck, robots to villas and residences, crowd at lunch and dinner</td><td>Island market, chef residency dinner</td></tr>
-        <tr><td><i class="sw" style="background:#6FA8C9"></i>Z04 Marina</td><td>Two piers with cross docks, the Terminal for tenders and the Service dock. Layout to be redesigned.</td><td>Berths, yacht club membership, service yard</td><td>Tenders, water taxi, excursion boats, supply vessel, arrivals walking to the stop</td><td>Sunset regatta, excursions at 09:00 and 14:00</td></tr>
-        <tr><td><i class="sw" style="background:#9CC58A"></i>Z05 East Villas</td><td>Eighteen 4-bedroom villas on the eastern cape, each with terrace and pool.</td><td>Villas for sale and rent, Residence Club shares</td><td>Breakfast by robot, housekeeping trolleys, predictive maintenance carts</td><td>Residents' day: marina, spa, dining in the village</td></tr>
-        <tr><td><i class="sw" style="background:#7FB8A6"></i>Z06 Spa &amp; Wellness</td><td>Spa on the second hill, gyms, tennis and pickleball courts.</td><td>Spa treatments, longevity programmes, sport academies</td><td>Guest flows 09–12 and 15–19, trainers and therapists</td><td>Breathwork, HIIT, tennis clinic, padel social, longevity workshop</td></tr>
-        <tr><td><i class="sw" style="background:#9C83BE"></i>Z07 Events Rotunda</td><td>Ring hall around a courtyard garden with three pavilions.</td><td>Exhibitions, talks, concerts, dinners for 300</td><td>Equipment by truck before events, buggy waves before and after</td><td>Exhibition opening, public talk, chamber concert</td></tr>
-        <tr><td><i class="sw" style="background:#8FA6BA"></i>Z08 Arrival &amp; Fleet</td><td>Reception, parking, helipad and the Fleet Hub.</td><td>—</td><td>Buggy charging and dispatch, helicopter arrivals</td><td>Peak shift planning</td></tr>
-        <tr><td><i class="sw" style="background:#9C9890"></i>Z09 Back of House</td><td>Warehouse bar, loading yard, staff accommodation, office, utilities, waste.</td><td>—</td><td>Supply vessel to warehouse, linen, F&B distribution, night waste run, robot and truck charging</td><td>Shift changes 07 / 15 / 23, supply calls Monday and Thursday</td></tr>
-        <tr><td><i class="sw" style="background:#E3D3BC"></i>Z10 Branded Residences</td><td>Four 45 × 45 m towers of 4 floors with roof terraces and bridges, on the beach.</td><td>208 apartments of 100–150 m², 60 % in the hotel pool</td><td>Residents' buggies, robot deliveries, housekeeping for the pool units</td><td>Owners' events, workation stays in low season</td></tr>
-        <tr><td><i class="sw" style="background:#C97A52"></i>Z11 Beach Club</td><td>Club on the north beach with pool, decks and a stage.</td><td>Day passes, memberships, F&B</td><td>Lunch wave, beach set-up carts at 06:00, lifeguards</td><td>Sunrise yoga, kids games, DJ sunset</td></tr>
-      </tbody>
-    </table>
+  <section id="services">
+    <h2>Services</h2>
+    <p class="lead">Back-of-house capacity that the concepts draw on. Green figures are capacities.</p>
+    <div class="cards" id="serviceCards"></div>
   </section>
 
-  <section id="layers">
-    <h2>How the system is built</h2>
-    <div class="grid">
-      <div class="card"><h3>1 · Guest experience layer</h3><p>A mobile app for guests, members and residents. Curation over catalogue; the Butler and the map are the only entry points. Every tap becomes an intent the system can fulfil.</p></div>
-      <div class="card"><h3>2 · Agent layer</h3><p>The Butler AI, the operator console for human concierges and the dispatcher that turns intents into jobs for people and machines. Humans stay in the loop, invisibly to the guest.</p></div>
-      <div class="card"><h3>3 · Physical AI layer</h3><p>Autonomous buggies, service trucks, delivery robots, service carts and boats, plus the state of the island: energy, water, weather, tides. The live demo shows one day of this layer on the master plan.</p><p><a href="/">Live demo →</a></p></div>
-    </div>
+  <section id="balance">
+    <h2>Balance</h2>
+    <p class="lead">Daily demand of all concepts against the capacity of the services. Red = the service as sized today is short.</p>
+    <table class="t bal" id="balance"><thead><tr><th>Resource</th><th>Demand per day</th><th>Capacity</th><th>Load</th><th></th></tr></thead><tbody></tbody></table>
   </section>
 
   <section id="programme">
@@ -89,20 +81,52 @@
       </tbody>
     </table>
   </section>
-
-  <section id="numbers">
-    <h2>Operating day in numbers</h2>
-    <div class="grid">
-      <div class="card"><div class="num">4,100<small>meals a day</small></div><p>Kitchens of the hotel, the village outlets, the Beach Club and the staff canteen.</p></div>
-      <div class="card"><div class="num">1,200<small>buggy trips</small></div><p>Peak 145 an hour; 20 buggies active, 28 in the fleet.</p></div>
-      <div class="card"><div class="num">300<small>robot deliveries</small></div><p>Breakfast, room service, luggage, amenities; 24 robots, 40 % fewer couriers.</p></div>
-      <div class="card"><div class="num">2.4 t<small>linen a day</small></div><p>Two linen runs by truck; laundry in the warehouse bar.</p></div>
-      <div class="card"><div class="num">100<small>work orders</small></div><p>60 on call, 40 planned; sensors predict most of them before guests notice.</p></div>
-      <div class="card"><div class="num">−90…120<small>staff positions</small></div><p>Effect of RubiqOS on logistics, housekeeping, delivery and engineering at the same service level.</p></div>
-    </div>
-  </section>
-
-  <p class="foot">RubiqOS · DestinationOS project, 2026. Working materials, not an offer. Master plan v023, operating model and programmes as of 17 October 2026.</p>
+  <p class="foot">RubiqOS · proforma of the generic island resort, 17 October 2026. Ratios: water 600 L per hotel key, 2 m³ per villa, 400 L per apartment, 30 L per cover, 150 L per staff member; energy 60 kWh per key, 150 per villa, 35 per apartment, 8 per cover; sewage 85 % of water; storage 1.5 m² per key plus kitchen cold rooms. Working material, not an offer.</p>
 </div>
+<script>
+const Z = { Z01: '#E8D9B0', Z02: '#C9B27C', Z03: '#D98C5F', Z04: '#6FA8C9', Z05: '#9CC58A', Z06: '#7FB8A6', Z07: '#9C83BE', Z08: '#8FA6BA', Z09: '#9C9890', Z10: '#E3D3BC', Z11: '#C97A52' };
+// product concepts: size, people, staff, storage, fleet, daily demand (water m3, energy kWh, sewage m3, food t, linen kg)
+const CONCEPTS = [
+  { id: 'beach-hotel', name: 'Beach Hotel', zone: 'Z01', what: 'Three 6-floor blocks on the beach, round lobby, restaurant, pool. The hotel side of the island.', size: { 'Keys': 240, 'Guests at 75 %': 342, 'Restaurant seats': 220, 'Pool, m²': '2,100' }, staff: 270, storage: 'Linen room 360 m², kitchen cold rooms 120 m², mini-bar store 60 m²', fleet: ['6 housekeeping robots', '6 delivery robots', '3 linen carts', '2 buggies dedicated'], demand: { water: 205, energy: 14400, sewage: 175, food: 1.1, linen: 1450 } },
+  { id: 'hill-hotel', name: 'Hill Hotel', zone: 'Z02', what: 'Eleven low boutique blocks on the central hill. Large rooms, views, quiet.', size: { 'Keys': 120, 'Guests at 70 %': 168, 'Lounge seats': 60 }, staff: 135, storage: 'Linen room 180 m², pantry 40 m²', fleet: ['3 housekeeping robots', '3 delivery robots', '2 linen carts', '2 buggies dedicated'], demand: { water: 101, energy: 7200, sewage: 86, food: 0.5, linen: 720 } },
+  { id: 'villas', name: 'East Villas', zone: 'Z05', what: 'Eighteen 4-bedroom villas on the eastern cape with terrace and pool; owned or rented.', size: { 'Villas': 18, 'Guests at 80 %': 80, 'Bedrooms': 72, 'Pools': 18 }, staff: 40, storage: 'Butler pantries 18 × 6 m², pool chemicals store', fleet: ['4 delivery robots', '2 housekeeping carts', '1 pool-service cart'], demand: { water: 36, energy: 2700, sewage: 31, food: 0.25, linen: 220 } },
+  { id: 'residences', name: 'Branded Residences', zone: 'Z10', what: 'Four 45 × 45 m towers, 4 floors, roof terraces; 60 % of the apartments in the hotel rental pool.', size: { 'Apartments': 208, 'In rental pool': 125, 'Residents at peak': 285, 'Roof pools': 4 }, staff: 95, storage: 'Linen and amenities 220 m², parcel room 40 m²', fleet: ['4 housekeeping robots', '4 delivery robots', '2 linen carts'], demand: { water: 110, energy: 7300, sewage: 94, food: 0.4, linen: 500 } },
+  { id: 'village', name: 'Marina Village', zone: 'Z03', what: 'Pedestrian retail quarter: four F&B outlets, shops, island market, apart-hotel for management.', size: { 'F&B outlets': 4, 'Covers a day': '1,100', 'Shops': 17, 'Apart-hotel units': 40 }, staff: 85, storage: 'Shared cold store 90 m², dry store 120 m², retail stock 300 m²', fleet: ['4 delivery robots based here', '1 restock cart'], demand: { water: 48, energy: 9600, sewage: 41, food: 0.9, linen: 150 } },
+  { id: 'beach-club', name: 'Beach Club', zone: 'Z11', what: 'Club on the north beach: sunbeds, pool, restaurant and bar, stage for the evening programme.', size: { 'Sunbeds': 180, 'Restaurant seats': 90, 'Covers a day': 450, 'Day passes': 120 }, staff: 40, storage: 'Bar and kitchen cold rooms 50 m², towel store 30 m²', fleet: ['2 beach set-up carts', '1 delivery robot'], demand: { water: 32, energy: 3600, sewage: 27, food: 0.35, linen: 400 } },
+  { id: 'members-club', name: 'Members Club', zone: 'Z01', what: 'Arc building on the beach west of the hotel with pavilion and pool; membership for the mainland and residents.', size: { 'Members': 400, 'Seats': 160, 'Covers a day': 300 }, staff: 30, storage: 'Kitchen cold rooms 40 m², wine cellar 30 m²', fleet: ['1 delivery robot', '1 service cart'], demand: { water: 20, energy: 2600, sewage: 17, food: 0.25, linen: 120 } },
+  { id: 'spa', name: 'Spa & Wellness', zone: 'Z06', what: 'Spa on the second hill with treatment rooms, thermal area and a longevity programme.', size: { 'Treatment rooms': 24, 'Guests an hour': 60, 'Treatments a day': 260 }, staff: 32, storage: 'Products 30 m², linen 40 m²', fleet: ['1 linen cart', '1 delivery robot'], demand: { water: 58, energy: 3800, sewage: 49, food: 0.05, linen: 520 } },
+  { id: 'sport', name: 'Sport', zone: 'Z06', what: 'Two gyms, three tennis and six pickleball courts, club house; academies and group classes.', size: { 'Gym places': 40, 'Courts': 9, 'Sessions a day': 160 }, staff: 15, storage: 'Equipment 60 m²', fleet: ['1 service cart'], demand: { water: 12, energy: 1900, sewage: 10, food: 0.02, linen: 160 } },
+  { id: 'marina', name: 'Marina', zone: 'Z04', what: 'Berths, Terminal for the shuttle and tenders, yacht club; layout to be redesigned with the yacht mix.', size: { 'Berths': 255, 'Yacht guests and crew': 120, 'Shuttle arrivals a day': 12 }, staff: 28, storage: 'Chandlery and fuel 150 m², service yard', fleet: ['Shuttle boat', 'Excursion boat', 'Duty RIB', 'Workboat'], demand: { water: 60, energy: 4100, sewage: 40, food: 0.1, linen: 0 } },
+  { id: 'events', name: 'Events Rotunda', zone: 'Z07', what: 'Ring hall around a courtyard with three pavilions: exhibitions, talks, concerts, dinners.', size: { 'Hall capacity': 300, 'Courtyard': 120, 'Events a day': 3 }, staff: 10, storage: 'Furniture and AV store 120 m²', fleet: ['1 truck run per event', '+6 buggies at dispersal'], demand: { water: 9, energy: 1800, sewage: 8, food: 0.15, linen: 60 } },
+];
+// services: capacity as sized in the plan
+const SERVICES = [
+  { name: 'Power plant', zone: 'Z09', what: 'Gas generators with solar on the roofs of the back of house and the parking; battery buffer.', cap: { 'Peak power': '9 MW', 'Energy a day': '95,000 kWh', 'Solar share': '18 %', 'Fuel autonomy': '14 days' }, key: 'energy', capacity: 95000 },
+  { name: 'Desalination (RO)', zone: 'Z09', what: 'Reverse-osmosis plant with potable storage tanks.', cap: { 'Output a day': '900 m³', 'Potable storage': '1,200 m³', 'Grey-water reuse': '35 %' }, key: 'water', capacity: 900 },
+  { name: 'Sewage treatment', zone: 'Z09', what: 'Treatment plant with reclaimed water for irrigation.', cap: { 'Treatment a day': '700 m³', 'Reclaimed for irrigation': '450 m³' }, key: 'sewage', capacity: 700 },
+  { name: 'Warehouse and cold chain', zone: 'Z09', what: 'Four-block warehouse bar: laundry, prep kitchen, cold storage, dry storage; receives the supply vessel.', cap: { 'Cold storage': '600 m²', 'Dry storage': '900 m²', 'Food throughput a day': '4.5 t', 'Supply calls a week': 2 }, key: 'food', capacity: 4.5 },
+  { name: 'Laundry', zone: 'Z09', what: 'Central laundry in the warehouse bar; two linen trucks.', cap: { 'Linen a day': '5,000 kg', 'Turnaround': '6 h' }, key: 'linen', capacity: 5000 },
+  { name: 'Fleet Hub', zone: 'Z08', what: 'Charging, parking and workshop for the land fleet; dispatch by RubiqOS.', cap: { 'Charging posts': 30, 'Buggies': 28, 'Delivery robots': 24, 'Service vehicles': 22 } },
+  { name: 'Staff accommodation', zone: 'Z09', what: 'Four-floor block with canteen; the rest of the staff commute by the staff shuttle.', cap: { 'Beds': 420, 'Canteen meals a day': '1,000', 'Staff on island at peak shift': 330 }, key: 'staff', capacity: 900 },
+  { name: 'Waste management', zone: 'Z09', what: 'Sorting, compactors and the night waste run to the transfer station at the dock.', cap: { 'Waste a day': '5 t', 'Recycled': '40 %' } },
+  { name: 'Service dock', zone: 'Z04', what: 'Supply vessel berth with crane; containers go straight onto service vehicles.', cap: { 'Vessel capacity': '9 t', 'Unloading': '2 h', 'Fuel bunkering': 'yes' } },
+];
+const sum = k => CONCEPTS.reduce((a, c) => a + (c.demand[k] || 0), 0);
+const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { maximumFractionDigits: d });
+document.getElementById('conceptCards').innerHTML = CONCEPTS.map(c => `<div class="con" id="${c.id}">
+  <div class="hd"><h3>${c.name}</h3><span class="zone"><i style="background:${Z[c.zone]}"></i>${c.zone}</span></div><p>${c.what}</p>
+  <div class="cap">Capacity</div><div class="kv">${Object.entries(c.size).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}</div>
+  <div class="cap">Needs per day</div><div class="kv"><span>Staff positions</span><span>${c.staff}</span><span>Water</span><span>${fmt(c.demand.water)} m³</span><span>Energy</span><span>${fmt(c.demand.energy)} kWh</span><span>Sewage</span><span>${fmt(c.demand.sewage)} m³</span><span>Food and beverage</span><span>${fmt(c.demand.food, 2)} t</span><span>Linen</span><span>${fmt(c.demand.linen)} kg</span></div>
+  <div class="cap">Storage</div><p>${c.storage}</p>
+  <div class="cap">Internal fleet</div><div class="fleet">${c.fleet.map(f => `<span>${f}</span>`).join('')}</div>
+</div>`).join('');
+document.getElementById('serviceCards').innerHTML = SERVICES.map(c => `<div class="con svc">
+  <div class="hd"><h3>${c.name}</h3><span class="zone"><i style="background:${Z[c.zone]}"></i>${c.zone}</span></div><p>${c.what}</p>
+  <div class="cap">Capacity</div><div class="kv">${Object.entries(c.cap).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}</div>
+</div>`).join('');
+const staffTotal = CONCEPTS.reduce((a, c) => a + c.staff, 0) + 120;   // + administration, utilities, security, landscape
+const rows = [['Water, m³', sum('water') + 150, 900, '+150 m³ irrigation and staff'], ['Energy, kWh', sum('energy') + 12000, 95000, '+12,000 kWh utilities, BOH and fleet charging'], ['Sewage, m³', sum('sewage') + 120, 700, '+120 m³ staff and BOH'], ['Food and beverage, t', sum('food') + 0.4, 4.5, '+0.4 t staff canteen'], ['Linen, kg', sum('linen') + 600, 5000, '+600 kg uniforms'], ['Staff positions', staffTotal, 900, 'plan 900 positions; 330 on the peak shift']];
+document.querySelector('#balance tbody').innerHTML = rows.map(([k, d, cap, note]) => { const p = Math.round(100 * d / cap); return `<tr><td>${k}</td><td>${fmt(d, k.includes('Food') ? 2 : 0)}</td><td>${fmt(cap, 1)}</td><td style="min-width:160px"><div class="bar"><i class="${p > 100 ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div></td><td class="muted">${p} % · ${note}</td></tr>`; }).join('');
+</script>
 </body>
 </html>

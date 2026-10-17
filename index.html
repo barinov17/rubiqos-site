@@ -87,7 +87,7 @@
   #load small { display: block; font: 12px var(--body); color: #3b5467; margin-top: 8px; text-align: center; }
 
   /* dashboard under the scene */
-  #dash { max-width: 1280px; margin: 0 auto; padding: 22px 16px 60px; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+  #dash { padding: 16px 16px 60px; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
   #dash .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   #dash .card.wide { grid-column: 1 / -1; }
   #dash h2 { font-family: var(--display); font-weight: 600; font-size: 17px; color: var(--navy); margin: 0 0 8px; }
@@ -106,9 +106,13 @@
   #dash .ev { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid rgba(21, 48, 74, 0.06); }
   #dash .ev.now { color: var(--navy); font-weight: 600; }
   #dash .ev small { color: var(--muted); font-weight: 400; }
-  #actorsBar { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; padding: 10px 16px; }
-  #actorsBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 4px 0 10px; }
-  #actorsBar .grp:first-child { margin-left: 0; }
+  #actorsBar { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; padding: 10px 16px; }
+  #actorsBar .row { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
+  #actorsBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); width: 110px; flex: none; }
+  #actorsBar .clock { grid-column: 2; grid-row: 1 / span 3; text-align: right; }
+  #actorsBar .clock .big { font-size: 44px; }
+  #actorsBar .clock small { display: block; font-size: 11px; color: var(--muted); }
+  @media (max-width: 720px) { #actorsBar { grid-template-columns: 1fr; } #actorsBar .clock { grid-column: 1; grid-row: auto; text-align: left; } }
   .actor { position: relative; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--navy); padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: default; }
   .actor:hover { background: rgba(21, 48, 74, 0.05); }
   .actor i { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.15); flex: none; }
@@ -147,12 +151,8 @@
 <div id="tip" class="panel"></div>
 </div>
 <section id="dash">
-  <div class="card wide" id="actorsBar"></div>
-  <div class="card wide" style="display:flex;gap:28px;align-items:baseline;flex-wrap:wrap">
-    <div><div class="big" id="time">06:40</div><div class="muted" style="font-size:11px">simulated time · 1 s = 15 s</div></div>
-    <div style="flex:1;min-width:240px"><div id="step" style="font-weight:600;color:var(--navy);font-size:14px"></div><div id="fleetLine" class="muted" style="font-size:12px;margin-top:2px"></div></div>
-    <div class="muted" id="stats" style="font-size:11px"></div>
-  </div>
+  <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
+  <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
   <div class="card"><h2>Guests on the island<small>plan, peak day</small></h2><div class="big" id="dGuestsTotal">—</div><div class="kv" id="dGuests"></div></div>
   <div class="card"><h2>Staff<small>on shift</small></h2><div class="big" id="dStaffTotal">—</div><div class="kv" id="dStaff"></div></div>
   <div class="card"><h2>Today<small>operations counters</small></h2><div class="kv" id="dOps"></div></div>
@@ -633,16 +633,18 @@ TYPES.yachtguest = { title: 'Yacht guest', role: 'Arrived on an own or chartered
 TYPES.member = { title: 'Member', role: 'Members Club member from the mainland: club house, beach, spa and sport by membership; comes by shuttle or own boat.' };
 TYPES.staff = { title: 'Staff', role: 'Housekeeping, F&B, engineers and butlers. Walk from the staff accommodation to the back of house at 07:00, 15:00 and 23:00.' };
 const COL = { hotel: 0x86aee0, resident: 0x9fcb7c, day: 0xf3c06b, yachtguest: 0xf4f1ea, member: 0xc9a3e6, staff: 0x15304a };
-const ACTORS = [['Guests and staff', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['staff', COL.staff]]],
+const ACTORS = [['People', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['staff', COL.staff]]],
   ['On land', [['buggy', 0xe0795f], ['robot', 0x6f9fd8], ['service', 0x15304a]]],
   ['On water', [['shuttle', 0xf5f5f2], ['excursion', 0xf2efe6], ['cargo', 0xc0504d], ['yacht', 0x15304a]]]];
 for (const [g, items] of ACTORS) {
-  const hd = document.createElement('span'); hd.className = 'grp'; hd.textContent = g; $('actorsBar').appendChild(hd);
+  const row = document.createElement('div'); row.className = 'row';
+  const hd = document.createElement('span'); hd.className = 'grp'; hd.textContent = g; row.appendChild(hd);
   for (const [t, c] of items) {
     const d = document.createElement('div'); d.className = 'actor';
     d.innerHTML = `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>${TYPES[t].title}<b id="cnt-${t}"></b><span class="desc">${TYPES[t].role}</span>`;
-    $('actorsBar').appendChild(d);
+    row.appendChild(d);
   }
+  $('actorsBar').insertBefore(row, $('actorsBar').querySelector('.clock'));
 }
 function updateActorCounts() {
   const n = {}; for (const f of people) if (!f.idle) n[f.type] = (n[f.type] || 0) + 1;
@@ -652,7 +654,7 @@ function updateActorCounts() {
   $('cnt-cargo').textContent = actors.cargo.mesh.visible ? '1/1' : '0/1'; $('cnt-yacht').textContent = actors.yacht.mesh.visible ? '1/1' : '0/1';
 }
 function vehicleCard(v) {
-  const T = TYPES[v.type], left = v.path ? Math.max(0, v.len - v.s) : 0, kmh = v.path ? Math.round(v.speed * 3.6 / 4) : 0, eta = left / Math.max(1, kmh / 3.6) / 60;
+  const T = TYPES[v.type], left = v.path ? Math.max(0, v.len - v.s) : 0, kmh = v.path ? Math.round(v.speed * 3.6 / 4) : 0, eta = left / Math.max(1, v.speed * 2);
   return `<b>${T.title} · ${v.id}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${v.task || 'Waiting for the next job'}</div>`
     + (v.path ? `<div>${kmh} km/h · ETA ${eta < 1 ? '<1' : Math.round(eta)} min` : '<div>Parked') + (DRAIN[v.type] ? ` · battery ${Math.round(v.battery)}%` : '') + '</div>';
 }
@@ -705,7 +707,7 @@ const villageFB = villageClusters.filter((o, i) => i % Math.max(1, Math.floor(vi
 
 // ===== fleet (plan: vault "Fleet Plan and Vehicle Scenarios"; the demo shows the peak shift at reduced scale)
 const ambient = [];
-const hourOf = () => ((6 * 60 + 40 + (window.SIM_T || 0) / 4) / 60) % 24;
+const hourOf = () => ((6 * 60 + 40 + (window.SIM_T || 0)) / 60) % 24;
 const between = (h, a, b) => (a <= b ? h >= a && h < b : h >= a || h < b);
 const stopName = p => { const n = stopNames[stops.indexOf(p)] || ''; const m = n.match(/DO-(\d+)/); return m ? `Drop-off ${+m[1]}` : n.split(' | ')[0] + ' drop-off'; };
 const villas = [...byName.keys()].filter(n => /^villa\.\d+$/.test(n)).map(n => ({ name: n.replace('villa.', 'Villa '), p: centreOf(n) }));
@@ -931,7 +933,7 @@ const people = [], routeCache = new Map();
 const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { let r = walk(a.p, b.p); if (!r || r.length < 2) r = [a.p, b.p]; routeCache.set(k, r); } return routeCache.get(k); };
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _pp = new THREE.Vector3();
 function person(i, type, home) {
-  const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 40, heading: 0, visible: true, goal: null, task: '', runs: false };
+  const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 20, heading: 0, visible: true, goal: null, task: '', runs: false };
   f.baseSpeed = f.speed; setType(f, type); people.push(f); return f;
 }
 function setType(f, type) { f.type = type; f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < 0.15; crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true; }
@@ -962,7 +964,7 @@ function stepPeople(dt) {
     const ux = (b.x - a.x) / seg, uz = (b.z - a.z) / seg;
     _pp.set(a.x + (b.x - a.x) * t - uz * f.off, a.y + (b.y - a.y) * t + 0.1, a.z + (b.z - a.z) * t + ux * f.off);
     f.heading = Math.atan2(-uz, ux); f.pos = _pp.clone();
-    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.wait = f.leaving ? 2 : f.speed > 6 ? 40 + rand() * 80 : 150 + rand() * 450; }   // stay a while: meals, beach, spa
+    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.wait = f.leaving ? 2 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300; }   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
 }
 function drawPeople() {
@@ -1016,7 +1018,8 @@ function updateDash() {
 // --- notifications, clock, camera director (same UI and timing as resort-cad-3d)
 const pins = [];
 let simT = 0, speedMul = 1, playing = true;
-const clockText = () => { const m = 6 * 60 + 40 + Math.floor(simT / 4); return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+const MOTION = 2, MOTION_PEOPLE = 6;          // vehicles 2x, people 6x: a 2 km walk takes ~15 simulated minutes
+const clockText = () => { const m = 6 * 60 + 40 + Math.floor(simT); return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
 function notify({ icon, tag, title, body, anchor, accent }) {
   logAll.push({ t: clockText(), title: `${icon} ${tag} · ${title}`, body });
   if (anchor) { const el = document.createElement('div'); el.className = 'pin' + (accent ? ' accent' : ''); el.textContent = title; stage.appendChild(el); pins.push({ el, anchor, until: simT + 5.5 }); }
@@ -1158,8 +1161,9 @@ $('bFleet').onclick = () => { fleetOn = !fleetOn; $('bFleet').classList.toggle('
 function tick(rdt, draw = true) {
   const dt = playing ? rdt * speedMul : 0;
   simT += dt; window.SIM_T = simT;
-  for (const a of Object.values(actors)) stepMover(a, dt);
-  stepAmbient(dt); stepPeople(dt);
+  const dtm = dt * MOTION;                                                  // movement runs faster than the clock-driven timers
+  for (const a of Object.values(actors)) stepMover(a, dtm);
+  stepAmbient(dtm); stepPeople(dt * MOTION_PEOPLE);
   for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].until) { waiters[i].res(); waiters.splice(i, 1); }
   directCamera(rdt); controls.update();
   if (!draw) return;
