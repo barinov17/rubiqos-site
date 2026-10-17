@@ -9,65 +9,33 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../site.css">
 <style>
-  .viewer { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
-  .stagebox { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-  .stagebox img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
-  .arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: rgba(255,255,255,.92); color: var(--navy); font-size: 20px; cursor: pointer; display: grid; place-items: center; }
-  .arrow:hover { background: #fff; } .arrow.l { left: 12px; } .arrow.r { right: 12px; }
-  .side h2 { font-family: var(--display); font-weight: 600; font-size: 22px; color: var(--navy); margin: 0 0 4px; }
-  .side .eyebrow { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 6px; }
-  .side p { font-size: 13.5px; color: #3b4852; margin: 0 0 10px; }
-  .side ul { margin: 0 0 12px; padding-left: 18px; font-size: 13px; color: #3b4852; } .side li { margin: 3px 0; }
-  .side .count { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 18px; }
-  .thumbs button { border: 2px solid transparent; border-radius: 10px; padding: 0; background: #fff; cursor: pointer; overflow: hidden; text-align: left; }
-  .thumbs button.on { border-color: var(--navy); }
-  .thumbs img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
-  .thumbs span { display: block; font: 500 11px var(--body); color: var(--navy); padding: 5px 8px; }
-  .keys { font-size: 12px; color: var(--muted); margin-top: 10px; }
-  @media (max-width: 900px) { .viewer { grid-template-columns: 1fr; } }
+  html, body { height: 100%; overflow: hidden; }
+  body { background: #0a1220; }
+  .deck { position: fixed; top: 64px; left: 0; right: 0; bottom: 0; display: grid; place-items: center; }
+  .deck img { max-width: calc(100vw - 140px); max-height: calc(100vh - 64px - 40px); width: auto; height: auto; aspect-ratio: 16 / 9; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); border-radius: 4px; background: #0a1220; }
+  .arrow { position: fixed; top: 50%; transform: translateY(-50%); width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08); color: #fff; font-size: 26px; line-height: 1; cursor: pointer; display: grid; place-items: center; }
+  .arrow:hover { background: rgba(255, 255, 255, 0.18); }
+  .arrow.l { left: 24px; } .arrow.r { right: 24px; }
+  .count { position: fixed; bottom: 12px; left: 0; right: 0; text-align: center; font: 500 12px var(--body); color: rgba(255, 255, 255, 0.55); letter-spacing: 0.04em; }
+  @media (max-width: 720px) { .deck img { max-width: 100vw; } .arrow { width: 40px; height: 40px; } .arrow.l { left: 8px; } .arrow.r { right: 8px; } }
 </style>
 </head>
 <body>
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS<small>destination operating system</small></a><nav><a href="/">Live demo</a><a href="/proforma/">Proforma</a><a href="/pitch/" class="on">Pitch deck</a><a href="/market/">Resort market view</a></nav><span class="spacer"></span><span class="tag">working materials · 2026</span></div></div>
-<div class="wrap">
-  <div class="hero" style="padding-bottom:14px">
-    <h1>Pitch deck.</h1>
-    <p>Working version v7 from Figma, exported 17 October 2026. Ten slides. Use the arrows or the keyboard; the notes on the right carry the message and the numbers behind each slide.</p>
-  </div>
-  <div class="viewer">
-    <div class="stagebox"><img id="img" src="s01.png" alt="Slide"><button class="arrow l" id="prev" aria-label="Previous">‹</button><button class="arrow r" id="next" aria-label="Next">›</button></div>
-    <aside class="side"><div class="eyebrow" id="eyebrow"></div><h2 id="title"></h2><div class="count" id="count"></div><p id="msg"></p><ul id="pts"></ul><div class="keys">← → to move · click a thumbnail</div></aside>
-  </div>
-  <div class="thumbs" id="thumbs"></div>
-  <p class="foot">Source of truth is the Figma file (page "Pitch v7 — working"). Republish this page after every deck change.</p>
-</div>
+<div class="deck"><img id="img" src="s01.png" alt="Slide 1"></div>
+<button class="arrow l" id="prev" aria-label="Previous slide">‹</button>
+<button class="arrow r" id="next" aria-label="Next slide">›</button>
+<div class="count" id="count"></div>
 <script>
-const SLIDES = [
-  { n: '01', t: 'Cover', m: 'Destinations that run themselves. An AI management platform for remote destinations, integrated with physical AI, without losing the human touch.', p: ['Audience: the owner of the anchor destination, as client and as pre-seed investor', 'Working name RubiqOS / DestinationOS'] },
-  { n: '02', t: 'Problem', m: 'Costs climb, robots get cheap, resorts stand still.', p: ['Resort opex grows with payroll; labour is 45 % of opex in remote destinations', 'Robot prices fall year on year while hospitality robot density is about 12 per 10,000 staff', 'Operators run on PMS add-ons, chat apps and radio dispatch'] },
-  { n: '03', t: 'Market opportunity', m: 'One market in opex a year: about 450 destinations, $51B.', p: ['203 operating destinations ≈ $29B opex + ~250 in the pipeline ≈ $22B', 'Payroll $23B → serviceable $12B → obtainable $4B', 'Software spend today ≈ $0.7B a year; the money is in operations, not in licences'] },
-  { n: '04', t: 'Why now', m: 'Technologies, regulation and development are aligned.', p: ['Agentic AI reached operations-grade reliability', 'AI and robotics regulation is written and adopted', 'Record pipeline of new destinations in design, where the system can be built in from day one'] },
-  { n: '05', t: 'Unique advantage', m: 'A team that has shipped both the software and the destinations, a niche without an owner, an anchor client that is also a lab.', p: ['Master planning and operations experience on real islands', 'No competitor combines guest UX, agentic operations and physical AI', 'Anchor destination gives data, a test bed and the first reference'] },
-  { n: '06', t: 'Solution', m: 'Guest, operator and physical AI around one system.', p: ['Guest layer: app with Butler and map as the only entry points', 'Agent layer: Butler AI, operator console, dispatcher; humans in the loop, invisibly', 'Physical AI layer: buggies, boats, robots, service fleet; shared services incl. landscape'] },
-  { n: '07', t: 'Scale', m: 'Automate what pays: today vs possible.', p: ['Anchor case: 1,000–2,000 guests a day → ~2,000 staff → $100M payroll', '53 % of payroll is automatable; a robot costs ~26 % of the human cost on those tasks', 'Opex floor −41 % at 60–80 % automation'] },
-  { n: '08', t: 'Business model', m: 'Paid per job done.', p: ['Build $1–3M one-off · Run $0.8–1.3M a year · outcome fee 30–35 % of the automated human cost', 'Why remote destinations: back of house 75 % of staff vs 60 % in city hotels', 'Client saves ~$36M a year on a $100M payroll at 53 % automation'] },
-  { n: '09', t: 'Go-to-market', m: 'Enter at design, grow to 48.', p: ['Ring 1: 7 named destinations in design, formats C/D/E, 1,000+ guests a day (~$2.2B opex)', 'Ring 2: +20 in construction or new phases (+$6.3B)', 'Ring 3: +21 operating retrofits (+$12.1B) → 16 % of resorts, 48 % of opex'] },
-  { n: '10', t: 'Team & ask', m: '$3M SAFE at a $25M cap.', p: ['Use of funds: team $2.09M · AI and lab $0.20M · marketing and sales $0.27M · legal and G&A $0.14M · reserve $0.30M', 'Advisors in hospitality and robotics; CTO search open'] },
-];
-let i = Math.max(0, SLIDES.findIndex(s => '#s' + s.n === location.hash));
-const $ = id => document.getElementById(id);
-function show(k) {
-  i = (k + SLIDES.length) % SLIDES.length; const s = SLIDES[i];
-  $('img').src = `s${s.n}.png`; $('img').alt = `${s.n} ${s.t}`; $('eyebrow').textContent = `Slide ${s.n}`; $('title').textContent = s.t; $('count').textContent = `${i + 1} of ${SLIDES.length}`;
-  $('msg').textContent = s.m; $('pts').innerHTML = s.p.map(x => `<li>${x}</li>`).join('');
-  document.querySelectorAll('.thumbs button').forEach((b, j) => b.classList.toggle('on', j === i));
-  history.replaceState(null, '', '#s' + s.n);
-}
-$('thumbs').innerHTML = SLIDES.map((s, j) => `<button data-i="${j}"><img src="s${s.n}.png" alt="" loading="lazy"><span>${s.n} · ${s.t}</span></button>`).join('');
-$('thumbs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) show(+b.dataset.i); });
-$('prev').onclick = () => show(i - 1); $('next').onclick = () => show(i + 1);
-addEventListener('keydown', e => { if (e.key === 'ArrowRight') show(i + 1); if (e.key === 'ArrowLeft') show(i - 1); });
+const N = 10;
+let i = Math.max(0, Math.min(N - 1, (parseInt((location.hash.match(/\d+/) || [1])[0], 10) || 1) - 1));
+const img = document.getElementById('img'), count = document.getElementById('count');
+function show(k) { i = (k + N) % N; const n = String(i + 1).padStart(2, '0'); img.src = `s${n}.png`; img.alt = `Slide ${i + 1}`; count.textContent = `${i + 1} / ${N}`; history.replaceState(null, '', '#' + (i + 1)); }
+document.getElementById('prev').onclick = () => show(i - 1);
+document.getElementById('next').onclick = () => show(i + 1);
+addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); show(i + 1); } if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); show(i - 1); } });
+let x0 = null; addEventListener('pointerdown', e => { x0 = e.clientX; }); addEventListener('pointerup', e => { if (x0 !== null && Math.abs(e.clientX - x0) > 40) show(e.clientX < x0 ? i + 1 : i - 1); x0 = null; });
+for (let k = 1; k <= N; k++) { const pre = new Image(); pre.src = `s${String(k).padStart(2, '0')}.png`; }
 show(i);
 </script>
 </body>
