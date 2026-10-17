@@ -519,10 +519,11 @@ function footprintMeshes(o) {                                                   
 // self-check (runs at load): draws every footprint exactly as hover does and checks the drawn outline sits under its object.
 // It tests the rendered result, so a transform error (like the old z mirror) is caught, not only a wrong calculation.
 function checkFootprints(list) {
-  const bad = []; const gb = new THREE.Box3(), ob = new THREE.Box3(), gc = new THREE.Vector3(), oc = new THREE.Vector3();
+  const bad = []; const gb = new THREE.Box3(), ob = new THREE.Box3(), _fb = new THREE.Box3(), gc = new THREE.Vector3(), oc = new THREE.Vector3();
   for (const [label, meshes] of list) {
     if (!meshes.length) continue; showFootprint(meshes); if (!fpGroup.children.length) continue;
-    gb.makeEmpty(); fpGroup.children.forEach(ch => gb.expandByObject(ch)); ob.makeEmpty(); meshes.forEach(m => ob.expandByObject(m));
+    gb.makeEmpty(); fpGroup.children.forEach(ch => gb.expandByObject(ch));
+    ob.makeEmpty(); for (const m of meshes) { if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); m.updateWorldMatrix(true, false); ob.union(_fb.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld)); }   // the meshes themselves, not their children (a drop-off parented to a building is not the building)
     gb.getCenter(gc); ob.getCenter(oc);
     const tol = 3 + 0.1 * Math.max(ob.max.x - ob.min.x, ob.max.z - ob.min.z);
     if (Math.abs(gc.x - oc.x) > tol || Math.abs(gc.z - oc.z) > tol) bad.push(`${label} (off by ${Math.round(Math.hypot(gc.x - oc.x, gc.z - oc.z))} m)`);
@@ -537,10 +538,17 @@ function card(o) {
   const title = t.name === 'Infrastructure zone' && o.name.includes(' | ') ? o.name.split(' | ')[1].replace(/ (roof|walls)$/, '') : t.name.split(' | ')[0];
   return `<b>${title}</b><div>${tu.use || tu.function || ''}</div><div class="k">${tu.zone_id} · ${tu.zone_name}</div>`;
 }
+// A product concept is one object: hovering any part (roof, block, link, lodge) selects and describes the whole concept
+// (founder 2026-10-17). conceptList = the PRODUCTS pins plus the three Marina Village clusters; villas stay individual.
+let conceptList = [];
+const conceptOf = o => { const t = topOf(o); return conceptList.find(d => (d.hp || d.fp || []).some(pre => o.name.startsWith(pre) || t.name.startsWith(pre))) || null; };
+const conceptMeshes = d => { if (!d._meshes) { const out = []; byName.forEach((m, n) => { if (m.isMesh && !FLAT.test(n) && (d.hp || d.fp).some(pre => n.startsWith(pre))) out.push(m); }); d._meshes = out; } return d._meshes; };
+const hoverSel = o => { const d = conceptOf(o); return d ? conceptMeshes(d) : footprintMeshes(o); };
+const hoverHtml = (o, area) => { const d = conceptOf(o); return (d ? conceptHtml(d) : card(o)) + `<div class="k"${d ? ' style="margin-top:4px"' : ''}>footprint ≈ ${Math.round(area).toLocaleString()} m²</div>`; };
 function setHover(o) {
-  hovered = o; const sel = pinned ? [pinned] : o ? footprintMeshes(o) : [];   // outline the building under the cursor, not the whole parcel
+  hovered = o; const sel = pinned ? hoverSel(pinned) : o ? hoverSel(o) : [];
   outline.selectedObjects = sel;
-  if (!pinned) { if (o) { const area = showFootprint(footprintMeshes(o)); tip.innerHTML = card(o) + `<div class="k">footprint ≈ ${Math.round(area).toLocaleString()} m²</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); } else { clearFootprint(); tip.style.display = 'none'; } }
+  if (!pinned) { if (o) { const area = showFootprint(sel); tip.innerHTML = hoverHtml(o, area); tip.style.display = 'block'; placeTip(pointer.x, pointer.y); } else { clearFootprint(); tip.style.display = 'none'; } }
 }
 function placeTip(x, y) {
   const tw = tip.offsetWidth, th = tip.offsetHeight;
@@ -563,7 +571,7 @@ canvas.addEventListener('pointerdown', e => { const q = stageXY(e); downAt = [q.
 canvas.addEventListener('pointerup', e => {
   const q = stageXY(e); if (!downAt || Math.hypot(q.x - downAt[0], q.y - downAt[1]) > 4) return;
   const p = pick();
-  if (p && p.object) { pinned = topOf(p.object); outline.selectedObjects = [pinned]; tip.innerHTML = card(p.object); tip.style.display = 'block'; tip.classList.add('pinned'); placeTip(q.x, q.y); }
+  if (p && p.object) { pinned = p.object; const sel = hoverSel(p.object); outline.selectedObjects = sel; tip.innerHTML = hoverHtml(p.object, showFootprint(sel)); tip.style.display = 'block'; tip.classList.add('pinned'); placeTip(q.x, q.y); }
   else { pinned = null; tip.classList.remove('pinned'); setHover(null); }
 });
 function updateHover() {
@@ -884,18 +892,18 @@ const topOfObj = (n, up = 6) => { const o = byName.get(n); if (!o) return null; 
 const topOfPrefix = (pre, up = 6) => { const b = new THREE.Box3(); let any = false; byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh) { b.expandByObject(o); any = true; } }); if (!any) return null; const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
 // products: kpis from the proforma (rubiqos.com/proforma); numbers per day at peak
 const PRODUCTS = [
-  { fp: ['Beach Hotel | west block', 'Beach Hotel | middle block', 'Beach Hotel | east block', 'Beach Hotel | link', 'Beach Hotel | lobby'], name: 'Beach Hotel', zone: 'Z01', p: topOfPrefix('Beach Hotel | middle block', 8), kpi: { 'Keys': 240, 'Guests at 75 %': 342, 'Staff': 270, 'Water': '205 m³', 'Energy': '14,400 kWh', 'Sewage': '175 m³' } },
-  { fp: ['Hotel 2.0'], name: 'Hill Hotel', zone: 'Z02', p: topOfPrefix('Hotel 2.0', 8), kpi: { 'Keys': 120, 'Guests at 70 %': 168, 'Staff': 135, 'Water': '101 m³', 'Energy': '7,200 kWh', 'Sewage': '86 m³' } },
-  { fp: ['branded residence BR1 | tower'], name: 'Residences BR1', zone: 'Z10', p: topOfPrefix('branded residence BR1', 8), kpi: { 'Apartments': 104, 'In rental pool': 62, 'Residents at peak': 142, 'Staff': 48, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
-  { fp: ['branded residence BR2 | tower'], name: 'Residences BR2', zone: 'Z10', p: topOfPrefix('branded residence BR2', 8), kpi: { 'Apartments': 104, 'In rental pool': 63, 'Residents at peak': 143, 'Staff': 47, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
+  { fp: ['Beach Hotel | west block', 'Beach Hotel | middle block', 'Beach Hotel | east block', 'Beach Hotel | link', 'Beach Hotel | lobby'], hp: ['Beach Hotel'], name: 'Beach Hotel', zone: 'Z01', p: topOfPrefix('Beach Hotel | middle block', 8), kpi: { 'Keys': 240, 'Guests at 75 %': 342, 'Staff': 270, 'Water': '205 m³', 'Energy': '14,400 kWh', 'Sewage': '175 m³' } },
+  { fp: ['Hotel 2.0'], hp: ['Hotel 2.'], name: 'Hill Hotel', zone: 'Z02', p: topOfPrefix('Hotel 2.0', 8), kpi: { 'Keys': 120, 'Guests at 70 %': 168, 'Staff': 135, 'Water': '101 m³', 'Energy': '7,200 kWh', 'Sewage': '86 m³' } },
+  { fp: ['branded residence BR1 | tower'], hp: ['branded residence BR1'], name: 'Residences BR1', zone: 'Z10', p: topOfPrefix('branded residence BR1', 8), kpi: { 'Apartments': 104, 'In rental pool': 62, 'Residents at peak': 142, 'Staff': 48, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
+  { fp: ['branded residence BR2 | tower'], hp: ['branded residence BR2'], name: 'Residences BR2', zone: 'Z10', p: topOfPrefix('branded residence BR2', 8), kpi: { 'Apartments': 104, 'In rental pool': 63, 'Residents at peak': 143, 'Staff': 47, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
   { fp: ['restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
-  { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
+  { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], hp: ['event hall museum.001'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
   { fp: ['gym.001', 'gym.002', 'tennis court', 'pickleball'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['marina support.001', 'Terminal'], name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.011', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
   { fp: ['Beach club buildings.001'], name: 'Beach Club', zone: 'Z11', p: topOfObj('Beach club buildings.001', 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
-  { fp: ['Members Club | arc building', 'Members Club | pavilion'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
+  { fp: ['Members Club | arc building', 'Members Club | pavilion'], hp: ['Members Club'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
 ];
 for (const n of [...byName.keys()].filter(n => /^villa\.\d+$/.test(n)).sort()) PRODUCTS.push({ fp: [n + ' |'], name: n.replace('villa.', 'Villa '), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
 // services: capacity and today's load (balance from the proforma)
@@ -911,13 +919,19 @@ const SERVICES = [
   { name: 'IF Water, power, sewage', fp: ['Infrastructure zone | IF'], p: topOfPrefix('Infrastructure zone | IF', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
 ];
 const PIN_SVG = c => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="11.4" r="4" fill="#fff"/></svg>`;
+const conceptHtml = d => `<b>${d.name}</b>${d.zone ? `<div class="k">${d.zone} · ${zoneInfo[d.zone].zone_name}</div>` : '<div class="k">Back of house · service</div>'}<div class="dash">${Object.entries(d.kpi).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}${d.load !== undefined ? `<div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div><span>Load today</span><span>${d.load} %</span>` : ''}</div>`;
+const VILLAGE_CLUSTERS = [   // founder 2026-10-17: Marina Village hovers as three clusters, not module by module (modules by x in the model)
+  { name: 'Marina Village · west cluster', zone: 'Z03', hp: ['DINING.001', 'DINING.002', 'DINING.003', 'DINING.004', 'DINING.005', 'DINING.006', 'DINING.007', 'DINING.008', 'DINING.009'], kpi: { 'Modules': 9, 'Use': 'F&B and shops by the marina basin', 'Part of': 'Marina Village' } },
+  { name: 'Marina Village · central cluster', zone: 'Z03', hp: ['DINING.010', 'DINING.011', 'DINING.012', 'DINING.013', 'DINING.014', 'DINING.015'], kpi: { 'Modules': 6, 'Use': 'Shops, cafés, the village square', 'Part of': 'Marina Village' } },
+  { name: 'Marina Village · east cluster', zone: 'Z03', hp: ['DINING.016', 'DINING.017', 'DINING.018', 'DINING.019', 'DINING.020', 'DINING.021'], kpi: { 'Modules': 6, 'Use': 'Restaurants toward the excursion dock', 'Part of': 'Marina Village' } },
+];
 const gpins = [];
 function makePin(d, cls, colour) {
   if (!d.p) return;
   const fpMeshes = () => { const out = []; for (const pre of (d.fp || [])) byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh && !FLAT.test(n)) out.push(o); }); return out; };
   d.fpMeshes = fpMeshes;
   const el = document.createElement('div'); el.className = 'gpin ' + cls; el.innerHTML = PIN_SVG(colour) + `<span>${d.name}</span>`; stage.appendChild(el);
-  const html = `<b>${d.name}</b>${d.zone ? `<div class="k">${d.zone} · ${zoneInfo[d.zone].zone_name}</div>` : '<div class="k">Back of house · service</div>'}<div class="dash">${Object.entries(d.kpi).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}${d.load !== undefined ? `<div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div><span>Load today</span><span>${d.load} %</span>` : ''}</div>`;
+  const html = conceptHtml(d);
   el.onpointerenter = e => { if (pinned) return; const ms = fpMeshes(); const area = ms.length ? showFootprint(ms) : 0; tip.innerHTML = html + (area ? `<div class="k" style="margin-top:4px">footprint ≈ ${Math.round(area).toLocaleString()} m²</div>` : ''); tip.style.display = 'block'; const q = stageXY(e); placeTip(q.x, q.y); outline.selectedObjects = []; };
   el.onpointermove = e => { if (pinned) return; const q = stageXY(e); placeTip(q.x, q.y); };
   el.onpointerleave = () => { if (!pinned) { tip.style.display = 'none'; clearFootprint(); } };
@@ -925,6 +939,7 @@ function makePin(d, cls, colour) {
 }
 for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
 for (const d of SERVICES) makePin(d, 'svc', '#5a6672');
+conceptList = [...VILLAGE_CLUSTERS, ...PRODUCTS, ...SERVICES];   // clusters first, so a village module resolves to its cluster, not to the whole village
 { const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))])); window.__fpBad = checkFootprints(list); window.__fpCheck = () => checkFootprints(list); window.__fpGroup = fpGroup; }
 function updatePins() { for (const g of gpins) { const sc = toScreen(g.p); if (!sc) { g.el.style.display = 'none'; continue; } g.el.style.display = ''; g.el.style.left = sc[0] + 'px'; g.el.style.top = sc[1] + 'px'; } }
 
@@ -1507,7 +1522,7 @@ loop();
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml });
 </script>
 </body>
 </html>
