@@ -142,11 +142,9 @@
 <div id="controls" class="panel">
   <button id="bPlay" class="on">Pause</button>
   <button id="bSpeed">Speed 1×</button>
-  <button id="bCam" class="on">Auto camera</button>
-  <button id="bOverview">Overview</button>
-  <button id="bFleet">Fleet</button>
-  <button id="bPeople" class="on">People</button>
-  <button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff" style="display:none">Clear filter</button>
+  <button id="bOverview" class="on">Overview</button>
+  <button id="bCam">Live camera</button>
+  <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
 <div id="tip" class="panel"></div>
 </div>
@@ -397,6 +395,7 @@ function flyToZone(id) { setAutoCam(false); const f = frameBox(zoneBox[id], 1.3)
 const OVER = frameBox(islandBox, 1.05);
 camera.position.copy(OVER.pos); controls.target.copy(OVER.target); controls.update();
 $('bOverview').onclick = () => { setAutoCam(false); flyTo(OVER.target, OVER.pos); };
+$('bCam').onclick = () => setAutoCam(!autoCam);
 
 // ---------- hover / click: outline + card
 let pickables = [];
@@ -676,7 +675,7 @@ function actor(id, type, label, mesh, color, medium = 'road') {
   const a = { id: label, key: id, type, mesh, path: null, s: 0, len: 0, speed: 0, onDone: null, medium, battery: 70 + Math.floor(rand() * 28), task: 'Waiting' };
   mesh.traverse(o => { o.userData.vehicle = a; }); return (actors[id] = a);
 }
-actor('yacht', 'Y2', 'Aurora', fleetModel('Y2'), 0x15304a, 'water');
+actor('yacht', 'Y2', 'Aurora', fleetModel('Y2'), 0x86aee0, 'water');
 actor('buggy', 'L1', 'P3', fleetModel('L1'), 0xe0795f);
 actor('truck', 'L4', 'T1', fleetModel('L4'), 0x15304a);
 actor('truck2', 'L4', 'T2', fleetModel('L4'), 0x15304a);
@@ -704,6 +703,46 @@ const road = (from, to) => roadR.route(from, to);
 // people: walkway route; if two pieces of the walk network are not linked in the model, cross the lawn in a straight line
 const walk = (from, to) => walkR.route(from, to) || (() => { const a = walkR.nearest(from), b = walkR.nearest(to); if (!a || !b) return null; const p = walkR.posOf(...a), q = walkR.posOf(...b); console.warn('walk fallback', [from.x | 0, from.z | 0], '->', [to.x | 0, to.z | 0]); return [p, p.clone().lerp(q, 0.5), q]; })();
 
+// ===== drop-off pads (founder 2026-10-17): every drop-off is red; each pad turned so its long side runs along the adjoining road
+{
+  const redMat = (() => { let m = null; model.traverse(o => { if (!m && o.isMesh && /^Drop-off \| DO-\d+ \(BOH\)$/.test(o.name)) m = o.material; }); return m; })();
+  const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
+  const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', 'Hotel Lobby road | access road']) for (const m of meshOf(n)) {
+    m.updateWorldMatrix(true, false); const g = m.geometry, pos = g.attributes.position, idx = g.index, cnt = idx ? idx.count : pos.count;
+    for (let i = 0; i < cnt; i += 3) {
+      const ia = idx ? idx.getX(i) : i, ib = idx ? idx.getX(i + 1) : i + 1, ic = idx ? idx.getX(i + 2) : i + 2;
+      _a.fromBufferAttribute(pos, ia).applyMatrix4(m.matrixWorld); _b.fromBufferAttribute(pos, ib).applyMatrix4(m.matrixWorld); _c.fromBufferAttribute(pos, ic).applyMatrix4(m.matrixWorld);
+      roadTris.push([(_a.x + _b.x + _c.x) / 3, (_a.z + _b.z + _c.z) / 3]);
+    }
+  }
+  const pca = pts => { const n = pts.length, mx = pts.reduce((s, q) => s + q[0], 0) / n, mz = pts.reduce((s, q) => s + q[1], 0) / n; let sxx = 0, szz = 0, sxz = 0; for (const [x, z] of pts) { sxx += (x - mx) ** 2; szz += (z - mz) ** 2; sxz += (x - mx) * (z - mz); } return 0.5 * Math.atan2(2 * sxz, sxx - szz); };
+  const pads = []; model.traverse(o => { if (o.isMesh && /guest drop-off$|^Drop-off \| DO-\d+/.test(o.name)) pads.push(o); });
+  const fixed = [];
+  for (const m of pads) {
+    if (redMat && m.material !== redMat) { m.userData.origMat = m.material; m.material = redMat; }
+    m.updateWorldMatrix(true, false);
+    const pos = m.geometry.attributes.position, pts = []; const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); pts.push([v.x, v.z]); }
+    const cx = pts.reduce((s, q) => s + q[0], 0) / pts.length, cz = pts.reduce((s, q) => s + q[1], 0) / pts.length;
+    const near = roadTris.filter(([x, z]) => Math.hypot(x - cx, z - cz) < 40 && Math.hypot(x - cx, z - cz) > 6);
+    if (near.length < 12) continue;
+    const padAng = pca(pts), roadAng = pca(near);
+    let d = roadAng - padAng; d = Math.atan2(Math.sin(2 * d), Math.cos(2 * d)) / 2;      // nearest of the two parallel orientations
+    if (Math.abs(d) < 0.02) continue;
+    if (Math.abs(d) > Math.PI / 6) { console.info('drop-off pad across its road (left as modelled):', m.name, Math.round(d * 180 / Math.PI) + '°'); continue; }   // skews only; end-of-spur pads stay
+    // rotate the pad about its own centre, in world space, keeping its position
+    const centre = new THREE.Vector3(cx, 0, cz), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -d);
+    const parentInv = new THREE.Matrix4().copy(m.parent.matrixWorld).invert();
+    const R = new THREE.Matrix4().makeTranslation(centre.x, centre.y, centre.z).multiply(new THREE.Matrix4().makeRotationFromQuaternion(q)).multiply(new THREE.Matrix4().makeTranslation(-centre.x, -centre.y, -centre.z));
+    const newWorld = new THREE.Matrix4().multiplyMatrices(R, m.matrixWorld);
+    new THREE.Matrix4().multiplyMatrices(parentInv, newWorld).decompose(m.position, m.quaternion, m.scale);
+    fixed.push([m.name, Math.round(d * 180 / Math.PI)]);
+  }
+  console.info('drop-off pads turned square to their road:', fixed);
+  window.__padsFixed = fixed;
+}
+
 // ===== Marina Village: four clusters are the F&B outlets of the retail zone (vault: Resort Population and Guest Day)
 const villageClusters = [...byName.keys()].filter(n => /^DINING\.\d+$/.test(n)).map(n => byName.get(n)).filter(o => o.parent === model);
 const FB_NAMES = ['Harbour Café', 'Island Bistro', 'Sunset Bar', 'Fire Grill'];
@@ -730,8 +769,10 @@ const CHARGE = { L1: { name: 'Fleet Hub', p: A.fleet }, L2: { name: 'Fleet Hub',
 const DRAIN = { L1: 0.09, L2: 0.06, L3: 0.07, L4: 0.05, L5: 0.11 };          // % per simulated minute on the move (electric land fleet)
 const pickNot = (arr, not) => { const c = arr.filter(x => x !== not); return c.length ? anyOf(c) : arr[0]; };
 
+const TYPE_COL = { L1: 0xe0795f, L2: 0xf3c06b, L3: 0x9fcb7c, L4: 0x15304a, L5: 0x6f9fd8, W1: 0xf5f5f2, W2: 0xc0504d, W3: 0xf2efe6, Y2: 0x86aee0 };
 function follower(type, label, medium, speed, next, home) {
   const mesh = fleetModel(type); scene.add(mesh); movers.push(mesh); mesh.visible = false;
+  const mk = beacon(TYPE_COL[type] || 0xffffff); mk.scale.set(0.014, 0.014, 1); mk.position.y = (FM[type] ? FM[type].height_m : 2) + 4; mk.name = 'marker'; mesh.add(mk);
   const f = { id: label, type, mesh, medium, speed, next, path: null, wait: rand() * 8, battery: 45 + Math.floor(rand() * 55), task: '', place: home || null };
   if (home) { placeAt(f, medium === 'water' ? home : roadR.posOf(...roadR.nearest(home))); f.task = 'Standby'; }
   mesh.traverse(o => { o.userData.vehicle = f; }); ambient.push(f); return f;
@@ -879,6 +920,7 @@ function stepAmbient(dt) {
     const key = f.type; (fleetCount[key] ||= [0, 0])[1]++;
     if (f.path) {
       fleetCount[key][0]++; if (DRAIN[f.type]) f.battery = Math.max(3, f.battery - DRAIN[f.type] * dt); stepMover(f, dt);
+      { const mk = f.mesh.getObjectByName('marker'); if (mk) mk.visible = !!f.path; }
       if (!f.path) {                                                               // trip just finished: counters, arrivals
         if (f.type === 'L1' || f.type === 'L2') ops.buggyTrips++; else if (f.type === 'L5' && !/^Empty/.test(f.task)) ops.deliveries++;
         else if (f.type === 'L4' && !/^Empty/.test(f.task)) ops.truckRuns++; else if (f.type === 'L3' && /^WO-/.test(f.task)) ops.workOrders++;
@@ -894,6 +936,7 @@ function stepAmbient(dt) {
     if (DRAIN[f.type] && f.battery < 20) { const c = CHARGE[f.type]; pts = trip(f, f.place || c.p, c.p, `Battery ${Math.round(f.battery)} % · to the ${c.name} to charge`); f.toCharge = true; if (!pts) { f.charging = 40; f.toCharge = false; continue; } }
     else pts = f.next(f);
     if (pts && pts.length > 1) { setPath(f, pts); f.mesh.visible = fleetOn; } else if (f.wait <= 0) f.wait = 6;
+    const mk = f.mesh.getObjectByName('marker'); if (mk) mk.visible = !!f.path;
   }
   $('fleetLine').textContent = 'Fleet on the move · ' + Object.entries(fleetCount).map(([k, v]) => `${k} ${v[0]}/${v[1]}`).join(' · ');
 }
@@ -1083,9 +1126,9 @@ const anchorPos = a => (typeof a === 'string' ? actors[a].mesh.position.clone().
 const waiters = [];
 const wait = sec => new Promise(res => waiters.push({ until: simT + sec, res }));
 const say = t => { $('step').textContent = t; };
-let autoCam = true, camFocus = null, camDist = 260, overview = false;
+let autoCam = false, camFocus = null, camDist = 260, overview = false;       // the scene opens on the overview; Live camera follows the script
 function focus(f, dist = 220) { camFocus = f; camDist = dist; overview = false; }
-function setAutoCam(v) { autoCam = v; $('bCam').classList.toggle('on', v); }
+function setAutoCam(v) { autoCam = v; $('bCam').classList.toggle('on', v); $('bOverview').classList.toggle('on', !v); }
 controls.addEventListener('start', () => { if (autoCam) setAutoCam(false); });
 // Blender-style trackpad: two-finger swipe orbits, Shift + swipe pans parallel to the ground, pinch / Ctrl + swipe zooms.
 // A mouse wheel (large vertical steps, no horizontal component) still zooms.
@@ -1206,7 +1249,6 @@ async function loop() {
 // ---------- controls
 $('bPlay').onclick = () => { playing = !playing; $('bPlay').textContent = playing ? 'Pause' : 'Play'; $('bPlay').classList.toggle('on', playing); };
 $('bSpeed').onclick = () => { speedMul = speedMul === 1 ? 2 : speedMul === 2 ? 4 : speedMul === 4 ? 8 : 1; $('bSpeed').textContent = `Speed ${speedMul}×`; };
-$('bCam').onclick = () => setAutoCam(!autoCam);
 let fleetOn = true;
 $('bFleet').classList.add('on');
 $('bFleet').onclick = () => { fleetOn = !fleetOn; $('bFleet').classList.toggle('on', fleetOn); for (const f of ambient) f.mesh.visible = fleetOn; };
