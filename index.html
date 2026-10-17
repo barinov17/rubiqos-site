@@ -758,6 +758,7 @@ try {
   const hg = await new Promise((res, rej) => loader.load(HELIPAD_GLB + '?v=' + encodeURIComponent(manifest.version), res, undefined, rej));
   hg.scene.position.copy(HELIPAD_POS); hg.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); scene.add(hg.scene);
   for (const n of ['halipad.001', 'halipad.002', 'halipad.003']) { const o = byName.get(n); if (o) o.visible = false; }   // the CAD discs under the asset
+  byName.forEach((o, n) => { if (n.startsWith('Footpath links')) o.visible = false; });   // the walk-grid connectors (e021/e022) route people but are not drawn (founder 2026-10-17)
 } catch (e) { console.warn('helipad.glb not loaded', e); }
 // --- register assets placed in the scene: B01 Arrivals Reception, S01 tennis courts (3), S02 pickleball courts (6). Each instance joins
 // `model` and byName as a building, so hover, outline and the GYM & Sports concept treat them like the rest of the scene.
@@ -768,13 +769,13 @@ try {
   const place = (tpl, name, pos, rotY, lift = 0.05) => {
     const inst = tpl.clone(true); inst.name = name; inst.position.set(pos[0], groundAt(pos[0], pos[2], pos[1]) + lift, pos[2]); inst.rotation.y = rotY;
     inst.userData = { ...inst.userData, group: 'buildings', function: 'sport', zone_id: 'Z06', zone_name: zoneInfo.Z06 ? zoneInfo.Z06.zone_name : '' };
-    inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.group = 'buildings'; } }); model.add(inst); byName.set(name, inst); return inst;
+    inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.group = 'buildings'; if (o !== inst) { o.name = `${name} | ${o.name.replace(/^.*\| /, '')}`; byName.set(o.name, o); } } }); model.add(inst); byName.set(name, inst); return inst;   // parts join byName, so the whole asset hovers as one concept
   };
   try {
     const pl = await fetch(ASSET_DIR + 'courts.placement.json', { cache: 'no-store' }).then(r => r.json());
     for (const [id, cad] of [['S01', /^tennis court\.\d+$/], ['S02', /^pickleball\.\d+$/]]) {
       const tpl = await loadAsset(pl.models[id].asset);
-      for (const ins of pl.models[id].instances) place(tpl, ins.name, ins.threejs.position, ins.threejs.rotation_y_rad);
+      for (const ins of pl.models[id].instances) place(tpl, ins.name, ins.threejs.position, ins.threejs.rotation_y_rad, 0.3);   // 0.3 m above the sports deck (z-fighting otherwise)
       byName.forEach((o, n) => { if (cad.test(n)) o.visible = false; });                 // the flat CAD rectangles under the templates
     }
   } catch (e) { console.warn('court assets not loaded', e); }
@@ -784,6 +785,12 @@ try {
     inst.userData.function = 'arrival & mobility'; inst.userData.zone_id = 'Z08'; inst.userData.zone_name = zoneInfo.Z08 ? zoneInfo.Z08.zone_name : '';
     const mp = byName.get('Arrivals Reception'); if (mp) mp.visible = false;             // the same pavilion built into the master plan by edit e015
   } catch (e) { console.warn('arrivals reception asset not loaded', e); }
+  try {                                                                           // B02 Rotunda Restaurant replaces the flat CAD disc; the disc's drop-off children stay in the scene
+    const pr = await fetch(ASSET_DIR + 'rotunda-restaurant.placement.json', { cache: 'no-store' }).then(r => r.json());
+    const tpl = await loadAsset(pr.asset); const inst = place(tpl, 'Rotunda Restaurant', pr.placement_threejs.position, pr.placement_threejs.rotation_y_rad, 0.0);
+    inst.userData.function = 'dining'; inst.userData.zone_id = 'Z02'; inst.userData.zone_name = zoneInfo.Z02 ? zoneInfo.Z02.zone_name : '';
+    const cad = byName.get('restaurant'); if (cad) { for (const c of [...cad.children]) model.attach(c); cad.visible = false; }
+  } catch (e) { console.warn('rotunda restaurant asset not loaded', e); }
 }
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
 function box(w, h, d, c, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); m.castShadow = true; return m; }
@@ -936,7 +943,7 @@ const PRODUCTS = [
   { fp: ['Hotel 2.0'], hp: ['Hotel 2.'], name: 'Hill Hotel', zone: 'Z02', p: topOfPrefix('Hotel 2.0', 8), kpi: { 'Keys': 120, 'Guests at 70 %': 168, 'Staff': 135, 'Water': '101 m³', 'Energy': '7,200 kWh', 'Sewage': '86 m³' } },
   { fp: ['branded residence BR1 | tower'], hp: ['branded residence BR1'], name: 'Residences BR1', zone: 'Z10', p: topOfPrefix('branded residence BR1', 8), kpi: { 'Apartments': 104, 'In rental pool': 62, 'Residents at peak': 142, 'Staff': 48, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
   { fp: ['branded residence BR2 | tower'], hp: ['branded residence BR2'], name: 'Residences BR2', zone: 'Z10', p: topOfPrefix('branded residence BR2', 8), kpi: { 'Apartments': 104, 'In rental pool': 63, 'Residents at peak': 143, 'Staff': 47, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
-  { fp: ['restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
+  { fp: ['Rotunda Restaurant'], hp: ['Rotunda Restaurant', 'restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('Rotunda Restaurant', 6) || topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
   { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], hp: ['event hall museum.001'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
   { fp: ['gym.001', 'gym.002', 'Tennis court', 'Pickleball court'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },

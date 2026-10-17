@@ -1,0 +1,32 @@
+{
+ "asset": "rotunda-restaurant.glb",
+ "blend": "RotundaRestaurant.blend (collection 'Rotunda Restaurant (asset)')",
+ "root_node": "Rotunda Restaurant",
+ "units": "metres",
+ "asset_frame": "origin = footprint centre at ground level; -Y in Blender = south = main passage = +Z in three.js",
+ "footprint_m": {
+  "site_D": 46.5,
+  "roof_D": 37.6
+ },
+ "height_m": 5.0,
+ "base_in_master": "DWG layer 'restaurant', CIRCLE 8518 centre (-297.00, 257.03) R 23.26; master object 'restaurant' (flat CAD disc) — hide it when the asset is shown; its drop-off children stay",
+ "placement_blender": {
+  "x": -297.0,
+  "y": 257.03,
+  "z": 0.0,
+  "rot_z_deg": 0.0
+ },
+ "placement_threejs": {
+  "position": [
+   -297.0,
+   0.0,
+   -257.03
+  ],
+  "rotation_y_rad": 0.0
+ },
+ "zone": {
+  "zone_id": "Z02",
+  "zone_name": "Hill Hotel",
+  "function": "dining"
+ }
+}
