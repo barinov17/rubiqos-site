@@ -106,6 +106,18 @@
   #dash .ev { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid rgba(21, 48, 74, 0.06); }
   #dash .ev.now { color: var(--navy); font-weight: 600; }
   #dash .ev small { color: var(--muted); font-weight: 400; }
+  #actorsBar { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; padding: 10px 16px; }
+  #actorsBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 4px 0 10px; }
+  #actorsBar .grp:first-child { margin-left: 0; }
+  .actor { position: relative; display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--navy); padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: default; }
+  .actor:hover { background: rgba(21, 48, 74, 0.05); }
+  .actor i { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.15); flex: none; }
+  .actor b { font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .actor .desc { display: none; position: absolute; left: 0; top: calc(100% + 6px); width: 280px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.4; color: #3b4852; z-index: 5; box-shadow: 0 8px 24px rgba(21, 48, 74, 0.14); }
+  .actor:hover .desc { display: block; }
+  .ticker { max-height: 280px; overflow: auto; scroll-behavior: smooth; font-size: 12.5px; }
+  .ticker div { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(21, 48, 74, 0.06); animation: in 0.4s; }
+  .ticker span { color: var(--muted); font-variant-numeric: tabular-nums; }
   @media (max-width: 900px) {
     #feed { top: auto; bottom: 74px; width: 210px; }
     #feed .note:nth-child(n+3) { display: none; }
@@ -117,11 +129,6 @@
 <div id="stage">
 <canvas id="c"></canvas>
 <div id="load">Loading the master plan<small id="loadInfo">resort-masterplan.glb · Draco</small></div>
-<div id="title" class="panel">
-  <h1>Luxury Resort</h1>
-  <div id="actors"></div>
-</div>
-<div id="feed"></div>
 <div id="layersPanel" class="panel">
   <div id="layers">
     <div class="box" id="layersBox"><div id="groupList"></div></div>
@@ -140,6 +147,7 @@
 <div id="tip" class="panel"></div>
 </div>
 <section id="dash">
+  <div class="card wide" id="actorsBar"></div>
   <div class="card wide" style="display:flex;gap:28px;align-items:baseline;flex-wrap:wrap">
     <div><div class="big" id="time">06:40</div><div class="muted" style="font-size:11px">simulated time · 1 s = 15 s</div></div>
     <div style="flex:1;min-width:240px"><div id="step" style="font-weight:600;color:var(--navy);font-size:14px"></div><div id="fleetLine" class="muted" style="font-size:12px;margin-top:2px"></div></div>
@@ -148,10 +156,9 @@
   <div class="card"><h2>Guests on the island<small>plan, peak day</small></h2><div class="big" id="dGuestsTotal">—</div><div class="kv" id="dGuests"></div></div>
   <div class="card"><h2>Staff<small>on shift</small></h2><div class="big" id="dStaffTotal">—</div><div class="kv" id="dStaff"></div></div>
   <div class="card"><h2>Today<small>operations counters</small></h2><div class="kv" id="dOps"></div></div>
-  <div class="card"><h2>Events<small>programme</small></h2><div id="dEvents"></div></div>
   <div class="card"><h2>Zones<small>people now</small></h2><div id="dZones"></div></div>
   <div class="card"><h2>Fleet<small>plan vs demo</small></h2><table id="dFleet"><thead><tr><th>Type</th><th>Plan</th><th>Demo</th><th>Moving</th><th>Charging</th><th>Battery</th></tr></thead><tbody></tbody></table></div>
-  <div class="card wide"><h2>Event log<small>operating system</small></h2><div class="log" id="dLog"></div></div>
+  <div class="card wide"><h2>Operations log<small>live, newest at the bottom</small></h2><div class="ticker" id="dLog"></div></div>
 </section>
 
 <script type="importmap">
@@ -437,7 +444,7 @@ canvas.addEventListener('pointerup', e => {
 function updateHover() {
   if (!hoverDirty) return; hoverDirty = false;
   const p = pick();
-  if (p && p.person) { if (!pinned) { const f = p.person, T = TYPES[f.type === 'guest' ? 'guest' : f.type]; tip.innerHTML = `<b>${T.title}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${f.task || ('At ' + (POI_LABEL[f.at] || f.at))}</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = []; } return; }
+  if (p && p.person) { if (!pinned) { const f = p.person, T = TYPES[f.type]; tip.innerHTML = `<b>${T.title}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${f.task || ('At ' + (POI_LABEL[f.at] || f.at))}</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = []; } return; }
   if (p && p.vehicle) { if (!pinned) { tip.innerHTML = vehicleCard(p.vehicle); tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = [p.vehicle.mesh]; } return; }
   const o = p ? p.object : null;
   if (o !== hovered) setHover(o); else if (o && !pinned) placeTip(pointer.x, pointer.y);
@@ -610,31 +617,39 @@ function beacon(color) {
 }
 const TYPES = {
   buggy: { title: 'Guest buggy', role: 'Autonomous electric shuttle between the guest stops; called from the guest app.' },
-  truck: { title: 'Service truck', role: 'Autonomous truck on the service loop: Service dock → back of house → venues.' },
+  truck: { title: 'Service vehicle · truck', role: 'Autonomous truck on the service roads: containers from the Service dock to the warehouse, linen, F&B restock, waste at night.' },
   robot: { title: 'Delivery robot', role: 'Ground robot. Food, luggage and amenities to rooms and villas.' },
   yacht: { title: 'Guest yacht', role: 'Arriving guests. Berth assigned by the marina system from the AIS track.' },
   cargo: { title: 'Supply vessel', role: 'Resupply: containers to the Service dock, straight onto service trucks.' },
-  guest: { title: 'Guest', role: 'Guided on foot by the app between the Terminal, the stops and the lobby.' },
-  cart: { title: 'Service cart', role: 'Staff utility cart: maintenance work orders, housekeeping trolleys, landscape and beach rounds.' },
-  tender: { title: 'Guest tender', role: '12-seat tender between the mainland and the Terminal; berth assigned by the marina system.' },
-  excursion: { title: 'Excursion boat', role: '20-seat boat for snorkelling and sunset trips, 09:00 and 14:00; cancelled above 25 kn.' },
-  taxi: { title: 'Water taxi', role: '8-seat shuttle between the Terminal, the Beach Club pier and the villas.' },
+  cart: { title: 'Service vehicle · cart', role: 'Staff utility cart on the service roads: maintenance work orders, housekeeping trolleys, landscape and beach rounds.' },
+  service: { title: 'Service vehicle', role: 'Trucks and carts on the service roads: supplies from the Service dock to the warehouse, linen, F&B restock, waste at night, maintenance and housekeeping rounds.' },
+  shuttle: { title: 'Shuttle boat', role: 'Comes from the mainland every hour, on the hour, with up to 40 guests, members and day visitors; leaves the Terminal at :10.' },
+  excursion: { title: 'Excursion boat', role: 'Leaves the Terminal with the event programme: snorkelling in the morning, sunset cruise in the evening; cancelled above 25 kn.' },
 };
+TYPES.hotel = { title: 'Hotel guest', role: 'Stays at the Beach Hotel or the Hill Hotel: restaurant, beach, spa, sport, events. Moves on foot and by buggy; some run in the morning and the evening.' };
+TYPES.resident = { title: 'Resident', role: 'Lives in a villa or a branded residence: boats in the marina, dining in the village, spa, sport and the hotel amenities.' };
+TYPES.day = { title: 'Day visitor', role: 'Comes for the day on the shuttle boat: Marina Village, the market, Beach Club and events; leaves on the evening shuttle.' };
+TYPES.yachtguest = { title: 'Yacht guest', role: 'Arrived on an own or chartered yacht in the marina: Marina Village, Beach Club, excursions and the regatta.' };
+TYPES.member = { title: 'Member', role: 'Members Club member from the mainland: club house, beach, spa and sport by membership; comes by shuttle or own boat.' };
 TYPES.staff = { title: 'Staff', role: 'Housekeeping, F&B, engineers and butlers. Walk from the staff accommodation to the back of house at 07:00, 15:00 and 23:00.' };
-TYPES.resident = { title: 'Resident', role: 'Lives in a villa or a branded residence: boats in the marina, dining, spa, sport and the hotel amenities.' };
-TYPES.runner = { title: 'Runner', role: 'Guest on a morning or evening run along the promenade and the loop paths.' };
-TYPES.arrival = { title: 'Arriving guest', role: 'Just off the tender at the Terminal: walks to the stop for a buggy or straight into Marina Village.' };
-const LEGEND = [['People', [['guest', 0xf3c06b], ['resident', 0x9fcb7c], ['staff', 0x15304a], ['runner', 0xe0795f], ['arrival', 0xb9b9b9]]],
-  ['Vehicles', [['buggy', 0xe0795f], ['truck', 0x15304a], ['robot', 0x6f9fd8], ['cart', 0xf4f4f2]]],
-  ['Boats', [['tender', 0xf5f5f2], ['excursion', 0xf2efe6], ['taxi', 0xffffff], ['yacht', 0x15304a], ['cargo', 0xc0504d]]]];
-for (const [h, items] of LEGEND) {
-  const hd = document.createElement('h3'); hd.textContent = h; $('actors').appendChild(hd);
+const COL = { hotel: 0x86aee0, resident: 0x9fcb7c, day: 0xf3c06b, yachtguest: 0xf4f1ea, member: 0xc9a3e6, staff: 0x15304a };
+const ACTORS = [['Guests and staff', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['staff', COL.staff]]],
+  ['On land', [['buggy', 0xe0795f], ['robot', 0x6f9fd8], ['service', 0x15304a]]],
+  ['On water', [['shuttle', 0xf5f5f2], ['excursion', 0xf2efe6], ['cargo', 0xc0504d], ['yacht', 0x15304a]]]];
+for (const [g, items] of ACTORS) {
+  const hd = document.createElement('span'); hd.className = 'grp'; hd.textContent = g; $('actorsBar').appendChild(hd);
   for (const [t, c] of items) {
-    const d = document.createElement('div'); d.innerHTML = `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>${TYPES[t].title}`;
-    d.onpointerenter = e => { tip.innerHTML = `<b>${TYPES[t].title}</b><div class="k">${TYPES[t].role}</div>`; tip.style.display = 'block'; const q = stageXY(e); placeTip(q.x, q.y); };
-    d.onpointerleave = () => { if (!pinned) tip.style.display = 'none'; };
-    $('actors').appendChild(d);
+    const d = document.createElement('div'); d.className = 'actor';
+    d.innerHTML = `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>${TYPES[t].title}<b id="cnt-${t}"></b><span class="desc">${TYPES[t].role}</span>`;
+    $('actorsBar').appendChild(d);
   }
+}
+function updateActorCounts() {
+  const n = {}; for (const f of people) if (!f.idle) n[f.type] = (n[f.type] || 0) + 1;
+  for (const t of ['hotel', 'resident', 'day', 'yachtguest', 'member', 'staff']) $('cnt-' + t).textContent = n[t] || 0;
+  const v = {}; for (const f of ambient) { const k = f.type === 'truck' || f.type === 'cart' ? 'service' : f.type; (v[k] ||= [0, 0])[1]++; if (f.path) v[k][0]++; }
+  for (const t of ['buggy', 'robot', 'service', 'shuttle', 'excursion']) { const x = v[t] || [0, 0]; $('cnt-' + t).textContent = `${x[0]}/${x[1]}`; }
+  $('cnt-cargo').textContent = actors.cargo.mesh.visible ? '1/1' : '0/1'; $('cnt-yacht').textContent = actors.yacht.mesh.visible ? '1/1' : '0/1';
 }
 function vehicleCard(v) {
   const T = TYPES[v.type], left = v.path ? Math.max(0, v.len - v.s) : 0, kmh = v.path ? Math.round(v.speed * 3.6 / 4) : 0, eta = left / Math.max(1, kmh / 3.6) / 60;
@@ -656,8 +671,8 @@ actor('truck', 'truck', 'T1', truckModel(), 0x15304a);
 actor('truck2', 'truck', 'T2', truckModel(), 0x15304a);
 actor('robot', 'robot', 'L2', robotModel(), 0x6f9fd8);
 actor('robot2', 'robot', 'R2', robotModel(), 0x6f9fd8);
-actor('guestA', 'guest', 'Smith party', personModel(0xe0795f), 0xe0795f, 'walk');
-actor('guestB', 'guest', 'Smith party', personModel(0xf3c06b), 0xf3c06b, 'walk');
+actor('guestA', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk');
+actor('guestB', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk');
 const task = (id, text) => { actors[id].task = text; };
 const lift = { water: boatY, road: 0.12, walk: 0.1 };
 function placeAt(a, p, heading = a.heading || 0) { a.pos = p; a.heading = heading; a.mesh.visible = true; a.mesh.position.set(p.x, a.medium === 'water' ? boatY : p.y + lift[a.medium], p.z); a.mesh.rotation.y = heading; }
@@ -774,20 +789,26 @@ for (let k = 0; k < 2; k++) follower('cart', `C${k + 5}`, cartModel(), 'road', 1
   return trip(f, from, t.p, `Landscape round · pruning and litter near ${t.name}`);
 }, A.fleet);
 
-// --- boats (plan 13, demo 4): 2 tenders, 1 excursion boat, 1 water taxi; routes over probed open water
-const SEA = { out: A.sea, far: bearing(A.terminal, 90, 1150), taxi: bearing(A.terminal, 75, 600) };
-for (let k = 0; k < 2; k++) follower('tender', `TN-${k + 1}`, boatModel(14, 0xf5f5f2), 'water', 20, f => {
-  const n = 4 + Math.floor(rand() * 9);
-  return f.place === A.berth ? trip(f, A.berth, SEA.out, `Tender · ${n} departing guests · Terminal → mainland`) : trip(f, SEA.out, A.berth, `Tender · ${n} arriving guests · mainland → Terminal, berth assigned`);
-}, A.berth);
+// --- boats: shuttle from the mainland every hour, excursion boat by the event programme (supply vessel and the guest yacht are scripted actors)
+const SEA = { out: A.sea, far: bearing(A.terminal, 90, 1150) };
+follower('shuttle', 'SH-1', boatModel(16, 0xf5f5f2), 'water', 20, f => {
+  const h = hourOf(), m = (h % 1) * 60;
+  if (f.place === SEA.out) {
+    if (m < 40 || m > 58) { f.task = `Shuttle · at the mainland pier · next arrival ${String(Math.ceil(h) % 24).padStart(2, '0')}:00`; f.wait = 6; return null; }
+    const n = 12 + Math.floor(rand() * 28); return trip(f, SEA.out, A.berth, `Shuttle · ${n} arriving guests · mainland → Terminal`);
+  }
+  if (m < 10) { f.task = 'Shuttle · boarding at the Terminal · departs at :10'; f.wait = 6; return null; }
+  const n = 5 + Math.floor(rand() * 20); return trip(f, A.berth, SEA.out, `Shuttle · ${n} departing guests · Terminal → mainland`);
+}, SEA.out);
 follower('excursion', 'EX-1', boatModel(18, 0xf2efe6), 'water', 16, f => {
-  const h = hourOf();
-  if (f.place === A.berth && !(between(h, 8.5, 10) || between(h, 13.5, 15))) { f.task = 'Excursion boat · next departure 09:00 / 14:00'; f.wait = 20; return null; }
-  return f.place === A.berth ? trip(f, A.berth, SEA.far, 'Snorkelling excursion · 14 guests · 3 h') : trip(f, SEA.far, A.berth, 'Excursion returning · guests notified 10 min out');
-}, A.berth);
-follower('taxi', 'WT-1', boatModel(9, 0xffffff), 'water', 18, f => {
-  const n = 1 + Math.floor(rand() * 6);
-  return f.place === A.berth ? trip(f, A.berth, SEA.taxi, `Water taxi · ${n} guests · Terminal → Beach Club pier`) : trip(f, SEA.taxi, A.berth, `Water taxi · ${n} guests · Beach Club pier → Terminal`);
+  const h = hourOf(), ex = EVENTS.filter(e => e.venue === 'excursion');
+  if (f.place === A.berth) {
+    const e = ex.find(e => h >= e.start && h < e.start + 0.3);
+    if (!e) { const nx = ex.find(e => e.start > h) || ex[0]; f.task = `Excursion boat · next: ${nx.name} at ${String(Math.floor(nx.start)).padStart(2, '0')}:${String(Math.round((nx.start % 1) * 60)).padStart(2, '0')}`; f.wait = 6; return null; }
+    f.ev = e; return trip(f, A.berth, SEA.far, `${e.name} · ${e.cap} guests · out from the Terminal`);
+  }
+  if (f.ev && h < f.ev.end - 0.3) { f.task = `${f.ev.name} · at sea · back ${String(Math.floor(f.ev.end)).padStart(2, '0')}:${String(Math.round((f.ev.end % 1) * 60)).padStart(2, '0')}`; f.wait = 6; return null; }
+  return trip(f, SEA.far, A.berth, `${f.ev ? f.ev.name : 'Excursion'} · returning · guests notified 10 min out`);
 }, A.berth);
 
 function seaPath(a, b) { const m = a.clone().lerp(b, 0.5); return [a, m, b]; }
@@ -797,16 +818,15 @@ const fleetCount = { buggy: [0, 0], truck: [0, 0], robot: [0, 0], cart: [0, 0], 
 function stepAmbient(dt) {
   for (const k in fleetCount) fleetCount[k] = [0, 0];
   for (const f of ambient) {
-    const key = ['tender', 'excursion', 'taxi'].includes(f.type) ? 'boat' : f.type;
+    const key = ['shuttle', 'excursion'].includes(f.type) ? 'boat' : f.type;
     fleetCount[key][1]++;
     if (f.path) {
       fleetCount[key][0]++; if (DRAIN[f.type]) f.battery = Math.max(3, f.battery - DRAIN[f.type] * dt); stepMover(f, dt);
       if (!f.path) {                                                               // trip just finished: counters, arrivals
         if (f.type === 'buggy') ops.buggyTrips++; else if (f.type === 'robot' && !/^Empty/.test(f.task)) ops.deliveries++;
         else if (f.type === 'truck' && !/^Empty/.test(f.task)) ops.truckRuns++; else if (f.type === 'cart' && /^WO-/.test(f.task)) ops.workOrders++;
-        else if (f.type === 'taxi') ops.taxiRides++;
-        else if (f.type === 'tender' && f.place === A.berth) { const m = f.task.match(/(\d+) arriving/); spawnArrivals(m ? +m[1] : 8); }
-        else if (f.type === 'tender') { const m = f.task.match(/(\d+) departing/); ops.departures += m ? +m[1] : 0; }
+        else if (f.type === 'shuttle' && f.place === A.berth) { const m = f.task.match(/(\d+) arriving/); spawnArrivals(m ? +m[1] : 8); }
+        else if (f.type === 'shuttle') { const m = f.task.match(/(\d+) departing/); ops.departures += m ? +m[1] : 0; }
       }
       continue;
     }
@@ -821,7 +841,7 @@ function stepAmbient(dt) {
   $('fleetLine').textContent = `Fleet on the move · buggies ${fleetCount.buggy[0]}/${fleetCount.buggy[1]} · trucks ${fleetCount.truck[0]}/${fleetCount.truck[1]} · robots ${fleetCount.robot[0]}/${fleetCount.robot[1]} · carts ${fleetCount.cart[0]}/${fleetCount.cart[1]} · boats ${fleetCount.boat[0]}/${fleetCount.boat[1]}`;
 }
 
-// ===== people on the walkways: hotel guests, residents, staff, runners, arrivals (vault: Resort Population and Guest Day)
+// ===== people on the walkways: hotel guests, residents, day visitors, yacht guests, members, staff (vault: Resort Population and Guest Day)
 const POI = {};
 const addPoi = (cat, name, p) => { if (!p) return null; const c = walkR.nearest(p); if (!c) return null; const q = { cat, name, p: walkR.posOf(...c) }; (POI[cat] ||= []).push(q); return q; };
 const has = n => byName.has(n);
@@ -843,12 +863,15 @@ addPoi('hotel', 'Beach Hotel lobby', A.hotel); for (const n of [...byName.keys()
 addPoi('staff', 'Staff accommodation', has('Infrastructure zone | SA staff accommodation') ? centreOf('Infrastructure zone | SA staff accommodation') : A.boh);
 addPoi('boh', 'Warehouse', A.boh); addPoi('boh', 'Hotel back of house', A.stopHotel); addPoi('boh', 'Village kitchens', A.village); addPoi('boh', 'Beach Club service', POI.beach[0].p); addPoi('boh', 'Spa service', A.spa);
 addPoi('stop', 'Marina stop', A.stopMarina);
+addPoi('club', 'Members Club', has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : POI.beach[0].p);
 const poiAny = cat => (POI[cat] && POI[cat].length ? anyOf(POI[cat]) : POI.hotel[0]);
-const POI_LABEL = { restaurant: 'the hotel restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the Terminal', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
+const POI_LABEL = { club: 'the Members Club', restaurant: 'the hotel restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the Terminal', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
 
 // --- event programme (vault: Event Programme)
 const EVENTS = [
   { venue: 'promenade', name: 'Guided run with a trainer', start: 6.5, end: 7.5, cap: 20 },
+  { venue: 'excursion', name: 'Snorkelling excursion', start: 9, end: 12, cap: 20 },
+  { venue: 'excursion', name: 'Sunset cruise', start: 17.5, end: 19.5, cap: 20 },
   { venue: 'beach', name: 'Sunrise yoga on the sand', start: 7, end: 8, cap: 40 },
   { venue: 'sport', name: 'Group HIIT', start: 7.5, end: 8.5, cap: 25 },
   { venue: 'spa', name: 'Breathwork and cold plunge', start: 8, end: 9, cap: 20 },
@@ -872,9 +895,14 @@ const eventAt = cat => { const h = hourOf(); return EVENTS.find(e => e.venue ===
 function wantCat(f) {
   const h = hourOf(), r = rand(), isRes = f.type === 'resident';
   if (f.type === 'staff') return staffCat(f, h);
-  if (f.type === 'runner') return between(h, 6, 9) || between(h, 17, 20) ? 'promenade' : 'home';
-  const ev = eventsNow(h).filter(e => !e.who || e.who === f.type);
-  if (ev.length && r < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue; }
+  if (f.runs && (between(h, 6, 8.5) || between(h, 17.5, 19.5)) && r < 0.5) return 'promenade';       // running is an activity of a guest
+  if (f.type === 'day' && (h < 10 || h >= 17.6)) return 'home';                                          // day visitors: on the island 10–18
+  if (f.type === 'member' && h >= 21) return 'home';
+  const ev = eventsNow(h).filter(e => !e.who || e.who === f.type || (e.who === 'guest' && f.type === 'hotel'));
+  if (ev.length && r < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue === 'excursion' ? 'terminal' : e.venue; }
+  if (f.type === 'day') return r < 0.35 ? 'village' : r < 0.6 ? 'beach' : r < 0.75 ? 'retail' : r < 0.85 ? 'marina' : 'promenade';
+  if (f.type === 'yachtguest') return between(h, 19, 23) ? (r < 0.6 ? 'village' : 'restaurant') : r < 0.3 ? 'marina' : r < 0.6 ? 'village' : r < 0.8 ? 'beach' : 'spa';
+  if (f.type === 'member') return between(h, 19, 21) ? (r < 0.5 ? 'club' : 'restaurant') : r < 0.4 ? 'club' : r < 0.6 ? 'beach' : r < 0.75 ? 'spa' : r < 0.9 ? 'sport' : 'village';
   if (between(h, 7, 9)) return isRes ? (r < 0.2 ? 'sport' : 'home') : (r < 0.6 ? 'restaurant' : r < 0.75 ? 'sport' : 'home');
   if (between(h, 9, 12.5)) return isRes ? (r < 0.35 ? 'marina' : r < 0.5 ? 'spa' : r < 0.7 ? 'beach' : 'home') : (r < 0.45 ? 'beach' : r < 0.6 ? 'spa' : r < 0.7 ? 'marina' : r < 0.8 ? 'sport' : 'home');
   if (between(h, 12.5, 14)) return isRes ? (r < 0.5 ? 'village' : r < 0.8 ? 'beach' : 'home') : (r < 0.4 ? 'beach' : r < 0.75 ? 'village' : 'restaurant');
@@ -903,28 +931,29 @@ const people = [], routeCache = new Map();
 const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { let r = walk(a.p, b.p); if (!r || r.length < 2) r = [a.p, b.p]; routeCache.set(k, r); } return routeCache.get(k); };
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _pp = new THREE.Vector3();
 function person(i, type, home) {
-  const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: type === 'runner' ? 7 : 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 40, heading: 0, visible: true, goal: null, task: '' };
-  crowdBody.setColorAt(i, new THREE.Color(type === 'staff' ? 0x15304a : type === 'runner' ? 0xe0795f : type === 'resident' ? 0x9fcb7c : type === 'arrival' ? 0xb9b9b9 : GUEST_COLS[i % GUEST_COLS.length]));
-  people.push(f); return f;
+  const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 40, heading: 0, visible: true, goal: null, task: '', runs: false };
+  f.baseSpeed = f.speed; setType(f, type); people.push(f); return f;
 }
-for (let i = 0; i < N_PEOPLE; i++) {
-  const type = i < 50 ? 'staff' : i < 70 ? 'runner' : i < 140 ? 'resident' : 'guest';
-  const home = type === 'staff' ? poiAny('staff') : type === 'resident' ? (rand() < 0.5 ? poiAny('villa') : poiAny('residence')) : poiAny('hotel');
-  person(i, type, home);
+function setType(f, type) { f.type = type; f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < 0.15; crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true; }
+const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.5 ? poiAny('villa') : poiAny('residence')), hotel: () => poiAny('hotel'), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina') };
+for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
+  const type = i < 50 ? 'staff' : i < 120 ? 'resident' : i < 240 ? 'hotel' : i < 255 ? 'yachtguest' : i < 290 ? 'day' : 'member';
+  const f = person(i, type, HOME[type]());
+  if (type === 'day' || type === 'member') { f.idle = true; f.visible = false; }                   // they come by the shuttle
 }
-const arrivalsPool = []; for (let i = N_PEOPLE; i < N_PEOPLE + N_ARRIVAL; i++) { const f = person(i, 'arrival', POI.terminal[0]); f.visible = false; f.idle = true; arrivalsPool.push(f); }
-crowdBody.instanceColor.needsUpdate = true;
-const ops = { buggyTrips: 0, deliveries: 0, truckRuns: 0, workOrders: 0, arrivals: 0, departures: 0, taxiRides: 0, eventsAttended: 0 };
+const ops = { buggyTrips: 0, deliveries: 0, truckRuns: 0, workOrders: 0, arrivals: 0, departures: 0, eventsAttended: 0 };
 function startWalk(f, to, text) { const pts = walkBetween(f.poi, to); f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; }
 function stepPeople(dt) {
   for (const f of people) {
     if (f.idle) continue;
     if (!f.path) {
       f.wait -= dt; if (f.wait > 0) continue;
-      if (f.type === 'arrival') { f.idle = true; f.visible = false; continue; }                   // boarded a buggy / entered the village
+      if (f.leaving) { f.idle = true; f.visible = false; f.leaving = false; continue; }          // boarded a buggy / took the shuttle home
       const cat = wantCat(f); const to = cat === 'home' ? f.home : poiAny(cat); if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
+      if ((f.type === 'day' || f.type === 'member') && cat === 'home') f.leaving = true;             // walks to the Terminal and leaves on the shuttle
       const ev = eventAt(cat); if (ev && cat !== 'home') ops.eventsAttended++;
-      startWalk(f, to, (ev ? `${ev.name} · ` : '') + `${f.type === 'staff' ? 'Staff' : 'Guest'} → ${POI_LABEL[cat] || cat}`);
+      f.speed = cat === 'promenade' && f.runs ? 7 : f.baseSpeed;
+      startWalk(f, to, (ev ? `${ev.name} · ` : '') + `${TYPES[f.type].title}${cat === 'promenade' && f.runs ? ' · running' : ''} → ${POI_LABEL[cat] || cat}`);
       continue;
     }
     f.s = Math.min(f.len, f.s + f.speed * dt);
@@ -933,7 +962,7 @@ function stepPeople(dt) {
     const ux = (b.x - a.x) / seg, uz = (b.z - a.z) / seg;
     _pp.set(a.x + (b.x - a.x) * t - uz * f.off, a.y + (b.y - a.y) * t + 0.1, a.z + (b.z - a.z) * t + ux * f.off);
     f.heading = Math.atan2(-uz, ux); f.pos = _pp.clone();
-    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.wait = f.type === 'arrival' ? 2 : f.type === 'runner' ? 40 + rand() * 80 : 150 + rand() * 450; }   // stay a while: meals, beach, spa
+    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.wait = f.leaving ? 2 : f.speed > 6 ? 40 + rand() * 80 : 150 + rand() * 450; }   // stay a while: meals, beach, spa
   }
 }
 function drawPeople() {
@@ -945,8 +974,13 @@ function drawPeople() {
   crowdBody.instanceMatrix.needsUpdate = true; crowdHead.instanceMatrix.needsUpdate = true;
 }
 function spawnArrivals(n) {
-  const free = arrivalsPool.filter(f => f.idle).slice(0, n); ops.arrivals += free.length;
-  for (const f of free) { f.idle = false; f.poi = POI.terminal[0]; f.pos = f.poi.p.clone(); f.wait = rand() * 3; const to = rand() < 0.6 ? POI.stop[0] : poiAny('village'); f.goal = to; startWalk(f, to, `Arriving guest → ${to.cat === 'stop' ? 'the buggy stop' : 'Marina Village'}`); }
+  const h = hourOf(), free = people.filter(f => f.idle && f.type !== 'staff').slice(0, n); ops.arrivals += free.length;
+  for (const f of free) {
+    const r = rand(); setType(f, h >= 17 ? 'hotel' : r < 0.5 ? 'day' : r < 0.8 ? 'hotel' : 'member'); f.home = HOME[f.type]();
+    f.idle = false; f.leaving = false; f.poi = POI.terminal[0]; f.at = 'terminal'; f.pos = f.poi.p.clone(); f.wait = rand() * 3;
+    if (f.type === 'hotel') { f.leaving = true; f.goal = POI.stop[0]; startWalk(f, POI.stop[0], 'Hotel guest · off the shuttle → the buggy stop'); }
+    else { const to = f.type === 'member' ? poiAny('club') : poiAny('village'); f.goal = to; startWalk(f, to, `${TYPES[f.type].title} · off the shuttle → ${POI_LABEL[to.cat]}`); }
+  }
 }
 let peopleOn = true;
 $('bPeople').onclick = () => { peopleOn = !peopleOn; $('bPeople').classList.toggle('on', peopleOn); };
@@ -958,8 +992,8 @@ const FLEET_PLAN = { buggy: 28, truck: 6, robot: 24, cart: 16, boat: 13 };
 const pct = (a, b) => Math.round(100 * a / Math.max(1, b));
 function updateDash() {
   const h = hourOf();
-  const guests = people.filter(f => f.type !== 'staff' && f.type !== 'arrival' && !f.idle);
-  const where = {}; for (const f of guests) { const k = f.path ? 'transit' : (f.at === 'villa' || f.at === 'residence' || f.at === 'hotel' ? 'home' : f.at); where[k] = (where[k] || 0) + 1; }
+  const guests = people.filter(f => f.type !== 'staff' && !f.idle);
+  const where = {}; for (const f of guests) { const k = f.path ? 'transit' : (f.at === 'villa' || f.at === 'residence' || f.at === 'hotel' ? 'home' : f.at === 'club' ? 'beach' : f.at === 'terminal' ? 'marina' : f.at); where[k] = (where[k] || 0) + 1; }
   const scale = PLAN.guests / Math.max(1, guests.length);
   const order = ['home', 'beach', 'restaurant', 'village', 'retail', 'spa', 'sport', 'marina', 'event', 'promenade', 'transit'];
   const lab = { home: 'In rooms, villas and residences', beach: 'Beach, pools, Beach Club', restaurant: 'Hotel restaurant', village: 'Marina Village F&B', retail: 'Shops', spa: 'Spa', sport: 'Gym and courts', marina: 'Marina and boats', event: 'Events Rotunda', promenade: 'Promenade', transit: 'On the move' };
@@ -968,27 +1002,23 @@ function updateDash() {
   const staff = people.filter(f => f.type === 'staff'); const onShift = staffOnShift(h);
   $('dStaffTotal').textContent = onShift;
   $('dStaff').innerHTML = `<span>Shift</span><span>${between(h, 7, 15) ? 'Morning 07–15' : between(h, 15, 23) ? 'Evening 15–23' : 'Night 23–07'}</span><span>Walking between posts</span><span>${Math.round(staff.filter(f => f.path).length * (onShift / staff.length))}</span><span>At the staff accommodation</span><span>${Math.round(staff.filter(f => !f.path && f.at === 'staff').length * (onShift / staff.length))}</span><span>Next shift change</span><span>${String(SHIFTS.find(t => t > h) ?? 7).padStart(2, '0')}:00</span>`;
-  $('dOps').innerHTML = [['Buggy trips', ops.buggyTrips], ['Robot deliveries', ops.deliveries], ['Truck runs', ops.truckRuns], ['Work orders closed', ops.workOrders], ['Guests arrived by tender', ops.arrivals], ['Water-taxi rides', ops.taxiRides], ['Event visits', ops.eventsAttended]].map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-  const fmt = t => `${String(Math.floor(t)).padStart(2, '0')}:${String(Math.round((t % 1) * 60)).padStart(2, '0')}`;
-  const VEN = { beach: 'Beach Club', event: 'Rotunda', spa: 'Spa', sport: 'Sport', village: 'Marina Village', marina: 'Marina', restaurant: 'Restaurant', promenade: 'Promenade' };
-  $('dEvents').innerHTML = EVENTS.map(e => { const now = h >= e.start && h < e.end, past = h >= e.end; return `<div class="ev${now ? ' now' : ''}" style="${past ? 'opacity:.45' : ''}"><span>${fmt(e.start)}–${fmt(e.end)}</span><span>${e.name}<br><small>${VEN[e.venue]} · ${e.cap} guests${e.who ? ' · ' + e.who + 's' : ''}</small></span><span>${now ? 'now' : past ? 'done' : ''}</span></div>`; }).join('');
+  $('dOps').innerHTML = [['Buggy trips', ops.buggyTrips], ['Robot deliveries', ops.deliveries], ['Truck runs', ops.truckRuns], ['Work orders closed', ops.workOrders], ['Arrived by shuttle', ops.arrivals], ['Left by shuttle', ops.departures], ['Event visits', ops.eventsAttended]].map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
   const zc = {}; for (const f of people) { if (f.idle || !f.pos) continue; for (const z of zones) { const b = zoneBox[z.zone_id]; if (f.pos.x >= b.min.x && f.pos.x <= b.max.x && f.pos.z >= b.min.z && f.pos.z <= b.max.z) { zc[z.zone_id] = (zc[z.zone_id] || 0) + 1; break; } } }
   const zmax = Math.max(1, ...Object.values(zc));
   $('dZones').innerHTML = zones.map(z => `<div style="display:flex;justify-content:space-between;font-size:12px"><span>${z.zone_id} ${z.zone_name}</span><b>${Math.round((zc[z.zone_id] || 0) * scale)}</b></div><div class="bar"><i style="width:${pct(zc[z.zone_id] || 0, zmax)}%;background:${z.colour}"></i></div>`).join('');
-  const rows = {}; for (const f of ambient) { const k = ['tender', 'excursion', 'taxi'].includes(f.type) ? 'boat' : f.type; const r = rows[k] ||= { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
-  $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = rows[k] || { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; return `<tr><td>${{ buggy: 'Guest buggies', truck: 'Service trucks', robot: 'Delivery robots', cart: 'Service carts', boat: 'Boats' }[k]}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.nb ? Math.round(r.bat / r.nb) + ' %' : '—'}</td></tr>`; }).join('');
-  $('dLog').innerHTML = logAll.slice(-40).reverse().map(l => `<div><span>${l.t}</span><div><b>${l.title}</b> · ${l.body}</div></div>`).join('');
+  const rows = {}; for (const f of ambient) { const k = ['shuttle', 'excursion'].includes(f.type) ? 'boat' : f.type; const r = rows[k] ||= { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
+  $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = rows[k] || { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; return `<tr><td>${{ buggy: 'Guest buggies', truck: 'Service vehicles · trucks', robot: 'Delivery robots', cart: 'Service vehicles · carts', boat: 'Boats' }[k]}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.nb ? Math.round(r.bat / r.nb) + ' %' : '—'}</td></tr>`; }).join('');
+  const lg = $('dLog'), stick = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
+  if (lg.dataset.n !== String(logAll.length)) { lg.dataset.n = String(logAll.length); lg.innerHTML = logAll.slice(-80).map(l => `<div><span>${l.t}</span><div><b>${l.title}</b> · ${l.body}</div></div>`).join(''); if (stick) lg.scrollTop = lg.scrollHeight; }
+  updateActorCounts();
 }
 
 // --- notifications, clock, camera director (same UI and timing as resort-cad-3d)
-const feed = $('feed'), pins = [];
+const pins = [];
 let simT = 0, speedMul = 1, playing = true;
 const clockText = () => { const m = 6 * 60 + 40 + Math.floor(simT / 4); return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
 function notify({ icon, tag, title, body, anchor, accent }) {
-  const n = document.createElement('div'); n.className = 'note';
-  n.innerHTML = `<div class="ic">${icon}</div><div><div class="hd"><span>${tag}</span><span>${clockText()}</span></div><div class="tt">${title}</div><div class="bd">${body}</div></div>`;
-  feed.prepend(n); logAll.push({ t: clockText(), title, body });
-  [...feed.children].forEach((c, i) => { c.classList.toggle('old', i > 0); if (i > 4) { c.classList.add('gone'); setTimeout(() => c.remove(), 600); } });
+  logAll.push({ t: clockText(), title: `${icon} ${tag} · ${title}`, body });
   if (anchor) { const el = document.createElement('div'); el.className = 'pin' + (accent ? ' accent' : ''); el.textContent = title; stage.appendChild(el); pins.push({ el, anchor, until: simT + 5.5 }); }
 }
 const anchorPos = a => (typeof a === 'string' ? actors[a].mesh.position.clone().add(new THREE.Vector3(0, 16, 0)) : a.clone().add(new THREE.Vector3(0, 22, 0)));
@@ -1039,7 +1069,6 @@ const hide = (...ids) => ids.forEach(i => { actors[i].mesh.visible = false; });
 async function loop() {
   while (true) {
     for (const a of Object.values(actors)) { a.path = null; a.mesh.visible = false; }
-    feed.innerHTML = '';
     placeAt(actors.yacht, A.sea, Math.atan2(-(A.berth.z - A.sea.z), A.berth.x - A.sea.x));
     say('Arrival by sea · berth assigned by the system'); focus('yacht', 520);
     notify({ icon: '⚓', tag: 'Marina AI', title: 'Yacht Aurora · 8 min out', body: 'AIS track matched to the Smith booking. Terminal, berth A2.', anchor: 'yacht' });
