@@ -17,7 +17,7 @@
   html, body { margin: 0; }
   body { font-family: var(--body); color: var(--ink); background: #f3f1ec; }
   #stageRow { display: flex; height: calc(100vh - var(--navh, 0px)); min-height: 520px; }   /* the map fills the visible screen; --navh comes from site.css */
-  #stage { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; overflow: hidden; background: #9cc7e0; }
+  #stage { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; overflow: hidden; background: #e9e7e2; }
   #c { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .panel { position: absolute; background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
            border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 24px rgba(21, 48, 74, 0.12); }
@@ -104,7 +104,7 @@
   #tip .k { color: var(--muted); }
   #tip.pinned { pointer-events: auto; }
 
-  #load { position: absolute; inset: 0; display: grid; place-items: center; background: #9cc7e0; color: var(--navy); font-family: var(--display); font-size: 20px; z-index: 5; transition: opacity 0.5s; }
+  #load { position: absolute; inset: 0; display: grid; place-items: center; background: #e9e7e2; color: var(--navy); font-family: var(--display); font-size: 20px; z-index: 5; transition: opacity 0.5s; }
   #load small { display: block; font: 12px var(--body); color: #3b5467; margin-top: 8px; text-align: center; }
 
   /* dashboard under the scene */
@@ -750,6 +750,13 @@ try {
   for (const m of FLEET.models) { const n = fg.scene.getObjectByName(m.node); if (n) fleetTpl.set(m.id, n); else console.warn('fleet model missing in the GLB:', m.node); }
 } catch (e) { console.warn('fleet-models.glb not loaded, box fallback', e); }
 const FM = Object.fromEntries(FLEET.models.map(m => [m.id, m]));
+// --- helipad asset (vault "Helipad Model": ICAO Annex 14 Vol II, FATO 21.2 m, TLOF 12 m; placement from assets/helipad.placement.json)
+const HELIPAD_GLB = 'helipad.glb', HELIPAD_POS = new THREE.Vector3(-1212.09, 0.6, -14.03);
+try {
+  const hg = await new Promise((res, rej) => loader.load(HELIPAD_GLB + '?v=' + encodeURIComponent(manifest.version), res, undefined, rej));
+  hg.scene.position.copy(HELIPAD_POS); hg.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); scene.add(hg.scene);
+  for (const n of ['halipad.001', 'halipad.002', 'halipad.003']) { const o = byName.get(n); if (o) o.visible = false; }   // the CAD discs under the asset
+} catch (e) { console.warn('helipad.glb not loaded', e); }
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
 function box(w, h, d, c, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); m.castShadow = true; return m; }
 function fleetModel(id) {                                                         // true scale, front = +X, origin on the ground / waterline
@@ -781,13 +788,14 @@ for (const id of ['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3', 'Y2']) if (!TY
 TYPES.hotel = { title: 'Hotel guest', role: 'Stays at the Beach Hotel or the Hill Hotel: restaurant, beach, spa, sport, events. Moves on foot and by buggy; some run in the morning and the evening.' };
 TYPES.resident = { title: 'Resident', role: 'Lives in a villa or a branded residence: boats in the marina, dining in the village, spa, sport and the hotel amenities.' };
 TYPES.day = { title: 'Day visitor', role: 'Comes for the day on the shuttle boat: Marina Village, the market, Beach Club and events; leaves on the evening shuttle.' };
+TYPES.A1 = { title: 'Helicopter', role: 'VIP charter helicopter, Airbus H145 class, 6–7 guests: arrives at the helipad five times a day (09:00, 11:00, 13:00, 15:00, 17:00), 12 minutes on the pad, a guest pod meets it at drop-off DO-23. Charter operator, not resort fleet.' };
 TYPES.yachtguest = { title: 'Yacht guest', role: 'Arrived on an own or chartered yacht in the marina: Marina Village, Beach Club, excursions and the regatta.' };
 TYPES.member = { title: 'Member', role: 'Members Club member from the mainland: club house, beach, spa and sport by membership; comes by shuttle or own boat.' };
 TYPES.staff = { title: 'Staff', role: 'Housekeeping, F&B, engineers and butlers. Walk from the staff accommodation to the back of house at 07:00, 15:00 and 23:00.' };
 const COL = { hotel: 0x86aee0, resident: 0x9fcb7c, day: 0xf3c06b, yachtguest: 0xf4f1ea, member: 0xc9a3e6, staff: 0x15304a };
 const ACTORS = [['People', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['staff', COL.staff]]],
   ['On land', [['L1', 0xe0795f], ['L2', 0xf3c06b], ['L3', 0x9fcb7c], ['L4', 0x15304a], ['L5', 0x6f9fd8]]],
-  ['On water', [['W1', 0xf5f5f2], ['W2', 0xc0504d], ['W3', 0xf2efe6], ['Y2', 0x86aee0]]]];
+  ['On water', [['W1', 0xf5f5f2], ['W2', 0xc0504d], ['W3', 0xf2efe6], ['Y2', 0x86aee0]]], ['In the air', [['A1', 0xf2efe6]]]];
 for (const [g, items] of ACTORS) {
   const row = document.createElement('div'); row.className = 'row';
   const hd = document.createElement('span'); hd.className = 'grp'; hd.textContent = g; row.appendChild(hd);
@@ -802,7 +810,7 @@ function updateActorCounts() {
   const n = {}; for (const f of people) if (!f.idle) n[f.type] = (n[f.type] || 0) + 1;
   for (const t of ['hotel', 'resident', 'day', 'yachtguest', 'member', 'staff']) $('cnt-' + t).textContent = n[t] || 0;
   const v = {}; for (const f of ambient) { (v[f.type] ||= [0, 0])[1]++; if (f.path) v[f.type][0]++; }
-  for (const t of ['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3']) { const x = v[t] || [0, 0]; $('cnt-' + t).textContent = `${x[0]}/${x[1]}`; }
+  for (const t of ['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3', 'A1']) { const x = v[t] || [0, 0]; if ($('cnt-' + t)) $('cnt-' + t).textContent = `${x[0]}/${x[1]}`; }
   $('cnt-Y2').textContent = actors.yacht.mesh.visible ? '1/1' : '0/1';
 }
 function vehicleCard(v) {
@@ -827,7 +835,7 @@ actor('robot2', 'L5', 'D7', fleetModel('L5'), 0x6f9fd8);
 actor('guestA', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk');
 actor('guestB', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk');
 const task = (id, text) => { actors[id].task = text; };
-const lift = { water: boatY, road: 0.03, walk: 0.1 };
+const lift = { water: boatY, road: 0.03, walk: 0.1, air: 0 };
 function placeAt(a, p, heading = a.heading || 0) { a.pos = p; a.heading = heading; a.mesh.visible = true; a.mesh.position.set(p.x, a.medium === 'water' ? boatY : p.y + lift[a.medium], p.z); a.mesh.rotation.y = heading; }
 function setPath(a, pts) { const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1])); Object.assign(a, { path: pts, cum, len: cum[cum.length - 1], s: 0 }); }
 function move(a, pts, speed) { return new Promise(res => { if (!pts || pts.length < 2) { console.warn('no route for', a.id); res(); return; } setPath(a, pts); a.speed = speed; a.onDone = res; a.mesh.visible = true; }); }
@@ -980,12 +988,12 @@ const bayUsed = new Set();
 const takeBay = () => { const i = BAYS.findIndex((_, i) => !bayUsed.has(i)); if (i >= 0) bayUsed.add(i); return i; };
 const pickNot = (arr, not) => { const c = arr.filter(x => x !== not); return c.length ? anyOf(c) : arr[0]; };
 
-const TYPE_COL = { L1: 0xe0795f, L2: 0xf3c06b, L3: 0x9fcb7c, L4: 0x15304a, L5: 0x6f9fd8, W1: 0xf5f5f2, W2: 0xc0504d, W3: 0xf2efe6, Y2: 0x86aee0 };
+const TYPE_COL = { A1: 0xf2efe6, L1: 0xe0795f, L2: 0xf3c06b, L3: 0x9fcb7c, L4: 0x15304a, L5: 0x6f9fd8, W1: 0xf5f5f2, W2: 0xc0504d, W3: 0xf2efe6, Y2: 0x86aee0 };
 function follower(type, label, medium, speed, next, home) {
   const mesh = fleetModel(type); scene.add(mesh); movers.push(mesh); mesh.visible = false;
   const mk = beacon(TYPE_COL[type] || 0xffffff); mk.scale.set(0.014, 0.014, 1); mk.position.y = (FM[type] ? FM[type].height_m : 2) + 4; mk.name = 'marker'; mesh.add(mk);
   const f = { id: label, type, mesh, medium, speed, next, path: null, wait: rand() * 8, battery: 22 + Math.floor(rand() * 78), task: '', place: home || null, bay: -1 };
-  if (home) { placeAt(f, medium === 'water' ? home : roadR.posOf(...roadR.nearest(home))); f.task = 'Standby'; }
+  if (home) { placeAt(f, medium === 'road' ? roadR.posOf(...roadR.nearest(home)) : home); f.task = 'Standby'; }
   mesh.traverse(o => { o.userData.vehicle = f; }); ambient.push(f); return f;
 }
 const trip = (f, from, to, text) => { f.task = text; f.place = to; return f.medium === 'water' ? via(f, [from, to], text) : road(from, to); };
@@ -1089,7 +1097,7 @@ const seaLegs = pts => {                                                        
   out[0] = pts[0].clone().setY(waterY); out[out.length - 1] = pts[pts.length - 1].clone().setY(waterY);   // exact berth and sea points at the ends
   return out;
 };
-const via = (f, pts, text) => { f.task = text; f.place = pts[pts.length - 1]; const r = seaLegs(pts); if (!r) f.wait = 10; return r; };
+const via = (f, pts, text, flight = false) => { f.task = text; f.place = pts[pts.length - 1]; if (flight) return pts.map(q => q.clone()); const r = seaLegs(pts); if (!r) f.wait = 10; return r; };
 function waterPoint(from, bearings, maxR = 700, off = 70) {
   for (const deg of bearings) for (let r = 20; r <= maxR; r += 20) if (isWater(bearing(from, deg, r).x, bearing(from, deg, r).z)) { let q = bearing(from, deg, r + off); if (isWater(q.x, q.z)) return q; }
   return null;
@@ -1147,10 +1155,32 @@ follower('W3', 'EX-1', 'water', 16, f => {
   return via(f, [SEA.far, A.entrance, A.basin, A.excBerth], `${f.ev ? f.ev.name : 'Excursion'} · returning through the marina · guests notified 10 min out`);
 }, A.excBerth);
 
+// --- A1 VIP helicopter (register A1, charter): five calls a day; approach from the WSW over the sea into the trade wind
+// (vault "Helipad Model"), 12 minutes on the TLOF, departure to the NW over the water. The pad is the helipad asset centre.
+const HELI = { pad: HELIPAD_POS.clone().setY(HELIPAD_POS.y + 0.25), hover: HELIPAD_POS.clone().setY(HELIPAD_POS.y + 25),
+               hold: bearing(HELIPAD_POS, 157.5, 700).setY(90), far: bearing(HELIPAD_POS, 157.5, 2600).setY(260),   // bearing(): 0 = east, 90 = south; 157.5 = WSW, 225 = NW
+               out1: bearing(HELIPAD_POS, 225, 500).setY(70), far2: bearing(HELIPAD_POS, 225, 2600).setY(260), calls: [9, 11, 13, 15, 17], stay: 12 / 60 };
+const heli = follower('A1', 'HELI', 'air', 30, f => {
+  const h = hourOf();
+  if (f.place === HELI.far2 || f.place === HELI.far) {
+    const call = HELI.calls.find(c => h >= c - 0.08 && h < c + 0.1);
+    if (call === undefined) { const nx = HELI.calls.find(c => c > h) ?? HELI.calls[0]; f.task = `At the mainland heliport · next call ${String(nx).padStart(2, '0')}:00`; f.wait = 5; f.mesh.visible = false; return null; }   // out of sight at the mainland
+    f.landedAt = undefined; const n = 2 + Math.floor(rand() * 5);
+    return via(f, [HELI.far, HELI.hold, HELI.hover, HELI.pad], `VIP arrival · ${n} guests · inbound from the WSW, landing ${String(call).padStart(2, '0')}:00`, true);
+  }
+  if (f.landedAt === undefined) { f.landedAt = h; ops.arrivals += 3; }
+  if (h < f.landedAt + HELI.stay) { f.task = `On the helipad · guests to the pod at DO-23 · departure ${clockAt(f.landedAt + HELI.stay)}`; f.wait = 3; return null; }
+  f.landedAt = undefined; return via(f, [HELI.pad, HELI.hover, HELI.out1, HELI.far2], 'VIP departure · climbing out to the NW', true);
+}, HELI.far);
+const clockAt = hh => `${String(Math.floor(hh) % 24).padStart(2, '0')}:${String(Math.round((hh % 1) * 60)).padStart(2, '0')}`;
+{ const disc = new THREE.Mesh(new THREE.CylinderGeometry(5.4, 5.4, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x15304a, transparent: true, opacity: 0.18, depthWrite: false }));
+  disc.position.y = 3.8; disc.name = 'rotor disc'; disc.visible = false; heli.mesh.add(disc); heli.rotor = disc; }
+
 // --- fleet step: trips, battery, charging, counters
 const fleetCount = {};
 function stepAmbient(dt) {
   for (const k in fleetCount) fleetCount[k] = [0, 0];
+  if (heli.rotor) { const on = !!heli.path || heli.landedAt !== undefined; heli.rotor.visible = on; if (on) heli.rotor.rotation.y += dt * 40; }
   for (const f of ambient) {
     const key = f.type; (fleetCount[key] ||= [0, 0])[1]++;
     if (f.path) {
@@ -1339,7 +1369,7 @@ $('bPeople').onclick = () => { peopleOn = !peopleOn; $('bPeople').classList.togg
 // --- dashboard (updated once a second)
 const logAll = [];
 const PLAN = { guests: 1000, keys: { 'Beach Hotel': 240, 'Hill Hotel': 120, 'Branded Residences': 208, 'Villas': 18 } };
-const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3 };   // Fleet Register counts
+const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3, A1: 1 };   // Fleet Register counts (A1 = charter helicopter)
 const pct = (a, b) => Math.round(100 * a / Math.max(1, b));
 function updateDash() {
   const h = hourOf();
@@ -1545,7 +1575,7 @@ loop();
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI });
 </script>
 </body>
 </html>

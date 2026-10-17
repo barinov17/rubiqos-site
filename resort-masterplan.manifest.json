@@ -1,7 +1,7 @@
 {
- "version": "v036",
- "exported": "2026-10-17 15:23",
- "changes": "changes/v036.json",
+ "version": "v037",
+ "exported": "2026-10-17 15:35",
+ "changes": "changes/v037.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -1239,24 +1239,6 @@
    "verts": 8
   },
   {
-   "name": "Drop-off | DO-04 (guest)",
-   "type": "MESH",
-   "collection": "04_Mobility/Drop-off",
-   "parent": "Drop-off",
-   "group": "mobility",
-   "function": "road",
-   "zone_id": "Z00",
-   "zone_name": "Island common",
-   "dwg_layer": null,
-   "dwg_handle": null,
-   "dwg_block": null,
-   "height_m": 0.06,
-   "derived": "design edit e007",
-   "hand_made": false,
-   "material": "Guest drop-off",
-   "verts": 8
-  },
-  {
    "name": "Drop-off | DO-05 (guest)",
    "type": "MESH",
    "collection": "04_Mobility/Drop-off",
@@ -1327,24 +1309,6 @@
    "hand_made": false,
    "material": "Drop-off pad",
    "verts": 170
-  },
-  {
-   "name": "Drop-off | DO-10 (BOH)",
-   "type": "MESH",
-   "collection": "04_Mobility/Drop-off",
-   "parent": "Drop-off",
-   "group": "mobility",
-   "function": "road",
-   "zone_id": "Z00",
-   "zone_name": "Island common",
-   "dwg_layer": null,
-   "dwg_handle": null,
-   "dwg_block": null,
-   "height_m": 0.06,
-   "derived": "design edit e007",
-   "hand_made": false,
-   "material": "Drop-off pad",
-   "verts": 8
   },
   {
    "name": "Drop-off | DO-11 (BOH)",
@@ -1456,24 +1420,6 @@
   },
   {
    "name": "Drop-off | DO-18 (BOH)",
-   "type": "MESH",
-   "collection": "04_Mobility/Drop-off",
-   "parent": "Drop-off",
-   "group": "mobility",
-   "function": "road",
-   "zone_id": "Z00",
-   "zone_name": "Island common",
-   "dwg_layer": null,
-   "dwg_handle": null,
-   "dwg_block": null,
-   "height_m": 0.06,
-   "derived": "design edit e007",
-   "hand_made": false,
-   "material": "Drop-off pad",
-   "verts": 170
-  },
-  {
-   "name": "Drop-off | DO-19 (BOH)",
    "type": "MESH",
    "collection": "04_Mobility/Drop-off",
    "parent": "Drop-off",
@@ -11787,7 +11733,7 @@
    "verts": 112
   },
   {
-   "name": "event hall museum.001 | guest drop-off",
+   "name": "event hall museum.001 | service drop-off",
    "type": "MESH",
    "collection": "05_Buildings/Leisure/Events",
    "parent": "event hall museum.001",
@@ -11801,7 +11747,7 @@
    "height_m": 0.06,
    "derived": "design edit e019",
    "hand_made": false,
-   "material": "Guest drop-off",
+   "material": "Drop-off pad",
    "verts": 8
   },
   {
@@ -11823,7 +11769,7 @@
    "verts": 8
   },
   {
-   "name": "restaurant | guest drop-off",
+   "name": "restaurant | service drop-off",
    "type": "MESH",
    "collection": "05_Buildings/Leisure/Restaurant",
    "parent": "restaurant",
@@ -11837,7 +11783,7 @@
    "height_m": 0.06,
    "derived": "design edit e019",
    "hand_made": false,
-   "material": "Guest drop-off",
+   "material": "Drop-off pad",
    "verts": 8
   },
   {
