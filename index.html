@@ -1472,7 +1472,7 @@ async function loop() {
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
   const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').textContent = v ? 'Close guest app' : 'Guest app';
-    if (v && !$('appFrame').src) $('appFrame').src = 'guest-app.html?embed=1'; };
+    if (v && !$('appFrame').src) $('appFrame').src = 'guest-app.html?embed=1&v=' + Date.now();   // never a cached copy: the file changes with every build };
   $('bApp').onclick = () => setApp(!$('appPanel').classList.contains('open')); }
 $('bPlay').onclick = () => { playing = !playing; $('bPlay').textContent = playing ? 'Pause' : 'Play'; $('bPlay').classList.toggle('on', playing); };
 $('bSpeed').onclick = () => { speedMul = speedMul === 1 ? 2 : speedMul === 2 ? 4 : speedMul === 4 ? 8 : 1; $('bSpeed').textContent = `Speed ${speedMul}×`; };
