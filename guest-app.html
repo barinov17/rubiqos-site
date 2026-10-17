@@ -377,7 +377,7 @@ svg.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.7;stroke
 @keyframes flash{0%{box-shadow:0 0 0 0 rgba(233,128,109,.55)}100%{box-shadow:0 0 0 14px rgba(233,128,109,0)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .map svg{display:block;width:100%;height:auto}.m-sea{fill:#bfe0ee}.m-land{fill:#efe6d2}.m-beach{fill:#f6ecd4}.m-green{fill:#cfdcb6}.m-walk{fill:#e3d9c4}.m-road{fill:#b9b2a6}.m-bld{fill:#8f8a80}.m-pier{fill:#d8c9a8}.pin text{font-size:7px}
-.embed body,body.embed{background:transparent!important;overflow:hidden}.embed .tools{display:none}.embed .wrap{padding:0;min-height:0;height:100vh;justify-content:flex-start;align-items:flex-start;overflow:hidden}.embed .phone{width:390px;height:844px;max-width:none;transform-origin:0 0;box-shadow:0 20px 50px rgba(6,40,48,.35)}
+.embed body,body.embed{background:transparent!important;overflow:hidden}.embed .tools{display:none}.embed .wrap{padding:0;min-height:0;height:100vh;justify-content:flex-start;align-items:flex-start;overflow:hidden}.embed .phone{width:390px;height:844px;max-width:none;transform-origin:0 0;box-shadow:0 20px 50px rgba(6,40,48,.35)}.embed.nojs .phone{height:min(calc(100vh - 16px),calc((100vw - 16px) * 844 / 390));width:auto;aspect-ratio:390/844;margin:8px auto}
 </style></head><body>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -530,7 +530,7 @@ svg.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.7;stroke
 </div>
 
 <script>
-if(new URLSearchParams(location.search).has('embed')){document.documentElement.classList.add('embed');addEventListener('DOMContentLoaded',()=>{const ph=document.getElementById('phone');const fit=()=>{const k=Math.min((innerHeight-16)/844,(innerWidth-16)/390);ph.style.transform=`translate(${Math.round((innerWidth-390*k)/2)}px,${Math.round((innerHeight-844*k)/2)}px) scale(${k})`};fit();addEventListener('resize',fit)});}
+if(new URLSearchParams(location.search).has('embed')){document.documentElement.classList.add('embed','nojs');const fit=()=>{const ph=document.getElementById('phone');if(!ph)return;document.documentElement.classList.remove('nojs');const W=document.documentElement.clientWidth,H=document.documentElement.clientHeight;const k=Math.min((H-16)/844,(W-16)/390);ph.style.transform=`translate(${Math.round((W-390*k)/2)}px,${Math.round((H-844*k)/2)}px) scale(${k})`};addEventListener('DOMContentLoaded',fit);addEventListener('load',fit);addEventListener('resize',fit);new ResizeObserver(fit).observe(document.documentElement);}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
