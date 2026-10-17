@@ -734,7 +734,7 @@ A.excBerth = A.excDock.clone().add(new THREE.Vector3(-20, 0, 22));           // 
 A.entrance = new THREE.Vector3(-995, 0, 455); A.basin = new THREE.Vector3(-760, 0, 405);   // marina entrance (gap west of the breakwater) and the basin middle
 A.sea = bearing(A.entrance, 105, 950);                                        // open sea beyond the entrance; re-probed below once the water test exists
 A.cargoBerth = bearing(A.dock, 225, 75); A.cargoSea = bearing(A.dock, 240, 900);
-const waterY = -2.5, boatY = waterY;                                       // fleet boat origins sit at the waterline
+const waterY = -4.0, boatY = waterY;   /* e020: sea level -4.0, was -2.5 */                                       // fleet boat origins sit at the waterline
 
 // --- fleet models from Blender (prototype/resort-blender/export/fleet-models.glb; types and counts: vault "Fleet Register")
 const FLEET_GLB = 'fleet-models.glb', FLEET_MAN = 'fleet-models.manifest.json';
