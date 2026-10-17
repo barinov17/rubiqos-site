@@ -233,6 +233,7 @@ composer.addPass(grade);
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
   renderer.setSize(w, h); composer.setSize(w, h); gtao.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+  if (window.__reframe) window.__reframe();                                   // the overview depends on the stage aspect
 }
 addEventListener('resize', resize); resize();
 
@@ -387,13 +388,17 @@ let fly = null;
 function flyTo(target, pos, dur = 1.4) { fly = { t: 0, dur, fromT: controls.target.clone(), fromP: camera.position.clone(), target, pos }; }
 function frameBox(box, k = 1.15) {
   const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
-  const span = Math.max(s.x, s.z, 120) * k, dist = span / 2 / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / camera.aspect * Math.max(1, camera.aspect);
+  // fit the box by width and by depth separately (the island is 2 : 1, the stage is wide): the larger of the two distances wins
+  const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), w = Math.max(s.x, s.z) * k, d = Math.min(s.x, s.z) * k;
+  const dist = (Math.max(w / (2 * t * camera.aspect), (d * 0.75 + Math.max(s.y, 40)) / (2 * t)) + Math.min(s.x, s.z) * 0.25) * 1.18;   // margin: the far end must not touch the frame
   c.y = Math.max(0, c.y);
   return { target: c, pos: c.clone().add(new THREE.Vector3(0.55, 0.75, 0.55).normalize().multiplyScalar(dist)) };   // from the south-east (+x east, +z south)
 }
 function flyToZone(id) { setAutoCam(false); const f = frameBox(zoneBox[id], 1.3); flyTo(f.target, f.pos); }
-const OVER = frameBox(islandBox, 1.05);
+let OVER = frameBox(islandBox, 1.05);
 camera.position.copy(OVER.pos); controls.target.copy(OVER.target); controls.update();
+window.__reframe = () => { const atOver = camera.position.distanceTo(OVER.pos) < 1 && !fly; OVER = frameBox(islandBox, 1.05); if (atOver) { camera.position.copy(OVER.pos); controls.target.copy(OVER.target); } };
+resize();
 $('bOverview').onclick = () => { setAutoCam(false); flyTo(OVER.target, OVER.pos); };
 $('bCam').onclick = () => setAutoCam(!autoCam);
 
