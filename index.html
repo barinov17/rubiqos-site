@@ -162,7 +162,7 @@
 <div id="tip" class="panel"></div>
 </div>
 <section id="dash">
-  <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">10:40</div><small>simulated time · 1 s = 1 min</small></div></div>
+  <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
   <div class="card"><h2>Guests on the island<small>plan, peak day</small></h2><div class="big" id="dGuestsTotal">—</div><div class="kv" id="dGuests"></div></div>
   <div class="card"><h2>Staff<small>on shift</small></h2><div class="big" id="dStaffTotal">—</div><div class="kv" id="dStaff"></div></div>
@@ -203,7 +203,7 @@ const MANIFEST = 'resort-masterplan.manifest.json';
 const SKY = 0x9cc7e0;
 
 // ---------- renderer, camera, lights (near 4 m / far 20 km keeps the 0.25 m level steps clean at island scale)
-const START_MIN = 10 * 60 + 40;                                              // the clock starts at 10:40, mid-morning of a running day
+const START_MIN = 6 * 60 + 40;                                               // the day starts in the morning; constant daylight (founder 2026-10-17)
 const canvas = $('c'), stage = $('stage');
 const stageXY = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -1385,65 +1385,15 @@ function tick(rdt, draw = true) {
   if (!draw) return;
   $('time').textContent = clockText();
   for (let i = pins.length - 1; i >= 0; i--) { const p = pins[i]; const s = toScreen(anchorPos(p.anchor)); if (simT > p.until || !s) { p.el.remove(); pins.splice(i, 1); continue; } p.el.style.left = s[0] + 'px'; p.el.style.top = s[1] + 'px'; }
-  applyTimeOfDay(); updateLabels(); updatePins(); updateHover(); drawPeople();
+  updateLabels(); updatePins(); updateHover(); drawPeople();
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }
   waterMat.uniforms.time.value = performance.now() / 1000;
   composer.render();
 }
 let last = performance.now();
 renderer.setAnimationLoop(now => { const rdt = Math.min(0.1, (now - last) / 1000); last = now; tick(rdt); });
-// ===== time of day: sunrise 06:30, sunset 18:30; everything below is driven by hourOf()
-const DAY = { skyTop: new THREE.Color(0x7fb3d6), skyHor: new THREE.Color(0xe3ecf1), fog: new THREE.Color(0xdde8ee), water: new THREE.Color(0xdde6ea), hemi: 1.05, sun: 2.25 };
-const NIGHT = { skyTop: new THREE.Color(0x0a1424), skyHor: new THREE.Color(0x1d2b3d), fog: new THREE.Color(0x182636), water: new THREE.Color(0x24344a), hemi: 0.22, sun: 0 };
-const DUSK = { skyTop: new THREE.Color(0x4a6f9a), skyHor: new THREE.Color(0xf0b58a), fog: new THREE.Color(0xd8c3b0) };
-const _c1 = new THREE.Color();
-function daylight(h) {                                                         // 0 at night, 1 in full day, soft edges around sunrise / sunset
-  const up = THREE.MathUtils.smoothstep(h, 5.9, 7.2), down = 1 - THREE.MathUtils.smoothstep(h, 17.8, 19.3); return Math.min(up, down);
-}
-function applyTimeOfDay() {
-  const h = hourOf(), d = daylight(h);
-  const dusk = Math.max(0, 1 - Math.abs(d - 0.45) / 0.45) * (1 - Math.abs(h - 12) / 12 < 0.5 ? 1 : 1);   // strongest around the horizon crossings
-  // sun: azimuth east → west, elevation from the hour
-  const t = (h - 6.5) / 12, el = Math.sin(Math.PI * THREE.MathUtils.clamp(t, 0, 1)) * 1.1, az = Math.PI * (0.15 + 0.7 * THREE.MathUtils.clamp(t, 0, 1));
-  const r = 2200; sun.position.set(Math.cos(az) * r * Math.cos(el) * -1, Math.max(120, Math.sin(el) * r), Math.sin(az) * r * Math.cos(el) * -0.6 + 900);
-  sun.intensity = DAY.sun * d; sun.castShadow = d > 0.05;
-  sun.color.setHex(0xfff3e0).lerp(new THREE.Color(0xffb070), dusk * 0.8);
-  hemi.intensity = THREE.MathUtils.lerp(NIGHT.hemi, DAY.hemi, d);
-  skyMat.uniforms.top.value.copy(NIGHT.skyTop).lerp(DAY.skyTop, d).lerp(DUSK.skyTop, dusk * 0.5);
-  skyMat.uniforms.horizon.value.copy(NIGHT.skyHor).lerp(DAY.skyHor, d).lerp(DUSK.skyHor, dusk * 0.7);
-  scene.fog.color.copy(NIGHT.fog).lerp(DAY.fog, d).lerp(DUSK.fog, dusk * 0.5);
-  waterMat.uniforms.skyC.value.copy(NIGHT.water).lerp(DAY.water, d); waterMat.uniforms.sunDir.value.copy(sun.position).normalize();
-  renderer.toneMappingExposure = THREE.MathUtils.lerp(0.95, 1.15, d);
-  lampGlow.material.opacity = 1 - d; lampHeads.material.emissiveIntensity = (1 - d) * 2.2; lampHeads.material.needsUpdate = false;
-}
-
-// ===== street lamps along roads (every ~45 m, both edges) and walkways (every ~30 m); on at night
-function lampSpots(grid, step, edgeOnly) {
-  const { y, W, H, ok, posOf } = grid, cellsPer = Math.max(2, Math.round(step / grid.cell)), out = [];
-  for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) {
-    if (!ok(gx, gz)) continue;
-    const edge = !ok(gx + 1, gz) || !ok(gx - 1, gz) || !ok(gx, gz + 1) || !ok(gx, gz - 1);
-    if (edgeOnly && !edge) continue;
-    if (((gx * 7 + gz * 13) % (cellsPer * cellsPer)) !== 0) continue;                 // sparse, deterministic pick
-    const p = posOf(gx, gz); if (out.every(q => q.distanceTo(p) > step * 0.8)) out.push(p);
-  }
-  return out;
-}
-const lampPts = [...lampSpots(roadR, 45, true), ...lampSpots(walkR, 30, false)].filter(p => p.y > -0.5);
-const lampPostGeo = new THREE.CylinderGeometry(0.06, 0.08, 4.2, 6).translate(0, 2.1, 0), lampHeadGeo = new THREE.SphereGeometry(0.22, 8, 6).translate(0, 4.3, 0);
-const lampPosts = new THREE.InstancedMesh(lampPostGeo, new THREE.MeshStandardMaterial({ color: 0x4a4f55, roughness: 0.8 }), lampPts.length);
-const lampHeads = new THREE.InstancedMesh(lampHeadGeo, new THREE.MeshStandardMaterial({ color: 0xfff1c8, emissive: 0xffd27a, emissiveIntensity: 0, roughness: 0.4 }), lampPts.length);
-{ const m = new THREE.Matrix4(); lampPts.forEach((p, i) => { m.makeTranslation(p.x, p.y, p.z); lampPosts.setMatrixAt(i, m); lampHeads.setMatrixAt(i, m); }); lampPosts.instanceMatrix.needsUpdate = true; lampHeads.instanceMatrix.needsUpdate = true; }
-scene.add(lampPosts, lampHeads);
-const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 2, 32, 32, 30); g.addColorStop(0, 'rgba(255,214,140,0.9)'); g.addColorStop(0.35, 'rgba(255,190,100,0.35)'); g.addColorStop(1, 'rgba(255,170,80,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
-const glowGeo = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(lampPts.flatMap(p => [p.x, p.y + 4.3, p.z]), 3));
-const lampGlow = new THREE.Points(glowGeo, new THREE.PointsMaterial({ map: glowTex, size: 14, sizeAttenuation: true, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
-scene.add(lampGlow);
-console.info('street lamps:', lampPts.length);
-
-// ===== warm start: the island has been running for two hours when the page opens
-for (let t = 0; t < 120; t += 0.05) tick(0.05, false);
-applyTimeOfDay();
+// ===== warm start: the day begins in the morning; 30 minutes are run before the page shows so nobody starts from a standstill
+for (let t = 0; t < 30; t += 0.05) tick(0.05, false);
 $('load').style.opacity = 0; setTimeout(() => $('load').remove(), 500);
 loop();
 
