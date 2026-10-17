@@ -1351,27 +1351,28 @@ let autoCam = false, camFocus = null, camDist = 260, overview = false;       // 
 function focus(f, dist = 220) { camFocus = f; camDist = dist; overview = false; }
 function setAutoCam(v) { autoCam = v; $('bCam').classList.toggle('on', v); $('bOverview').classList.toggle('on', !v); }
 controls.addEventListener('start', () => { if (autoCam) setAutoCam(false); });
-// Blender-style trackpad: two-finger swipe orbits, Shift + swipe pans parallel to the ground, pinch / Ctrl + swipe zooms.
-// A mouse wheel (large vertical steps, no horizontal component) still zooms.
+// Wheel / two-finger scroll = zoom (founder 2026-10-17: a wheel must never tilt the camera). Shift = pan along the ground,
+// Alt = orbit; a horizontal-only trackpad swipe also orbits. Drag with the mouse orbits as before (OrbitControls).
 controls.enableZoom = false;
 canvas.addEventListener('wheel', e => {
   e.preventDefault(); if (autoCam) setAutoCam(false); fly = null;
   const off = camera.position.clone().sub(controls.target), dist = off.length();
   const px = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1, dx = e.deltaX * px, dy = e.deltaY * px;
   const wheelMouse = e.deltaX === 0 && Math.abs(dy) >= 50 && Number.isInteger(dy);
-  if (e.ctrlKey || e.metaKey || wheelMouse) {                               // zoom (pinch sends ctrlKey)
+  const swipeSideways = !e.altKey && !e.shiftKey && Math.abs(dx) > Math.abs(dy) * 2;
+  if (e.altKey || swipeSideways) {                                           // orbit
+    const sph = new THREE.Spherical().setFromVector3(off);
+    sph.theta -= dx * 0.0045; sph.phi = THREE.MathUtils.clamp(sph.phi - dy * 0.0045, 0.06, controls.maxPolarAngle);
+    off.setFromSpherical(sph); camera.position.copy(controls.target).add(off);
+  } else if (!e.shiftKey) {                                                  // zoom: wheel, two-finger scroll, pinch (ctrlKey)
     off.multiplyScalar(THREE.MathUtils.clamp(Math.exp(dy * (wheelMouse ? 0.0012 : 0.004)), 0.5, 2));
     const d = THREE.MathUtils.clamp(off.length(), controls.minDistance, controls.maxDistance); off.setLength(d);
     camera.position.copy(controls.target).add(off);
-  } else if (e.shiftKey) {                                                   // pan along the ground plane
+  } else {                                                                   // Shift: pan along the ground plane
     const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
     const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
     const k = dist * 0.0014; const move = right.multiplyScalar(dx * k).add(fwd.multiplyScalar(-dy * k));
     controls.target.add(move); camera.position.add(move);
-  } else {                                                                   // orbit
-    const sph = new THREE.Spherical().setFromVector3(off);
-    sph.theta -= dx * 0.0045; sph.phi = THREE.MathUtils.clamp(sph.phi - dy * 0.0045, 0.06, controls.maxPolarAngle);
-    off.setFromSpherical(sph); camera.position.copy(controls.target).add(off);
   }
   camera.lookAt(controls.target);
 }, { passive: false });
