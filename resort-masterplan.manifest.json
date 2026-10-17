@@ -1,7 +1,7 @@
 {
- "version": "v039",
- "exported": "2026-10-17 17:18",
- "changes": "changes/v039.json",
+ "version": "v040",
+ "exported": "2026-10-17 17:26",
+ "changes": "changes/v040.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -336,7 +336,7 @@
    "derived": "hill at the spa centre (founder sketch 2026-10-16)",
    "hand_made": false,
    "material": "DWG GREEN AREAS",
-   "verts": 97164
+   "verts": 101073
   },
   {
    "name": "GREEN AREAS.003",
