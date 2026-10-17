@@ -443,7 +443,7 @@ $('bCam').onclick = () => setAutoCam(!autoCam);
 let pickables = [];
 // only buildings (objects with a function) and vehicles are pickable; terrain, water, roads, trees, marina are not
 const GROUND_PART = /green strip|service yard|courtyard$|yard$|ground$|\| path |access road$|drop-off$|deck$|pool water$|planters?$|roof garden$/;   // ground plates of a parcel: not a thing to hover (founder 2026-10-17)
-function rebuildPickables() { pickables = []; model.traverse(o => { if (o.isMesh && o.userData.group === 'buildings' && o.visible && isShown(o) && !GROUND_PART.test(o.name) && !/^tennis court\.|^pickleball\./.test(o.name)) pickables.push(o); }); }
+function rebuildPickables() { pickables = []; model.traverse(o => { if (o.isMesh && o.userData.group === 'buildings' && o.visible && isShown(o) && !GROUND_PART.test(o.name) && !/^tennis court\.|^pickleball\.|^wellness-spa\./.test(o.name)) pickables.push(o); }); }
 function isShown(o) { for (let p = o; p && p !== model; p = p.parent) if (!p.visible) return false; return true; }
 rebuildPickables();
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('tip');
@@ -792,6 +792,12 @@ try {
     inst.userData.function = 'dining'; inst.userData.zone_id = 'Z02'; inst.userData.zone_name = zoneInfo.Z02 ? zoneInfo.Z02.zone_name : '';
     const cad = byName.get('restaurant'); if (cad) { for (const c of [...cad.children]) model.attach(c); cad.visible = false; }
   } catch (e) { console.warn('rotunda restaurant asset not loaded', e); }
+  try {                                                                           // B03 Wellness Spa replaces the flat CAD blocks wellness-spa.001-005
+    const ps = await fetch(ASSET_DIR + 'wellness-spa.placement.json', { cache: 'no-store' }).then(r => r.json());
+    const tpl = await loadAsset(ps.asset); const inst = place(tpl, 'Wellness Spa', ps.placement_threejs.position, ps.placement_threejs.rotation_y_rad || 0, 0.0);
+    inst.userData.function = 'wellness'; inst.userData.zone_id = 'Z06'; inst.userData.zone_name = zoneInfo.Z06 ? zoneInfo.Z06.zone_name : '';
+    byName.forEach((o, n) => { if (/^wellness-spa\.\d+$/.test(n)) { for (const c of [...o.children]) model.attach(c); o.visible = false; } });
+  } catch (e) { console.warn('wellness spa asset not loaded', e); }
 }
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
 function box(w, h, d, c, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); m.castShadow = true; return m; }
@@ -947,7 +953,7 @@ const PRODUCTS = [
   { fp: ['Rotunda Restaurant'], hp: ['Rotunda Restaurant', 'restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('Rotunda Restaurant', 6) || topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
   { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], hp: ['event hall museum.001'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
   { fp: ['gym.001', 'gym.002', 'Tennis court', 'Pickleball court'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
-  { fp: ['wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
+  { fp: ['Wellness Spa'], hp: ['Wellness Spa', 'wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfObj('Wellness Spa', 6) || topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['marina support.001', 'Terminal'], name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.011', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
   { fp: ['Beach club buildings.001'], name: 'Beach Club', zone: 'Z11', p: topOfObj('Beach club buildings.001', 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },

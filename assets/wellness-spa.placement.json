@@ -1,0 +1,16 @@
+{
+ "asset": "wellness-spa.glb",
+ "blend": "WellnessSpa.blend (collection 'Wellness Spa (asset)')",
+ "source_script": "pipeline/spa_asset.py",
+ "root_node": "Wellness Spa",
+ "asset_id": "B03",
+ "units": "metres",
+ "asset_frame": "origin = ring centre at ground level; local axes rotated -16.99 deg from the master plan so the DWG rectangles are axis-aligned; +Y ~ north (outdoor pool), -Y = reception and ring entrance",
+ "base_in_master": "DWG layer 'wellness-spa': circles 85C1 R 25.86 / 85C2 R 18.07 at (-853.881, 480.601); rectangles 84D1, 84D2, 84D3 — flat CAD in the master plan, hide them where the asset is shown",
+ "footprint_m": {"x": 124, "y": 112},
+ "height_m": {"ring_roof": 6.15, "pavilions_max": 12.6},
+ "placement_blender": {"x": -853.881, "y": 480.601, "z": 0.0, "rot_z_deg": 16.99},
+ "placement_threejs": {"position": [-853.881, 0.0, -480.601], "rotation_y_rad": 0.2965},
+ "z_note": "z 0.0 = assumed ground; sample the land surface at the centre if the scene ground is not at 0",
+ "zone": {"zone_id": "Z06", "zone_name": "Spa & Wellness", "function": "spa & wellness"}
+}
