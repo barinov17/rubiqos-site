@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261017e">
+<link rel="stylesheet" href="/site.css?v=20261017f">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -16,7 +16,8 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body { font-family: var(--body); color: var(--ink); background: #f3f1ec; }
-  #stage { position: relative; height: 78vh; min-height: 540px; overflow: hidden; background: #9cc7e0; }
+  #stageRow { display: flex; height: calc(100vh - var(--navh, 0px)); min-height: 520px; }   /* the map fills the visible screen; --navh comes from site.css */
+  #stage { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; overflow: hidden; background: #9cc7e0; }
   #c { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .panel { position: absolute; background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
            border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 24px rgba(21, 48, 74, 0.12); }
@@ -54,17 +55,18 @@
   #layers .row button:hover:not(.on), #controls button:hover:not(.on) { background: rgba(21, 48, 74, 0.06); }
   #layers .muted { color: var(--muted); font-size: 11px; }
 
-  #controls { right: 12px; top: 12px; padding: 4px; display: flex; gap: 3px; border-radius: 10px; }   /* small, top-right inside the map */
+  #controls { left: 12px; bottom: 12px; padding: 4px; display: flex; gap: 3px; border-radius: 10px; }   /* small, bottom-left inside the map */
   #controls button { font-size: 11px; padding: 4px 8px; border-radius: 7px; }
 
   #bApp { right: 12px; bottom: 12px; font: 600 12px var(--body); color: #fff; background: var(--navy); border-color: var(--navy); padding: 8px 14px; cursor: pointer; z-index: 4; }   /* guest app: bottom-right of the map */
   #bApp.on { background: #fff; color: var(--navy); }
-  #appPanel { right: 12px; top: 52px; bottom: 56px; width: min(410px, calc(100% - 24px)); display: none; overflow: hidden; z-index: 4; background: rgba(255, 255, 255, 0.55); }
-  #appPanel.open { display: block; }
-  #appPanel iframe { width: 100%; height: 100%; border: 0; display: block; }
-  #appClose { position: absolute; top: 6px; right: 8px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--navy); font-size: 16px; line-height: 1; cursor: pointer; }
+  /* guest app: slides in from the right and narrows the map; iPhone proportions 390 x 844, full visible height */
+  #appPanel { flex: 0 0 auto; width: 0; height: 100%; overflow: hidden; background: #e9e4da; transition: width 0.35s cubic-bezier(.2,.8,.2,1); }
+  #appPanel.open { width: calc((100vh - var(--navh, 0px) - 24px) * 0.4621 + 24px); }
+  #appPanel iframe { width: calc((100vh - var(--navh, 0px) - 24px) * 0.4621 + 24px); height: 100%; border: 0; display: block; }
   #stage.app #feed { display: none; }
-  #feed { position: absolute; top: 52px; right: 12px; width: 230px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  @media (max-width: 900px) { #stageRow { position: relative; } #appPanel { position: absolute; right: 0; top: 0; z-index: 5; } #bApp { z-index: 6; } }   /* small screens: the app covers the map */
+  #feed { position: absolute; top: 12px; right: 12px; width: 230px; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
   .note { pointer-events: auto; display: grid; grid-template-columns: 24px 1fr; gap: 8px; padding: 7px 9px; border-radius: 10px;
           background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--line);
           box-shadow: 0 6px 20px rgba(21, 48, 74, 0.12); animation: in 0.45s cubic-bezier(.2,.8,.2,1); transition: opacity 0.6s, transform 0.6s; }
@@ -155,6 +157,7 @@
 </head>
 <body>
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/proforma/">Proforma</a><a href="/physical-ai/">Physical AI</a><a href="/pitch/">Pitch deck</a><a href="/market/">Resort market view</a></nav><span></span></div></div>
+<div id="stageRow">
 <div id="stage">
 <canvas id="c"></canvas>
 <div id="load">Loading the master plan<small id="loadInfo">resort-masterplan.glb · Draco</small></div>
@@ -173,7 +176,8 @@
 </div>
 <div id="tip" class="panel"></div>
 <button id="bApp" class="panel">Guest app</button>
-<div id="appPanel" class="panel"><button id="appClose" aria-label="Close">×</button><iframe id="appFrame" title="Guest app"></iframe></div>
+</div>
+<div id="appPanel"><iframe id="appFrame" title="Guest app"></iframe></div>
 </div>
 <section id="dash">
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
@@ -269,7 +273,7 @@ function resize() {
   renderer.setSize(w, h); composer.setSize(w, h); gtao.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
   if (window.__reframe) window.__reframe();                                   // the overview depends on the stage aspect
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize); new ResizeObserver(resize).observe(stage); resize();   // the stage narrows when the guest app opens
 
 // ---------- load: manifest + GLB in parallel
 const draco = new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/libs/draco/');
@@ -1467,7 +1471,7 @@ async function loop() {
 // ---------- controls
 { const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').textContent = v ? 'Close guest app' : 'Guest app';
     if (v && !$('appFrame').src) $('appFrame').src = 'guest-app.html?embed=1'; };
-  $('bApp').onclick = () => setApp(!$('appPanel').classList.contains('open')); $('appClose').onclick = () => setApp(false); }
+  $('bApp').onclick = () => setApp(!$('appPanel').classList.contains('open')); }
 $('bPlay').onclick = () => { playing = !playing; $('bPlay').textContent = playing ? 'Pause' : 'Play'; $('bPlay').classList.toggle('on', playing); };
 $('bSpeed').onclick = () => { speedMul = speedMul === 1 ? 2 : speedMul === 2 ? 4 : speedMul === 4 ? 8 : 1; $('bSpeed').textContent = `Speed ${speedMul}×`; };
 let fleetOn = true;

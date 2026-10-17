@@ -2,7 +2,7 @@
 /* rubiqos.com — shared styles for the site pages (the market matrix and the live demo keep their own styles and only take the nav) */
 :root {
   --navy: #15304a; --accent: #e0795f; --sand: #f1e7d3; --ink: #16222b; --muted: #6b7680; --line: rgba(21, 48, 74, 0.12);
-  --bg: #f3f1ec; --card: #ffffff; --display: "Manrope", "Inter", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
+  --bg: #f3f1ec; --card: #ffffff; --navh: 48px; --display: "Manrope", "Inter", system-ui, sans-serif; --body: "Inter", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
