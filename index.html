@@ -406,9 +406,9 @@ function frameBox(box, k = 1.15) {
   const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
   // fit the box by width and by depth separately (the island is 2 : 1, the stage is wide): the larger of the two distances wins
   const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), w = Math.max(s.x, s.z) * k, d = Math.min(s.x, s.z) * k;
-  const dist = (Math.max(w / (2 * t * camera.aspect), (d * 0.75 + Math.max(s.y, 40)) / (2 * t)) + Math.min(s.x, s.z) * 0.25) * 1.02;   // founder's default zoom (2026-10-17): the island fills the frame
+  const dist = (Math.max(w / (2 * t * camera.aspect), (d * 0.75 + Math.max(s.y, 40)) / (2 * t)) + Math.min(s.x, s.z) * 0.25) * 0.82;   // founder's default zoom (2026-10-17): the island fills the frame edge to edge
   c.y = Math.max(0, c.y);
-  return { target: c, pos: c.clone().add(new THREE.Vector3(0.55, 0.75, 0.55).normalize().multiplyScalar(dist)) };   // from the south-east (+x east, +z south)
+  return { target: c, pos: c.clone().add(new THREE.Vector3(0.10, 0.92, 0.66).normalize().multiplyScalar(dist)) };   // founder's default view (2026-10-17): from the south, steep, marina bottom-left
 }
 function flyToZone(id) { setAutoCam(false); const f = frameBox(zoneBox[id], 1.3); flyTo(f.target, f.pos); }
 let OVER = frameBox(islandBox, 1.05);
@@ -824,7 +824,7 @@ const PRODUCTS = [
   { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
   { fp: ['wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['marina support.001', 'Terminal'], name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
-  { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.007', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
+  { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.011', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
   { fp: ['Beach club buildings.001'], name: 'Beach Club', zone: 'Z11', p: topOfObj('Beach club buildings.001', 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
   { fp: ['Members Club | arc building', 'Members Club | pavilion'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
 ];
