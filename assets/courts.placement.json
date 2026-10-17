@@ -1,0 +1,188 @@
+{
+ "about": "Placement of the court templates S01 / S02 in the master-plan frame (from DWG layers tennis court / pickleball).",
+ "units": "metres",
+ "asset_frame": "origin = court centre at ground level; long axis = local Y (north-south), net along local X",
+ "z_note": "z 0.0 = assumed ground; sample the land surface at each centre if the scene ground is not at 0",
+ "master_plan_note": "the master plan has only flat CAD rectangles on these layers; hide them where the templates are shown",
+ "models": {
+  "S01": {
+   "asset": "tennis-court.glb",
+   "node": "Tennis court",
+   "instances": [
+    {
+     "name": "Tennis court 1",
+     "dwg_handle": "850D",
+     "blender": {
+      "x": 487.16,
+      "y": -73.47,
+      "z": 0.0,
+      "rot_z_deg": 2.96
+     },
+     "threejs": {
+      "position": [
+       487.16,
+       0.0,
+       73.47
+      ],
+      "rotation_y_rad": 0.0517
+     }
+    },
+    {
+     "name": "Tennis court 2",
+     "dwg_handle": "850E",
+     "blender": {
+      "x": 461.54,
+      "y": -70.08,
+      "z": 0.0,
+      "rot_z_deg": 2.96
+     },
+     "threejs": {
+      "position": [
+       461.54,
+       0.0,
+       70.08
+      ],
+      "rotation_y_rad": 0.0517
+     }
+    },
+    {
+     "name": "Tennis court 3",
+     "dwg_handle": "850F",
+     "blender": {
+      "x": 435.07,
+      "y": -64.04,
+      "z": 0.0,
+      "rot_z_deg": 2.96
+     },
+     "threejs": {
+      "position": [
+       435.07,
+       0.0,
+       64.04
+      ],
+      "rotation_y_rad": 0.0517
+     }
+    }
+   ]
+  },
+  "S02": {
+   "asset": "pickleball-court.glb",
+   "node": "Pickleball court",
+   "instances": [
+    {
+     "name": "Pickleball court 1",
+     "dwg_handle": "8510",
+     "blender": {
+      "x": 423.62,
+      "y": -3.41,
+      "z": 0.0,
+      "rot_z_deg": 2.97
+     },
+     "threejs": {
+      "position": [
+       423.62,
+       0.0,
+       3.41
+      ],
+      "rotation_y_rad": 0.0517
+     }
+    },
+    {
+     "name": "Pickleball court 2",
+     "dwg_handle": "8511",
+     "blender": {
+      "x": 432.87,
+      "y": -5.29,
+      "z": 0.0,
+      "rot_z_deg": 2.97
+     },
+     "threejs": {
+      "position": [
+       432.87,
+       0.0,
+       5.29
+      ],
+      "rotation_y_rad": 0.0517
+     }
+    },
+    {
+     "name": "Pickleball court 3",
+     "dwg_handle": "8512",
+     "blender": {
+      "x": 451.44,
+      "y": -10.27,
+      "z": 0.0,
+      "rot_z_deg": 2.96
+     },
+     "threejs": {
+      "position": [
+       451.44,
+       0.0,
+       10.27
+      ],
+      "rotation_y_rad": 0.0516
+     }
+    },
+    {
+     "name": "Pickleball court 4",
+     "dwg_handle": "8513",
+     "blender": {
+      "x": 460.7,
+      "y": -12.15,
+      "z": 0.0,
+      "rot_z_deg": 2.96
+     },
+     "threejs": {
+      "position": [
+       460.7,
+       0.0,
+       12.15
+      ],
+      "rotation_y_rad": 0.0516
+     }
+    },
+    {
+     "name": "Pickleball court 5",
+     "dwg_handle": "8514",
+     "blender": {
+      "x": 479.27,
+      "y": -17.13,
+      "z": 0.0,
+      "rot_z_deg": 2.96
+     },
+     "threejs": {
+      "position": [
+       479.27,
+       0.0,
+       17.13
+      ],
+      "rotation_y_rad": 0.0516
+     }
+    },
+    {
+     "name": "Pickleball court 6",
+     "dwg_handle": "8515",
+     "blender": {
+      "x": 488.52,
+      "y": -19.01,
+      "z": 0.0,
+      "rot_z_deg": 2.97
+     },
+     "threejs": {
+      "position": [
+       488.52,
+       0.0,
+       19.01
+      ],
+      "rotation_y_rad": 0.0517
+     }
+    }
+   ]
+  }
+ },
+ "zone": {
+  "zone_id": "Z06",
+  "zone_name": "Spa & Wellness",
+  "function": "sport"
+ }
+}

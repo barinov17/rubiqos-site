@@ -127,11 +127,6 @@
   #dash .ev { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid rgba(21, 48, 74, 0.06); }
   #dash .ev.now { color: var(--navy); font-weight: 600; }
   #dash .ev small { color: var(--muted); font-weight: 400; }
-  #styleBar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 16px; }
-  #styleBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-right: 4px; }
-  #styleBar .sty { font: 500 12.5px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; cursor: pointer; }
-  #styleBar .sty.on { background: var(--navy); color: #fff; border-color: var(--navy); }
-  #styleBar small { font-size: 11.5px; margin-left: 6px; }
   #actorsBar { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; padding: 10px 16px; }
   #actorsBar .row { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
   #actorsBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); width: 110px; flex: none; }
@@ -185,7 +180,6 @@
 <div id="appPanel"><iframe id="appFrame" title="Guest app"></iframe></div>
 </div>
 <section id="dash">
-  <div class="card wide" id="styleBar"><span class="grp">Map style</span><button class="sty on" data-style="standard">Standard</button><button class="sty" data-style="model">Architectural model</button><small class="muted">Architectural model: matt white architecture, sand, sage planting, calm water — a physical presentation model.</small></div>
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
   <div class="card"><h2>Guests on the island<small>plan, peak day</small></h2><div class="big" id="dGuestsTotal">—</div><div class="kv" id="dGuests"></div></div>
@@ -449,7 +443,7 @@ $('bCam').onclick = () => setAutoCam(!autoCam);
 let pickables = [];
 // only buildings (objects with a function) and vehicles are pickable; terrain, water, roads, trees, marina are not
 const GROUND_PART = /green strip|service yard|courtyard$|yard$|ground$|\| path |access road$|drop-off$|deck$|pool water$|planters?$|roof garden$/;   // ground plates of a parcel: not a thing to hover (founder 2026-10-17)
-function rebuildPickables() { pickables = []; model.traverse(o => { if (o.isMesh && o.userData.group === 'buildings' && o.visible && isShown(o) && !GROUND_PART.test(o.name)) pickables.push(o); }); }
+function rebuildPickables() { pickables = []; model.traverse(o => { if (o.isMesh && o.userData.group === 'buildings' && o.visible && isShown(o) && !GROUND_PART.test(o.name) && !/^tennis court\.|^pickleball\./.test(o.name)) pickables.push(o); }); }
 function isShown(o) { for (let p = o; p && p !== model; p = p.parent) if (!p.visible) return false; return true; }
 rebuildPickables();
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('tip');
@@ -757,12 +751,40 @@ try {
 } catch (e) { console.warn('fleet-models.glb not loaded, box fallback', e); }
 const FM = Object.fromEntries(FLEET.models.map(m => [m.id, m]));
 // --- helipad asset (vault "Helipad Model": ICAO Annex 14 Vol II, FATO 21.2 m, TLOF 12 m; placement from assets/helipad.placement.json)
-const HELIPAD_GLB = 'helipad.glb', HELIPAD_POS = new THREE.Vector3(-1212.09, 0.6, -14.03);
+const groupOfMesh = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
+const ASSET_DIR = 'assets/';   // Model Register assets (vault: Model Register); the site build rewrites this to its own folder
+const HELIPAD_GLB = ASSET_DIR + 'helipad.glb', HELIPAD_POS = new THREE.Vector3(-1212.09, 0.6, -14.03);
 try {
   const hg = await new Promise((res, rej) => loader.load(HELIPAD_GLB + '?v=' + encodeURIComponent(manifest.version), res, undefined, rej));
   hg.scene.position.copy(HELIPAD_POS); hg.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); scene.add(hg.scene);
   for (const n of ['halipad.001', 'halipad.002', 'halipad.003']) { const o = byName.get(n); if (o) o.visible = false; }   // the CAD discs under the asset
 } catch (e) { console.warn('helipad.glb not loaded', e); }
+// --- register assets placed in the scene: B01 Arrivals Reception, S01 tennis courts (3), S02 pickleball courts (6). Each instance joins
+// `model` and byName as a building, so hover, outline and the GYM & Sports concept treat them like the rest of the scene.
+{
+  const _ar = new THREE.Raycaster(); _ar.firstHitOnly = true; const terr = []; model.traverse(o => { if (o.isMesh && groupOfMesh(o) === 'terrain') terr.push(o); });
+  const groundAt = (x, z, dflt = 0) => { _ar.set(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)); const h = _ar.intersectObjects(terr, false); return h.length ? h[0].point.y : dflt; };
+  const loadAsset = file => new Promise((res, rej) => loader.load(ASSET_DIR + file + '?v=' + encodeURIComponent(manifest.version), g => res(g.scene), undefined, rej));
+  const place = (tpl, name, pos, rotY, lift = 0.05) => {
+    const inst = tpl.clone(true); inst.name = name; inst.position.set(pos[0], groundAt(pos[0], pos[2], pos[1]) + lift, pos[2]); inst.rotation.y = rotY;
+    inst.userData = { ...inst.userData, group: 'buildings', function: 'sport', zone_id: 'Z06', zone_name: zoneInfo.Z06 ? zoneInfo.Z06.zone_name : '' };
+    inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.group = 'buildings'; } }); model.add(inst); byName.set(name, inst); return inst;
+  };
+  try {
+    const pl = await fetch(ASSET_DIR + 'courts.placement.json', { cache: 'no-store' }).then(r => r.json());
+    for (const [id, cad] of [['S01', /^tennis court\.\d+$/], ['S02', /^pickleball\.\d+$/]]) {
+      const tpl = await loadAsset(pl.models[id].asset);
+      for (const ins of pl.models[id].instances) place(tpl, ins.name, ins.threejs.position, ins.threejs.rotation_y_rad);
+      byName.forEach((o, n) => { if (cad.test(n)) o.visible = false; });                 // the flat CAD rectangles under the templates
+    }
+  } catch (e) { console.warn('court assets not loaded', e); }
+  try {
+    const pr = await fetch(ASSET_DIR + 'arrivals-reception.placement.json', { cache: 'no-store' }).then(r => r.json());
+    const tpl = await loadAsset(pr.asset); const inst = place(tpl, 'Arrivals Reception (asset)', pr.placement_threejs.position, pr.placement_threejs.rotation_y_rad, 0.0);
+    inst.userData.function = 'arrival & mobility'; inst.userData.zone_id = 'Z08'; inst.userData.zone_name = zoneInfo.Z08 ? zoneInfo.Z08.zone_name : '';
+    const mp = byName.get('Arrivals Reception'); if (mp) mp.visible = false;             // the same pavilion built into the master plan by edit e015
+  } catch (e) { console.warn('arrivals reception asset not loaded', e); }
+}
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
 function box(w, h, d, c, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); m.castShadow = true; return m; }
 function fleetModel(id) {                                                         // true scale, front = +X, origin on the ground / waterline
@@ -916,7 +938,7 @@ const PRODUCTS = [
   { fp: ['branded residence BR2 | tower'], hp: ['branded residence BR2'], name: 'Residences BR2', zone: 'Z10', p: topOfPrefix('branded residence BR2', 8), kpi: { 'Apartments': 104, 'In rental pool': 63, 'Residents at peak': 143, 'Staff': 47, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
   { fp: ['restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
   { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], hp: ['event hall museum.001'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
-  { fp: ['gym.001', 'gym.002', 'tennis court', 'pickleball'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
+  { fp: ['gym.001', 'gym.002', 'Tennis court', 'Pickleball court'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['marina support.001', 'Terminal'], name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.011', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
@@ -1543,61 +1565,6 @@ async function loop() {
   }
 }
 
-// ===== map styles (founder 2026-10-17): everything a style touches is here — palette, materials, light, shadow, AO, grading, water, sky
-const STYLES = {
-  standard: { label: 'Standard', mats: null,
-    sky: [0x7fb3d6, 0xe3ecf1], fog: 0xdde8ee, fogRange: [2400, 11500], exposure: 1.15, hemi: [0xd6e6f2, 0xa29d8c, 1.05], sun: [0xfff3e0, 2.25], shadowRadius: 6,
-    ao: { radius: 9, distanceExponent: 1.5, thickness: 1.2, scale: 1.2, samples: 12 }, aoBlend: 0.45, grade: { sat: 0.95, con: 0.98, lift: 0.01, tint: 0xffffff },
-    water: { deep: 0x1a597e, mid: 0x2f95b7, shallow: 0x79d4d5, sand: 0xc5e8df, skyC: 0xdde6ea, fresK: 0.45, specK: 0.45 } },
-  model: { label: 'Architectural model',
-    // palette of the physical model: warm white plaster, grey-blue glass, sand, grey-beige roads, sage and olive planting
-    mats: { building: [0xeee9de, 0.92], glass: [0x9daeb8, 0.32, 0.12], pool: [0x8fc9cc, 0.25], plant: [0xb3bf9d, 0.95],
-            ground: [0xd8ccae, 0.95], beach: [0xe4dac0, 0.95], rock: [0xcbc1aa, 0.95], green: [0xb9c2a3, 0.95],
-            road: [0xaaa69a, 0.9], walk: [0xc8c1ae, 0.92], pier: [0xd9d0bb, 0.9], breakwater: [0xcfc5ae, 0.95],
-            crown: [0x9da98a, 0.95], crownDark: [0x8a9777, 0.95], palm: [0xa3ad8c, 0.95], trunk: [0xbdb39d, 0.95] },
-    sky: [0xc9d6de, 0xeef0ee], fog: 0xe6e9e9, fogRange: [7000, 20000] /* a model on a table: almost no haze */, exposure: 1.08, hemi: [0xf1f3f4, 0xcdc4b2, 1.35], sun: [0xfff6ea, 1.9], shadowRadius: 8,
-    ao: { radius: 7, distanceExponent: 1.5, thickness: 1.0, scale: 1.0, samples: 16 }, aoBlend: 0.55, grade: { sat: 0.88, con: 0.95, lift: 0.03, tint: 0xfdfbf7 },
-    water: { deep: 0x4f8a98, mid: 0x6fb2b8, shallow: 0xa7dad6, sand: 0xcfe6dd, skyC: 0xe6ecec, fresK: 0.3, specK: 0.12 } },
-};
-const styleMatCache = new Map();
-const styleMat = (st, key) => { const k = st + ':' + key; if (!styleMatCache.has(k)) { const [c, r, m] = STYLES[st].mats[key]; styleMatCache.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m || 0, name: 'style ' + key })); } return styleMatCache.get(k); };
-const groupOfMesh = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
-function styleClass(o) {                                                         // which palette entry a mesh takes; null = untouched
-  const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = groupOfMesh(o);
-  if (g === 'zoning' || g === 'water' || n === 'Sea' || /drop-off$|^Drop-off \| DO-/.test(n)) return null;
-  if (/glass/i.test(mn)) return 'glass';
-  if (/Pool water/.test(mn)) return 'pool';
-  if (g === 'trees') return /dark/i.test(mn) ? 'crownDark' : /Palm/.test(mn) ? 'palm' : /trunk/i.test(mn) ? 'trunk' : /crown/i.test(mn) ? 'crown' : 'building';
-  if (g === 'terrain') return /BEACH/.test(mn) ? 'beach' : /GREEN/.test(mn) ? 'green' : /Rocky/.test(mn) ? 'rock' : 'ground';
-  if (g === 'landscape') return 'green';
-  if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) ? 'road' : 'walk';
-  if (g === 'marina') return /MARINA$/.test(mn) ? 'breakwater' : /Pier deck/.test(mn) ? 'pier' : 'building';
-  if (/GREEN|Planting/.test(mn)) return 'plant';
-  if (/Road surface/.test(mn)) return 'road';
-  if (/Promenade|Plaza|Urban ground|deck$/i.test(mn + ' ' + n)) return 'walk';
-  return 'building';
-}
-let mapStyle = 'standard';
-function applyStyle(name) {
-  const st = STYLES[name] || STYLES.standard; mapStyle = name;
-  model.traverse(o => {
-    if (!o.isMesh) return; const cls = styleClass(o); if (!cls) return;
-    if (!o.userData.baseMat) o.userData.baseMat = o.material;                   // the material the scene was loaded with
-    o.material = st.mats ? styleMat(name, cls) : o.userData.baseMat;
-    if (o.userData.origMat) o.userData.origMat = o.material;                    // keep the zone-filter dimming in step
-  });
-  skyMat.uniforms.top.value.set(st.sky[0]); skyMat.uniforms.horizon.value.set(st.sky[1]); scene.fog.color.set(st.fog); scene.fog.near = st.fogRange[0]; scene.fog.far = st.fogRange[1];
-  renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2];
-  sun.color.set(st.sun[0]); sun.intensity = st.sun[1]; sun.shadow.radius = st.shadowRadius;
-  gtao.updateGtaoMaterial({ ...st.ao, distanceFallOff: 1 }); gtao.blendIntensity = st.aoBlend;
-  grade.uniforms.sat.value = st.grade.sat; grade.uniforms.con.value = st.grade.con; grade.uniforms.lift.value = st.grade.lift; grade.uniforms.tint.value.set(st.grade.tint);
-  for (const [k, v] of Object.entries(st.water)) { const u = waterMat.uniforms[k]; if (u) { if (u.value.set) u.value.set(v); else u.value = v; } }
-  document.querySelectorAll('#styleBar .sty').forEach(b => b.classList.toggle('on', b.dataset.style === name));
-  try { localStorage.setItem('mapStyle', name); } catch (e) {}
-}
-document.querySelectorAll('#styleBar .sty').forEach(b => { b.onclick = () => applyStyle(b.dataset.style); });
-{ let saved = 'standard'; try { saved = localStorage.getItem('mapStyle') || 'standard'; } catch (e) {} if (STYLES[saved] && saved !== 'standard') applyStyle(saved); }
-
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
   const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').textContent = v ? 'Close guest app' : 'Guest app';
@@ -1636,7 +1603,7 @@ loop();
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI, __applyStyle: applyStyle, __STYLES: STYLES });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI });
 </script>
 </body>
 </html>

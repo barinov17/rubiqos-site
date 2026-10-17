@@ -1,0 +1,13 @@
+{
+ "asset": "arrivals-reception.glb",
+ "blend": "ArrivalsReception.blend (collection 'Arrivals Reception (asset)')",
+ "root_node": "Arrivals Reception",
+ "units": "metres",
+ "asset_frame": "origin = building centre at ground level; front (stairs, cascade, reflecting pool) = -Y in Blender = +Z in three.js",
+ "footprint_m": [64, 73],
+ "height_m": 16.6,
+ "placement_blender": {"x": -1031.8, "y": -135.2, "z": 0.0, "rot_z_deg": -2.2},
+ "placement_threejs": {"position": [-1031.8, 0.0, 135.2], "rotation_y_rad": -0.0384},
+ "replaces": "CAD block 'Guest Arrivals Reception' (handle 8453), master-plan edit e015, model v028",
+ "zone": {"zone_id": "Z08", "zone_name": "Arrival & Fleet", "function": "arrival & mobility"}
+}
