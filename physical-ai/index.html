@@ -8,26 +8,65 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css?v=20261017f">
+<style>
+  body.site table.t.mk td:first-child { width: 1%; }
+  body.site table.t.mk td:nth-child(2) { min-width: 180px; }
+  body.site table.t.mk td:nth-child(2) b { color: var(--navy); }
+  body.site table.t.mk td:nth-child(2) small { display: block; color: var(--muted); font-size: 12px; }
+  body.site table.t.mk td:nth-child(3) { min-width: 300px; }
+  body.site .st { display: inline-block; font: 600 10px var(--body); letter-spacing: 0.04em; border-radius: 5px; padding: 1px 5px; margin-left: 4px; vertical-align: 1px; }
+  body.site .st.s { background: #e3f3ea; color: #1a7f52; }
+  body.site .st.p { background: #fdf0d8; color: #9a6a12; }
+  body.site .st.x { background: #f9e3e1; color: #c0504d; }
+  body.site .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+  body.site .grp td { background: #faf8f4; font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 7px 12px; }
+  @media (max-width: 720px) { body.site .scroll { overflow-x: auto; } body.site .scroll table.t { min-width: 820px; } }
+</style>
 </head>
 <body class="site">
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Live demo</a><a href="/proforma/">Proforma</a><a href="/physical-ai/" class="on">Physical AI</a><a href="/pitch/">Pitch deck</a><a href="/market/">Resort market view</a></nav><span></span></div></div>
 <div class="wrap">
   <div class="hero">
     <h1>Physical AI</h1>
-    <p>Robots, autonomous vehicles and vessels that run the island day: delivery robots, autonomous pods and shuttles, boats, cleaning and service units. This section will compare the platforms and show where each one fits in the resort operation.</p>
-    <div class="note">Placeholder. The platform research comes next.</div>
+    <p>Robots, autonomous vehicles and vessels that run the island day: guest pods and shuttles, service carts and trucks, delivery robots, shuttle and supply boats. This section maps each fleet type of the master plan to the platforms that exist on the market today, and shows where each one fits in the resort operation.</p>
+    <div class="note">v1 · market map, 2026-10-17. Fleet types and counts come from the Fleet Register of the master plan; candidates are platforms with a commercial launch or an open order book. Per-type detail (capacity, autonomy, price, references) comes next.</div>
   </div>
-  <section>
-    <h2>What this section will cover</h2>
-    <p class="lead">Planned structure, to be filled after the research.</p>
-    <div class="grid">
-      <div class="card"><h3>Land fleet</h3><p>Autonomous pods, shuttles, utility carts and trucks. Which platforms exist, what they cost, how they charge.</p></div>
-      <div class="card"><h3>Robots</h3><p>Delivery and service robots for back of house, room service and housekeeping.</p></div>
-      <div class="card"><h3>Water</h3><p>Autonomous and assisted shuttle boats, supply vessels, marina operations.</p></div>
-      <div class="card"><h3>Orchestration</h3><p>How RubiqOS dispatches the fleet: tasks, charging cycle, people and vehicles in one plan.</p></div>
+
+  <section id="market">
+    <h2>Fleet type → platforms on the market</h2>
+    <p class="lead">Nine fleet types the operation needs, and who builds them. Every type is covered by shipping hardware; autonomy on land and water is commercial, but so far in cities and at a handful of resorts.</p>
+    <div class="legend"><span><span class="st s">S</span> shipping, in commercial service</span><span><span class="st p">P</span> pilot or pre-order</span><span><span class="st x">X</span> vendor closed or changed hands</span></div>
+    <div class="scroll">
+    <table class="t mk">
+      <thead><tr><th>ID</th><th>Fleet type · role on the island</th><th>Platforms on the market</th><th>Maturity of the class</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="4">Land</td></tr>
+        <tr><td>L1</td><td><b>Guest pod</b> · 4 seats, driverless<small>On demand from the app, terminal transfers, dinner and event waves · ~40 units</small></td><td>Zoox<span class="st s">S</span> Carteav<span class="st s">S</span> Auve Tech MiCa<span class="st s">S</span> May Mobility<span class="st s">S</span> Ohmio<span class="st p">P</span></td><td>Robotaxis run paid service in cities (Zoox, Las Vegas). Private grounds are the easier case: no public roads. Carteav targets campuses and resorts directly.</td></tr>
+        <tr><td>L2</td><td><b>Guest shuttle</b> · 8–10 seats, fixed loop<small>Terminal → hotels → Marina Village → Beach Club → spa · 4–6 units</small></td><td>EasyMile EZ10<span class="st s">S</span> WeRide Robobus<span class="st s">S</span> Ohmio LIFT<span class="st p">P</span> Holon Mover<span class="st p">P</span> Karsan e-ATAK + ADASTEC<span class="st s">S</span> Navya Evo<span class="st x">X</span></td><td>Mature class with a resort reference: EasyMile runs a 2.5 km hotel–resort loop at Terhills, Belgium, 7 days a week on a 10-year contract.</td></tr>
+        <tr><td>L3</td><td><b>Service cart</b> · staff, driven<small>Engineers on call, housekeeping, landscape, beach · 16 units</small></td><td>Goupil G2 / G4<span class="st s">S</span> Club Car Carryall<span class="st s">S</span> Polaris GEM eL XD<span class="st s">S</span> Alkè ATX<span class="st s">S</span> · autonomy retrofit: Carteav, Perrone<span class="st p">P</span></td><td>Standard resort hardware, electric, driven. Driverless carts come as a retrofit kit on the same chassis.</td></tr>
+        <tr><td>L4</td><td><b>Service truck</b> · 3 t, driven<small>Warehouse ↔ kitchens, laundry, night waste run, unloading the supply vessel · 6 units</small></td><td>Fuso eCanter<span class="st s">S</span> Isuzu N-Series EV<span class="st s">S</span> Goupil G6<span class="st s">S</span> Maxus eDeliver 7 / 9<span class="st s">S</span></td><td>Electric light trucks ship from every major OEM. Autonomous trucking (Einride, Gatik) targets highways, not an island.</td></tr>
+        <tr><td>L5</td><td><b>Delivery robot</b> · ~120 l, outdoor + indoor<small>Room service, villa breakfasts, luggage, amenities · 24 units</small></td><td>Outdoor: Ottonomy Ottobot<span class="st s">S</span> Starship<span class="st s">S</span> Serve Gen3<span class="st s">S</span> Cartken Hauler<span class="st s">S</span> Neubility<span class="st s">S</span> · Indoor: Keenon W3<span class="st s">S</span> Pudu FlashBot<span class="st s">S</span> Relay<span class="st s">S</span></td><td>Thousands of sidewalk robots in service (Starship 2,700; 8 M deliveries). Hotel indoor robots cost $10–30 k. A single 120 l body for street and corridor is still a niche: expect two classes or Cartken for luggage.</td></tr>
+        <tr class="grp"><td colspan="4">Water</td></tr>
+        <tr><td>W1</td><td><b>Shuttle boat</b> · 50–65 passengers<small>Mainland ↔ terminal, marina ↔ Beach Club ↔ villas · 3 units</small></td><td>Aventura Arawak 42<span class="st s">S</span> Candela P-12<span class="st s">S</span> Artemis EF-24<span class="st p">P</span> Zeabuz / MF Estelle (autonomy)<span class="st s">S</span> Hyke<span class="st p">P</span></td><td>Electric foiling shuttles are ordered by resorts: 12 × Candela P-12 for the Maldives (service from 2026), a fleet for NEOM / Red Sea. One commercial autonomous ferry runs in Stockholm.</td></tr>
+        <tr><td>W2</td><td><b>Supply vessel</b> · landing craft<small>Food and consumables in, waste out, 2 runs a week · 1 unit, chartered</small></td><td>Armstrong Marine<span class="st s">S</span> Munson<span class="st s">S</span> Damen Landing Craft<span class="st s">S</span> Lyman-Morse LMF<span class="st s">S</span> · autonomy retrofit: Sea Machines SM300<span class="st s">S</span></td><td>Built to order by a dozen aluminium yards; small landing craft already serve island resorts in the Maldives. Autonomy is a retrofit kit, not a new hull.</td></tr>
+        <tr><td>W3</td><td><b>Excursion boat</b> · ~12 guests<small>Snorkelling and sunset trips, 09:00 and 14:00 · 3 units</small></td><td>Axopar 37<span class="st s">S</span> Artemis EF-12 Escape<span class="st s">S</span> Candela C-8<span class="st s">S</span> Navier N30<span class="st s">S</span> X Shore 1<span class="st s">S</span></td><td>Shipping; electric foilers carry 8–12 and already serve a resort (Artemis at Vejrø, Denmark). Prices €130 k – €400 k.</td></tr>
+        <tr class="grp"><td colspan="4">Air</td></tr>
+        <tr><td>A1</td><td><b>Helicopter</b> · VIP transfer, 6–7 guests<small>Charter operator, not resort fleet · helipad I01, D ≤ 13.6 m</small></td><td>Airbus H145 / H135<span class="st s">S</span> Leonardo AW109<span class="st s">S</span> Bell 407 / 429<span class="st s">S</span> · eVTOL: Joby<span class="st p">P</span> Archer Midnight<span class="st p">P</span> EHang EH216-S<span class="st s">S</span></td><td>Helicopters are the baseline. eVTOL air taxis target a UAE launch in Q4 2026 without final FAA certification yet; EHang flies paying passengers in China.</td></tr>
+      </tbody>
+    </table>
     </div>
   </section>
-  <div class="foot">RubiqOS · working materials · 2026</div>
+
+  <section id="takeaways">
+    <h2>What the map says</h2>
+    <div class="grid">
+      <div class="card"><h3>Hardware exists</h3><p>Every fleet type of the master plan is covered by shipping platforms. No part of the plan waits for a product that does not exist.</p></div>
+      <div class="card"><h3>Autonomy is here, unevenly</h3><p>Driverless shuttles, robotaxis, sidewalk robots and one autonomous ferry run commercially. Resort deployments are few: Terhills, Vejrø, the Maldives and the Red Sea.</p></div>
+      <div class="card"><h3>The gap is orchestration</h3><p>No vendor dispatches pods, shuttles, robots and boats together with people and charging. That layer is RubiqOS.</p></div>
+      <div class="card"><h3>Next</h3><p>Per-type detail: capacity, autonomy level, charging, price where public, references. Then the dispatch model: tasks, charging cycle, people and vehicles in one plan.</p></div>
+    </div>
+  </section>
+  <div class="foot">RubiqOS · working materials · 2026 · sources in the project research note <em>physical-ai-platforms-2026</em></div>
 </div>
 </body>
 </html>
