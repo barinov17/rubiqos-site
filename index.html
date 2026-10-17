@@ -127,6 +127,11 @@
   #dash .ev { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid rgba(21, 48, 74, 0.06); }
   #dash .ev.now { color: var(--navy); font-weight: 600; }
   #dash .ev small { color: var(--muted); font-weight: 400; }
+  #styleBar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 16px; }
+  #styleBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-right: 4px; }
+  #styleBar .sty { font: 500 12.5px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; cursor: pointer; }
+  #styleBar .sty.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  #styleBar small { font-size: 11.5px; margin-left: 6px; }
   #actorsBar { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; padding: 10px 16px; }
   #actorsBar .row { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
   #actorsBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); width: 110px; flex: none; }
@@ -180,6 +185,7 @@
 <div id="appPanel"><iframe id="appFrame" title="Guest app"></iframe></div>
 </div>
 <section id="dash">
+  <div class="card wide" id="styleBar"><span class="grp">Map style</span><button class="sty on" data-style="standard">Standard</button><button class="sty" data-style="model">Architectural model</button><small class="muted">Architectural model: matt white architecture, sand, sage planting, calm water — a physical presentation model.</small></div>
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
   <div class="card"><h2>Guests on the island<small>plan, peak day</small></h2><div class="big" id="dGuestsTotal">—</div><div class="kv" id="dGuests"></div></div>
@@ -342,13 +348,13 @@ const landMask = (() => {
 const waterMat = new THREE.ShaderMaterial({
   fog: true,
   uniforms: { ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), tLand: { value: landMask }, box: { value: new THREE.Vector4(MASK.minx, MASK.minz, MASK.w, MASK.h) }, time: { value: 0 },
-    sunDir: { value: sun.position.clone().normalize() }, deep: { value: new THREE.Color(0x1a597e) }, mid: { value: new THREE.Color(0x2f95b7) }, shallow: { value: new THREE.Color(0x79d4d5) }, sand: { value: new THREE.Color(0xc5e8df) }, skyC: { value: new THREE.Color(0xdde6ea) } },
+    sunDir: { value: sun.position.clone().normalize() }, deep: { value: new THREE.Color(0x1a597e) }, mid: { value: new THREE.Color(0x2f95b7) }, shallow: { value: new THREE.Color(0x79d4d5) }, sand: { value: new THREE.Color(0xc5e8df) }, skyC: { value: new THREE.Color(0xdde6ea) }, fresK: { value: 0.45 }, specK: { value: 0.45 } },
   vertexShader: `varying vec3 vW;
 #include <fog_pars_vertex>
     void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vW = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
 #include <fog_vertex>
 }`,
-  fragmentShader: `uniform sampler2D tLand; uniform vec4 box; uniform float time; uniform vec3 sunDir, deep, mid, shallow, sand, skyC; varying vec3 vW;
+  fragmentShader: `uniform sampler2D tLand; uniform vec4 box; uniform float time; uniform vec3 sunDir, deep, mid, shallow, sand, skyC; uniform float fresK, specK; varying vec3 vW;
 #include <fog_pars_fragment>
     void main(){
       vec2 uv = vec2((vW.x - box.x) / box.z, 1.0 - (vW.z - box.y) / box.w);
@@ -358,9 +364,9 @@ const waterMat = new THREE.ShaderMaterial({
       vec3 n = normalize(vec3(w1 * 0.02 + w2 * 0.012, 1.0, w1 * 0.018 - w2 * 0.012));
       vec3 v = normalize(cameraPosition - vW);
       float fres = pow(1.0 - max(dot(v, n), 0.0), 3.0);
-      col = mix(col, skyC, fres * 0.45);
+      col = mix(col, skyC, fres * fresK);
       float spec = pow(max(dot(reflect(-sunDir, n), v), 0.0), 90.0);
-      col += vec3(1.0, 0.98, 0.94) * spec * 0.45;
+      col += vec3(1.0, 0.98, 0.94) * spec * specK;
       gl_FragColor = vec4(col, 1.0);
 #include <fog_fragment>
     }` });
@@ -1537,6 +1543,61 @@ async function loop() {
   }
 }
 
+// ===== map styles (founder 2026-10-17): everything a style touches is here — palette, materials, light, shadow, AO, grading, water, sky
+const STYLES = {
+  standard: { label: 'Standard', mats: null,
+    sky: [0x7fb3d6, 0xe3ecf1], fog: 0xdde8ee, fogRange: [2400, 11500], exposure: 1.15, hemi: [0xd6e6f2, 0xa29d8c, 1.05], sun: [0xfff3e0, 2.25], shadowRadius: 6,
+    ao: { radius: 9, distanceExponent: 1.5, thickness: 1.2, scale: 1.2, samples: 12 }, aoBlend: 0.45, grade: { sat: 0.95, con: 0.98, lift: 0.01, tint: 0xffffff },
+    water: { deep: 0x1a597e, mid: 0x2f95b7, shallow: 0x79d4d5, sand: 0xc5e8df, skyC: 0xdde6ea, fresK: 0.45, specK: 0.45 } },
+  model: { label: 'Architectural model',
+    // palette of the physical model: warm white plaster, grey-blue glass, sand, grey-beige roads, sage and olive planting
+    mats: { building: [0xeee9de, 0.92], glass: [0x9daeb8, 0.32, 0.12], pool: [0x8fc9cc, 0.25], plant: [0xb3bf9d, 0.95],
+            ground: [0xd8ccae, 0.95], beach: [0xe4dac0, 0.95], rock: [0xcbc1aa, 0.95], green: [0xb9c2a3, 0.95],
+            road: [0xaaa69a, 0.9], walk: [0xc8c1ae, 0.92], pier: [0xd9d0bb, 0.9], breakwater: [0xcfc5ae, 0.95],
+            crown: [0x9da98a, 0.95], crownDark: [0x8a9777, 0.95], palm: [0xa3ad8c, 0.95], trunk: [0xbdb39d, 0.95] },
+    sky: [0xc9d6de, 0xeef0ee], fog: 0xe6e9e9, fogRange: [7000, 20000] /* a model on a table: almost no haze */, exposure: 1.08, hemi: [0xf1f3f4, 0xcdc4b2, 1.35], sun: [0xfff6ea, 1.9], shadowRadius: 8,
+    ao: { radius: 7, distanceExponent: 1.5, thickness: 1.0, scale: 1.0, samples: 16 }, aoBlend: 0.55, grade: { sat: 0.88, con: 0.95, lift: 0.03, tint: 0xfdfbf7 },
+    water: { deep: 0x4f8a98, mid: 0x6fb2b8, shallow: 0xa7dad6, sand: 0xcfe6dd, skyC: 0xe6ecec, fresK: 0.3, specK: 0.12 } },
+};
+const styleMatCache = new Map();
+const styleMat = (st, key) => { const k = st + ':' + key; if (!styleMatCache.has(k)) { const [c, r, m] = STYLES[st].mats[key]; styleMatCache.set(k, new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m || 0, name: 'style ' + key })); } return styleMatCache.get(k); };
+const groupOfMesh = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
+function styleClass(o) {                                                         // which palette entry a mesh takes; null = untouched
+  const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = groupOfMesh(o);
+  if (g === 'zoning' || g === 'water' || n === 'Sea' || /drop-off$|^Drop-off \| DO-/.test(n)) return null;
+  if (/glass/i.test(mn)) return 'glass';
+  if (/Pool water/.test(mn)) return 'pool';
+  if (g === 'trees') return /dark/i.test(mn) ? 'crownDark' : /Palm/.test(mn) ? 'palm' : /trunk/i.test(mn) ? 'trunk' : /crown/i.test(mn) ? 'crown' : 'building';
+  if (g === 'terrain') return /BEACH/.test(mn) ? 'beach' : /GREEN/.test(mn) ? 'green' : /Rocky/.test(mn) ? 'rock' : 'ground';
+  if (g === 'landscape') return 'green';
+  if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) ? 'road' : 'walk';
+  if (g === 'marina') return /MARINA$/.test(mn) ? 'breakwater' : /Pier deck/.test(mn) ? 'pier' : 'building';
+  if (/GREEN|Planting/.test(mn)) return 'plant';
+  if (/Road surface/.test(mn)) return 'road';
+  if (/Promenade|Plaza|Urban ground|deck$/i.test(mn + ' ' + n)) return 'walk';
+  return 'building';
+}
+let mapStyle = 'standard';
+function applyStyle(name) {
+  const st = STYLES[name] || STYLES.standard; mapStyle = name;
+  model.traverse(o => {
+    if (!o.isMesh) return; const cls = styleClass(o); if (!cls) return;
+    if (!o.userData.baseMat) o.userData.baseMat = o.material;                   // the material the scene was loaded with
+    o.material = st.mats ? styleMat(name, cls) : o.userData.baseMat;
+    if (o.userData.origMat) o.userData.origMat = o.material;                    // keep the zone-filter dimming in step
+  });
+  skyMat.uniforms.top.value.set(st.sky[0]); skyMat.uniforms.horizon.value.set(st.sky[1]); scene.fog.color.set(st.fog); scene.fog.near = st.fogRange[0]; scene.fog.far = st.fogRange[1];
+  renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2];
+  sun.color.set(st.sun[0]); sun.intensity = st.sun[1]; sun.shadow.radius = st.shadowRadius;
+  gtao.updateGtaoMaterial({ ...st.ao, distanceFallOff: 1 }); gtao.blendIntensity = st.aoBlend;
+  grade.uniforms.sat.value = st.grade.sat; grade.uniforms.con.value = st.grade.con; grade.uniforms.lift.value = st.grade.lift; grade.uniforms.tint.value.set(st.grade.tint);
+  for (const [k, v] of Object.entries(st.water)) { const u = waterMat.uniforms[k]; if (u) { if (u.value.set) u.value.set(v); else u.value = v; } }
+  document.querySelectorAll('#styleBar .sty').forEach(b => b.classList.toggle('on', b.dataset.style === name));
+  try { localStorage.setItem('mapStyle', name); } catch (e) {}
+}
+document.querySelectorAll('#styleBar .sty').forEach(b => { b.onclick = () => applyStyle(b.dataset.style); });
+{ let saved = 'standard'; try { saved = localStorage.getItem('mapStyle') || 'standard'; } catch (e) {} if (STYLES[saved] && saved !== 'standard') applyStyle(saved); }
+
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
   const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').textContent = v ? 'Close guest app' : 'Guest app';
@@ -1575,7 +1636,7 @@ loop();
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI, __applyStyle: applyStyle, __STYLES: STYLES });
 </script>
 </body>
 </html>
