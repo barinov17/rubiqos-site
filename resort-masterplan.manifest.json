@@ -1,7 +1,7 @@
 {
- "version": "v044",
- "exported": "2026-10-17 17:58",
- "changes": "changes/v044.json",
+ "version": "v045",
+ "exported": "2026-10-17 18:07",
+ "changes": "changes/v045.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -1236,7 +1236,7 @@
    "derived": "design edit e028",
    "hand_made": false,
    "material": "Road surface",
-   "verts": 28
+   "verts": 1030
   },
   {
    "name": "Drop-off",
@@ -1848,7 +1848,7 @@
    "derived": "design edit e028",
    "hand_made": false,
    "material": "Promenade surface",
-   "verts": 8
+   "verts": 328
   },
   {
    "name": "Restaurant drop-offs",
@@ -1869,12 +1869,12 @@
    "verts": 0
   },
   {
-   "name": "Restaurant drop-offs | guest drop-off",
+   "name": "Restaurant drop-offs | service drop-off",
    "type": "MESH",
    "collection": "04_Mobility/Drop-offs",
    "parent": "Restaurant drop-offs",
    "group": "mobility",
-   "function": "arrival & mobility",
+   "function": "operations",
    "zone_id": "Z02",
    "zone_name": "Hill Hotel",
    "dwg_layer": null,
@@ -1883,7 +1883,7 @@
    "height_m": 0.06,
    "derived": "design edit e028",
    "hand_made": false,
-   "material": "Guest drop-off",
+   "material": "Drop-off pad",
    "verts": 8
   },
   {
