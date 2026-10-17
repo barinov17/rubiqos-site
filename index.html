@@ -78,6 +78,17 @@
   .zlabel i { font: 600 10px var(--body); font-style: normal; color: #fff; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
               text-shadow: none; box-shadow: 0 0 0 2px #fff; }
 
+  .gpin { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); cursor: default; display: flex; flex-direction: column; align-items: center; gap: 1px; z-index: 3; }
+  .gpin svg { width: 22px; height: 30px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35)); transition: transform 0.15s; }
+  .gpin.small svg { width: 14px; height: 19px; }
+  .gpin.svc svg { width: 18px; height: 24px; }
+  .gpin:hover svg { transform: scale(1.25); }
+  .gpin span { font: 600 10.5px var(--body); color: var(--navy); background: rgba(255, 255, 255, 0.9); border-radius: 6px; padding: 1px 6px; white-space: nowrap; display: none; }
+  .gpin:hover span, .gpin.named span { display: block; }
+  #tip .dash { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; margin-top: 6px; }
+  #tip .dash span:nth-child(2n) { text-align: right; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+  #tip .bar { height: 5px; border-radius: 3px; background: rgba(21, 48, 74, 0.1); overflow: hidden; grid-column: 1 / -1; margin: -1px 0 3px; }
+  #tip .bar i { display: block; height: 100%; background: var(--navy); }
   #tip { position: fixed; pointer-events: none; padding: 9px 12px; font-size: 12px; display: none; max-width: 300px; line-height: 1.45; }
   #tip b { color: var(--navy); font-size: 13px; }
   #tip .k { color: var(--muted); }
@@ -752,6 +763,55 @@ const walk = (from, to) => walkR.route(from, to) || (() => { const a = walkR.nea
   window.__padsFixed = fixed;
 }
 
+// ===== Hill Hotel: founder 2026-10-17 — the blocks stand about one floor too high on the hill; lowered 3.4 m here until the model is fixed in Blender (models.py, hotel_on_hill)
+{ let n = 0; byName.forEach((o, name) => { if (o.parent === model && /^Hotel 2\.\d+ \| /.test(name)) { o.position.y -= 3.4; o.updateMatrixWorld(true); n++; } }); console.info('Hill Hotel parts lowered by 3.4 m:', n); }
+
+// ===== geo pins: product concepts and back-of-house services, each with a small dashboard on hover
+const ZC = Object.fromEntries(zones.map(z => [z.zone_id, z.colour]));
+const topOfObj = (n, up = 6) => { const o = byName.get(n); if (!o) return null; const b = bboxOf(o); const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
+const topOfPrefix = (pre, up = 6) => { const b = new THREE.Box3(); let any = false; byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh) { b.expandByObject(o); any = true; } }); if (!any) return null; const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
+// products: kpis from the proforma (rubiqos.com/proforma); numbers per day at peak
+const PRODUCTS = [
+  { name: 'Beach Hotel', zone: 'Z01', p: topOfPrefix('Beach Hotel | middle block', 8), kpi: { 'Keys': 240, 'Guests at 75 %': 342, 'Staff': 270, 'Water': '205 m³', 'Energy': '14,400 kWh', 'Sewage': '175 m³' } },
+  { name: 'Hill Hotel', zone: 'Z02', p: topOfPrefix('Hotel 2.0', 8), kpi: { 'Keys': 120, 'Guests at 70 %': 168, 'Staff': 135, 'Water': '101 m³', 'Energy': '7,200 kWh', 'Sewage': '86 m³' } },
+  { name: 'Residences BR1', zone: 'Z10', p: topOfPrefix('branded residence BR1', 8), kpi: { 'Apartments': 104, 'In rental pool': 62, 'Residents at peak': 142, 'Staff': 48, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
+  { name: 'Residences BR2', zone: 'Z10', p: topOfPrefix('branded residence BR2', 8), kpi: { 'Apartments': 104, 'In rental pool': 63, 'Residents at peak': 143, 'Staff': 47, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
+  { name: 'Restaurant', zone: 'Z02', p: topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
+  { name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
+  { name: 'Spa & Wellness', zone: 'Z06', p: topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
+  { name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
+  { name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.007', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
+  { name: 'Beach Club', zone: 'Z11', p: topOfObj('Beach club buildings.001', 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
+  { name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
+];
+for (const n of [...byName.keys()].filter(n => /^villa\.\d+$/.test(n)).sort()) PRODUCTS.push({ name: n.replace('villa.', 'Villa '), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
+// services: capacity and today's load (balance from the proforma)
+const SERVICES = [
+  { name: 'WH-1 Laundry', p: topOfObj('Infrastructure zone | WH-1 warehouse laundry roof', 5), kpi: { 'Linen a day': '5,000 kg', 'Load today': '4,900 kg', 'Turnaround': '6 h' }, load: 98 },
+  { name: 'WH-2 Prep kitchen', p: topOfObj('Infrastructure zone | WH-2 warehouse prep kitchen roof', 5), kpi: { 'Meals prepared': '4,100 a day', 'Staff canteen': '1,000 meals' }, load: 90 },
+  { name: 'WH-3 Cold storage', p: topOfObj('Infrastructure zone | WH-3 warehouse cold storage roof', 5), kpi: { 'Cold rooms': '600 m²', 'Food throughput': '4.5 t a day', 'Load today': '4.47 t', 'Next supply call': 'Thursday 08:00' }, load: 99 },
+  { name: 'WH-4 Dry storage', p: topOfObj('Infrastructure zone | WH-4 warehouse storage roof', 5), kpi: { 'Dry store': '900 m²', 'Autonomy': '6 days' }, load: 80 },
+  { name: 'FH Fleet Hub', p: topOfObj('Infrastructure zone | FH fleet hub roof', 5), kpi: { 'Charging posts': 30, 'Guest pods': '40 planned', 'Shuttles': 5, 'Service vehicles': 22 }, load: 70 },
+  { name: 'OFF Office', p: topOfObj('Infrastructure zone | OFF office roof', 5), kpi: { 'Dispatch and admin': '27 on the morning shift', 'Operator console': 'RubiqOS' }, load: 60 },
+  { name: 'SA Staff accommodation', p: topOfObj('Infrastructure zone | SA staff accommodation roof', 5), kpi: { 'Beds': 420, 'Canteen': '1,000 meals a day', 'Shifts': '07 · 15 · 23' }, load: 85 },
+  { name: 'W Waste management', p: topOfObj('Infrastructure zone | W waste management roof', 5), kpi: { 'Waste a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, load: 84 },
+  { name: 'IF Water, power, sewage', p: topOfObj('Infrastructure zone | IF infrastructure (water, power, sewage) roof', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
+];
+const PIN_SVG = c => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="11.4" r="4" fill="#fff"/></svg>`;
+const gpins = [];
+function makePin(d, cls, colour) {
+  if (!d.p) return;
+  const el = document.createElement('div'); el.className = 'gpin ' + cls; el.innerHTML = PIN_SVG(colour) + `<span>${d.name}</span>`; stage.appendChild(el);
+  const html = `<b>${d.name}</b>${d.zone ? `<div class="k">${d.zone} · ${zoneInfo[d.zone].zone_name}</div>` : '<div class="k">Back of house · service</div>'}<div class="dash">${Object.entries(d.kpi).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}${d.load !== undefined ? `<div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div><span>Load today</span><span>${d.load} %</span>` : ''}</div>`;
+  el.onpointerenter = e => { if (pinned) return; tip.innerHTML = html; tip.style.display = 'block'; const q = stageXY(e); placeTip(q.x, q.y); outline.selectedObjects = []; };
+  el.onpointermove = e => { if (pinned) return; const q = stageXY(e); placeTip(q.x, q.y); };
+  el.onpointerleave = () => { if (!pinned) tip.style.display = 'none'; };
+  gpins.push({ el, p: d.p });
+}
+for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
+for (const d of SERVICES) makePin(d, 'svc', '#5a6672');
+function updatePins() { for (const g of gpins) { const sc = toScreen(g.p); if (!sc) { g.el.style.display = 'none'; continue; } g.el.style.display = ''; g.el.style.left = sc[0] + 'px'; g.el.style.top = sc[1] + 'px'; } }
+
 // ===== Marina Village: four clusters are the F&B outlets of the retail zone (vault: Resort Population and Guest Day)
 const villageClusters = [...byName.keys()].filter(n => /^DINING\.\d+$/.test(n)).map(n => byName.get(n)).filter(o => o.parent === model);
 const FB_NAMES = ['Harbour Café', 'Island Bistro', 'Sunset Bar', 'Fire Grill'];
@@ -1274,7 +1334,7 @@ function tick(rdt, draw = true) {
   if (!draw) return;
   $('time').textContent = clockText();
   for (let i = pins.length - 1; i >= 0; i--) { const p = pins[i]; const s = toScreen(anchorPos(p.anchor)); if (simT > p.until || !s) { p.el.remove(); pins.splice(i, 1); continue; } p.el.style.left = s[0] + 'px'; p.el.style.top = s[1] + 'px'; }
-  updateLabels(); updateHover(); drawPeople();
+  updateLabels(); updatePins(); updateHover(); drawPeople();
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }
   waterMat.uniforms.time.value = performance.now() / 1000;
   composer.render();
