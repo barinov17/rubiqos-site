@@ -1,7 +1,7 @@
 {
- "version": "v053",
- "exported": "2026-10-17 18:32",
- "changes": "changes/v053.json",
+ "version": "v061",
+ "exported": "2026-10-17 18:53",
+ "changes": "changes/v061.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -264,7 +264,7 @@
    "derived": null,
    "hand_made": false,
    "material": "DWG BEACH",
-   "verts": 46
+   "verts": 74
   },
   {
    "name": "BEACH.003",
@@ -282,7 +282,7 @@
    "derived": null,
    "hand_made": false,
    "material": "DWG BEACH",
-   "verts": 28
+   "verts": 62
   },
   {
    "name": "BEACH rocky shore",
@@ -314,11 +314,11 @@
    "dwg_layer": "outline",
    "dwg_handle": "8451",
    "dwg_block": null,
-   "height_m": 2.5,
+   "height_m": 5.5,
    "derived": null,
    "hand_made": false,
    "material": "DWG outline",
-   "verts": 10016
+   "verts": 30346
   },
   {
    "name": "Hill",
@@ -823,6 +823,42 @@
    "hand_made": false,
    "material": "DWG GREEN AREAS",
    "verts": 48
+  },
+  {
+   "name": "GREEN AREAS Rotunda park.001",
+   "type": "EMPTY",
+   "collection": "02_Landscape/GREEN AREAS",
+   "parent": null,
+   "group": "landscape",
+   "function": "planting",
+   "zone_id": "Z07",
+   "zone_name": "Events Rotunda",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": null,
+   "derived": "design edit e036",
+   "hand_made": false,
+   "material": null,
+   "verts": 0
+  },
+  {
+   "name": "GREEN AREAS Rotunda park.001 | park",
+   "type": "MESH",
+   "collection": "02_Landscape/GREEN AREAS",
+   "parent": "GREEN AREAS Rotunda park.001",
+   "group": "landscape",
+   "function": "planting",
+   "zone_id": "Z07",
+   "zone_name": "Events Rotunda",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": 0.62,
+   "derived": "design edit e036",
+   "hand_made": false,
+   "material": "DWG GREEN AREAS",
+   "verts": 252
   },
   {
    "name": "villa landscape",
@@ -1939,6 +1975,42 @@
    "hand_made": false,
    "material": "Promenade surface",
    "verts": 328
+  },
+  {
+   "name": "Rotunda park | path N",
+   "type": "EMPTY",
+   "collection": "04_Mobility/Footpaths",
+   "parent": null,
+   "group": "mobility",
+   "function": "arrival & mobility",
+   "zone_id": "Z07",
+   "zone_name": "Events Rotunda",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": null,
+   "derived": "design edit e036",
+   "hand_made": false,
+   "material": null,
+   "verts": 0
+  },
+  {
+   "name": "Rotunda park | path N | surface",
+   "type": "MESH",
+   "collection": "04_Mobility/Footpaths",
+   "parent": "Rotunda park | path N",
+   "group": "mobility",
+   "function": "arrival & mobility",
+   "zone_id": "Z07",
+   "zone_name": "Events Rotunda",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": 0.3,
+   "derived": "design edit e036",
+   "hand_made": false,
+   "material": "Promenade surface",
+   "verts": 8
   },
   {
    "name": "Restaurant drop-offs",
@@ -6204,7 +6276,7 @@
    "derived": "design edit e003",
    "hand_made": false,
    "material": "Planting",
-   "verts": 68
+   "verts": 84
   },
   {
    "name": "branded residence BR1 | tower B glass",
@@ -6258,7 +6330,7 @@
    "derived": "design edit e003",
    "hand_made": false,
    "material": "Planting",
-   "verts": 68
+   "verts": 84
   },
   {
    "name": "branded residence BR2 | tower A podium",
@@ -6546,7 +6618,7 @@
    "derived": "design edit e003",
    "hand_made": false,
    "material": "Planting",
-   "verts": 68
+   "verts": 84
   },
   {
    "name": "branded residence BR2 | tower B glass",
@@ -6600,7 +6672,7 @@
    "derived": "design edit e003",
    "hand_made": false,
    "material": "Planting",
-   "verts": 68
+   "verts": 84
   },
   {
    "name": "gym.001",
