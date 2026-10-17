@@ -19,13 +19,14 @@
   body.site .con p { margin: 0; font-size: 12.5px; color: #3b4852; }
   body.site .con .cap { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 4px; }
   body.site .con .kv { grid-template-columns: 1fr auto; font-size: 12.5px; }
-  body.site .con .fleet { display: flex; flex-wrap: wrap; gap: 5px; }
-  body.site .con .fleet span { font: 500 11px var(--body); color: var(--navy); border: 1px solid var(--line); border-radius: 7px; padding: 3px 7px; background: #faf8f4; }
+  body.site .con .top { background: #faf8f4; border-radius: 10px; padding: 8px 10px; }
+  body.site .con .top span:nth-child(2n) { font-size: 14px; }
   body.site .svc .kv span:nth-child(2n) { color: #1a7f52; }
   body.site .bal .bar { height: 8px; border-radius: 4px; background: rgba(21, 48, 74, 0.08); overflow: hidden; }
   body.site .bal .bar i { display: block; height: 100%; background: var(--navy); }
   body.site .bal .bar i.over { background: #c0504d; }
   body.site .bal td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
+  body.site .bal .over-txt { color: #c0504d; font-weight: 600; }
 </style>
 </head>
 <body class="site">
@@ -33,12 +34,12 @@
 <div class="wrap pf">
   <div class="hero" style="padding-bottom:10px">
     <h1>Proforma.</h1>
-    <p>Every product concept of the island as a card: what it is, how big it is, what it needs to run — staff, storage, fleet, water, energy, sewage. Below them the services that supply those needs, and the balance between demand and capacity. Numbers are planning ratios for a luxury island resort on master plan v024; replace them with the operator's own as they arrive.</p>
+    <p>Every product concept of the island as a card: what it is, how many people it holds, what it is made of, who runs it and what it needs every day — water, energy, sewage, food, laundry, waste. Below them the services that supply those needs, and the balance between demand and capacity. Numbers are planning ratios for a luxury island resort on master plan v024; replace them with the operator's own as they arrive.</p>
   </div>
 
   <section id="concepts">
     <h2>Product concepts</h2>
-    <p class="lead">Revenue-generating units. Capacity and daily demand at peak occupancy.</p>
+    <p class="lead">Revenue-generating units. Capacity is the most people the concept can hold; the needs are for an average day at 70 % occupancy.</p>
     <div class="cards" id="conceptCards"></div>
   </section>
 
@@ -50,8 +51,8 @@
 
   <section id="balance">
     <h2>Balance</h2>
-    <p class="lead">Daily demand of all concepts against the capacity of the services. Red = the service as sized today is short.</p>
-    <table class="t bal" id="balance"><thead><tr><th>Resource</th><th>Demand per day</th><th>Capacity</th><th>Load</th><th></th></tr></thead><tbody></tbody></table>
+    <p class="lead">Daily demand of all concepts against the capacity of the services: the average day at 70 % occupancy and the peak day at 100 %. Red = the service as sized today is short.</p>
+    <table class="t bal" id="balance"><thead><tr><th>Resource</th><th>Average day</th><th>Peak day</th><th>Capacity</th><th>Load, average day</th><th></th></tr></thead><tbody></tbody></table>
   </section>
 
   <section id="programme">
@@ -81,23 +82,44 @@
       </tbody>
     </table>
   </section>
-  <p class="foot">RubiqOS · proforma of the generic island resort, 17 October 2026. Ratios: water 600 L per hotel key, 2 m³ per villa, 400 L per apartment, 30 L per cover, 150 L per staff member; energy 60 kWh per key, 150 per villa, 35 per apartment, 8 per cover; sewage 85 % of water; storage 1.5 m² per key plus kitchen cold rooms. Working material, not an offer.</p>
+  <p class="foot">RubiqOS · proforma of the generic island resort, 17 October 2026. Method: needs = capacity × occupancy (× visits a day for day venues) × a ratio per guest-day or per visit; the marina is counted per occupied berth. Ratios per guest-day: hotels water 500 L, energy 42 kWh, food 2.0 kg, laundry 4 kg, waste 2.5 kg; villas 600 L, 50 kWh, 1.5 kg, 4 kg, 2.5 kg; residences 300 L, 25 kWh, 1.0 kg, 1.5 kg, 2.0 kg. Day venues per visit: 15–180 L of water, 4–12 kWh, 0.1–0.9 kg of food, 0.1–2 kg of laundry, 0.2–0.6 kg of waste. Berth-day: 15 m boat 0.2 m³ and 60 kWh, 35 m boat 1 m³ and 400 kWh, 80 m boat 5 m³ and 2,400 kWh of shore power. Sewage = 85 % of water. Sources: Cornell Hotel Sustainability Benchmarking (luxury resort tier), ITP water and carbon benchmarks, UNEP tourism waste ratios, PIANC marina guidance. Guests on the average day = capacity × 70 %; hotel practice applies occupancy to keys at about two guests per key, which gives some 15 % fewer guests, so these figures sit on the safe side. Working material, not an offer.</p>
 </div>
 <script>
 const Z = { Z01: '#E8D9B0', Z02: '#C9B27C', Z03: '#D98C5F', Z04: '#6FA8C9', Z05: '#9CC58A', Z06: '#7FB8A6', Z07: '#9C83BE', Z08: '#8FA6BA', Z09: '#9C9890', Z10: '#E3D3BC', Z11: '#C97A52' };
-// product concepts: size, people, staff, storage, fleet, daily demand (water m3, energy kWh, sewage m3, food t, linen kg)
+const OCC = 0.70;   // average occupancy applied to every concept
+// Product concepts.
+//   capacity  most people the concept can hold at once; unit = what they are called
+//   turns     visits a day per place for day venues (lodging = 1)
+//   objects   what the capacity is made of
+//   staff     positions (FTE), all roles of the concept
+//   per       daily ratio per guest-day or per visit: water L, energy kWh, food kg, laundry kg, waste kg; sewage = 85 % of water
+//   units     (marina) occupied-berth basis instead of per-person: n berths, pax aboard, per-berth-day ratios
 const CONCEPTS = [
-  { id: 'beach-hotel', name: 'Beach Hotel', zone: 'Z01', what: 'Three 6-floor blocks on the beach, round lobby, restaurant, pool. The hotel side of the island.', size: { 'Keys': 240, 'Guests at 75 %': 342, 'Restaurant seats': 220, 'Pool, m²': '2,100' }, staff: 270, storage: 'Linen room 360 m², kitchen cold rooms 120 m², mini-bar store 60 m²', fleet: ['6 housekeeping robots', '6 delivery robots', '3 linen carts', '2 buggies dedicated'], demand: { water: 205, energy: 14400, sewage: 175, food: 1.1, linen: 1450 } },
-  { id: 'hill-hotel', name: 'Hill Hotel', zone: 'Z02', what: 'Eleven low boutique blocks on the central hill. Large rooms, views, quiet.', size: { 'Keys': 120, 'Guests at 70 %': 168, 'Lounge seats': 60 }, staff: 135, storage: 'Linen room 180 m², pantry 40 m²', fleet: ['3 housekeeping robots', '3 delivery robots', '2 linen carts', '2 buggies dedicated'], demand: { water: 101, energy: 7200, sewage: 86, food: 0.5, linen: 720 } },
-  { id: 'villas', name: 'East Villas', zone: 'Z05', what: 'Eighteen 4-bedroom villas on the eastern cape with terrace and pool; owned or rented.', size: { 'Villas': 18, 'Guests at 80 %': 80, 'Bedrooms': 72, 'Pools': 18 }, staff: 40, storage: 'Butler pantries 18 × 6 m², pool chemicals store', fleet: ['4 delivery robots', '2 housekeeping carts', '1 pool-service cart'], demand: { water: 36, energy: 2700, sewage: 31, food: 0.25, linen: 220 } },
-  { id: 'residences', name: 'Branded Residences', zone: 'Z10', what: 'Four 45 × 45 m towers, 4 floors, roof terraces; 60 % of the apartments in the hotel rental pool.', size: { 'Apartments': 208, 'In rental pool': 125, 'Residents at peak': 285, 'Roof pools': 4 }, staff: 95, storage: 'Linen and amenities 220 m², parcel room 40 m²', fleet: ['4 housekeeping robots', '4 delivery robots', '2 linen carts'], demand: { water: 110, energy: 7300, sewage: 94, food: 0.4, linen: 500 } },
-  { id: 'village', name: 'Marina Village', zone: 'Z03', what: 'Pedestrian retail quarter: four F&B outlets, shops, island market, apart-hotel for management.', size: { 'F&B outlets': 4, 'Covers a day': '1,100', 'Shops': 17, 'Apart-hotel units': 40 }, staff: 85, storage: 'Shared cold store 90 m², dry store 120 m², retail stock 300 m²', fleet: ['4 delivery robots based here', '1 restock cart'], demand: { water: 48, energy: 9600, sewage: 41, food: 0.9, linen: 150 } },
-  { id: 'beach-club', name: 'Beach Club', zone: 'Z11', what: 'Club on the north beach: sunbeds, pool, restaurant and bar, stage for the evening programme.', size: { 'Sunbeds': 180, 'Restaurant seats': 90, 'Covers a day': 450, 'Day passes': 120 }, staff: 40, storage: 'Bar and kitchen cold rooms 50 m², towel store 30 m²', fleet: ['2 beach set-up carts', '1 delivery robot'], demand: { water: 32, energy: 3600, sewage: 27, food: 0.35, linen: 400 } },
-  { id: 'members-club', name: 'Members Club', zone: 'Z01', what: 'Arc building on the beach west of the hotel with pavilion and pool; membership for the mainland and residents.', size: { 'Members': 400, 'Seats': 160, 'Covers a day': 300 }, staff: 30, storage: 'Kitchen cold rooms 40 m², wine cellar 30 m²', fleet: ['1 delivery robot', '1 service cart'], demand: { water: 20, energy: 2600, sewage: 17, food: 0.25, linen: 120 } },
-  { id: 'spa', name: 'Spa & Wellness', zone: 'Z06', what: 'Spa on the second hill with treatment rooms, thermal area and a longevity programme.', size: { 'Treatment rooms': 24, 'Guests an hour': 60, 'Treatments a day': 260 }, staff: 32, storage: 'Products 30 m², linen 40 m²', fleet: ['1 linen cart', '1 delivery robot'], demand: { water: 58, energy: 3800, sewage: 49, food: 0.05, linen: 520 } },
-  { id: 'sport', name: 'GYM & Sports', zone: 'Z06', what: 'One complex: two gyms, three tennis and six pickleball courts on a shared deck; academies and group classes.', size: { 'Gym places': 40, 'Courts': 9, 'Sessions a day': 160 }, staff: 15, storage: 'Equipment 60 m²', fleet: ['1 service cart'], demand: { water: 12, energy: 1900, sewage: 10, food: 0.02, linen: 160 } },
-  { id: 'marina', name: 'Marina', zone: 'Z04', what: 'Berths, Terminal for the shuttle and tenders, yacht club; layout to be redesigned with the yacht mix.', size: { 'Berths': 255, 'Yacht guests and crew': 120, 'Shuttle arrivals a day': 12 }, staff: 28, storage: 'Chandlery and fuel 150 m², service yard', fleet: ['Shuttle boat', 'Excursion boat', 'Duty RIB', 'Workboat'], demand: { water: 60, energy: 4100, sewage: 40, food: 0.1, linen: 0 } },
-  { id: 'events', name: 'Events Rotunda', zone: 'Z07', what: 'Ring hall around a courtyard with three pavilions: exhibitions, talks, concerts, dinners.', size: { 'Hall capacity': 300, 'Courtyard': 120, 'Events a day': 3 }, staff: 10, storage: 'Furniture and AV store 120 m²', fleet: ['1 truck run per event', '+6 buggies at dispersal'], demand: { water: 9, energy: 1800, sewage: 8, food: 0.15, linen: 60 } },
+  { id: 'beach-hotel', name: 'Beach Hotel', zone: 'Z01', unit: 'guests', what: 'The main hotel on the beach: three guest-room blocks around a round lobby, the signature restaurant and the central pool. Where most of the island\'s guests stay.',
+    capacity: 528, objects: { 'Deluxe rooms': 140, 'Premier sea-view rooms': 60, 'One-bedroom suites': 32, 'Signature suites': 8, 'Restaurant': 1, 'Pool': 1 }, staff: 270, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
+  { id: 'hill-hotel', name: 'Hill Hotel', zone: 'Z02', unit: 'guests', what: 'A boutique hotel of low blocks scattered over the central hill. Larger rooms, views across the island, quiet; its own lounge.',
+    capacity: 280, objects: { 'Hillside rooms': 56, 'Terrace rooms': 36, 'One-bedroom suites': 22, 'Two-bedroom suites': 6, 'Lounge': 1 }, staff: 135, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
+  { id: 'villas', name: 'East Villas', zone: 'Z05', unit: 'guests', what: 'Private villas on the eastern cape, each with a terrace and its own pool. Owned or let through the hotel, served by butlers.',
+    capacity: 144, objects: { 'Four-bedroom villas': 18, 'Bedrooms': 72, 'Private pools': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
+  { id: 'residences', name: 'Branded Residences', zone: 'Z10', unit: 'residents', what: 'Apartment towers with roof terraces and pools next to the village. Most apartments are let through the hotel rental pool, the rest are lived in by their owners.',
+    capacity: 812, objects: { 'One-bedroom apartments': 62, 'Two-bedroom apartments': 94, 'Three-bedroom apartments': 42, 'Penthouses': 10, 'Roof pools': 4 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
+  { id: 'village', name: 'Marina Village', zone: 'Z03', unit: 'people at once', turns: 3, what: 'The pedestrian heart of the island: cafés and restaurants, shops, the island market and a small apart-hotel for management.',
+    capacity: 600, objects: { 'Restaurants and cafés': 4, 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20, 'Apart-hotel units': 40 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
+  { id: 'beach-club', name: 'Beach Club', zone: 'Z11', unit: 'people at once', turns: 1.5, what: 'A day club on the north beach: sunbeds and cabanas, a pool, a restaurant and bar, and a stage for the evening programme.',
+    capacity: 320, objects: { 'Sunbeds': 180, 'Cabanas': 12, 'Restaurant seats': 90, 'Bar seats': 40, 'Pool': 1, 'Stage': 1 }, staff: 40, per: { water: 60, energy: 8, food: 0.9, laundry: 1.0, waste: 0.6 } },
+  { id: 'members-club', name: 'Members Club', zone: 'Z01', unit: 'people at once', turns: 2, what: 'A club on the beach west of the hotel with a pavilion and a pool. Membership for the mainland and for the island\'s residents.',
+    capacity: 260, objects: { 'Members': 400, 'Dining seats': 100, 'Lounge and bar seats': 60, 'Pavilion seats': 40, 'Pool deck places': 60 }, staff: 30, per: { water: 40, energy: 8, food: 0.8, laundry: 0.8, waste: 0.5 } },
+  { id: 'spa', name: 'Spa & Wellness', zone: 'Z06', unit: 'people at once', turns: 4, what: 'A spa on the second hill: treatment rooms, a thermal area and a longevity clinic.',
+    capacity: 90, objects: { 'Treatment rooms': 16, 'Couple suites': 6, 'Longevity clinic rooms': 2, 'Thermal area places': 40, 'Relaxation lounge places': 20 }, staff: 32, per: { water: 180, energy: 12, food: 0.2, laundry: 2.0, waste: 0.3 } },
+  { id: 'sport', name: 'GYM & Sports', zone: 'Z06', unit: 'people at once', turns: 4, what: 'One sports complex: gyms, a group studio, tennis and pickleball courts on a shared deck, a clubhouse. Academies and classes.',
+    capacity: 130, objects: { 'Gyms': 2, 'Group studio': 1, 'Tennis courts': 3, 'Pickleball courts': 6, 'Clubhouse': 1 }, staff: 15, per: { water: 40, energy: 5, food: 0.1, laundry: 0.5, waste: 0.2 } },
+  { id: 'marina', name: 'Marina', zone: 'Z04', unit: 'people aboard', what: 'The yacht marina behind the breakwater: three sizes of berth, the arrivals terminal for the shuttle and tenders, a yacht club and a fuel dock.',
+    units: [ { name: 'Berths for boats to 15 m', n: 50, pax: 4, per: { water: 200, energy: 60, food: 5, laundry: 2, waste: 8 } },
+             { name: 'Berths for boats to 35 m', n: 32, pax: 8, per: { water: 1000, energy: 400, food: 15, laundry: 6, waste: 20 } },
+             { name: 'Berths for boats to 80 m', n: 8, pax: 14, per: { water: 5000, energy: 2400, food: 40, laundry: 15, waste: 50 } } ],
+    objects: { 'Arrivals terminal': 1, 'Yacht club': 1, 'Fuel dock': 1 }, staff: 28 },
+  { id: 'events', name: 'Events Rotunda', zone: 'Z07', unit: 'people at once', turns: 1.5, what: 'A ring hall around a courtyard with three pavilions: exhibitions, talks, concerts and dinners.',
+    capacity: 540, objects: { 'Hall places': 300, 'Courtyard places': 120, 'Pavilions': 3, 'Pavilion places': 120 }, staff: 10, per: { water: 15, energy: 4, food: 0.4, laundry: 0.1, waste: 0.3 } },
 ];
 // services: capacity as sized in the plan
 const SERVICES = [
@@ -105,28 +127,42 @@ const SERVICES = [
   { name: 'Desalination (RO)', zone: 'Z09', what: 'Reverse-osmosis plant with potable storage tanks.', cap: { 'Output a day': '900 m³', 'Potable storage': '1,200 m³', 'Grey-water reuse': '35 %' }, key: 'water', capacity: 900 },
   { name: 'Sewage treatment', zone: 'Z09', what: 'Treatment plant with reclaimed water for irrigation.', cap: { 'Treatment a day': '700 m³', 'Reclaimed for irrigation': '450 m³' }, key: 'sewage', capacity: 700 },
   { name: 'Warehouse and cold chain', zone: 'Z09', what: 'Four-block warehouse bar: laundry, prep kitchen, cold storage, dry storage; receives the supply vessel.', cap: { 'Cold storage': '600 m²', 'Dry storage': '900 m²', 'Food throughput a day': '4.5 t', 'Supply calls a week': 2 }, key: 'food', capacity: 4.5 },
-  { name: 'Laundry', zone: 'Z09', what: 'Central laundry in the warehouse bar; two linen trucks.', cap: { 'Linen a day': '5,000 kg', 'Turnaround': '6 h' }, key: 'linen', capacity: 5000 },
+  { name: 'Laundry', zone: 'Z09', what: 'Central laundry in the warehouse bar; two linen trucks.', cap: { 'Linen a day': '5,000 kg', 'Turnaround': '6 h' }, key: 'laundry', capacity: 5000 },
   { name: 'Fleet Hub', zone: 'Z08', what: 'Charging, parking and workshop for the land fleet; dispatch by RubiqOS.', cap: { 'Charging posts': 30, 'Buggies': 28, 'Delivery robots': 24, 'Service vehicles': 22 } },
   { name: 'Staff accommodation', zone: 'Z09', what: 'Four-floor block with canteen; the rest of the staff commute by the staff shuttle.', cap: { 'Beds': 420, 'Canteen meals a day': '1,000', 'Staff on island at peak shift': 330 }, key: 'staff', capacity: 900 },
-  { name: 'Waste management', zone: 'Z09', what: 'Sorting, compactors and the night waste run to the transfer station at the dock.', cap: { 'Waste a day': '5 t', 'Recycled': '40 %' } },
+  { name: 'Waste management', zone: 'Z09', what: 'Sorting, compactors and the night waste run to the transfer station at the dock.', cap: { 'Waste a day': '5 t', 'Recycled': '40 %' }, key: 'waste', capacity: 5 },
   { name: 'Service dock', zone: 'Z04', what: 'Supply vessel berth with crane; containers go straight onto service vehicles.', cap: { 'Vessel capacity': '9 t', 'Unloading': '2 h', 'Fuel bunkering': 'yes' } },
 ];
-const sum = k => CONCEPTS.reduce((a, c) => a + (c.demand[k] || 0), 0);
 const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { maximumFractionDigits: d });
-document.getElementById('conceptCards').innerHTML = CONCEPTS.map(c => `<div class="con" id="${c.id}">
+const capacityOf = c => c.units ? c.units.reduce((a, u) => a + u.n * u.pax, 0) : c.capacity;
+// daily needs of a concept at a given occupancy: water m³, energy kWh, sewage m³, food t, laundry kg, waste t
+function needs(c, occ) {
+  let w = 0, e = 0, f = 0, l = 0, ws = 0;
+  if (c.units) for (const u of c.units) { const n = u.n * occ; w += n * u.per.water; e += n * u.per.energy; f += n * u.per.food; l += n * u.per.laundry; ws += n * u.per.waste; }
+  else { const n = c.capacity * occ * (c.turns || 1); w = n * c.per.water; e = n * c.per.energy; f = n * c.per.food; l = n * c.per.laundry; ws = n * c.per.waste; }
+  return { water: w / 1000, energy: e, sewage: 0.85 * w / 1000, food: f / 1000, laundry: l, waste: ws / 1000 };
+}
+const people = (c, occ) => Math.round(capacityOf(c) * occ * (c.turns || 1));
+const sum = (k, occ) => CONCEPTS.reduce((a, c) => a + needs(c, occ)[k], 0);
+document.getElementById('conceptCards').innerHTML = CONCEPTS.map(c => { const d = needs(c, OCC); const objs = c.units ? Object.fromEntries([...c.units.map(u => [u.name, u.n]), ...Object.entries(c.objects)]) : c.objects; return `<div class="con" id="${c.id}">
   <div class="hd"><h3>${c.name}</h3><span class="zone"><i style="background:${Z[c.zone]}"></i>${c.zone}</span></div><p>${c.what}</p>
-  <div class="cap">Capacity</div><div class="kv">${Object.entries(c.size).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}</div>
-  <div class="cap">Needs per day</div><div class="kv"><span>Staff positions</span><span>${c.staff}</span><span>Water</span><span>${fmt(c.demand.water)} m³</span><span>Energy</span><span>${fmt(c.demand.energy)} kWh</span><span>Sewage</span><span>${fmt(c.demand.sewage)} m³</span><span>Food and beverage</span><span>${fmt(c.demand.food, 2)} t</span><span>Linen</span><span>${fmt(c.demand.linen)} kg</span></div>
-  <div class="cap">Storage</div><p>${c.storage}</p>
-  <div class="cap">Internal fleet</div><div class="fleet">${c.fleet.map(f => `<span>${f}</span>`).join('')}</div>
-</div>`).join('');
+  <div class="kv top"><span>Capacity</span><span>${fmt(capacityOf(c))} ${c.unit}</span><span>Occupancy</span><span>${Math.round(OCC * 100)} %</span><span>Average day</span><span>${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}</span></div>
+  <div class="cap">Objects</div><div class="kv">${Object.entries(objs).map(([k, v]) => `<span>${k}</span><span>${fmt(v)}</span>`).join('')}</div>
+  <div class="cap">Staff</div><div class="kv"><span>Positions</span><span>${c.staff}</span></div>
+  <div class="cap">Needs per day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Laundry</span><span>${fmt(d.laundry)} kg</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span></div>
+</div>`; }).join('');
 document.getElementById('serviceCards').innerHTML = SERVICES.map(c => `<div class="con svc">
   <div class="hd"><h3>${c.name}</h3><span class="zone"><i style="background:${Z[c.zone]}"></i>${c.zone}</span></div><p>${c.what}</p>
   <div class="cap">Capacity</div><div class="kv">${Object.entries(c.cap).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}</div>
 </div>`).join('');
 const staffTotal = CONCEPTS.reduce((a, c) => a + c.staff, 0) + 120;   // + administration, utilities, security, landscape
-const rows = [['Water, m³', sum('water') + 150, 900, '+150 m³ irrigation and staff'], ['Energy, kWh', sum('energy') + 12000, 95000, '+12,000 kWh utilities, BOH and fleet charging'], ['Sewage, m³', sum('sewage') + 120, 700, '+120 m³ staff and BOH'], ['Food and beverage, t', sum('food') + 0.4, 4.5, '+0.4 t staff canteen'], ['Linen, kg', sum('linen') + 600, 5000, '+600 kg uniforms'], ['Staff positions', staffTotal, 900, 'plan 900 positions; 330 on the peak shift']];
-document.querySelector('#balance tbody').innerHTML = rows.map(([k, d, cap, note]) => { const p = Math.round(100 * d / cap); return `<tr><td>${k}</td><td>${fmt(d, k.includes('Food') ? 2 : 0)}</td><td>${fmt(cap, 1)}</td><td style="min-width:160px"><div class="bar"><i class="${p > 100 ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div></td><td class="muted">${p} % · ${note}</td></tr>`; }).join('');
+const capOf = k => SERVICES.find(s => s.key === k).capacity;
+// [label, key, extra demand outside the concepts, decimals, note]
+const ROWS = [['Water, m³', 'water', 150, 0, '+150 m³ staff housing and back of house'], ['Energy, kWh', 'energy', 12000, 0, '+12,000 kWh utilities, back of house and fleet charging'], ['Sewage, m³', 'sewage', 120, 0, '+120 m³ staff housing and back of house'], ['Food and beverage, t', 'food', 0.4, 2, '+0.4 t staff canteen'], ['Laundry, kg', 'laundry', 600, 0, '+600 kg uniforms'], ['Waste, t', 'waste', 0.3, 2, '+0.3 t back of house'], ['Staff positions', 'staff', 0, 0, 'plan 900 positions; 330 on the peak shift']];
+document.querySelector('#balance tbody').innerHTML = ROWS.map(([label, k, extra, dec, note]) => {
+  const avg = k === 'staff' ? staffTotal : sum(k, OCC) + extra, peak = k === 'staff' ? staffTotal : sum(k, 1) + extra, cap = capOf(k);
+  const p = Math.round(100 * avg / cap), pp = Math.round(100 * peak / cap);
+  return `<tr><td>${label}</td><td>${fmt(avg, dec)}</td><td>${fmt(peak, dec)}</td><td>${fmt(cap, dec)}</td><td style="min-width:160px"><div class="bar"><i class="${p > 100 ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div></td><td class="muted"><span class="${p > 100 ? 'over-txt' : ''}">${p} %</span> average · <span class="${pp > 100 ? 'over-txt' : ''}">${pp} %</span> peak · ${note}</td></tr>`; }).join('');
 </script>
 </body>
 </html>
