@@ -143,7 +143,7 @@
   #dash .two { grid-column: 1 / -1; display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: stretch; }
   #dash .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
   #dash .pair td small { color: var(--muted); }
-  #dash .lb { display: flex; align-items: center; gap: 6px; } #dash .lb .bar { width: 54px; margin: 0; flex: none; }
+  #dash .lb { display: flex; align-items: center; gap: 6px; } #dash .lb .bar { width: 54px; margin: 0; flex: none; } #dProducts .lb .bar { flex: 1 1 auto; } #dProducts .lb { gap: 10px; font-weight: 600; color: var(--navy); }
   @media (max-width: 900px) { #dash .two, #dash .pair { grid-template-columns: 1fr; } }
   .ticker .d { color: #3b4852; font-size: 12px; margin-top: 1px; }
   .ticker { max-height: 360px; overflow: auto; scroll-behavior: smooth; font-size: 12.5px; }
@@ -185,9 +185,8 @@
   <div class="card"><h2>Guests on the island<small>plan, peak day</small></h2><div class="big" id="dGuestsTotal">—</div><div class="kv" id="dGuests"></div></div>
   <div class="card"><h2>Staff<small>on shift</small></h2><div class="big" id="dStaffTotal">—</div><div class="kv" id="dStaff"></div></div>
   <div class="card"><h2>Today<small>operations counters</small></h2><div class="kv" id="dOps"></div></div>
-  <div class="card"><h2>Zones<small>people now</small></h2><div id="dZones"></div></div>
   <div class="pair">
-    <div class="card"><h2>Products<small>guests now · staff on shift</small></h2><table id="dProducts"><thead><tr><th>Product</th><th>Guests</th><th>Staff</th></tr></thead><tbody></tbody></table></div>
+    <div class="card"><h2>Products<small>guests now · staff on shift</small></h2><table id="dProducts"><thead><tr><th>Product</th><th style="width:46%">Guests now</th><th>Staff</th></tr></thead><tbody></tbody></table></div>
     <div class="card"><h2>Services<small>base parameters · load today</small></h2><table id="dServices"><thead><tr><th>Service</th><th>Base parameters</th><th>Load</th></tr></thead><tbody></tbody></table></div>
   </div>
   <div class="two">
@@ -1316,9 +1315,6 @@ function updateDash() {
   $('dStaffTotal').textContent = onShift;
   $('dStaff').innerHTML = `<span>Shift</span><span>${between(h, 7, 15) ? 'Morning 07–15' : between(h, 15, 23) ? 'Evening 15–23' : 'Night 23–07'}</span><span>Walking between posts</span><span>${Math.round(staff.filter(f => f.path).length * (onShift / staff.length))}</span><span>At the staff accommodation</span><span>${Math.round(staff.filter(f => !f.path && f.at === 'staff').length * (onShift / staff.length))}</span><span>Next shift change</span><span>${String(SHIFTS.find(t => t > h) ?? 7).padStart(2, '0')}:00</span>`;
   $('dOps').innerHTML = [['Guest pod and shuttle trips', ops.buggyTrips], ['Robot deliveries', ops.deliveries], ['Truck runs', ops.truckRuns], ['Work orders closed', ops.workOrders], ['Arrived by shuttle', ops.arrivals], ['Left by shuttle', ops.departures], ['Event visits', ops.eventsAttended]].map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-  const zc = {}; for (const f of people) { if (f.idle || !f.pos) continue; for (const z of zones) { const b = zoneBox[z.zone_id]; if (f.pos.x >= b.min.x && f.pos.x <= b.max.x && f.pos.z >= b.min.z && f.pos.z <= b.max.z) { zc[z.zone_id] = (zc[z.zone_id] || 0) + 1; break; } } }
-  const zmax = Math.max(1, ...Object.values(zc));
-  $('dZones').innerHTML = zones.map(z => `<div style="display:flex;justify-content:space-between;font-size:12px"><span>${z.zone_id} ${z.zone_name}</span><b>${Math.round((zc[z.zone_id] || 0) * scale)}</b></div><div class="bar"><i style="width:${pct(zc[z.zone_id] || 0, zmax)}%;background:${z.colour}"></i></div>`).join('');
   const rows = {}; for (const f of ambient) { const k = f.type; const r = rows[k] ||= { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
   $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = rows[k] || { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; return `<tr><td>${TYPES[k] ? TYPES[k].title : k}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.nb ? Math.round(r.bat / r.nb) + ' %' : '—'}</td></tr>`; }).join('');
   const lg = $('dLog'), stick = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
@@ -1330,8 +1326,9 @@ function updateDash() {
       : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? 'Beach Club' : c === 'club' ? 'Members Club' : null; };
   const pg = {}; for (const f of guests) { if (f.path && !f.strolling) continue; const k = prodOf(f); if (k) pg[k] = (pg[k] || 0) + 1; }
   const shiftShare = onShift / 625, villaN = PRODUCTS.filter(d => d.small).length;
-  const prows = PRODUCTS.filter(d => !d.small).map(d => [d.name, d.kpi.Staff || 0]).concat([['Villas', villaN * 4]]);
-  $('dProducts').querySelector('tbody').innerHTML = prows.map(([n, st]) => `<tr><td>${n}</td><td>${Math.round((pg[n] || 0) * scale)}</td><td>${Math.round(st * shiftShare)}</td></tr>`).join('');
+  const prows = PRODUCTS.filter(d => !d.small).map(d => [d.name, d.kpi.Staff || 0, ZC[d.zone] || '#15304a']).concat([['Villas', villaN * 4, ZC.Z05 || '#15304a']]);
+  const pmax = Math.max(1, ...prows.map(([n]) => pg[n] || 0));
+  $('dProducts').querySelector('tbody').innerHTML = prows.map(([n, st, col]) => `<tr><td>${n}</td><td><div class="lb"><div class="bar" style="width:70%"><i style="width:${pct(pg[n] || 0, pmax)}%;background:${col}"></i></div>${Math.round((pg[n] || 0) * scale)}</div></td><td>${Math.round(st * shiftShare)}</td></tr>`).join('');
   $('dServices').querySelector('tbody').innerHTML = SERVICES.map(d => `<tr><td>${d.name}</td><td><small>${Object.entries(d.kpi).slice(0, 2).map(([k, v]) => `${k} ${v}`).join(' · ')}</small></td><td><div class="lb"><div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div>${d.load} %</div></td></tr>`).join('');
   updateActorCounts();
 }
