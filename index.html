@@ -627,6 +627,9 @@ function surfaceGrid(meshes, cell, gap = 12) {
       }
     }
   }
+  return finishGrid(y, W, H, ox, oz, cell, gap);
+}
+function finishGrid(y, W, H, ox, oz, cell, gap) {                               // bridges, nearest, A* on a filled raster
   const cellOf = p => [Math.round((p.x - ox) / cell), Math.round((p.z - oz) / cell)];
   const posOf = (gx, gz) => new THREE.Vector3(ox + gx * cell, y[gz * W + gx], oz + gz * cell);
   const ok = (gx, gz) => gx >= 0 && gz >= 0 && gx < W && gz < H && !isNaN(y[gz * W + gx]);
@@ -705,7 +708,7 @@ function surfaceGrid(meshes, cell, gap = 12) {
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
 const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|service drop-off$|^Hotel Lobby road \| access road$/.test(n)).flatMap(meshOf);
 const roadR = surfaceGrid([...meshOf('ROADS_SERVICE surface'), ...meshOf('ROADS_SERVICE (block) surface'), ...meshOf('loading zone surface'), ...padMeshes], 3);
-const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...padMeshes.filter(m => !/\(BOH\)/.test(m.name))], 2.5, 30);   // people may cross up to 30 m of lawn between walkway pieces
+const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...meshOf('Infrastructure zone | path FH'), ...meshOf('Infrastructure zone | path SA'), ...meshOf('GYM & Sports | deck'), ...[...byName.keys()].filter(n => n.startsWith('Footpath links')).flatMap(meshOf), ...padMeshes.filter(m => !/\(BOH\)/.test(m.name))], 2.5, 12);   // strict (founder 2026-10-17): walkways only; 12 m bridging covers kerbs, missing paths are added to the model (e021)
 $('stats').textContent = `model ${manifest.version} (${manifest.exported}) · ${top.length} objects · loaded in ${timeStat} s · road grid ${roadR.count} cells · walk grid ${walkR.count} cells`;
 
 // --- anchors: objects by name (centre of their bounds)
@@ -841,7 +844,8 @@ function stepMover(a, dt) {
 }
 const road = (from, to) => roadR.route(from, to);
 // people: walkway route; if two pieces of the walk network are not linked in the model, cross the lawn in a straight line
-const walk = (from, to) => walkR.route(from, to) || (() => { const a = walkR.nearest(from), b = walkR.nearest(to); if (!a || !b) return null; const p = walkR.posOf(...a), q = walkR.posOf(...b); console.warn('walk fallback', [from.x | 0, from.z | 0], '->', [to.x | 0, to.z | 0]); return [p, p.clone().lerp(q, 0.5), q]; })();
+const noRoute = new Set();
+const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k = `${from.x | 0},${from.z | 0}>${to.x | 0},${to.z | 0}`; if (!noRoute.has(k)) { noRoute.add(k); console.warn('no walkway between', [from.x | 0, from.z | 0], 'and', [to.x | 0, to.z | 0]); } } return r; };   // strict: walkways only, never across the lawn
 
 // ===== drop-off pads (founder 2026-10-17): every drop-off is red; each pad turned so its long side runs along the adjoining road
 {
@@ -984,7 +988,7 @@ function follower(type, label, medium, speed, next, home) {
   if (home) { placeAt(f, medium === 'water' ? home : roadR.posOf(...roadR.nearest(home))); f.task = 'Standby'; }
   mesh.traverse(o => { o.userData.vehicle = f; }); ambient.push(f); return f;
 }
-const trip = (f, from, to, text) => { f.task = text; f.place = to; return f.medium === 'water' ? seaPath(from, to) : road(from, to); };
+const trip = (f, from, to, text) => { f.task = text; f.place = to; return f.medium === 'water' ? via(f, [from, to], text) : road(from, to); };
 
 // --- L1 guest pods (register ~40, demo 12): on demand, arrival transfers, lunch and evening waves; 4 seats
 for (let k = 0; k < 12; k++) follower('L1', `P${k + 4}`, 'road', 22, f => {
@@ -1067,7 +1071,25 @@ const isWater = (x, z) => { _wr.set(new THREE.Vector3(x, 300, z), new THREE.Vect
   const deg = [105, 95, 115, 85, 125, 75, 135].find(ok); if (deg !== undefined) A.sea = bearing(A.entrance, deg, 950); else console.warn('no open-sea bearing from the marina entrance');
   for (const k of ['berth', 'excBerth', 'entrance', 'basin']) if (!isWater(A[k].x, A[k].z)) console.warn('marina waypoint not on water:', k, A[k].toArray().map(v => v | 0));
 }
-const via = (f, pts, text) => { f.task = text; f.place = pts[pts.length - 1]; return pts; };
+// water grid for the boats: 10 m cells over the island and its approaches; a cell is navigable when it and its 8 neighbours are
+// water (one cell of clearance off the land, the breakwater and the piers). Routes = A* on this grid, like the vehicles on the roads.
+const seaR = (() => {
+  const cell = 10, x0 = islandBox.min.x - 700, z0 = islandBox.min.z - 700, W = Math.ceil((islandBox.max.x - islandBox.min.x + 1400) / cell) + 1, H = Math.ceil((islandBox.max.z - islandBox.min.z + 1400) / cell) + 1;
+  const landMeshes = []; model.traverse(o => { if (!o.isMesh) return; let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } if (g === 'terrain' || g === 'marina' || g === 'buildings' || g === 'mobility' || g === 'landscape') landMeshes.push(o); });
+  const wet = new Uint8Array(W * H), ray = new THREE.Raycaster(); ray.firstHitOnly = true; const o = new THREE.Vector3(), d = new THREE.Vector3(0, -1, 0);
+  for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) { o.set(x0 + gx * cell, 300, z0 + gz * cell); ray.set(o, d); const hits = ray.intersectObjects(landMeshes, false); wet[gz * W + gx] = hits.length && hits[0].point.y > waterY - 0.5 ? 0 : 1; }
+  const y = new Float32Array(W * H).fill(NaN);
+  for (let gz = 1; gz < H - 1; gz++) for (let gx = 1; gx < W - 1; gx++) { let ok = true; for (let dz = -1; dz <= 1 && ok; dz++) for (let dx = -1; dx <= 1; dx++) if (!wet[(gz + dz) * W + gx + dx]) { ok = false; break; } if (ok) y[gz * W + gx] = waterY; }
+  return finishGrid(y, W, H, x0, z0, cell, 0);
+})();
+console.info('water grid', seaR.count, 'navigable cells');
+const seaLegs = pts => {                                                           // water route through the waypoints; null if a leg has no water route
+  const out = [];
+  for (let i = 1; i < pts.length; i++) { const r = seaR.route(pts[i - 1], pts[i]); if (!r) { console.warn('no water route', pts[i - 1].toArray().map(v => v | 0), '->', pts[i].toArray().map(v => v | 0)); return null; } out.push(...(out.length ? r.slice(1) : r)); }
+  out[0] = pts[0].clone().setY(waterY); out[out.length - 1] = pts[pts.length - 1].clone().setY(waterY);   // exact berth and sea points at the ends
+  return out;
+};
+const via = (f, pts, text) => { f.task = text; f.place = pts[pts.length - 1]; const r = seaLegs(pts); if (!r) f.wait = 10; return r; };
 function waterPoint(from, bearings, maxR = 700, off = 70) {
   for (const deg of bearings) for (let r = 20; r <= maxR; r += 20) if (isWater(bearing(from, deg, r).x, bearing(from, deg, r).z)) { let q = bearing(from, deg, r + off); if (isWater(q.x, q.z)) return q; }
   return null;
@@ -1244,7 +1266,7 @@ const crowdHead = new THREE.InstancedMesh(headGeo, new THREE.MeshStandardMateria
 crowdBody.castShadow = true; scene.add(crowdBody, crowdHead);
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
-const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { let r = walk(a.p, b.p); if (!r || r.length < 2) r = [a.p, b.p]; routeCache.set(k, r); } return routeCache.get(k); };
+const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { const r = walk(a.p, b.p); routeCache.set(k, r && r.length > 1 ? r : null); } return routeCache.get(k); };   // null = no walkway: the trip does not happen
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _pp = new THREE.Vector3();
 function person(i, type, home) {
   const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 20, heading: 0, visible: true, goal: null, task: '', runs: false };
@@ -1258,7 +1280,7 @@ for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   if (type === 'day' || type === 'member') { f.idle = true; f.visible = false; }                   // they come by the shuttle
 }
 const ops = { buggyTrips: 0, deliveries: 0, truckRuns: 0, workOrders: 0, arrivals: 0, departures: 0, eventsAttended: 0 };
-function startWalk(f, to, text) { let pts = walkBetween(f.poi, to); if (f.pos && pts.length && f.pos.distanceTo(pts[0]) > 1.5) pts = [f.pos.clone(), ...pts]; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; }
+function startWalk(f, to, text) { let pts = walkBetween(f.poi, to); if (!pts) return false; if (f.pos && pts.length && f.pos.distanceTo(pts[0]) > 1.5) pts = [f.pos.clone(), ...pts]; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; return true; }
 const MILL = { village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
 function stepPeople(dt) {
   for (const f of people) {
@@ -1271,7 +1293,8 @@ function stepPeople(dt) {
           f.stroll = 8 + rand() * 18;
           const R = MILL[f.at] || 25, c = f.poi.p, a = rand() * Math.PI * 2, r = R * Math.sqrt(rand());
           const cell = walkR.nearest(new THREE.Vector3(c.x + Math.cos(a) * r, c.y, c.z + Math.sin(a) * r));
-          if (cell) { const q = walkR.posOf(...cell); if (q.distanceTo(c) < R * 1.6) { const pts = [f.pos.clone(), q]; f.path = pts; f.cum = [0, pts[0].distanceTo(q)]; f.len = f.cum[1]; f.s = 0; f.goal = f.poi; f.strolling = true; f.speed = f.baseSpeed * 0.6; } }
+          if (cell) { const q = walkR.posOf(...cell); const r = q.distanceTo(c) < R * 1.6 ? walkR.route(f.pos, q) : null;   // strolls follow the walkways too
+            if (r && r.length > 1) { const pts = r; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = f.poi; f.strolling = true; f.speed = f.baseSpeed * 0.6; } }
         }
       }
       if (f.wait > 0) continue;
@@ -1280,7 +1303,7 @@ function stepPeople(dt) {
       if ((f.type === 'day' || f.type === 'member') && cat === 'home') f.leaving = true;             // walks to the Terminal and leaves on the shuttle
       const ev = eventAt(cat); if (ev && cat !== 'home') ops.eventsAttended++;
       f.speed = cat === 'promenade' && f.runs ? 7 : f.baseSpeed;
-      startWalk(f, to, (ev ? `${ev.name} · ` : '') + `${TYPES[f.type].title}${cat === 'promenade' && f.runs ? ' · running' : ''} → ${POI_LABEL[cat] || cat}`);
+      if (!startWalk(f, to, (ev ? `${ev.name} · ` : '') + `${TYPES[f.type].title}${cat === 'promenade' && f.runs ? ' · running' : ''} → ${POI_LABEL[cat] || cat}`)) { f.wait = 10 + rand() * 20; f.leaving = false; }   // no walkway there: stay, choose again later
       continue;
     }
     f.s = Math.min(f.len, f.s + f.speed * dt);
@@ -1412,7 +1435,7 @@ async function loop() {
     say('Arrival by sea · berth assigned by the system'); focus('yacht', 520);
     notify({ icon: '⚓', tag: 'Marina AI', title: 'Yacht Aurora · 8 min out', body: 'AIS track matched to the Smith booking. Terminal, berth A2.', anchor: 'yacht' });
     task('yacht', '4 guests · open sea → guest dock, berth A2');
-    await move(actors.yacht, [A.sea, A.entrance, A.berth], SPEED.boat); task('yacht', 'Moored at the guest dock');
+    await move(actors.yacht, seaLegs([A.sea, A.entrance, A.berth]), SPEED.boat); task('yacht', 'Moored at the guest dock');
     notify({ icon: '🛥️', tag: 'Marina', title: 'Docked at the guest dock', body: 'Mooring confirmed by dock sensors. Concierge on the pier.', anchor: A.guestDock, accent: true });
 
     say('Guests walk to the stop · a guest pod and a delivery robot come to meet them'); focus(A.stopMarina, 300);
@@ -1522,7 +1545,7 @@ loop();
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute });
 </script>
 </body>
 </html>

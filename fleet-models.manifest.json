@@ -2,8 +2,27 @@
  "source": "FleetModels.blend / pipeline/fleet_models.py",
  "register": "vault 2. Architecture/Fleet Register",
  "units": "metres",
- "axes": "glTF Y-up; front of every vehicle = +X; origin = ground (land) or waterline (water) centre",
+ "axes": "glTF Y-up; front of every vehicle = +X; origin = ground (land) or waterline (water) centre; helicopter: ground under the rotor mast",
  "models": [
+  {
+   "id": "A1",
+   "node": "A1 Helicopter",
+   "type": "helicopter",
+   "title": "VIP helicopter, Airbus H145 D3 class, 6-7 guests",
+   "medium": "air",
+   "resort_fleet": false,
+   "length_m": 13.53,
+   "width_m": 10.37,
+   "height_m": 3.98,
+   "below_origin_m": 0.0,
+   "parts": [
+    "A1 Helicopter | coral",
+    "A1 Helicopter | glass",
+    "A1 Helicopter | grey",
+    "A1 Helicopter | navy",
+    "A1 Helicopter | white"
+   ]
+  },
   {
    "id": "L1",
    "node": "L1 Guest pod",
