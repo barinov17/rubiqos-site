@@ -1,0 +1,208 @@
+{
+ "source": "FleetModels.blend / pipeline/fleet_models.py",
+ "register": "vault 2. Architecture/Fleet Register",
+ "units": "metres",
+ "axes": "glTF Y-up; front of every vehicle = +X; origin = ground (land) or waterline (water) centre",
+ "models": [
+  {
+   "id": "L1",
+   "node": "L1 Guest pod",
+   "type": "guest_pod",
+   "title": "Autonomous 4-seat guest pod (Zoox-like)",
+   "medium": "road",
+   "resort_fleet": true,
+   "length_m": 3.6,
+   "width_m": 1.9,
+   "height_m": 1.86,
+   "below_origin_m": -0.0,
+   "parts": [
+    "L1 Guest pod | coral",
+    "L1 Guest pod | glass",
+    "L1 Guest pod | grey",
+    "L1 Guest pod | rubber",
+    "L1 Guest pod | seat",
+    "L1 Guest pod | white"
+   ]
+  },
+  {
+   "id": "L2",
+   "node": "L2 Guest shuttle",
+   "type": "guest_shuttle",
+   "title": "Electric shuttle bus, 8-10 guests, fixed loop",
+   "medium": "road",
+   "resort_fleet": true,
+   "length_m": 5.6,
+   "width_m": 2.1,
+   "height_m": 2.65,
+   "below_origin_m": -0.0,
+   "parts": [
+    "L2 Guest shuttle | coral",
+    "L2 Guest shuttle | glass",
+    "L2 Guest shuttle | grey",
+    "L2 Guest shuttle | rubber",
+    "L2 Guest shuttle | white"
+   ]
+  },
+  {
+   "id": "L3",
+   "node": "L3 Service cart",
+   "type": "service_cart",
+   "title": "Service cart: engineering, housekeeping, landscape",
+   "medium": "road",
+   "resort_fleet": true,
+   "length_m": 3.4,
+   "width_m": 1.4,
+   "height_m": 1.95,
+   "below_origin_m": -0.0,
+   "parts": [
+    "L3 Service cart | coral",
+    "L3 Service cart | glass",
+    "L3 Service cart | grey",
+    "L3 Service cart | navy",
+    "L3 Service cart | rubber",
+    "L3 Service cart | white"
+   ]
+  },
+  {
+   "id": "L4",
+   "node": "L4 Service truck",
+   "type": "service_truck",
+   "title": "Electric service truck, 3 t",
+   "medium": "road",
+   "resort_fleet": true,
+   "length_m": 6.2,
+   "width_m": 2.12,
+   "height_m": 2.85,
+   "below_origin_m": -0.0,
+   "parts": [
+    "L4 Service truck | coral",
+    "L4 Service truck | glass",
+    "L4 Service truck | grey",
+    "L4 Service truck | navy",
+    "L4 Service truck | rubber",
+    "L4 Service truck | white"
+   ]
+  },
+  {
+   "id": "L5",
+   "node": "L5 Delivery robot",
+   "type": "delivery_robot",
+   "title": "Delivery robot, ~120 L",
+   "medium": "road",
+   "resort_fleet": true,
+   "length_m": 1.14,
+   "width_m": 0.75,
+   "height_m": 1.05,
+   "below_origin_m": 0.0,
+   "parts": [
+    "L5 Delivery robot | coral",
+    "L5 Delivery robot | glass",
+    "L5 Delivery robot | grey",
+    "L5 Delivery robot | rubber",
+    "L5 Delivery robot | white"
+   ]
+  },
+  {
+   "id": "W1",
+   "node": "W1 Shuttle boat",
+   "type": "shuttle_boat",
+   "title": "Passenger shuttle catamaran, Arawak 42 (Aventura Boats), 50-65 pax",
+   "medium": "water",
+   "resort_fleet": true,
+   "length_m": 12.5,
+   "width_m": 6.1,
+   "height_m": 6.3,
+   "below_origin_m": 0.8,
+   "parts": [
+    "W1 Shuttle boat | glass",
+    "W1 Shuttle boat | white"
+   ]
+  },
+  {
+   "id": "W2",
+   "node": "W2 Supply vessel",
+   "type": "supply_vessel",
+   "title": "Supply landing craft (5216-RCM type, widened)",
+   "medium": "water",
+   "resort_fleet": true,
+   "length_m": 15.85,
+   "width_m": 6.24,
+   "height_m": 4.5,
+   "below_origin_m": 0.9,
+   "parts": [
+    "W2 Supply vessel | glass",
+    "W2 Supply vessel | grey",
+    "W2 Supply vessel | navy",
+    "W2 Supply vessel | white"
+   ]
+  },
+  {
+   "id": "W3",
+   "node": "W3 Excursion boat",
+   "type": "excursion_boat",
+   "title": "Excursion boat, centre-console, ~12 guests",
+   "medium": "water",
+   "resort_fleet": true,
+   "length_m": 10.0,
+   "width_m": 3.2,
+   "height_m": 3.75,
+   "below_origin_m": 0.7,
+   "parts": [
+    "W3 Excursion boat | seat",
+    "W3 Excursion boat | teak",
+    "W3 Excursion boat | white"
+   ]
+  },
+  {
+   "id": "Y1",
+   "node": "Y1 Yacht S",
+   "type": "yacht_s",
+   "title": "Owner motor yacht",
+   "medium": "water",
+   "resort_fleet": false,
+   "length_m": 15.0,
+   "width_m": 4.5,
+   "height_m": 3.09,
+   "below_origin_m": 0.54,
+   "parts": [
+    "Y1 Yacht S | glass",
+    "Y1 Yacht S | teak",
+    "Y1 Yacht S | white"
+   ]
+  },
+  {
+   "id": "Y2",
+   "node": "Y2 Yacht M",
+   "type": "yacht_m",
+   "title": "Crewed yacht",
+   "medium": "water",
+   "resort_fleet": false,
+   "length_m": 35.0,
+   "width_m": 7.5,
+   "height_m": 8.7,
+   "below_origin_m": 0.9,
+   "parts": [
+    "Y2 Yacht M | glass",
+    "Y2 Yacht M | teak",
+    "Y2 Yacht M | white"
+   ]
+  },
+  {
+   "id": "Y3",
+   "node": "Y3 Yacht L",
+   "type": "yacht_l",
+   "title": "Superyacht",
+   "medium": "water",
+   "resort_fleet": false,
+   "length_m": 80.0,
+   "width_m": 13.5,
+   "height_m": 15.22,
+   "below_origin_m": 1.62,
+   "parts": [
+    "Y3 Yacht L | glass",
+    "Y3 Yacht L | teak",
+    "Y3 Yacht L | white"
+   ]
+  }
+ ]
+}
