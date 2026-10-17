@@ -767,6 +767,7 @@ try {
   const _ar = new THREE.Raycaster(); _ar.firstHitOnly = true; const terr = []; model.traverse(o => { if (o.isMesh && groupOfMesh(o) === 'terrain') terr.push(o); });
   const groundAt = (x, z, dflt = 0) => { _ar.set(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)); const h = _ar.intersectObjects(terr, false); return h.length ? h[0].point.y : dflt; };
   const loadAsset = file => new Promise((res, rej) => loader.load(ASSET_DIR + file + '?v=' + encodeURIComponent(manifest.version), g => res(g.scene), undefined, rej));
+  const inMaster = root => [...byName.keys()].some(n => n === root || n.startsWith(root + ' | '));   // the master plan may already carry the asset (edit e033 and later): then the viewer does not load it again
   const place = (tpl, name, pos, rotY, lift = 0.05) => {
     const inst = tpl.clone(true); inst.name = name; inst.position.set(pos[0], groundAt(pos[0], pos[2], pos[1]) + lift, pos[2]); inst.rotation.y = rotY;
     inst.userData = { ...inst.userData, group: 'buildings', function: 'sport', zone_id: 'Z06', zone_name: zoneInfo.Z06 ? zoneInfo.Z06.zone_name : '' };
@@ -781,23 +782,23 @@ try {
     }
   } catch (e) { console.warn('court assets not loaded', e); }
   try {
-    const pr = await fetch(ASSET_DIR + 'arrivals-reception.placement.json', { cache: 'no-store' }).then(r => r.json());
+    if (inMaster('Arrivals Reception') && !byName.has('Arrivals Reception (asset)')) throw new Error('in master'); const pr = await fetch(ASSET_DIR + 'arrivals-reception.placement.json', { cache: 'no-store' }).then(r => r.json());
     const tpl = await loadAsset(pr.asset); const inst = place(tpl, 'Arrivals Reception (asset)', pr.placement_threejs.position, pr.placement_threejs.rotation_y_rad, 0.0);
     inst.userData.function = 'arrival & mobility'; inst.userData.zone_id = 'Z08'; inst.userData.zone_name = zoneInfo.Z08 ? zoneInfo.Z08.zone_name : '';
     const mp = byName.get('Arrivals Reception'); if (mp) mp.visible = false;             // the same pavilion built into the master plan by edit e015
-  } catch (e) { console.warn('arrivals reception asset not loaded', e); }
+  } catch (e) { if (String(e.message) !== 'in master') console.warn('arrivals reception asset not loaded', e); }
   try {                                                                           // B02 Rotunda Restaurant replaces the flat CAD disc; the disc's drop-off children stay in the scene
-    const pr = await fetch(ASSET_DIR + 'rotunda-restaurant.placement.json', { cache: 'no-store' }).then(r => r.json());
+    if (inMaster('Rotunda Restaurant') && !byName.has('Rotunda Restaurant')) throw new Error('in master'); const pr = await fetch(ASSET_DIR + 'rotunda-restaurant.placement.json', { cache: 'no-store' }).then(r => r.json());
     const tpl = await loadAsset(pr.asset); const inst = place(tpl, 'Rotunda Restaurant', pr.placement_threejs.position, pr.placement_threejs.rotation_y_rad, 0.0);
     inst.userData.function = 'dining'; inst.userData.zone_id = 'Z02'; inst.userData.zone_name = zoneInfo.Z02 ? zoneInfo.Z02.zone_name : '';
     const cad = byName.get('restaurant'); if (cad) { for (const c of [...cad.children]) model.attach(c); cad.visible = false; }
-  } catch (e) { console.warn('rotunda restaurant asset not loaded', e); }
+  } catch (e) { if (String(e.message) !== 'in master') console.warn('rotunda restaurant asset not loaded', e); }
   try {                                                                           // B03 Wellness Spa replaces the flat CAD blocks wellness-spa.001-005
-    const ps = await fetch(ASSET_DIR + 'wellness-spa.placement.json', { cache: 'no-store' }).then(r => r.json());
+    if (inMaster('Wellness Spa') && !byName.has('Wellness Spa')) throw new Error('in master'); const ps = await fetch(ASSET_DIR + 'wellness-spa.placement.json', { cache: 'no-store' }).then(r => r.json());
     const tpl = await loadAsset(ps.asset); const inst = place(tpl, 'Wellness Spa', ps.placement_threejs.position, ps.placement_threejs.rotation_y_rad || 0, 0.0);
     inst.userData.function = 'wellness'; inst.userData.zone_id = 'Z06'; inst.userData.zone_name = zoneInfo.Z06 ? zoneInfo.Z06.zone_name : '';
     byName.forEach((o, n) => { if (/^wellness-spa\.\d+$/.test(n)) { for (const c of [...o.children]) model.attach(c); o.visible = false; } });
-  } catch (e) { console.warn('wellness spa asset not loaded', e); }
+  } catch (e) { if (String(e.message) !== 'in master') console.warn('wellness spa asset not loaded', e); }
 }
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
 function box(w, h, d, c, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); m.castShadow = true; return m; }
