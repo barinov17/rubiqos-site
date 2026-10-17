@@ -31,33 +31,24 @@
 </head>
 <body class="site">
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Live demo</a><a href="/proforma/" class="on">Proforma</a><a href="/physical-ai/">Physical AI</a><a href="/pitch/">Pitch deck</a><a href="/market/">Resort market view</a></nav><span></span></div></div>
-<div class="wrap pf">
-  <div class="hero" style="padding-bottom:10px">
-    <h1>Proforma.</h1>
-    <p>Every product concept of the island as a card: what it is, how many people it holds, what it is made of, who runs it and what it needs every day — water, energy, sewage, food, laundry, waste. Below them the services that supply those needs, and the balance between demand and capacity. Numbers are planning ratios for a luxury island resort on master plan v024; replace them with the operator's own as they arrive.</p>
-  </div>
-
+<div class="wrap pf" style="padding-top:24px">
   <section id="concepts">
     <h2>Product concepts</h2>
-    <p class="lead">Revenue-generating units. Capacity is the most people the concept can hold; objects are what that capacity is made of; the needs are for an average day at 70 % occupancy.</p>
     <div class="cards" id="conceptCards"></div>
   </section>
 
   <section id="services">
     <h2>Services</h2>
-    <p class="lead">Back-of-house capacity that the concepts draw on. Green figures are capacities.</p>
     <div class="cards" id="serviceCards"></div>
   </section>
 
   <section id="balance">
     <h2>Balance</h2>
-    <p class="lead">Daily demand of all concepts against the capacity of the services: the average day at 70 % occupancy and the peak day at 100 %. Red = the service as sized today is short.</p>
     <table class="t bal" id="balance"><thead><tr><th>Resource</th><th>Average day</th><th>Peak day</th><th>Capacity</th><th>Load, average day</th><th></th></tr></thead><tbody></tbody></table>
   </section>
 
   <section id="programme">
     <h2>Event programme</h2>
-    <p class="lead">Places and events of one day. The live demo runs this programme: guests walk to the venue while an event is on, buggies pre-position before it, the excursion boat leaves the Terminal with it.</p>
     <table class="t">
       <thead><tr><th>Time</th><th>Venue</th><th>Event</th><th>For whom</th><th>Capacity</th><th>Operations</th></tr></thead>
       <tbody>
@@ -82,7 +73,6 @@
       </tbody>
     </table>
   </section>
-  <p class="foot">RubiqOS · proforma of the generic island resort, 17 October 2026. Method: needs = capacity × occupancy (× visits a day for day venues) × a ratio per guest-day or per visit; the marina is counted per occupied berth. Ratios per guest-day: hotels water 500 L, energy 42 kWh, food 2.0 kg, laundry 4 kg, waste 2.5 kg; villas 600 L, 50 kWh, 1.5 kg, 4 kg, 2.5 kg; residences 300 L, 25 kWh, 1.0 kg, 1.5 kg, 2.0 kg. Day venues per visit: 15–180 L of water, 4–12 kWh, 0.1–0.9 kg of food, 0.1–2 kg of laundry, 0.2–0.6 kg of waste. Berth-day: 15 m boat 0.2 m³ and 60 kWh, 35 m boat 1 m³ and 400 kWh, 80 m boat 5 m³ and 2,400 kWh of shore power. Sewage = 85 % of water. Sources: Cornell Hotel Sustainability Benchmarking (luxury resort tier), ITP water and carbon benchmarks, UNEP tourism waste ratios, PIANC marina guidance. Guests on the average day = capacity × 70 %; hotel practice applies occupancy to keys at about two guests per key, which gives some 15 % fewer guests, so these figures sit on the safe side. Working material, not an offer.</p>
 </div>
 <script>
 const Z = { Z01: '#E8D9B0', Z02: '#C9B27C', Z03: '#D98C5F', Z04: '#6FA8C9', Z05: '#9CC58A', Z06: '#7FB8A6', Z07: '#9C83BE', Z08: '#8FA6BA', Z09: '#9C9890', Z10: '#E3D3BC', Z11: '#C97A52' };
