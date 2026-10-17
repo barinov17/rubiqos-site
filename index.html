@@ -706,9 +706,9 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
   return { route, nearest, posOf, cellOf, ok, cell, y, W, H, ox, oz, count: y.filter(v => !isNaN(v)).length };
 }
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
-const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|service drop-off$|^Hotel Lobby road \| access road$/.test(n)).flatMap(meshOf);
-const roadR = surfaceGrid([...meshOf('ROADS_SERVICE surface'), ...meshOf('ROADS_SERVICE (block) surface'), ...meshOf('loading zone surface'), ...padMeshes], 3);
-const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...meshOf('Infrastructure zone | path FH'), ...meshOf('Infrastructure zone | path SA'), ...meshOf('GYM & Sports | deck'), ...[...byName.keys()].filter(n => n.startsWith('Footpath links')).flatMap(meshOf), ...padMeshes.filter(m => !/\(BOH\)/.test(m.name))], 2.5, 12);   // strict (founder 2026-10-17): walkways only; 12 m bridging covers kerbs, missing paths are added to the model (e021)
+const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|service drop-off$| \| access road$/.test(n)).flatMap(meshOf);   // pads and every parcel access road are drivable
+const roadR = surfaceGrid([...meshOf('ROADS_SERVICE surface'), ...meshOf('ROADS_SERVICE (block) surface'), ...meshOf('loading zone surface'), ...[...byName.keys()].filter(n => / service road \| surface$/.test(n)).flatMap(meshOf), ...padMeshes], 3);   // + service roads added by edits
+const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...meshOf('Infrastructure zone | path FH'), ...meshOf('Infrastructure zone | path SA'), ...meshOf('GYM & Sports | deck'), ...[...byName.keys()].filter(n => n.startsWith('Footpath links') || / \| path .*\| surface$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/\(BOH\)|service drop-off$/.test(m.name))], 2.5, 12);   // + paths added by edits; service pads are not walkways   // strict (founder 2026-10-17): walkways only; 12 m bridging covers kerbs, missing paths are added to the model (e021)
 $('stats').textContent = `model ${manifest.version} (${manifest.exported}) · ${top.length} objects · loaded in ${timeStat} s · road grid ${roadR.count} cells · walk grid ${walkR.count} cells`;
 
 // --- anchors: objects by name (centre of their bounds)
@@ -896,7 +896,7 @@ const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k 
   const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x4e5d6e, roughness: 0.9 }), bohPadMat = new THREE.MeshStandardMaterial({ color: 0x6e5f55, roughness: 0.9 });   // founder 2026-10-17 evening: blue and brown kept, tones close to the road
   const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
-  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
+  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$| service road \| surface$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
     m.updateWorldMatrix(true, false); const g = m.geometry, pos = g.attributes.position, idx = g.index, cnt = idx ? idx.count : pos.count;
     for (let i = 0; i < cnt; i += 3) {
       const ia = idx ? idx.getX(i) : i, ib = idx ? idx.getX(i + 1) : i + 1, ic = idx ? idx.getX(i + 2) : i + 2;
