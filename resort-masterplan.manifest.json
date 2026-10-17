@@ -1,7 +1,7 @@
 {
- "version": "v040",
- "exported": "2026-10-17 17:26",
- "changes": "changes/v040.json",
+ "version": "v041",
+ "exported": "2026-10-17 17:37",
+ "changes": "changes/v041.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -714,7 +714,7 @@
    "derived": "design edit e014",
    "hand_made": false,
    "material": "DWG GREEN AREAS",
-   "verts": 6853
+   "verts": 9255
   },
   {
    "name": "GREEN AREAS west field | coast wall",

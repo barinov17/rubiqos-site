@@ -736,7 +736,8 @@ A.berth = A.guestDock.clone().add(new THREE.Vector3(55, 0, 12));           // wa
 A.excBerth = A.excDock.clone().add(new THREE.Vector3(-20, 0, 22));           // water just inside the breakwater root at the excursion dock
 A.entrance = new THREE.Vector3(-995, 0, 455); A.basin = new THREE.Vector3(-760, 0, 405);   // marina entrance (gap west of the breakwater) and the basin middle
 A.sea = bearing(A.entrance, 105, 950);                                        // open sea beyond the entrance; re-probed below once the water test exists
-A.cargoBerth = bearing(A.dock, 225, 75); A.cargoSea = bearing(A.dock, 240, 900);
+A.slip = { x0: -1150, x1: -1118, z0: -177, z1: -157 };                              // the dock slip (water inlet) in three coords, open to the west
+A.cargoBerth = new THREE.Vector3(-1131, 0, -167); A.cargoSea = bearing(A.dock, 240, 900);   // berth inside the slip; the sea point 900 m out
 const waterY = -4.0, boatY = waterY;   /* e020: sea level -4.0, was -2.5 */                                       // fleet boat origins sit at the waterline
 
 // --- fleet models from Blender (prototype/resort-blender/export/fleet-models.glb; types and counts: vault "Fleet Register")
@@ -823,7 +824,7 @@ for (const id of ['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3', 'Y2']) if (!TY
 TYPES.hotel = { title: 'Hotel guest', role: 'Stays at the Beach Hotel or the Hill Hotel: restaurant, beach, spa, sport, events. Moves on foot and by buggy; some run in the morning and the evening.' };
 TYPES.resident = { title: 'Resident', role: 'Lives in a villa or a branded residence: boats in the marina, dining in the village, spa, sport and the hotel amenities.' };
 TYPES.day = { title: 'Day visitor', role: 'Comes for the day on the shuttle boat: Marina Village, the market, Beach Club and events; leaves on the evening shuttle.' };
-TYPES.A1 = { title: 'Helicopter', role: 'VIP charter helicopter, Airbus H145 class, 6–7 guests: arrives at the helipad five times a day (09:00, 11:00, 13:00, 15:00, 17:00), 12 minutes on the pad, a guest pod meets it at drop-off DO-23. Charter operator, not resort fleet.' };
+TYPES.A1 = { title: 'Helicopter', role: 'VIP charter helicopter, Airbus H145 class, 6–7 guests: five calls a day (09:00, 11:00, 13:00, 15:00, 17:00). A guest pod meets it at drop-off DO-23: arriving guests go to the Beach Hotel, departing guests come up from the hotel before take-off. Charter operator, not resort fleet.' };
 TYPES.yachtguest = { title: 'Yacht guest', role: 'Arrived on an own or chartered yacht in the marina: Marina Village, Beach Club, excursions and the regatta.' };
 TYPES.member = { title: 'Member', role: 'Members Club member from the mainland: club house, beach, spa and sport by membership; comes by shuttle or own boat.' };
 TYPES.staff = { title: 'Staff', role: 'Housekeeping, F&B, engineers and butlers. Walk from the staff accommodation to the back of house at 07:00, 15:00 and 23:00.' };
@@ -892,10 +893,10 @@ const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k 
 
 // ===== drop-off pads (founder 2026-10-17): every drop-off is red; each pad turned so its long side runs along the adjoining road
 {
-  const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x9cc9e8, roughness: 0.85 }), bohPadMat = new THREE.MeshStandardMaterial({ color: 0x9a4e3c, roughness: 0.9 });   // founder 2026-10-17
+  const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x4e5d6e, roughness: 0.9 }), bohPadMat = new THREE.MeshStandardMaterial({ color: 0x6e5f55, roughness: 0.9 });   // founder 2026-10-17 evening: blue and brown kept, tones close to the road
   const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
-  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', 'Hotel Lobby road | access road']) for (const m of meshOf(n)) {
+  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
     m.updateWorldMatrix(true, false); const g = m.geometry, pos = g.attributes.position, idx = g.index, cnt = idx ? idx.count : pos.count;
     for (let i = 0; i < cnt; i += 3) {
       const ia = idx ? idx.getX(i) : i, ib = idx ? idx.getX(i + 1) : i + 1, ic = idx ? idx.getX(i + 2) : i + 2;
@@ -913,20 +914,19 @@ const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k 
     for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); pts.push([v.x, v.z]); }
     const cx = pts.reduce((s, q) => s + q[0], 0) / pts.length, cz = pts.reduce((s, q) => s + q[1], 0) / pts.length;
     const near = roadTris.filter(([x, z]) => Math.hypot(x - cx, z - cz) < 40 && Math.hypot(x - cx, z - cz) > 6);
-    if (near.length < 12) continue;
-    const padAng = pca(pts), roadAng = pca(near);
-    let d = roadAng - padAng; d = Math.atan2(Math.sin(2 * d), Math.cos(2 * d)) / 2;      // nearest of the two parallel orientations
-    if (Math.abs(d) < 0.02) continue;
-    if (Math.abs(d) > Math.PI / 6) { console.info('drop-off pad across its road (left as modelled):', m.name, Math.round(d * 180 / Math.PI) + '°'); continue; }   // skews only; end-of-spur pads stay
-    // rotate the pad about its own centre, in world space, keeping its position
-    const centre = new THREE.Vector3(cx, 0, cz), q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -d);
-    const parentInv = new THREE.Matrix4().copy(m.parent.matrixWorld).invert();
-    const R = new THREE.Matrix4().makeTranslation(centre.x, centre.y, centre.z).multiply(new THREE.Matrix4().makeRotationFromQuaternion(q)).multiply(new THREE.Matrix4().makeTranslation(-centre.x, -centre.y, -centre.z));
-    const newWorld = new THREE.Matrix4().multiplyMatrices(R, m.matrixWorld);
-    new THREE.Matrix4().multiplyMatrices(parentInv, newWorld).decompose(m.position, m.quaternion, m.scale);
-    fixed.push([m.name, Math.round(d * 180 / Math.PI)]);
+    const padAng = pca(pts), roadAng = near.length >= 12 ? pca(near) : padAng, service = m.material === bohPadMat;   // no road within 40 m: the pad keeps its own axis
+    // size: the pad's own extents along its axes, scaled to 70 % of the area; orientation: guest = long side along the road, service = across
+    const ca = Math.cos(padAng), sa = Math.sin(padAng);
+    const us = pts.map(([x, z]) => (x - cx) * ca + (z - cz) * sa), vs = pts.map(([x, z]) => -(x - cx) * sa + (z - cz) * ca);
+    let L = (Math.max(...us) - Math.min(...us)) * 0.8367, Wd = (Math.max(...vs) - Math.min(...vs)) * 0.8367; if (L < Wd) [L, Wd] = [Wd, L];
+    const ang = service ? roadAng + Math.PI / 2 : roadAng;
+    const top = Math.max(...Array.from({ length: pos.count }, (_, i) => v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).y));
+    m.geometry.dispose(); m.geometry = new THREE.BoxGeometry(L, 0.06, Wd);
+    const world = new THREE.Matrix4().makeTranslation(cx, top - 0.03, cz).multiply(new THREE.Matrix4().makeRotationY(-ang));
+    new THREE.Matrix4().multiplyMatrices(new THREE.Matrix4().copy(m.parent.matrixWorld).invert(), world).decompose(m.position, m.quaternion, m.scale);
+    fixed.push([m.name, service ? 'across' : 'along', Math.round(L), Math.round(Wd)]);
   }
-  console.info('drop-off pads turned square to their road:', fixed);
+  console.info('drop-off pads rebuilt (30 % smaller; guest along the road, service across):', fixed.length);
   window.__padsFixed = fixed;
 }
 
@@ -1034,8 +1034,11 @@ function follower(type, label, medium, speed, next, home) {
 const trip = (f, from, to, text) => { f.task = text; f.place = to; return f.medium === 'water' ? via(f, [from, to], text) : road(from, to); };
 
 // --- L1 guest pods (register ~40, demo 12): on demand, arrival transfers, lunch and evening waves; 4 seats
+const podJobs = [];                                                               // scripted pod trips (helicopter guests); a free pod takes the next job
 for (let k = 0; k < 12; k++) follower('L1', `P${k + 4}`, 'road', 22, f => {
   const h = hourOf(), from = f.place || anyOf(stops); let to, text; const n = 1 + Math.floor(rand() * 4);
+  if (f.job) { const leg = f.job.legs.shift(); if (leg) return trip(f, from, leg[0], leg[1]); if (f.job.onDone) f.job.onDone(); f.job = null; }
+  if (podJobs.length && !f.toCharge) { f.job = podJobs.shift(); const leg = f.job.legs.shift(); return trip(f, from, leg[0], leg[1]); }
   if (between(h, 7, 10.5) && rand() < 0.6) { to = pickNot([A.stopHotel, ...villas.map(v => stopNear(v.p))], from); text = `Arrival transfer · ${n} guests · Terminal stop → ${stopName(to)}`; }
   else if (between(h, 12.5, 14) && rand() < 0.6) { to = A.stopVillage; text = `Lunch wave · ${n} guests → Marina Village`; if (to === from) { to = pickNot(stops, from); text = `Pre-positioning for the lunch wave → ${stopName(to)}`; } }
   else if (between(h, 18, 21.5) && rand() < 0.6) { to = stopNear(A.rotunda); text = `Evening · ${n} guests → Events Rotunda`; if (to === from) { to = pickNot(stops, from); text = `Return trip after the event → ${stopName(to)}`; } }
@@ -1123,6 +1126,8 @@ const seaR = (() => {
   for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) { o.set(x0 + gx * cell, 300, z0 + gz * cell); ray.set(o, d); const hits = ray.intersectObjects(landMeshes, false); wet[gz * W + gx] = hits.length && hits[0].point.y > waterY - 0.5 ? 0 : 1; }
   const y = new Float32Array(W * H).fill(NaN);
   for (let gz = 1; gz < H - 1; gz++) for (let gx = 1; gx < W - 1; gx++) { let ok = true; for (let dz = -1; dz <= 1 && ok; dz++) for (let dx = -1; dx <= 1; dx++) if (!wet[(gz + dz) * W + gx + dx]) { ok = false; break; } if (ok) y[gz * W + gx] = waterY; }
+  for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) {                                   // the dock slip is narrower than the clearance: its wet cells are navigable as they are
+    const px = x0 + gx * cell, pz = z0 + gz * cell; if (wet[gz * W + gx] && px >= A.slip.x0 - 12 && px <= A.slip.x1 && pz >= A.slip.z0 && pz <= A.slip.z1) y[gz * W + gx] = waterY; }
   return finishGrid(y, W, H, x0, z0, cell, 0);
 })();
 console.info('water grid', seaR.count, 'navigable cells');
@@ -1200,12 +1205,17 @@ const heli = follower('A1', 'HELI', 'air', 30, f => {
   if (f.place === HELI.far2 || f.place === HELI.far) {
     const call = HELI.calls.find(c => h >= c - 0.08 && h < c + 0.1);
     if (call === undefined) { const nx = HELI.calls.find(c => c > h) ?? HELI.calls[0]; f.task = `At the mainland heliport · next call ${String(nx).padStart(2, '0')}:00`; f.wait = 5; f.mesh.visible = false; return null; }   // out of sight at the mainland
-    f.landedAt = undefined; const n = 2 + Math.floor(rand() * 5);
+    f.landedAt = undefined; const n = 2 + Math.floor(rand() * 5); f.guests = n;
     return via(f, [HELI.far, HELI.hold, HELI.hover, HELI.pad], `VIP arrival · ${n} guests · inbound from the WSW, landing ${String(call).padStart(2, '0')}:00`, true);
   }
-  if (f.landedAt === undefined) { f.landedAt = h; ops.arrivals += 3; }
-  if (h < f.landedAt + HELI.stay) { f.task = `On the helipad · guests to the pod at DO-23 · departure ${clockAt(f.landedAt + HELI.stay)}`; f.wait = 3; return null; }
-  f.landedAt = undefined; return via(f, [HELI.pad, HELI.hover, HELI.out1, HELI.far2], 'VIP departure · climbing out to the NW', true);
+  if (f.landedAt === undefined) {                                                 // landed: a pod brings the arriving guests to the hotel, another collects the departing ones
+    f.landedAt = h; f.departReady = false; const n = f.guests || 3, m = 2 + Math.floor(rand() * 4), heliStop = stopNear(HELIPAD_POS);
+    podJobs.push({ legs: [[heliStop, `VIP arrival · to the helipad stop DO-23 for ${n} guests`], [A.stopHotel, `VIP arrival · ${n} guests · helipad → Beach Hotel`]], onDone: () => spawnArrivals(n, POI.hotel[0]) });
+    podJobs.push({ legs: [[A.stopHotel, `VIP departure · collecting ${m} guests at the Beach Hotel`], [heliStop, `VIP departure · ${m} guests · Beach Hotel → helipad`]],
+      onDone: () => { let k = 0; for (const g of people) { if (k >= m) break; if (!g.idle && g.type === 'hotel' && !g.path) { g.idle = true; g.visible = false; k++; } } ops.departures += k; f.departReady = true; } });
+  }
+  if (h < f.landedAt + HELI.stay || (!f.departReady && h < f.landedAt + 1.0)) { f.task = `On the helipad · guests to the pod at DO-23 · departure ${clockAt(f.landedAt + HELI.stay)}`; f.wait = 3; return null; }
+  f.landedAt = undefined; return via(f, [HELI.pad, HELI.hover, HELI.out1, HELI.far2], `VIP departure · ${f.departReady ? 'guests aboard' : 'no guests'} · climbing out to the NW`, true);
 }, HELI.far);
 const clockAt = hh => `${String(Math.floor(hh) % 24).padStart(2, '0')}:${String(Math.round((hh % 1) * 60)).padStart(2, '0')}`;
 { const disc = new THREE.Mesh(new THREE.CylinderGeometry(5.4, 5.4, 0.05, 32), new THREE.MeshStandardMaterial({ color: 0x15304a, transparent: true, opacity: 0.18, depthWrite: false }));
@@ -1389,11 +1399,12 @@ function drawPeople() {
   }
   crowdBody.instanceMatrix.needsUpdate = true; crowdHead.instanceMatrix.needsUpdate = true;
 }
-function spawnArrivals(n) {
+function spawnArrivals(n, at = null) {                                            // at: a POI where the guests appear (helicopter guests arrive by pod at the hotel)
   const h = hourOf(), free = people.filter(f => f.idle && f.type !== 'staff').slice(0, n); ops.arrivals += free.length;
   for (const f of free) {
-    const r = rand(); setType(f, h >= 17 ? 'hotel' : r < 0.5 ? 'day' : r < 0.8 ? 'hotel' : 'member'); f.home = HOME[f.type]();
-    f.idle = false; f.leaving = false; f.poi = POI.terminal[0]; f.at = 'terminal'; f.pos = f.poi.p.clone(); f.wait = rand() * 3;
+    const r = rand(); setType(f, at || h >= 17 ? 'hotel' : r < 0.5 ? 'day' : r < 0.8 ? 'hotel' : 'member'); f.home = HOME[f.type]();
+    f.idle = false; f.leaving = false; f.poi = at || POI.terminal[0]; f.at = f.poi.cat; f.pos = f.poi.p.clone(); f.wait = rand() * 3;
+    if (at) { f.wait = 20 + rand() * 40; continue; }                                 // checked in: they start their day from the lobby
     if (f.type === 'hotel') { f.leaving = true; f.goal = POI.stop[0]; startWalk(f, POI.stop[0], 'Hotel guest · off the shuttle → the buggy stop'); }
     else { const to = f.type === 'member' ? poiAny('club') : poiAny('village'); f.goal = to; startWalk(f, to, `${TYPES[f.type].title} · off the shuttle → ${POI_LABEL[to.cat]}`); }
   }

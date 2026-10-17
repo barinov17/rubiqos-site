@@ -37,7 +37,6 @@
    "parts": [
     "L1 Guest pod | coral",
     "L1 Guest pod | glass",
-    "L1 Guest pod | grey",
     "L1 Guest pod | rubber",
     "L1 Guest pod | seat",
     "L1 Guest pod | white"
@@ -57,7 +56,6 @@
    "parts": [
     "L2 Guest shuttle | coral",
     "L2 Guest shuttle | glass",
-    "L2 Guest shuttle | grey",
     "L2 Guest shuttle | rubber",
     "L2 Guest shuttle | white"
    ]
@@ -96,7 +94,6 @@
    "parts": [
     "L4 Service truck | coral",
     "L4 Service truck | glass",
-    "L4 Service truck | grey",
     "L4 Service truck | navy",
     "L4 Service truck | rubber",
     "L4 Service truck | white"
@@ -116,7 +113,6 @@
    "parts": [
     "L5 Delivery robot | coral",
     "L5 Delivery robot | glass",
-    "L5 Delivery robot | grey",
     "L5 Delivery robot | rubber",
     "L5 Delivery robot | white"
    ]
