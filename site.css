@@ -17,7 +17,7 @@ body.site a { color: var(--navy); }
 .sitenav nav a { font: 500 13px var(--body); color: var(--navy); text-decoration: none; padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
 .sitenav nav a:hover { background: rgba(21, 48, 74, 0.06); }
 .sitenav nav a.on { background: var(--navy); color: #fff; }
-@media (max-width: 720px) { .sitenav .in { grid-template-columns: auto 1fr; } .sitenav nav { justify-self: end; } }
+@media (max-width: 960px) { .sitenav .in { grid-template-columns: auto minmax(0, 1fr); } .sitenav nav { justify-self: end; max-width: 100%; } }
 /* --- page scaffold */
 body.site .wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
 body.site .hero { padding: 56px 0 28px; }
