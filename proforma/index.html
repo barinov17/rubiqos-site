@@ -39,7 +39,7 @@
 
   <section id="concepts">
     <h2>Product concepts</h2>
-    <p class="lead">Revenue-generating units. Capacity is the most people the concept can hold; the needs are for an average day at 70 % occupancy.</p>
+    <p class="lead">Revenue-generating units. Capacity is the most people the concept can hold; objects are what that capacity is made of; the needs are for an average day at 70 % occupancy.</p>
     <div class="cards" id="conceptCards"></div>
   </section>
 
@@ -95,31 +95,31 @@ const OCC = 0.70;   // average occupancy applied to every concept
 //   per       daily ratio per guest-day or per visit: water L, energy kWh, food kg, laundry kg, waste kg; sewage = 85 % of water
 //   units     (marina) occupied-berth basis instead of per-person: n berths, pax aboard, per-berth-day ratios
 const CONCEPTS = [
-  { id: 'beach-hotel', name: 'Beach Hotel', zone: 'Z01', unit: 'guests', what: 'The main hotel on the beach: three guest-room blocks around a round lobby, the signature restaurant and the central pool. Where most of the island\'s guests stay.',
-    capacity: 528, objects: { 'Deluxe rooms': 140, 'Premier sea-view rooms': 60, 'One-bedroom suites': 32, 'Signature suites': 8, 'Restaurant': 1, 'Pool': 1 }, staff: 270, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
-  { id: 'hill-hotel', name: 'Hill Hotel', zone: 'Z02', unit: 'guests', what: 'A boutique hotel of low blocks scattered over the central hill. Larger rooms, views across the island, quiet; its own lounge.',
-    capacity: 280, objects: { 'Hillside rooms': 56, 'Terrace rooms': 36, 'One-bedroom suites': 22, 'Two-bedroom suites': 6, 'Lounge': 1 }, staff: 135, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
-  { id: 'villas', name: 'East Villas', zone: 'Z05', unit: 'guests', what: 'Private villas on the eastern cape, each with a terrace and its own pool. Owned or let through the hotel, served by butlers.',
-    capacity: 144, objects: { 'Four-bedroom villas': 18, 'Bedrooms': 72, 'Private pools': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
-  { id: 'residences', name: 'Branded Residences', zone: 'Z10', unit: 'residents', what: 'Apartment towers with roof terraces and pools next to the village. Most apartments are let through the hotel rental pool, the rest are lived in by their owners.',
-    capacity: 812, objects: { 'One-bedroom apartments': 62, 'Two-bedroom apartments': 94, 'Three-bedroom apartments': 42, 'Penthouses': 10, 'Roof pools': 4 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
+  { id: 'beach-hotel', name: 'Beach Hotel', zone: 'Z01', unit: 'guests', what: 'The main hotel on the beach, three guest-room blocks with a restaurant. Where most of the island\'s guests stay.',
+    capacity: 528, objects: { 'Deluxe rooms': 140, 'Premier sea-view rooms': 60, 'One-bedroom suites': 32, 'Signature suites': 8 }, staff: 270, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
+  { id: 'hill-hotel', name: 'Hill Hotel', zone: 'Z02', unit: 'guests', what: 'A boutique hotel of low blocks scattered over the central hill. Larger rooms, views across the island, quiet.',
+    capacity: 280, objects: { 'Hillside rooms': 56, 'Terrace rooms': 36, 'One-bedroom suites': 22, 'Two-bedroom suites': 6 }, staff: 135, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
+  { id: 'villas', name: 'East Villas', zone: 'Z05', unit: 'guests', what: 'Private villas on the eastern cape. Owned or let through the hotel, served by butlers.',
+    capacity: 144, objects: { 'Four-bedroom villas': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
+  { id: 'residences', name: 'Branded Residences', zone: 'Z10', unit: 'residents', what: 'Apartment towers next to the village. Most apartments are let through the hotel rental pool, the rest are lived in by their owners.',
+    capacity: 812, objects: { 'One-bedroom apartments': 62, 'Two-bedroom apartments': 94, 'Three-bedroom apartments': 42, 'Penthouses': 10 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
   { id: 'village', name: 'Marina Village', zone: 'Z03', unit: 'people at once', turns: 3, what: 'The pedestrian heart of the island: cafés and restaurants, shops, the island market and a small apart-hotel for management.',
-    capacity: 600, objects: { 'Restaurants and cafés': 4, 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20, 'Apart-hotel units': 40 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
-  { id: 'beach-club', name: 'Beach Club', zone: 'Z11', unit: 'people at once', turns: 1.5, what: 'A day club on the north beach: sunbeds and cabanas, a pool, a restaurant and bar, and a stage for the evening programme.',
-    capacity: 320, objects: { 'Sunbeds': 180, 'Cabanas': 12, 'Restaurant seats': 90, 'Bar seats': 40, 'Pool': 1, 'Stage': 1 }, staff: 40, per: { water: 60, energy: 8, food: 0.9, laundry: 1.0, waste: 0.6 } },
-  { id: 'members-club', name: 'Members Club', zone: 'Z01', unit: 'people at once', turns: 2, what: 'A club on the beach west of the hotel with a pavilion and a pool. Membership for the mainland and for the island\'s residents.',
-    capacity: 260, objects: { 'Members': 400, 'Dining seats': 100, 'Lounge and bar seats': 60, 'Pavilion seats': 40, 'Pool deck places': 60 }, staff: 30, per: { water: 40, energy: 8, food: 0.8, laundry: 0.8, waste: 0.5 } },
+    capacity: 600, objects: { 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20, 'Apart-hotel units': 40 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
+  { id: 'beach-club', name: 'Beach Club', zone: 'Z11', unit: 'people at once', turns: 1.5, what: 'A day club on the north beach: sunbeds and cabanas, a restaurant and a bar, the evening programme.',
+    capacity: 320, objects: { 'Sunbeds': 180, 'Cabanas': 12, 'Restaurant seats': 90, 'Bar seats': 40 }, staff: 40, per: { water: 60, energy: 8, food: 0.9, laundry: 1.0, waste: 0.6 } },
+  { id: 'members-club', name: 'Members Club', zone: 'Z01', unit: 'people at once', turns: 2, what: 'A club on the beach west of the hotel. Membership for the mainland and for the island\'s residents.',
+    capacity: 260, objects: { 'Dining seats': 100, 'Lounge and bar seats': 60, 'Pavilion seats': 40, 'Pool deck places': 60 }, staff: 30, per: { water: 40, energy: 8, food: 0.8, laundry: 0.8, waste: 0.5 } },
   { id: 'spa', name: 'Spa & Wellness', zone: 'Z06', unit: 'people at once', turns: 4, what: 'A spa on the second hill: treatment rooms, a thermal area and a longevity clinic.',
     capacity: 90, objects: { 'Treatment rooms': 16, 'Couple suites': 6, 'Longevity clinic rooms': 2, 'Thermal area places': 40, 'Relaxation lounge places': 20 }, staff: 32, per: { water: 180, energy: 12, food: 0.2, laundry: 2.0, waste: 0.3 } },
-  { id: 'sport', name: 'GYM & Sports', zone: 'Z06', unit: 'people at once', turns: 4, what: 'One sports complex: gyms, a group studio, tennis and pickleball courts on a shared deck, a clubhouse. Academies and classes.',
-    capacity: 130, objects: { 'Gyms': 2, 'Group studio': 1, 'Tennis courts': 3, 'Pickleball courts': 6, 'Clubhouse': 1 }, staff: 15, per: { water: 40, energy: 5, food: 0.1, laundry: 0.5, waste: 0.2 } },
-  { id: 'marina', name: 'Marina', zone: 'Z04', unit: 'people aboard', what: 'The yacht marina behind the breakwater: three sizes of berth, the arrivals terminal for the shuttle and tenders, a yacht club and a fuel dock.',
+  { id: 'sport', name: 'GYM & Sports', zone: 'Z06', unit: 'people at once', turns: 4, what: 'One sports complex: gyms, a group studio, tennis and pickleball courts, a clubhouse. Academies and classes.',
+    capacity: 130, objects: { 'Gym places': 40, 'Studio places': 20, 'Tennis courts': 3, 'Pickleball courts': 6, 'Clubhouse seats': 34 }, staff: 15, per: { water: 40, energy: 5, food: 0.1, laundry: 0.5, waste: 0.2 } },
+  { id: 'marina', name: 'Marina', zone: 'Z04', unit: 'people aboard', what: 'The yacht marina behind the breakwater with three sizes of berth.',
     units: [ { name: 'Berths for boats to 15 m', n: 50, pax: 4, per: { water: 200, energy: 60, food: 5, laundry: 2, waste: 8 } },
              { name: 'Berths for boats to 35 m', n: 32, pax: 8, per: { water: 1000, energy: 400, food: 15, laundry: 6, waste: 20 } },
              { name: 'Berths for boats to 80 m', n: 8, pax: 14, per: { water: 5000, energy: 2400, food: 40, laundry: 15, waste: 50 } } ],
-    objects: { 'Arrivals terminal': 1, 'Yacht club': 1, 'Fuel dock': 1 }, staff: 28 },
-  { id: 'events', name: 'Events Rotunda', zone: 'Z07', unit: 'people at once', turns: 1.5, what: 'A ring hall around a courtyard with three pavilions: exhibitions, talks, concerts and dinners.',
-    capacity: 540, objects: { 'Hall places': 300, 'Courtyard places': 120, 'Pavilions': 3, 'Pavilion places': 120 }, staff: 10, per: { water: 15, energy: 4, food: 0.4, laundry: 0.1, waste: 0.3 } },
+    objects: {}, staff: 28 },
+  { id: 'events', name: 'Events Rotunda', zone: 'Z07', unit: 'people at once', turns: 1.5, what: 'A ring hall around a courtyard with pavilions: exhibitions, talks, concerts and dinners.',
+    capacity: 540, objects: { 'Hall places': 300, 'Courtyard places': 120, 'Pavilion places': 120 }, staff: 10, per: { water: 15, energy: 4, food: 0.4, laundry: 0.1, waste: 0.3 } },
 ];
 // services: capacity as sized in the plan
 const SERVICES = [
