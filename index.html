@@ -442,7 +442,8 @@ $('bCam').onclick = () => setAutoCam(!autoCam);
 // ---------- hover / click: outline + card
 let pickables = [];
 // only buildings (objects with a function) and vehicles are pickable; terrain, water, roads, trees, marina are not
-function rebuildPickables() { pickables = []; model.traverse(o => { if (o.isMesh && o.userData.group === 'buildings' && o.visible && isShown(o)) pickables.push(o); }); }
+const GROUND_PART = /green strip|service yard|courtyard$|yard$|ground$|\| path |access road$|drop-off$|deck$|pool water$|planters?$|roof garden$/;   // ground plates of a parcel: not a thing to hover (founder 2026-10-17)
+function rebuildPickables() { pickables = []; model.traverse(o => { if (o.isMesh && o.userData.group === 'buildings' && o.visible && isShown(o) && !GROUND_PART.test(o.name)) pickables.push(o); }); }
 function isShown(o) { for (let p = o; p && p !== model; p = p.parent) if (!p.visible) return false; return true; }
 rebuildPickables();
 const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = $('tip');
