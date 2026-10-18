@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261018b">
+<link rel="stylesheet" href="/site.css?v=20261018c">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -194,9 +194,6 @@
 <section id="dash">
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
-  <div class="card"><h2>Guests on the island<small>plan, peak day</small></h2><div class="big" id="dGuestsTotal">—</div><div class="kv" id="dGuests"></div></div>
-  <div class="card"><h2>Staff<small>on shift</small></h2><div class="big" id="dStaffTotal">—</div><div class="kv" id="dStaff"></div></div>
-  <div class="card"><h2>Today<small>operations counters</small></h2><div class="kv" id="dOps"></div></div>
   <div class="pair">
     <div class="card"><h2>Products<small>guests now · staff on shift</small></h2><table id="dProducts"><thead><tr><th>Product</th><th style="width:46%">Guests now</th><th>Staff</th></tr></thead><tbody></tbody></table></div>
     <div class="card"><h2>Services<small>base parameters · load today</small></h2><table id="dServices"><thead><tr><th>Service</th><th>Base parameters</th><th>Load</th></tr></thead><tbody></tbody></table></div>
@@ -1486,12 +1483,8 @@ function updateDash() {
   const scale = PLAN.guests / Math.max(1, guests.length);
   const order = ['home', 'beach', 'restaurant', 'village', 'retail', 'spa', 'sport', 'marina', 'event', 'promenade', 'transit'];
   const lab = { home: 'In rooms, villas and residences', beach: 'Beach, pools, Beach Club', restaurant: 'Hotel restaurant', village: 'Marina Village F&B', retail: 'Shops', spa: 'Spa', sport: 'Gym and courts', marina: 'Marina and boats', event: 'Events Rotunda', promenade: 'Promenade', transit: 'On the move' };
-  $('dGuestsTotal').textContent = PLAN.guests.toLocaleString();
-  $('dGuests').innerHTML = order.filter(k => where[k]).map(k => `<span>${lab[k]}</span><span>${Math.round((where[k] || 0) * scale)}</span>`).join('');
+  // the Guests / Staff / Today summary cards were removed on 2026-10-18 (founder); the simulation keeps counting for the Products and Services tables
   const staff = people.filter(f => f.type === 'staff'); const onShift = staffOnShift(h);
-  $('dStaffTotal').textContent = onShift;
-  $('dStaff').innerHTML = `<span>Shift</span><span>${between(h, 7, 15) ? 'Morning 07–15' : between(h, 15, 23) ? 'Evening 15–23' : 'Night 23–07'}</span><span>Walking between posts</span><span>${Math.round(staff.filter(f => f.path).length * (onShift / staff.length))}</span><span>At the staff accommodation</span><span>${Math.round(staff.filter(f => !f.path && f.at === 'staff').length * (onShift / staff.length))}</span><span>Next shift change</span><span>${String(SHIFTS.find(t => t > h) ?? 7).padStart(2, '0')}:00</span>`;
-  $('dOps').innerHTML = [['Guest pod and shuttle trips', ops.buggyTrips], ['Robot deliveries', ops.deliveries], ['Truck runs', ops.truckRuns], ['Work orders closed', ops.workOrders], ['Arrived by shuttle', ops.arrivals], ['Left by shuttle', ops.departures], ['Event visits', ops.eventsAttended]].map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
   const rows = {}; for (const f of ambient) { const k = f.type; const r = rows[k] ||= { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
   $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = rows[k] || { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; return `<tr><td>${TYPES[k] ? TYPES[k].title : k}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.nb ? Math.round(r.bat / r.nb) + ' %' : '—'}</td></tr>`; }).join('');
   const lg = $('dLog'), stick = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
