@@ -1645,7 +1645,7 @@ const SCHEMATIC = {
   green: 0xf4f7fd, greenDot: 0x6f98e3, dotStep: 4.0, dotR: 0.25,   /* stronger dots (founder 2026-10-18) */                       // lawns: white with blue dots (halftone of the reference)
   roadMain: 0x34477a, walk: 0xc4c7cc, plaza: 0xcfd2d7, infra: 0xc6c9cf, infraBld: 0xa4a9b2, pier: 0xdfe6f2, breakwater: 0xeef2f8,
   tree: 0xcfdcf5, treeDark: 0xb8cbf1, palm: 0xd6e2f7, trunk: 0xe3e9f5,   // light, so the trees do not compete with the buildings
-  glassDarken: 0.82, pool: 0x8cc2f0, sig: 0x4f73d4, people: 0x1d3a8f,
+  glassDarken: 0.82, pool: 0x8cc2f0, sig: 0x4f73d4, people: 0x1d3a8f, plinth: 0xb4b8c0,
   heli: { lawn: 0xffffff, 'grass pavers': 0xe8edf6, hedge: 0xd6e0f1, pavers: 0xc4c7cc, FATO: 0xc4c7cc, TLOF: 0x9aa3b3, white: 0xffffff, yellow: 0x4f73d4 },
   fn: { hotel: 0x2856e0, 'apart hotel': 0x3a66e4, residences: 0x4f7ae9, villas: 0x7c9cf0, 'food & retail': 0x9db6f4, dining: 0x6f8fee,
         'events & culture': 0x1a3fb8, 'spa & wellness': 0x8aa9f2, wellness: 0x8aa9f2, 'wellness & sport': 0x8aa9f2, sport: 0xb4c8f6, courts: 0xb4c8f6,
@@ -1705,6 +1705,7 @@ function schematicMat(o) {
   if (/GREEN|Planting|roof garden|planters/i.test(mn + ' ' + n)) return dotMat();
   if (/Road surface/.test(mn) || /access road$|service road/.test(n)) return flatMat(S.roadMain);
   if (/Promenade|Plaza|Urban ground|Villa deck|deck$|yard$|courtyard$|forecourt$|ground$|path/i.test(mn + ' ' + n)) return flatMat(S.walk);
+  if (/(\| |)(plinth|podium|base)$/i.test(n)) return flatMat(S.plinth);   // building bases (on the hill they are tall) read as grey
   if (SIG.test(meshTop(o).name) || SIG.test(n)) return /glass/i.test(mn) ? flatMat(new THREE.Color(S.sig).multiplyScalar(S.glassDarken).getHex(), 0.5) : flatMat(S.sig);
   const base = new THREE.Color(S.fn[meshFn(o)] ?? S.fn.default);
   if (/glass/i.test(mn)) return flatMat(base.clone().multiplyScalar(S.glassDarken).getHex(), 0.5);
