@@ -764,7 +764,8 @@ const FM = Object.fromEntries(FLEET.models.map(m => [m.id, m]));
 const groupOfMesh = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
 const ASSET_DIR = 'assets/';   // Model Register assets (vault: Model Register); the site build rewrites this to its own folder
 const HELIPAD_GLB = ASSET_DIR + 'helipad.glb', HELIPAD_POS = new THREE.Vector3(-1212.09, 0.6, -14.03);
-try {
+if (byName.has('Helipad')) { window.__helipadRoot = byName.get('Helipad'); }   // e046: the master plan carries the helipad now
+else try {
   const hg = await new Promise((res, rej) => loader.load(HELIPAD_GLB + '?v=' + encodeURIComponent(manifest.version), res, undefined, rej));
   hg.scene.position.copy(HELIPAD_POS); hg.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }); scene.add(hg.scene); window.__helipadRoot = hg.scene;
   for (const n of ['halipad.001', 'halipad.002', 'halipad.003']) { const o = byName.get(n); if (o) o.visible = false; }   // the CAD discs under the asset
@@ -1183,6 +1184,8 @@ const seaR = (() => {
   return finishGrid(y, W, H, x0, z0, cell, 0);
 })();
 console.info('water grid', seaR.count, 'navigable cells');
+for (const k of ['berth', 'excBerth', 'entrance', 'basin', 'cargoBerth']) {                       // a marina edit can put a waypoint on a pier: snap it to the nearest navigable water (same object, so references stay)
+  if (isWater(A[k].x, A[k].z)) continue; const c = seaR.nearest(A[k]); if (c) { const q = seaR.posOf(...c); console.info('marina waypoint moved to water:', k, [A[k].x | 0, A[k].z | 0], '->', [q.x | 0, q.z | 0]); A[k].set(q.x, A[k].y, q.z); } }
 const seaLegs = pts => {                                                           // water route through the waypoints; null if a leg has no water route
   const out = [];
   for (let i = 1; i < pts.length; i++) { const r = seaR.route(pts[i - 1], pts[i]); if (!r) { console.warn('no water route', pts[i - 1].toArray().map(v => v | 0), '->', pts[i].toArray().map(v => v | 0)); return null; } out.push(...(out.length ? r.slice(1) : r)); }
