@@ -6,27 +6,27 @@
 <meta name="robots" content="noindex, nofollow">
 <title>RubiqOS · Proforma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261018a">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css?v=20261018b">
 <style>
   body.site .pf { max-width: none; padding: 0 20px; }
   body.site .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
   body.site .con { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
   body.site .con .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-  body.site .con h3 { font-family: var(--display); font-weight: 600; font-size: 18px; color: var(--navy); margin: 0; }
+  body.site .con h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
   body.site .con .zone { font: 500 11px var(--body); color: var(--muted); white-space: nowrap; }
   body.site .con .zone i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-  body.site .con p { margin: 0; font-size: 12.5px; color: #3b4852; }
-  body.site .con .cap { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 4px; }
+  body.site .con p { margin: 0; font-size: 12.5px; color: var(--text); }
+  body.site .con .cap { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-top: 4px; }
   body.site .con .kv { grid-template-columns: 1fr auto; font-size: 12.5px; }
-  body.site .con .top { background: #faf8f4; border-radius: 10px; padding: 8px 10px; }
+  body.site .con .top { background: var(--panel); border-radius: 10px; padding: 8px 10px; }
   body.site .con .top span:nth-child(2n) { font-size: 14px; }
-  body.site .svc .kv span:nth-child(2n) { color: #1a7f52; }
-  body.site .bal .bar { height: 8px; border-radius: 4px; background: rgba(21, 48, 74, 0.08); overflow: hidden; }
-  body.site .bal .bar i { display: block; height: 100%; background: var(--navy); }
-  body.site .bal .bar i.over { background: #c0504d; }
+  body.site .svc .kv span:nth-child(2n) { color: var(--ok); }
+  body.site .bal .bar { height: 8px; border-radius: 4px; background: rgba(10, 18, 32, 0.08); overflow: hidden; }
+  body.site .bal .bar i { display: block; height: 100%; background: var(--accent); }
+  body.site .bal .bar i.over { background: var(--bad); }
   body.site .bal td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
-  body.site .bal .over-txt { color: #c0504d; font-weight: 600; }
+  body.site .bal .over-txt { color: var(--bad); font-weight: 600; }
 </style>
 </head>
 <body class="site">
