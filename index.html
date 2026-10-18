@@ -1393,7 +1393,7 @@ const crowdHead = new THREE.InstancedMesh(headGeo, new THREE.MeshStandardMateria
 crowdBody.castShadow = true; scene.add(crowdBody, crowdHead);
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
-const SCHEMATIC_PEOPLE = 0x1d3a8f;   // people dots of the schematic style
+const SCHEMATIC_PEOPLE = 0x2856e0;   // people dots of the schematic style: round, blue (founder 2026-10-18)
 const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { const r = walk(a.p, b.p); routeCache.set(k, r && r.length > 1 ? r : null); } return routeCache.get(k); };   // null = no walkway: the trip does not happen
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _pp = new THREE.Vector3();
 function person(i, type, home) {
@@ -1445,7 +1445,8 @@ function stepPeople(dt) {
   }
 }
 const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * (N_PEOPLE + N_ARRIVAL)), 3)),
-  new THREE.PointsMaterial({ color: SCHEMATIC_PEOPLE, size: 4.5, sizeAttenuation: false, depthTest: true }));   // schematic style: every person one dot, no types
+  new THREE.PointsMaterial({ color: SCHEMATIC_PEOPLE, size: 6, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5,
+    map: (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.beginPath(); x.arc(16, 16, 14, 0, 7); x.fill(); return new THREE.CanvasTexture(c); })() }));   // round dots   // schematic style: every person one dot, no types
 peopleDots.visible = false; peopleDots.frustumCulled = false; peopleDots.renderOrder = 8; scene.add(peopleDots);
 function drawPeople() {
   if (peopleDots.visible) { const a = peopleDots.geometry.attributes.position.array; let n = 0;
