@@ -1605,8 +1605,8 @@ async function loop() {
 // All palette and light values of the schematic style are here.
 const SCHEMATIC = {
   sea: 0xb9d6f5, land: 0xffffff, beach: 0xf4f7fc, rock: 0xe8eef8,
-  green: 0xf2f6fd, greenDot: 0x9dbdf0, dotStep: 7.0, dotR: 0.22,                       // lawns: white with blue dots (halftone of the reference)
-  roadMain: 0x1c2b52, walk: 0xd6dfef, plaza: 0xe7edf7, pier: 0xdfe6f2, breakwater: 0xeef2f8,
+  green: 0xf2f6fd, greenDot: 0x9dbdf0, dotStep: 4.0, dotR: 0.24,                       // lawns: white with blue dots (halftone of the reference)
+  roadMain: 0x34477a, walk: 0xb9bcc2, plaza: 0xcfd2d7, infra: 0xc6c9cf, infraBld: 0xa4a9b2, pier: 0xdfe6f2, breakwater: 0xeef2f8,
   tree: 0xcfdcf5, treeDark: 0xb8cbf1, palm: 0xd6e2f7, trunk: 0xe3e9f5,   // light, so the trees do not compete with the buildings
   glassDarken: 0.82, pool: 0x8cc2f0,
   fn: { hotel: 0x2856e0, 'apart hotel': 0x3a66e4, residences: 0x4f7ae9, villas: 0x7c9cf0, 'food & retail': 0x9db6f4, dining: 0x6f8fee,
@@ -1637,6 +1637,7 @@ const meshFn = o => { let q = o; while (q.parent && q.parent !== model) q = q.pa
 function schematicMat(o) {
   const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), S = SCHEMATIC;
   if (g === 'zoning' || n === 'Sea' || n === 'Shallow water' || /drop-off$|^Drop-off \| DO-/.test(n)) return null;
+  if (n.startsWith('Infrastructure zone')) return /GREEN/.test(mn) ? dotMat() : /Road surface/.test(mn) ? flatMat(S.roadMain) : /Village stone|Hotel glass|Hotel white|Village roof/.test(mn) ? flatMat(S.infraBld) : flatMat(S.infra);   // back of house: greys
   if (/Pool water/.test(mn)) return flatMat(S.pool, 0.4);
   if (g === 'trees') return flatMat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);
   if (g === 'terrain') return /BEACH/.test(mn) ? flatMat(S.beach) : /Rocky/.test(mn) ? flatMat(S.rock) : /GREEN/.test(mn) ? dotMat() : flatMat(S.land);
