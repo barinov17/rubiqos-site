@@ -55,7 +55,13 @@
   #layers .row button:hover:not(.on), #controls button:hover:not(.on) { background: rgba(21, 48, 74, 0.06); }
   #layers .muted { color: var(--muted); font-size: 11px; }
 
-  #controls { left: 12px; bottom: 12px; padding: 4px; display: flex; gap: 3px; border-radius: 10px; }   /* small, bottom-left inside the map */
+  #bottomBar { position: absolute; left: 12px; bottom: 12px; display: flex; gap: 8px; align-items: center; z-index: 3; }   /* controls + style switch on one level, bottom-left of the map */
+  #bottomBar .panel { position: static; }
+  #controls { padding: 4px; display: flex; gap: 3px; border-radius: 10px; }
+  #styleSw { padding: 4px; display: flex; gap: 3px; border-radius: 10px; align-items: center; }
+  #styleSw .lab { font: 600 10px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0 6px 0 4px; }
+  #styleSw button { font: 500 11px var(--body); color: var(--navy); background: transparent; border: 1px solid var(--line); border-radius: 7px; padding: 4px 8px; cursor: pointer; }
+  #styleSw button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
   #controls button { font-size: 11px; padding: 4px 8px; border-radius: 7px; }
 
   #bApp { right: 12px; top: 12px; font: 700 14px var(--body); color: #fff; background: var(--accent); border-color: var(--accent); padding: 11px 18px; border-radius: 12px; cursor: pointer; z-index: 4; display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 18px rgba(224, 121, 95, 0.35); }   /* guest app: orange, top-right of the map (founder 2026-10-18) */
@@ -168,12 +174,15 @@
     <div class="box" id="zonesBox"><div class="muted">click = filter · ⤴ = fly to</div><div id="zoneList"></div></div>
   </div>
 </div>
+<div id="bottomBar">
 <div id="controls" class="panel">
   <button id="bPlay" class="on">Pause</button>
   <button id="bSpeed">Speed 1×</button>
   <button id="bOverview" class="on">Overview</button>
   <button id="bCam">Live camera</button>
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
+</div>
+<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="standard" class="on">Standard</button><button data-style="schematic">Schematic</button></div>
 </div>
 <div id="tip" class="panel"></div>
 <button id="bApp" class="panel"><span class="arr">←</span><span>Guest app</span></button>
@@ -1592,6 +1601,76 @@ async function loop() {
   }
 }
 
+// ===== map styles (founder 2026-10-18): Standard = the model as exported; Schematic = deck palette (blue on white).
+// All palette and light values of the schematic style are here.
+const SCHEMATIC = {
+  sea: 0xb9d6f5, land: 0xffffff, beach: 0xf4f7fc, rock: 0xe8eef8,
+  green: 0xf2f6fd, greenDot: 0x9dbdf0, dotStep: 7.0, dotR: 0.22,                       // lawns: white with blue dots (halftone of the reference)
+  roadMain: 0x1c2b52, walk: 0xd6dfef, plaza: 0xe7edf7, pier: 0xdfe6f2, breakwater: 0xeef2f8,
+  tree: 0xcfdcf5, treeDark: 0xb8cbf1, palm: 0xd6e2f7, trunk: 0xe3e9f5,   // light, so the trees do not compete with the buildings
+  glassDarken: 0.82, pool: 0x8cc2f0,
+  fn: { hotel: 0x2856e0, 'apart hotel': 0x3a66e4, residences: 0x4f7ae9, villas: 0x7c9cf0, 'food & retail': 0x9db6f4, dining: 0x6f8fee,
+        'events & culture': 0x1a3fb8, 'spa & wellness': 0x8aa9f2, wellness: 0x8aa9f2, 'wellness & sport': 0x8aa9f2, sport: 0xb4c8f6, courts: 0xb4c8f6,
+        'arrival & mobility': 0x5d7fd6, operations: 0xc3d0ea, default: 0xa3b8e6 },
+  sky: [0xeef3fb, 0xf6f8fc], fog: 0xf3f6fb, fogRange: [6000, 20000], exposure: 1.0, toneMapping: THREE.NoToneMapping,   // no tone curve: the palette shows as drawn
+  hemi: [0xffffff, 0xd5ddee, 2.9], sun: [0xffffff, 1.5], aoBlend: 0.15, /* three r170: diffuse = albedo x light / pi, so (2.9 + 1.5 x 0.74) / pi = 1.28: white land stays white */ grade: { sat: 1.0, con: 1.0, lift: 0.0, tint: 0xffffff },
+};
+const STD = { toneMapping: renderer.toneMapping, sky: [skyMat.uniforms.top.value.getHex(), skyMat.uniforms.horizon.value.getHex()], fog: scene.fog.color.getHex(), fogRange: [scene.fog.near, scene.fog.far],
+  exposure: renderer.toneMappingExposure, hemi: [hemi.color.getHex(), hemi.groundColor.getHex(), hemi.intensity], sun: [sun.color.getHex(), sun.intensity], aoBlend: gtao.blendIntensity,
+  grade: { sat: grade.uniforms.sat.value, con: grade.uniforms.con.value, lift: grade.uniforms.lift.value, tint: grade.uniforms.tint.value.getHex() },
+  water: Object.fromEntries(['deep', 'mid', 'shallow', 'sand', 'skyC', 'fresK', 'specK'].map(k => [k, waterMat.uniforms[k].value.clone ? waterMat.uniforms[k].value.clone() : waterMat.uniforms[k].value])) };
+const schemCache = new Map();
+const flatMat = (hex, rough = 0.95) => { const k = 'f' + hex; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 })); return schemCache.get(k); };
+const dotMat = () => {                                                              // world-space dot pattern, so no UVs are needed
+  if (schemCache.has('dots')) return schemCache.get('dots');
+  const m = new THREE.MeshStandardMaterial({ color: SCHEMATIC.green, roughness: 1, metalness: 0 });
+  m.onBeforeCompile = sh => {
+    sh.uniforms.dotCol = { value: new THREE.Color(SCHEMATIC.greenDot) }; sh.uniforms.dotStep = { value: SCHEMATIC.dotStep }; sh.uniforms.dotR = { value: SCHEMATIC.dotR };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform vec3 dotCol; uniform float dotStep, dotR;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n{ vec2 g = vWP.xz / dotStep; vec2 o = vec2(mod(floor(g.y), 2.0) * 0.5, 0.0); vec2 f = fract(g + o) - 0.5; float d = length(f); float w = fwidth(d);\n  diffuseColor.rgb = mix(dotCol, diffuseColor.rgb, smoothstep(dotR - w, dotR + w, d)); }');
+  };
+  schemCache.set('dots', m); return m;
+};
+const meshGroup = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
+const meshFn = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q.userData.function || o.userData.function || ''; };
+function schematicMat(o) {
+  const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), S = SCHEMATIC;
+  if (g === 'zoning' || n === 'Sea' || n === 'Shallow water' || /drop-off$|^Drop-off \| DO-/.test(n)) return null;
+  if (/Pool water/.test(mn)) return flatMat(S.pool, 0.4);
+  if (g === 'trees') return flatMat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);
+  if (g === 'terrain') return /BEACH/.test(mn) ? flatMat(S.beach) : /Rocky/.test(mn) ? flatMat(S.rock) : /GREEN/.test(mn) ? dotMat() : flatMat(S.land);
+  if (g === 'landscape') return /GREEN|Planting/.test(mn) ? dotMat() : flatMat(S.land);
+  if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? flatMat(S.roadMain) : /Plaza|Urban/.test(mn) ? flatMat(S.plaza) : flatMat(S.walk);
+  if (g === 'marina') return /MARINA$/.test(mn) ? flatMat(S.breakwater) : /Pier deck/.test(mn) ? flatMat(S.pier) : /Boat/.test(mn) ? flatMat(0xffffff) : flatMat(S.fn['arrival & mobility']);
+  if (/GREEN|Planting|roof garden|planters/i.test(mn + ' ' + n)) return dotMat();
+  if (/Road surface/.test(mn) || /access road$|service road/.test(n)) return flatMat(S.roadMain);
+  if (/Promenade|Plaza|Urban ground|Villa deck|deck$|yard$|courtyard$|forecourt$|ground$|path/i.test(mn + ' ' + n)) return flatMat(S.walk);
+  const base = new THREE.Color(S.fn[meshFn(o)] ?? S.fn.default);
+  if (/glass/i.test(mn)) return flatMat(base.clone().multiplyScalar(S.glassDarken).getHex(), 0.5);
+  if (/roof|slab|white|parapet|top band/i.test(mn + ' ' + n)) return flatMat(base.clone().lerp(new THREE.Color(0xffffff), 0.55).getHex());
+  return flatMat(base.getHex());
+}
+let mapStyle = 'standard';
+function applyMapStyle(name) {
+  const sch = name === 'schematic', st = sch ? SCHEMATIC : STD; mapStyle = name;
+  model.traverse(o => {
+    if (!o.isMesh) return;
+    if (!o.userData.baseMat) o.userData.baseMat = o.material;
+    const m = sch ? schematicMat(o) : null; o.material = m || o.userData.baseMat;
+  });
+  skyMat.uniforms.top.value.set(st.sky[0]); skyMat.uniforms.horizon.value.set(st.sky[1]); scene.fog.color.set(st.fog); scene.fog.near = st.fogRange[0]; scene.fog.far = st.fogRange[1];
+  renderer.toneMapping = st.toneMapping; renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2]; sun.color.set(st.sun[0]); sun.intensity = st.sun[1];
+  gtao.blendIntensity = st.aoBlend; grade.uniforms.sat.value = st.grade.sat; grade.uniforms.con.value = st.grade.con; grade.uniforms.lift.value = st.grade.lift; grade.uniforms.tint.value.set(st.grade.tint);
+  const W = waterMat.uniforms;
+  if (sch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(SCHEMATIC.sea); W.fresK.value = 0; W.specK.value = 0; }   // one flat light-blue sea
+  else for (const [k, v] of Object.entries(STD.water)) { if (W[k].value.copy) W[k].value.copy(v); else W[k].value = v; }
+  document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
+  try { localStorage.setItem('mapStyle2', name); } catch (e) {}
+}
+document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
+{ let saved = 'standard'; try { saved = localStorage.getItem('mapStyle2') || 'standard'; } catch (e) {} if (saved === 'schematic') applyMapStyle('schematic'); }
+
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
   const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').innerHTML = v ? '<span>Guest app</span><span class="arr">→</span>' : '<span class="arr">←</span><span>Guest app</span>';   // arrow: where the panel goes
@@ -1630,7 +1709,7 @@ loop();
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI, __applyMapStyle: applyMapStyle });
 </script>
 </body>
 </html>
