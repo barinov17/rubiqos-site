@@ -335,13 +335,20 @@ model.traverse(o => {
 // static scenery merged per material into a few draw calls.
 const berths = [];                                                           // { cls S/M/L, id Y1-3, slot, local, pos, quat, heading, bow, length, occupied }
 const yachtInst = {};                                                        // Y1-3 -> { parts: [InstancedMesh], ghost: [InstancedMesh] }
-const ghostMat = new THREE.MeshStandardMaterial({ color: 0xe6edf5, roughness: 1, transparent: true, opacity: 0.55, depthWrite: false, name: 'Yacht ghost' });
-const _zeroM = new THREE.Matrix4().makeScale(0, 0, 0), _flatM = new THREE.Matrix4(), _flatS = new THREE.Matrix4().makeScale(1, 0.02, 1);
-function berthShow(b, on) {                                                  // on: the yacht sits in the berth; off: a flat silhouette marks the empty berth
+const _zeroM = new THREE.Matrix4().makeScale(0, 0, 0);
+// an empty berth = the hull outline as a light-blue dashed line (founder 2026-10-18); one LineSegments holds every empty berth
+const ghostLine = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x5a9be8, dashSize: 1.4, gapSize: 1.0, transparent: true, opacity: 0.9 }));
+ghostLine.frustumCulled = false; ghostLine.renderOrder = 7; scene.add(ghostLine);
+let ghostDirty = false;
+function rebuildGhostLines() {
+  const pts = [], v = new THREE.Vector3();
+  for (const b of berths) { if (b.occupied) continue; const o = yachtInst[b.id].outline; for (let i = 0; i < o.length; i++) for (const q of [o[i], o[(i + 1) % o.length]]) { v.set(q[0], 0.12, q[1]).applyMatrix4(b.world); pts.push(v.x, v.y, v.z); } }
+  ghostLine.geometry.dispose(); ghostLine.geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); ghostLine.computeLineDistances(); ghostDirty = false;
+}
+function berthShow(b, on) {                                                  // on: the yacht sits in the berth; off: the dashed outline marks the empty berth
   b.occupied = on; const inst = yachtInst[b.id];
   for (const im of inst.parts) { im.setMatrixAt(b.slot, on ? b.local : _zeroM); im.instanceMatrix.needsUpdate = true; }
-  _flatM.copy(b.local).multiply(_flatS); _flatM.elements[13] += 0.1;
-  for (const im of inst.ghost) { im.setMatrixAt(b.slot, on ? _zeroM : _flatM); im.instanceMatrix.needsUpdate = true; }
+  ghostDirty = true;
 }
 {
   const root = byName.get('Marina (SketchUp plan)');
@@ -353,12 +360,15 @@ function berthShow(b, on) {                                                  // 
       const nodes = yachts.filter(o => o.name.startsWith(id + ' ')); if (!nodes.length) continue;
       const tpl = nodes[0], parts = tpl.children.filter(c => c.isMesh);     // every yacht of a class is the same mesh (e060): the first one is the template
       const mk = (geo, mat, name) => { const im = new THREE.InstancedMesh(geo, mat, nodes.length); im.name = name; im.userData = { group: 'marina', function: 'marina', zone_id: tpl.userData.zone_id, zone_name: tpl.userData.zone_name, material: mat.name }; im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false; root.add(im); byName.set(name, im); return im; };
-      const inst = yachtInst[id] = { parts: parts.map((c, k) => mk(c.geometry, c.material, `${id} yachts | ${c.material.name || 'part'} ${k}`)), ghost: parts.filter(c => !/glass/i.test(c.material.name)).map((c, k) => mk(c.geometry, ghostMat, `${id} berths | ghost ${k}`)) };
+      const inst = yachtInst[id] = { parts: parts.map((c, k) => mk(c.geometry, c.material, `${id} yachts | ${c.material.name || 'part'} ${k}`)) };
+      { const pts = [], v = new THREE.Vector3();                              // plan outline of the hull (convex), in yacht-local metres, for the empty-berth dashes
+        for (const c of parts) { if (/glass/i.test(c.material.name)) continue; const p = c.geometry.attributes.position; for (let k = 0; k < p.count; k++) { v.fromBufferAttribute(p, k).applyMatrix4(c.matrix); pts.push([v.x, v.z]); } }
+        inst.outline = hull2(pts); }
       nodes.forEach((o, i) => {
         const local = inv.clone().multiply(o.matrixWorld), pos = new THREE.Vector3(), quat = new THREE.Quaternion(); o.matrixWorld.decompose(pos, quat, new THREE.Vector3());
         const bow = new THREE.Vector3(1, 0, 0).applyQuaternion(quat).setY(0).normalize();                 // fleet convention: front = +X
-        berths.push({ cls: CLS[id], id, slot: i, local, pos, quat, bow, heading: Math.atan2(-bow.z, bow.x), length: o.userData.length_m || 15, berth_id: o.userData.berth_id || '', name: o.name, occupied: true, busy: false });
-        for (const im of inst.parts) im.setMatrixAt(i, local); for (const im of inst.ghost) im.setMatrixAt(i, _zeroM);
+        berths.push({ cls: CLS[id], id, slot: i, local, world: o.matrixWorld.clone(), pos, quat, bow, heading: Math.atan2(-bow.z, bow.x), length: o.userData.length_m || 15, berth_id: o.userData.berth_id || '', name: o.name, occupied: true, busy: false });
+        for (const im of inst.parts) im.setMatrixAt(i, local);
         root.remove(o); byName.delete(o.name);
       });
     }
@@ -1375,18 +1385,39 @@ const clockAt = hh => `${String(Math.floor(hh) % 24).padStart(2, '0')}:${String(
 
 // ===== marina traffic (founder 2026-10-18): berths 50–70 % full, an empty berth shows a light silhouette; yachts arrive and
 // leave through the entrance over the day: 1 large, 4 medium and 8 small changes (a departure, then an arrival at another berth).
-// A yacht docks stern-to: it comes to a fairway point off the open side of the berth, turns to the berth heading and backs in.
+// Standard routes (founder sketch 2026-10-18): a trunk channel inside the breakwater, one spur up every fairway between the
+// pontoon rows, and the open-sea leg from the trunk's west end through the entrance. A yacht backs out of its berth onto the
+// spur, follows spur → trunk → sea; an arrival runs the same way back and docks stern-to. The network is drawn as a dashed line.
 const YACHT_SPEED = { S: 10, M: 9, L: 7 }, DOCK_SPEED = 2.2;
-for (const b of berths) {
-  const L = b.length, side = [1, -1].find(s => isWater(b.pos.x + b.bow.x * s * L * 1.2, b.pos.z + b.bow.z * s * L * 1.2));
-  b.side = side || 0; if (!side) continue;
-  b.approach = b.pos.clone().add(b.bow.clone().multiplyScalar(side * L * 1.6)).setY(waterY);
-  const c = seaR.nearest(b.approach); if (!c) continue; const q = seaR.posOf(...c); if (q.distanceTo(b.approach) > 70) continue;
-  b.fairway = q;
+const MAR = (() => {
+  const b0 = berths.find(b => b.cls === 'S') || berths[0]; if (!b0) return null;
+  const ax = new THREE.Vector3(b0.bow.x, 0, b0.bow.z), al = new THREE.Vector3(-b0.bow.z, 0, b0.bow.x);                        // across / along the pontoons
+  const U = p => p.x * ax.x + p.z * ax.z, V = p => p.x * al.x + p.z * al.z, XZ = (u, v, y = waterY) => new THREE.Vector3(u * ax.x + v * al.x, y, u * ax.z + v * al.z);
+  for (const b of berths) { b.u = U(b.pos); b.v = V(b.pos); b.sgn = Math.sign(b.bow.x * ax.x + b.bow.z * ax.z) || 1; b.ua = b.u + b.sgn * 1.3 * b.length; }
+  const fairways = [];                                                        // berths facing the same water lane cluster by their approach coordinate
+  for (const b of [...berths].sort((p, q) => p.ua - q.ua)) { const f = fairways[fairways.length - 1]; if (f && b.ua - f.last < 14) { f.members.push(b); f.last = b.ua; } else fairways.push({ members: [b], last: b.ua }); }
+  const vTrunk = Math.min(...berths.map(b => b.v)) - 40;                      // 40 m south of the southernmost berth, inside the breakwater
+  for (const f of fairways) { f.u = f.members.reduce((s, b) => s + b.ua, 0) / f.members.length; f.top = XZ(f.u, Math.max(...f.members.map(b => b.v)) + 12); f.foot = XZ(f.u, vTrunk); for (const b of f.members) { b.fairway = f; b.approach = XZ(f.u, b.v); } }
+  const uW = Math.max(U(A.entrance), ...fairways.map(f => f.u)), uE = Math.min(...fairways.map(f => f.u));
+  const west = XZ(uW, vTrunk), east = XZ(uE, vTrunk), westNav = seaR.posOf(...seaR.nearest(west));
+  const out = seaLegs([westNav, A.entrance, SEA.out]) || [westNav, A.entrance.clone().setY(waterY), SEA.out.clone().setY(waterY)];
+  const dry = []; const check = (p, q, tag) => { for (let t = 0; t <= 1; t += 0.05) { const m = p.clone().lerp(q, t); if (!isWater(m.x, m.z)) { dry.push(tag); break; } } };
+  for (const f of fairways) check(f.top, f.foot, 'spur ' + Math.round(f.u)); check(east, west, 'trunk');
+  if (dry.length) console.warn('marina fairway network crosses land:', dry); else console.info('marina fairway network:', fairways.length, 'spurs + trunk, all on water');
+  return { fairways, west, east, out: [west.clone(), ...out] };
+})();
+if (MAR) {                                                                  // the designed routes, dashed on the water
+  const pts = []; for (const f of MAR.fairways) pts.push(f.top, f.foot); pts.push(MAR.east, MAR.west); for (let i = 1; i < MAR.out.length; i++) pts.push(MAR.out[i - 1], MAR.out[i]);
+  const g = new THREE.BufferGeometry().setFromPoints(pts.map(p => p.clone().setY(waterY + 0.35)));
+  const ln = new THREE.LineSegments(g, new THREE.LineDashedMaterial({ color: 0x2457e6, dashSize: 7, gapSize: 5, transparent: true, opacity: 0.75 })); ln.computeLineDistances(); ln.name = 'fairways'; ln.renderOrder = 7; scene.add(ln);
 }
-const berthsOk = berths.filter(b => b.fairway);
-console.info('marina berths:', berths.length, '· with an approach route:', berthsOk.length, Object.fromEntries(['S', 'M', 'L'].map(c => [c, berthsOk.filter(b => b.cls === c).length])));
-for (const b of berths) berthShow(b, rand() < 0.6);                            // the day starts about 60 % full
+const berthsOk = MAR ? berths : [];
+console.info('marina berths:', berths.length, Object.fromEntries(['S', 'M', 'L'].map(c => [c, berths.filter(b => b.cls === c).length])), '· fairways:', MAR ? MAR.fairways.map(f => `${f.members.length} berths`) : 'none');
+for (const cls of ['S', 'M', 'L']) {                                            // the day starts 60 % full, berths shuffled per class so full and empty ones mix
+  const list = berths.filter(b => b.cls === cls); for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  list.forEach((b, i) => berthShow(b, i < Math.round(list.length * 0.6)));
+}
+rebuildGhostLines();
 const occupancyText = () => { const o = berths.filter(b => b.occupied).length; return `marina ${Math.round(100 * o / Math.max(1, berths.length))} % full (${o} of ${berths.length} berths)`; };
 const yachtMovers = [];
 function yachtMover(id) {
@@ -1404,19 +1435,19 @@ function stepDock(y, dt) {
 }
 function yachtDepart(cls) {
   const cands = berthsOk.filter(b => b.cls === cls && b.occupied && !b.busy); if (!cands.length) return false;
-  const b = anyOf(cands), sea = seaLegs([b.fairway, A.entrance, SEA.out]); if (!sea) return false;
+  const b = anyOf(cands), route = [b.approach.clone(), b.fairway.foot.clone(), ...MAR.out.map(p => p.clone())];   // spur → trunk → entrance → open sea
   const y = yachtMover(b.id); b.busy = true; y.busy = true; berthShow(b, false);
   y.mesh.visible = true; y.mesh.position.copy(b.pos); y.mesh.rotation.y = b.heading; y.heading = b.heading; y.path = null;
   y.task = `${TYPES[b.id].title} · leaving berth ${b.berth_id} → open sea`;
   notify({ icon: '⛵', tag: 'Marina', title: `${TYPES[b.id].title} departing · berth ${b.berth_id}`, body: `Lines off, pilot out through the entrance. ${occupancyText()}.` });
-  dockLeg(y, b.pos, b.approach, b.heading, b.heading, () => { setPath(y, [b.approach.clone(), ...sea]); y.speed = YACHT_SPEED[cls]; y.onDone = () => { y.mesh.visible = false; y.busy = false; b.busy = false; }; });
+  dockLeg(y, b.pos, b.approach, b.heading, b.heading, () => { setPath(y, route); y.speed = YACHT_SPEED[cls]; y.onDone = () => { y.mesh.visible = false; y.busy = false; b.busy = false; }; });
   return true;
 }
 function yachtArrive(cls) {
   const cands = berthsOk.filter(b => b.cls === cls && !b.occupied && !b.busy); if (!cands.length) return false;
-  const b = anyOf(cands), sea = seaLegs([SEA.out, A.entrance, b.fairway]); if (!sea) return false;
+  const b = anyOf(cands), route = [...MAR.out.map(p => p.clone()).reverse(), b.fairway.foot.clone(), b.approach.clone()];   // open sea → entrance → trunk → spur
   const y = yachtMover(b.id); b.busy = true; y.busy = true; y.task = `${TYPES[b.id].title} · inbound → berth ${b.berth_id}`;
-  placeAt(y, SEA.out, Math.atan2(-(A.entrance.z - SEA.out.z), A.entrance.x - SEA.out.x)); setPath(y, [...sea, b.approach.clone()]); y.speed = YACHT_SPEED[cls];
+  placeAt(y, SEA.out, Math.atan2(-(A.entrance.z - SEA.out.z), A.entrance.x - SEA.out.x)); setPath(y, route); y.speed = YACHT_SPEED[cls];
   y.onDone = () => { y.task = `${TYPES[b.id].title} · docking stern-to at berth ${b.berth_id}`; dockLeg(y, b.approach, b.pos, y.heading, b.heading, () => { y.mesh.visible = false; y.busy = false; b.busy = false; berthShow(b, true);
     notify({ icon: '🛥️', tag: 'Marina', title: `${TYPES[b.id].title} moored · berth ${b.berth_id}`, body: `Shore power and water connected. ${occupancyText()}.` }); }); };
   notify({ icon: '📡', tag: 'Marina AI', title: `${TYPES[b.id].title} inbound`, body: `AIS track matched to the booking · berth ${b.berth_id} assigned. ${occupancyText()}.` });
@@ -1429,6 +1460,7 @@ function stepYachts(dt) {
   if (day !== yachtDay) { yachtDay = day; yachtEvents = []; for (const [cls, pairs] of Object.entries(YACHT_PAIRS)) for (const [d, a] of pairs) yachtEvents.push({ h: d, cls, kind: 'depart' }, { h: a, cls, kind: 'arrive' }); yachtEvents = yachtEvents.filter(e => e.h >= h - 0.02).sort((p, q) => p.h - q.h); }
   while (yachtEvents.length && yachtEvents[0].h <= h) { const e = yachtEvents.shift(); if (!(e.kind === 'depart' ? yachtDepart(e.cls) : yachtArrive(e.cls))) console.info('marina: no', e.kind, 'possible for class', e.cls, 'at', clockAt(h)); }
   for (const y of yachtMovers) { if (y.dock) stepDock(y, dt); else if (y.path) stepMover(y, dt); }
+  if (ghostDirty) rebuildGhostLines();
 }
 
 // --- fleet step: trips, battery, charging, counters
