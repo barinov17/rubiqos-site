@@ -227,7 +227,7 @@ const ROBOTS = {
   L5: { name: 'Delivery robot', scope: 'fleet', does: 'Brings room service, villa breakfasts, luggage and amenities to the guest.' },
   W1: { name: 'Shuttle boat', scope: 'fleet', does: 'Carries guests mainland ↔ terminal and marina ↔ Beach Club ↔ villas; one remote operator.' },
   W2: { name: 'Supply vessel', scope: 'fleet', does: 'Lands food and consumables at the Service dock, takes waste back; one remote operator.' },
-  W3: { name: 'Excursion boat', scope: 'fleet', does: 'Snorkelling and sunset trips with a skipper aboard.' },
+  // W3 excursion boat is not a robot: a skipper drives it with guests aboard (founder 2026-10-19); it stays in the fleet table only
   scrubber: { name: 'Floor-scrubbing robot', scope: 'object', does: 'Washes hard floors in corridors, lobbies and the back of house, mostly at night.' },
   pool: { name: 'Pool-cleaning robot', scope: 'object', does: 'Cleans the pool floor and walls of its villa, hotel or thermal area.' },
   luggage: { name: 'Luggage robot', scope: 'object', does: 'Takes bags from the drop-off to the room and back, inside its building.' },
@@ -273,7 +273,6 @@ const ORIGIN = {
   L5: { by: 'founder', note: 'Fleet Register: delivery robots (founder: "робот-доставщик").' },
   W1: { by: 'founder', note: 'Fleet Register; autonomous with one operator for all boats: founder\'s brief of 2026-10-19.' },
   W2: { by: 'founder', note: 'Fleet Register; two autonomous service boats bringing goods and taking waste: founder\'s brief of 2026-10-19.' },
-  W3: { by: 'founder', note: 'Fleet Register: excursion boats with a skipper.' },
   scrubber: { by: 'founder', note: 'Founder 2026-10-19: "роботы-пылесосы, которые обслуживают этаж и общую зону". Real product class (Avidbots Neo, Pudu CC1, Brain Corp).' },
   mower: { by: 'founder', note: 'Founder 2026-10-19: "автономные боты, которые стригут газоны" for the landscaping service. Real (Husqvarna Ceora / Automower).' },
   washline: { by: 'founder', note: 'Founder 2026-10-19: "автономный робот-прачка" in the laundry. Real: tunnel washer lines (Jensen, Girbau, Kannegiesser).' },
@@ -352,7 +351,7 @@ const TEAM = {
   'guest-dock': { people: { 'Dock staff': 6, 'Shuttle operator (remote, all boats)': 1, 'Porters': 4 }, robots: { luggage: 4, kiosk: 3 } },
   'excursion-terminal': { people: { 'Guides': 4, 'Desk': 2, 'Skippers (guests aboard)': 3 }, robots: {} },
   'crew-lounge': { people: { 'Attendants': 3 }, robots: { kiosk: 1 } },
-  fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: Object.assign({ charger: 2 }, ...['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3'].map(k => ({ [k]: FLEET_PLAN[k] }))) },
+  fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: Object.assign({ charger: 2 }, ...['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2'].map(k => ({ [k]: FLEET_PLAN[k] }))) },
 };
 
 const tsum = o => Object.values(o).reduce((a, b) => a + b, 0);
