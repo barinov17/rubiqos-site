@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019q">
+<link rel="stylesheet" href="/site.css?v=20261019r">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -1827,13 +1827,14 @@ function updateDash() {
   const prodOf = f => { const c = f.at, n = (f.poi && f.poi.name) || '';
     return c === 'food' ? (f.poi && f.poi.prod) || null : c === 'hotel' ? (n.startsWith('Hill') ? 'Hill Hotel' : 'Beach Hotel') : c === 'residence' ? (n.includes('BR2') ? 'Residences BR2' : 'Residences BR1') : c === 'villa' ? 'Villas'
       : c === 'restaurant' ? 'Restaurant' : c === 'event' ? 'Events Rotunda' : c === 'spa' ? 'Spa & Wellness' : c === 'sport' ? 'GYM & Sports' : c === 'marina' || c === 'terminal' || c === 'excursion' ? 'Marina'
-      : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? 'Beach Club' : c === 'club' ? 'Members Club' : null; };
+      : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? (n.startsWith('North') ? 'North Beach' : n.startsWith('South') ? 'South Beach' : 'Beach Club') : c === 'club' ? 'Members Club' : null; };
   const pg = {}; for (const f of guests) { if (f.path && !f.strolling) continue; const k = prodOf(f); if (k) pg[k] = (pg[k] || 0) + 1; }
   const products = {}; for (const [k, v] of Object.entries(pg)) products[k] = Math.round(v * scale);
   const byType = {}; for (const f of people) if (!f.idle) byType[f.type] = (byType[f.type] || 0) + 1;
   const byCls = {}; for (const b of berths) { const c = byCls[b.cls] ||= { moored: 0, berths: 0 }; c.berths++; if (b.occupied) c.moored++; }
   const w1 = ambient.filter(f => f.type === 'W1' && /^Mainland/.test(f.task)).map(f => f.task), sv = ambient.find(f => f.type === 'W2'), ex = ambient.find(f => f.type === 'W3');
   const riders = people.filter(f => f.ride && f.ride.waiting && f.visible).length, aboard = people.filter(f => f.ride && !f.visible).length;
+  window.__dbg = window.__dbg || { POI, A, beachClubP };                      /* positions for debugging from the console; not used by the pages */
   window.__live = {
     clock: clockText(), hour: +h.toFixed(2), day: DAYN[dayIndex() % 7], guestsSim: guests.length, scale: +scale.toFixed(2), onShift, shiftShare: +shiftShare.toFixed(3),
     people: byType, products, fleet,

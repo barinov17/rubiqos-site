@@ -7,7 +7,7 @@
 <title>RubiqOS · Simulation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019q">
+<link rel="stylesheet" href="/site.css?v=20261019r">
 <style>
   body.site .wrap { max-width: none; }                                    /* the whole page at full width (founder 2026-10-19) */
   body.site .hero p { max-width: 70ch; }
@@ -33,7 +33,7 @@
   <div class="hero">
     <h1>How the simulation moves</h1>
     <p>The live demo is not an animation. Every person, vehicle, boat and the helicopter decides its next trip on its own, from the time of day, the event programme and the rules on this page. The system only dispatches: pods answer calls, trucks meet the supply vessel, the marina assigns berths. This page is the rulebook behind the map, in the same words the code uses.</p>
-    <div class="note">v1.2 · 2026-10-19 (resources added, operators moved to the proforma cards). Rules read from the demo source (<code>prototype/resort-glb</code>) and the vault notes <em>Resort Population and Guest Day</em>, <em>Fleet Plan and Vehicle Scenarios</em>, <em>Event Programme</em>, <em>Helipad Model</em>. Numbers are the demo's, at reduced scale where stated.</div>
+    <div class="note">v1.3 · 2026-10-19 (profiles and yacht crews added; resources; operators moved to the proforma cards). Rules read from the demo source (<code>prototype/resort-glb</code>) and the vault notes <em>Resort Population and Guest Day</em>, <em>Fleet Plan and Vehicle Scenarios</em>, <em>Event Programme</em>, <em>Helipad Model</em>. Numbers are the demo's, at reduced scale where stated.</div>
   </div>
 
   <section id="principles">
@@ -71,7 +71,7 @@
 
   <section id="people">
     <h2>People</h2>
-    <p class="lead">Six kinds of people, each with a home and a day. Walking speed 3–4 km/h, runners 6 km/h. At a place a person stays 2–7 simulated hours and strolls around it on the walkways (a 15–70 m radius, depending on the place).</p>
+    <p class="lead">Seven kinds of people, each with a home, a profile and a day. Walking speed 3–4 km/h, runners 6 km/h. At a place a person stays 2–7 simulated hours and strolls around it on the walkways (a 15–70 m radius, depending on the place).</p>
     <div class="scroll"><table class="t">
       <thead><tr><th>Who</th><th>Demo count</th><th>Home</th><th>How the day goes</th></tr></thead>
       <tbody>
@@ -80,7 +80,23 @@
         <tr><td><span class="sw" style="background:#f3c06b"></span>Day visitor</td><td>35</td><td>Mainland · arrives at the guest dock</td><td>On the island 10:00–18:00 only. Marina Village 35 %, beach 25 %, shops 15 %, marina 10 %, promenade 15 %. Walks to the guest dock and leaves on the evening shuttle.</td></tr>
         <tr><td><span class="sw" style="background:#f4f1ea;border-color:#bbb"></span>Yacht guest</td><td>15</td><td>A yacht in the marina</td><td>Marina 30 %, village 30 %, beach 20 %, spa 20 % by day; after 19:00 the village (60 %) or the restaurant.</td></tr>
         <tr><td><span class="sw" style="background:#c9a3e6"></span>Member</td><td>30</td><td>Mainland · arrives at the guest dock</td><td>Members Club 40 %, beach 20 %, spa 15 %, sport 15 %, village 10 %; club or restaurant in the evening; leaves after 21:00.</td></tr>
+        <tr><td><span class="sw" style="background:#8c6d4f"></span>Yacht crew</td><td>follows the yachts (52 at 76 moored)</td><td>Their yacht in the marina</td><td>The count is the moored boats × crew per class (small 1, medium 4, large 12 at the plan's scale; ÷ 4 in the demo). They board when the yacht arrives and leave with it. By day mostly the marina and the crew lounge, the village and the promenade; the beach in the afternoon; meals at any outlet; aboard 22:00–07:00. Not counted as guests.</td></tr>
         <tr><td><span class="sw" style="background:#15304a"></span>Staff</td><td>50</td><td>Staff accommodation</td><td>Walks between the staff accommodation and the back-of-house places only: warehouse, Fleet Hub, utilities, office, waste. At a shift change half go in, half go out. On shift: 330 in the morning, 230 in the evening, 65 at night.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 style="font: 600 17px var(--body); color: var(--navy); margin: 24px 0 6px">Profiles · five behaviours per kind</h3>
+    <p class="lead">Each person is given one profile at birth. The profile weights the day table: when a person leaves a place, the shares of the current hour are multiplied by the profile's weights (a weight of 4 makes that place four times as likely; places not named keep weight 1). Meals go to any food outlet on the island, chosen at random: the hotel restaurant, the Restaurant, the village cafés, the Beach Club. Beaches are places: the five spots on each sand beach.</p>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>Kind</th><th>Profiles and what they pull towards</th></tr></thead>
+      <tbody>
+        <tr><td>Hotel guest</td><td><b>Beach lover</b> beach ×4, food, spa · <b>Foodie</b> food ×3, village ×2, shops · <b>Wellness guest</b> spa ×4, sport, promenade · <b>Sporty guest</b> sport ×4, promenade ×2, runs at dawn and dusk · <b>Explorer</b> village, shops, marina, events, promenade</td></tr>
+        <tr><td>Resident</td><td><b>Homebody</b> home ×4, village · <b>Sailor</b> marina ×4, club, food · <b>Wellness resident</b> spa ×3.5, sport ×2 · <b>Social resident</b> village ×3, food ×2.5, events ×2 · <b>Beach resident</b> beach ×4, promenade, runs</td></tr>
+        <tr><td>Day visitor</td><td><b>Shopper</b> shops ×4, village ×2 · <b>Beach day</b> beach ×4, food · <b>Sightseer</b> promenade ×3, marina ×2.5, events ×2 · <b>Day foodie</b> food ×3.5, village ×2 · <b>Family</b> beach ×3, shops, village, events</td></tr>
+        <tr><td>Yacht guest</td><td><b>On board</b> marina ×4, food · <b>Village regular</b> village ×3.5, shops, food · <b>Beach crew</b> beach ×4, club · <b>Spa day</b> spa ×4, promenade · <b>Explorer</b> events ×2.5, promenade ×2, shops ×2, marina</td></tr>
+        <tr><td>Member</td><td><b>Club regular</b> club ×4, food · <b>Beach member</b> beach ×4, club · <b>Spa member</b> spa ×4, club · <b>Sport member</b> sport ×4, promenade, runs · <b>Social member</b> food ×3, village ×2, events ×2</td></tr>
+        <tr><td>Yacht crew</td><td><b>Deckhand</b> marina ×4, village, beach · <b>Chef</b> marina ×3, village ×2, food · <b>Captain</b> marina ×4, food, promenade · <b>Steward</b> marina ×3, village ×2, shops · <b>Engineer</b> marina ×5, promenade</td></tr>
+        <tr><td>Staff</td><td><b>Housekeeping · F&B · Engineering · Butler · Landscape</b>: the role is a label for the hover card; all staff move only in the back of house</td></tr>
       </tbody>
     </table></div>
 
