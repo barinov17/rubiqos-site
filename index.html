@@ -2075,13 +2075,13 @@ function schematicMat(o) {
 const ARCH = {
   sea: 0x7d97a8, land: 0xf1efe8, beach: 0xebe5d6, rock: 0xe0ddd5,
   green: 0xc3cfae, greenDot: 0x97a68a, dotStep: 3.0, dotR: 0.22,
-  roadMain: 0xd6d1c7, walk: 0xeae6dd, plaza: 0xe8c9a4, pier: 0xe9e5dc, breakwater: 0xe2ded5,
+  roadMain: 0xd6d1c7, walk: 0xcfadaf, walkWide: 0xe9e3da, plaza: 0xe8c9a4, pier: 0xe9e5dc, breakwater: 0xe2ded5,   /* walkways: a dusty burgundy, so they read against the paper (founder 2026-10-19); wide grounds (village, promenade, yards) stay pale */
   tree: 0xa3b78d, treeDark: 0x8ea47a, palm: 0xadc296, trunk: 0xbdb5a5,
-  wall: 0xf3f3f0, roof: 0xf8f8f6, glass: 0xd3dae0, plinth: 0xe4e4e0, pool: 0xa9c6d2,
+  wall: 0xf3f3f0, roof: 0xf8f8f6, timber: 0xc4a683, glass: 0xd3dae0, plinth: 0xe4e4e0, pool: 0xa9c6d2,   /* timber / thatch / shingle roofs stay brown */
   guestPad: 0xc9d8ea, hatchBase: 0xeae6dd, hatchLine: 0x8a8f96,
-  yachtHull: 0xf5f5f2, yachtGlass: 0xb6c2cb, people: 0x3b3f45, edge: 0x2f3338,
+  yachtHull: 0xf5f5f2, yachtGlass: 0xb6c2cb, people: 0x3b3f45, edge: 0x4a4f57, edgeAlpha: 0.5,   /* lines: thinner-looking, grey rather than black */
   sky: [0xdfe7ec, 0xf5f4f0], fog: 0xf1f0ec, fogRange: [5000, 20000], exposure: 1.0, toneMapping: THREE.NoToneMapping,
-  hemi: [0xffffff, 0xd9d5cc, 2.4], sun: [0xffffff, 1.3], shadow: 0.35, aoBlend: 0.55, grade: { sat: 0.92, con: 1.0, lift: 0.0, tint: 0xffffff },
+  hemi: [0xffffff, 0xd9d5cc, 1.9], sun: [0xfff6e8, 1.9], shadow: 0.8, aoBlend: 0.5, grade: { sat: 0.92, con: 0.96, lift: 0.0, tint: 0xffffff },   /* softer contrast, real shadows */
 };
 const archFlat = (hex, rough = 1) => { const k = 'a' + hex + '/' + rough; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 })); return schemCache.get(k); };   // offset: the edge lines win the depth test
 const archPeople = () => archFlat(ARCH.people);
@@ -2093,21 +2093,25 @@ function archMat(o) {
   if (g === 'trees') return archFlat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);
   if (g === 'terrain') return /BEACH/.test(mn) ? archFlat(S.beach) : /Rocky/.test(mn) ? archFlat(S.rock) : /GREEN/.test(mn) ? lawn() : archFlat(S.land);
   if (g === 'landscape') return /GREEN|Planting/.test(mn) ? lawn() : archFlat(S.land);
-  if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? archFlat(S.roadMain) : /Plaza|Urban/.test(mn) ? archFlat(S.plaza) : archFlat(S.walk);
+  if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? archFlat(S.roadMain) : /Plaza|Urban/.test(mn) ? archFlat(S.plaza) : /Marina Village|PROMENADE/.test(n) ? archFlat(S.walkWide) : archFlat(S.walk);
   if (g === 'marina') return /ghost/i.test(mn) ? schemGhost() : /Boat|Yacht/.test(mn) ? archFlat(S.yachtHull, 0.5) : /glass/i.test(mn) ? archFlat(S.yachtGlass, 0.4) : /Pier deck/.test(mn) ? archFlat(S.pier) : archFlat(S.breakwater);
-  if (/GREEN|Planting|roof garden|planters/i.test(mn + ' ' + n)) return lawn();
+  if (/GREEN|Planting|roof garden|planters|lawn|hedge/i.test(mn + ' ' + n)) return lawn();
   if (/Road surface/.test(mn) || /access road$|service road/.test(n)) return archFlat(S.roadMain);
-  if (/Promenade|Plaza|Urban ground|Villa deck|deck$|yard$|courtyard$|forecourt$|ground$|path/i.test(mn + ' ' + n)) return archFlat(S.walk);
-  if (/glass/i.test(mn)) return archFlat(S.glass, 0.4);
+  if (/Promenade|Plaza|Urban ground|yard$|courtyard$|forecourt$|ground$/i.test(mn + ' ' + n)) return archFlat(S.walkWide);
+  if (/Villa deck|deck$|path|walk [EW]$|stair/i.test(mn + ' ' + n)) return archFlat(S.walk);
+  if (/glass|water$|reflecting pool|cascade water/i.test(mn + ' ' + n)) return archFlat(S.glass, 0.4);
+  if (/timber|thatch|shingle|teak|wood|Village roof|DWG restaurant/i.test(mn)) return archFlat(S.timber);   // outlets, spa, reception, villas: brown roofs and frames
   if (/(\| |)(plinth|podium|base)$/i.test(n)) return archFlat(S.plinth);
+  if (/^(DINING|Wellness Spa|Villa|Arrivals Reception|Rotunda Restaurant|Beach Club|Members Club|restaurant|event hall)/.test(meshTop(o).name) && /roof|pergola|posts|timber|columns/i.test(n)) return archFlat(S.timber);   // the asset materials carry no names: roofs and frames by part name
+  { const c = (o.userData.baseMat || o.material).color; if (c && c.getHSL) { const h = c.getHSL({}); if (h.s > 0.18 && h.h > 0.03 && h.h < 0.13 && h.l < 0.78) return archFlat(S.timber); } }   // anything brown in the model stays brown
   if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return archFlat(S.roof);
   return archFlat(S.wall);
 }
 let archEdges = null;
 function buildArchEdges() {
-  const grp = new THREE.Group(); grp.name = 'arch edges'; const mat = new THREE.LineBasicMaterial({ color: ARCH.edge, transparent: true, opacity: 0.85 }); let n = 0;
+  const grp = new THREE.Group(); grp.name = 'arch edges'; const mat = new THREE.LineBasicMaterial({ color: ARCH.edge, transparent: true, opacity: ARCH.edgeAlpha }); let n = 0;
   model.updateMatrixWorld(true);
-  const add = o => { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 24), mat); ln.matrixAutoUpdate = false; ln.matrix.copy(o.matrixWorld); grp.add(ln); n++; };
+  const add = o => { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 40), mat); ln.matrixAutoUpdate = false; ln.matrix.copy(o.matrixWorld); grp.add(ln); n++; };
   model.traverse(o => {
     if (!o.isMesh || o.isInstancedMesh || !isShown(o)) return; const g = meshGroup(o);
     if (!(g === 'buildings' || g === 'marina') || /drop-off$|^Drop-off \| DO-|Pool water|^MARINA( \| apron slope)?$/.test(o.name) || /ghost|glass/i.test(o.userData.material || (o.material && o.material.name) || '')) return;
