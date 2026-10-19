@@ -195,10 +195,15 @@ function productInner(c, link = true) {
 }
 const productCard = (c, link = true) => `<div class="con" id="${c.id}">${productInner(c, link)}</div>`;
 // the marina as a full-width block (founder 2026-10-19), like the Fleet Hub: the card on the left, the berths by class on the right
-const marinaBlock = (link = true) => { const c = entityOf('marina'); return `<div class="con wide" id="marina"><div class="col">${productInner(c, link)}</div>
-  <div class="col"><div class="cap">Berths by class · live</div><div class="scroll"><table class="t"><thead><tr><th>Class</th><th class="num">Berths</th><th class="num">Occupied</th><th style="width:40%"></th></tr></thead><tbody id="marinaRows"></tbody></table></div>
-  <p class="muted" style="font-size:12px;margin:6px 0 0">Plan 90 berths (50 S · 32 M · 8 L); the model holds 126.</p>
-  <div class="cap" style="margin-top:14px">Movements today</div><div class="kv" data-live="marina-moves"><span>—</span><span>—</span></div></div></div>`; };
+const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c, OCC); return `<div class="con wide three" id="marina">
+  <div class="col">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
+    <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="marina"><span>Berths occupied</span><span>—</span></div></div>
+    <div class="sec"><div class="cap">By class · live</div><table class="t mini"><thead><tr><th>Class</th><th class="num">Berths</th><th class="num">Occupied</th><th style="width:38%"></th></tr></thead><tbody id="marinaRows"></tbody></table><p class="muted" style="font-size:11.5px;margin:4px 0 0">Plan 90 berths (50 S · 32 M · 8 L); the model holds 126.</p></div></div>
+  <div class="col">
+    <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv"><span>Capacity</span><span>${c.capLabel}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel}</span></div></div>
+    <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
+    <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
+  <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div></div>`; };
 const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
@@ -257,7 +262,8 @@ function refreshLive() {
       rows.push(['Berths occupied', `${M.moored} / ${M.berths}`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)], ['Staff on shift', stf]);
       const NAME = { S: 'S · to 15 m', M: 'M · to 35 m', L: 'L · to 80 m' };
       const mr = document.getElementById('marinaRows'); if (mr) mr.innerHTML = ['S', 'M', 'L'].map(k => { const b = M.byCls[k] || { moored: 0, berths: 0 }; return `<tr><td>${NAME[k]}</td><td class="num">${b.berths}</td><td class="num">${b.moored}</td><td class="bar-td">${bar(Math.round(100 * b.moored / Math.max(1, b.berths)), 101)}</td></tr>`; }).join('');
-      setLive('marina-moves', [['Under way', M.underway], ['Left today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`], ['Next', M.next.replace(' class', '')]]); }
+      setLive('marina-moves', [['Under way now', M.underway], ['Left today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`]]);
+      const mn = document.getElementById('marinaNext'); if (mn) mn.innerHTML = (M.upcoming || []).length ? M.upcoming.map(u => `<tr><td>${u.at}</td><td>${u.kind === 'arrive' ? '↓ Arrival' : '↑ Departure'}</td><td>${u.cls}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">no more today</td></tr>'; }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
   }

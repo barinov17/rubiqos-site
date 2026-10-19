@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019m">
+<link rel="stylesheet" href="/site.css?v=20261019n">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -1804,7 +1804,7 @@ function updateDash() {
     clock: clockText(), hour: +h.toFixed(2), day: DAYN[dayIndex() % 7], guestsSim: guests.length, scale: +scale.toFixed(2), onShift, shiftShare: +shiftShare.toFixed(3),
     people: byType, products, fleet,
     marina: { berths: berths.length, moored: berths.filter(b => b.occupied).length, underway: yachtMovers.filter(y => y.busy).length, byCls,
-              arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
+              arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
     ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`),
   };
