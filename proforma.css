@@ -51,3 +51,18 @@ body.site .log .d { color: var(--text); font-size: 12px; margin-top: 1px; }
 body.site h3.grp { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 18px 0 8px; }   /* category of a card group (founder 2026-10-19) */
 body.site h3.grp:first-child { margin-top: 4px; }
 body.site .con .zone i { margin-right: 0; width: 10px; height: 10px; }
+/* --- the event programme as a schedule (founder 2026-10-19): venues as rows, the day as the x axis, bookings in every block */
+body.site .sched { --svw: 150px; position: relative; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px 12px; overflow: hidden; }
+body.site .srow { display: grid; grid-template-columns: var(--svw) 1fr; align-items: stretch; min-height: 54px; border-top: 1px solid rgba(10, 18, 32, 0.06); }
+body.site .srow.shead { min-height: 22px; border-top: 0; }
+body.site .svenue { font: 600 12.5px var(--body); color: var(--navy); padding: 10px 10px 10px 0; } body.site .svenue a { color: var(--navy); text-decoration: none; }
+body.site .slane { position: relative; background-image: repeating-linear-gradient(to right, rgba(10, 18, 32, 0.06) 0 1px, transparent 1px calc(100% / 9)); }
+body.site .sticks { height: 22px; background: none; } body.site .sticks span { position: absolute; top: 2px; transform: translateX(-50%); font: 500 10px var(--body); color: var(--muted); }
+body.site .sev { position: absolute; top: 6px; bottom: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px 4px; overflow: hidden; min-width: 0; }
+body.site .sev b { display: block; font: 600 11.5px var(--body); color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.site .sev small { display: block; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.site .sev .sbar { display: block; height: 4px; border-radius: 2px; background: rgba(10, 18, 32, 0.1); margin-top: 4px; overflow: hidden; } body.site .sev .sbar u { display: block; height: 100%; background: var(--navy); }
+body.site .sev[data-state="now"] { background: #e3ebfd; border-color: var(--accent); } body.site .sev[data-state="now"] .sbar u { background: var(--accent); }
+body.site .sev[data-state="done"] { opacity: 0.55; }
+body.site .snow { position: absolute; top: 10px; bottom: 12px; width: 2px; background: var(--accent); pointer-events: none; }
+@media (max-width: 720px) { body.site .sched { --svw: 90px; } body.site .svenue { font-size: 11px; } }

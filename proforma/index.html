@@ -7,8 +7,8 @@
 <title>RubiqOS · Proforma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019g">
-<link rel="stylesheet" href="/proforma.css?v=20261019g">
+<link rel="stylesheet" href="/site.css?v=20261019h">
+<link rel="stylesheet" href="/proforma.css?v=20261019h">
 </head>
 <body class="site off">
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Live demo</a><a href="/proforma/" class="on">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
@@ -35,19 +35,19 @@
 
   <section id="programme">
     <h2>Event programme</h2>
-    <p class="lead">Every event happens at a venue; the venue is one of the products, with its own page.</p>
+    <p class="lead">One row per venue, the day from 06:00 to midnight. Each event: its time, its bookings against capacity; bookings fill in as the start comes, the line is now.</p>
     <div id="programmeT"></div>
   </section>
 
   <p class="foot">RubiqOS · Proforma v2, 2026-10-19 · products and services as cards with operators and live load · the demo at <a href="/">rubiqos.com</a>.</p>
 </div>
 <iframe id="sim" src="/?headless=1" title="simulation"></iframe>
-<script src="/proforma-data.js?v=20261019g"></script>
+<script src="/proforma-data.js?v=20261019h"></script>
 <script>
 document.getElementById('productCards').innerHTML = groupsHtml(PRODUCT_GROUPS);
 document.getElementById('serviceCards').innerHTML = groupsHtml(SERVICE_GROUPS);
 document.getElementById('fleetCard').outerHTML = fleetCard();
-document.getElementById('programmeT').innerHTML = eventsTable(EVENTS);
+document.getElementById('programmeT').innerHTML = scheduleHtml(EVENTS);
 </script>
 </body>
 </html>

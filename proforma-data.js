@@ -195,8 +195,34 @@ const fleetCard = (link = true) => `<div class="con wide" id="fleetCard"><div cl
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
   <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div></div>
   <div class="col"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;
-const eventRow = e => `<tr><td>${e.time}</td><td>${e.venue ? `<a href="${ENTITY_URL(e.venue)}">${entityOf(e.venue).name}</a>` : e.venueName}</td><td>${e.name}</td><td>${e.who}</td><td>${e.cap}</td><td>${e.ops}</td></tr>`;
-const eventsTable = list => `<table class="t"><thead><tr><th>Time</th><th>Venue</th><th>Event</th><th>For whom</th><th>Capacity</th><th>Operations</th></tr></thead><tbody>${list.map(eventRow).join('')}</tbody></table>`;
+// --- the event programme as a schedule (founder 2026-10-19): the event, its time, its venue, its bookings against capacity. Nothing else.
+EVENTS.forEach((e, i) => { e.i = i; const [a, b] = e.time.split('–').map(t => { const [h, m] = t.split(':').map(Number); return h + m / 60; }); e.start = a; e.end = b; });
+const SCHED = { h0: 6, h1: 24 };
+const hhmm = h => `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
+// bookings: the plan fills from 35 % a day ahead to full at the start; while the event runs the booked guests attend; after it, done
+function bookings(e, h) {
+  if (h === undefined) return { n: Math.round(e.cap * 0.8), state: 'plan', label: 'booked' };
+  if (h < e.start) { const f = Math.max(0.35, Math.min(1, 1 - (e.start - h) / 12)); return { n: Math.round(e.cap * f), state: 'ahead', label: `booked · starts ${hhmm(e.start)}` }; }
+  if (h < e.end) return { n: e.cap, state: 'now', label: 'attending now' };
+  return { n: e.cap, state: 'done', label: 'attended' };
+}
+const schedVenues = () => { const out = []; for (const e of EVENTS) { const k = e.venue || e.venueName; if (!out.some(v => v.k === k)) out.push({ k, name: e.venue ? entityOf(e.venue).name : e.venueName, id: e.venue }); } return out; };
+function scheduleHtml(list = EVENTS) {
+  const span = SCHED.h1 - SCHED.h0, pct = h => (100 * (h - SCHED.h0) / span).toFixed(2) + '%';
+  const venues = schedVenues().filter(v => list.some(e => (e.venue || e.venueName) === v.k));
+  const ticks = []; for (let h = SCHED.h0; h <= SCHED.h1; h += 2) ticks.push(`<span style="left:${pct(h)}">${hhmm(h)}</span>`);
+  const rows = venues.map(v => { const evs = list.filter(e => (e.venue || e.venueName) === v.k);
+    return `<div class="srow"><div class="svenue">${v.id ? `<a href="${ENTITY_URL(v.id)}">${v.name}</a>` : v.name}</div><div class="slane">${evs.map(e => `<div class="sev" data-ev="${e.i}" title="${e.name} · ${e.time} · capacity ${e.cap}" style="left:${pct(e.start)};width:${pct(e.end).slice(0, -1) - pct(e.start).slice(0, -1)}%"><b>${e.name}</b><small>${e.time} · <span class="bk">${bookings(e).n}</span> of ${e.cap} <span class="bl">booked</span></small><i class="sbar"><u style="width:80%"></u></i></div>`).join('')}</div></div>`; }).join('');
+  return `<div class="sched"><div class="srow shead"><div class="svenue"></div><div class="slane sticks">${ticks.join('')}</div></div>${rows}<div class="snow" id="schedNow" style="display:none"></div></div>`;
+}
+function refreshSchedule(h) {
+  const span = SCHED.h1 - SCHED.h0; const now = document.getElementById('schedNow');
+  if (now) { const inside = h >= SCHED.h0 && h <= SCHED.h1; now.style.display = inside ? '' : 'none'; if (inside) now.style.left = `calc(var(--svw) + (100% - var(--svw)) * ${(h - SCHED.h0) / span})`; }
+  for (const el of document.querySelectorAll('.sev')) { const e = EVENTS[+el.dataset.ev], b = bookings(e, h); el.dataset.state = b.state;
+    el.querySelector('.bk').textContent = b.n; el.querySelector('.bl').textContent = b.label; el.querySelector('.sbar u').style.width = Math.round(100 * b.n / e.cap) + '%'; }
+}
+const eventRow = e => `<tr><td>${e.time}</td><td>${e.venue ? `<a href="${ENTITY_URL(e.venue)}">${entityOf(e.venue).name}</a>` : e.venueName}</td><td>${e.name}</td><td class="num" data-evrow="${e.i}">${bookings(e).n} of ${e.cap}</td></tr>`;
+const eventsTable = list => `<table class="t"><thead><tr><th>Time</th><th>Venue</th><th>Event</th><th class="num">Booked / capacity</th></tr></thead><tbody>${list.map(eventRow).join('')}</tbody></table>`;
 // --- live: the simulation runs headless in the hidden frame (#sim); its window.__live is read once a second. Every [data-live] on the page is filled.
 const bar = (p, over = 98) => `<div class="bar"><i class="${p >= over ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div>`;
 const setLive = (id, rows) => { const el = document.querySelector(`[data-live="${id}"]`); if (!el) return;   // bars go last: a bar in the middle flips the label / value parity of the kv grid
@@ -209,6 +235,7 @@ function refreshLive() {
   const guestsNow = Object.values(L.products).reduce((a, b) => a + b, 0);
   const clock = document.getElementById('clock'); if (clock) clock.textContent = L.clock;
   const st = document.getElementById('stLine'); if (st) st.innerHTML = `${L.day} · simulated time, 1 s = 1 min · <b>${fmt(Object.values(L.people).reduce((a, b) => a + b, 0) - (L.people.staff || 0))}</b> guests in the simulation, shown at the plan's scale (× ${L.scale}) · <b>${L.onShift}</b> staff on shift · ${L.events.length ? 'now: ' + L.events.join(', ') : 'no event running'}`;
+  refreshSchedule(L.hour); for (const td of document.querySelectorAll('[data-evrow]')) { const e = EVENTS[+td.dataset.evrow], b = bookings(e, L.hour); td.textContent = `${b.n} of ${e.cap} · ${b.label}`; }
   const gMax = Math.max(1, ...PRODUCTS.map(c => c.live.reduce((a, n) => a + (L.products[n] || 0), 0)));   // the guests bar compares the products with each other, as the old demo table did (founder 2026-10-19)
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
