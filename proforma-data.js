@@ -7,8 +7,8 @@ const OCC = 0.70;   // average occupancy applied to every product
 // Operators: one manager per object. `id` is the variable the system (and later the agent) is addressed by.
 const OPERATORS = [
   { id: 'hotels', name: 'Hotels manager', note: 'Both hotels: rooms, housekeeping, arrivals and departures.' },
-  { id: 'villas', name: 'Villas manager', note: 'All villas: butlers, housekeeping, villa breakfasts.' },
-  { id: 'residences', name: 'Residences manager', note: 'Both towers: owners, the rental pool, concierge.' },
+  { id: 'villas', rooms: true, name: 'Villas manager', note: 'All villas: butlers, housekeeping, villa breakfasts.' },
+  { id: 'residences', rooms: true, name: 'Residences manager', note: 'Both towers: owners, the rental pool, concierge.' },
   { id: 'marina', name: 'Marina manager', note: 'Berths, AIS matching, the guest dock, shore power and water.' },
   { id: 'village', name: 'Marina Village manager', note: 'F&B outlets, shops, the market and the village square.' },
   { id: 'restaurant', name: 'Restaurant manager', note: 'The Restaurant: covers, the wine tasting.' },
@@ -32,14 +32,14 @@ const OP = Object.fromEntries(OPERATORS.map(o => [o.id, o]));
 // staff = positions (FTE); per = per guest-day or visit: water L, energy kWh, food kg, laundry kg, waste kg; sewage = 85 % of water.
 // live = the product names the simulation counts guests under (several for a card that spans two towers).
 const PRODUCTS = [
-  { id: 'beach-hotel', name: 'Beach Hotel', zone: 'Z01', op: 'hotels', unit: 'guests', live: ['Beach Hotel'], what: 'The main hotel on the beach: three room blocks and a restaurant.',
-    produces: 'Room nights · breakfast and the hotel restaurant · the beach in front', capacity: 528, objects: { 'Deluxe rooms': 140, 'Premier sea-view rooms': 60, 'One-bedroom suites': 32, 'Signature suites': 8 }, staff: 270, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
-  { id: 'hill-hotel', name: 'Hill Hotel', zone: 'Z02', op: 'hotels', unit: 'guests', live: ['Hill Hotel'], what: 'Boutique hotel of low blocks over the central hill; large rooms, views.',
-    produces: 'Room nights · suites with terraces', capacity: 280, objects: { 'Hillside rooms': 56, 'Terrace rooms': 36, 'One-bedroom suites': 22, 'Two-bedroom suites': 6 }, staff: 135, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
+  { id: 'beach-hotel', rooms: true, name: 'Beach Hotel', zone: 'Z01', op: 'hotels', unit: 'guests', live: ['Beach Hotel'], what: 'The main hotel on the beach: three room blocks and a restaurant.',
+    produces: 'Room nights · breakfast and the hotel restaurant · the beach in front', capacity: 528, objects: { 'Deluxe rooms': 140, 'Sea-view rooms': 60, '1-BR suites': 32, 'Signature suites': 8 }, staff: 270, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
+  { id: 'hill-hotel', rooms: true, name: 'Hill Hotel', zone: 'Z02', op: 'hotels', unit: 'guests', live: ['Hill Hotel'], what: 'Boutique hotel of low blocks over the central hill; large rooms, views.',
+    produces: 'Room nights · suites with terraces', capacity: 280, objects: { 'Hillside rooms': 56, 'Terrace rooms': 36, '1-BR suites': 22, '2-BR suites': 6 }, staff: 135, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
   { id: 'villas', name: 'East Villas', zone: 'Z05', op: 'villas', unit: 'guests', live: ['Villas'], what: 'Private villas on the eastern cape, owned or let, served by butlers.',
-    produces: 'Villa nights · butler service · villa breakfasts', capacity: 144, objects: { 'Four-bedroom villas': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
+    produces: 'Villa nights · butler service · villa breakfasts', capacity: 144, objects: { '4-BR villas': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
   { id: 'residences', name: 'Branded Residences', zone: 'Z10', op: 'residences', unit: 'residents', live: ['Residences BR1', 'Residences BR2'], what: 'Apartment towers by the village; most units in the hotel rental pool.',
-    produces: 'Apartment nights (rental pool) · owner services · concierge', capacity: 812, objects: { 'One-bedroom apartments': 62, 'Two-bedroom apartments': 94, 'Three-bedroom apartments': 42, 'Penthouses': 10 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
+    produces: 'Apartment nights (rental pool) · owner services · concierge', capacity: 812, objects: { '1-BR apartments': 62, '2-BR apartments': 94, '3-BR apartments': 42, 'Penthouses': 10 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
   { id: 'village', name: 'Marina Village', zone: 'Z03', op: 'village', unit: 'people at once', turns: 3, live: ['Marina Village'], what: 'Pedestrian heart: cafes, restaurants, shops, the market, an apart-hotel.',
     produces: 'Covers at four F&B outlets · retail · the island market', capacity: 600, objects: { 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20, 'Apart-hotel units': 40 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
   { id: 'restaurant', name: 'Restaurant', zone: 'Z02', op: 'restaurant', unit: 'people at once', turns: 4, live: ['Restaurant'], what: 'Signature round pavilion on the hill: dinner service, the wine tasting.',
@@ -109,8 +109,14 @@ const SERVICES = [
     liveFn: L => [['Lifeguards', L.hour >= 8 && L.hour < 19 ? 'on both beaches' : 'off duty, beaches closed'], ['Events watched', L.events.length ? L.events.map(e => e.split(' · ')[0]).join(', ') : '—']] },
   // the marina's own infrastructure (founder 2026-10-19): shown in the Marina category with the berths
   { id: 'marina-support', name: 'Marina support building', zone: 'Z04', op: 'marina', what: 'Harbour office, shore power and water distribution, fuel, pump-out, crew facilities, chandlery.',
-    produces: { 'Shore power connections': 90, 'Fuel': 'diesel and petrol', 'Pump-out and water': 'every berth', 'Harbour office': '24 h' }, consumes: { 'Energy (distributed to berths)': '≈ 30,000 kWh a day at full occupancy', 'Water (to berths)': '≈ 60 m³ a day' }, loadBase: 60,
-    liveFn: L => { const M = L.marina; return [['Load', Math.round(100 * M.moored / M.berths) + ' %'], ['Shore power connections', M.moored]]; } },   // the berths and the movements are in the marina block, not here
+    produces: { 'Harbour office': '24 h', 'Berth services': 'see the card below', 'Chandlery and workshop': 'parts, small repairs', 'Crew facilities': 'in the crew lounge' }, consumes: { 'Energy (building)': '≈ 900 kWh a day', 'Water (building)': '≈ 12 m³ a day' }, loadBase: 60,
+    liveFn: L => { const M = L.marina; return [['Load', Math.round(100 * M.moored / M.berths) + ' %'], ['Boats in the harbour', M.moored]]; } },   // the berths and the movements are in the marina block, not here
+  // services for the boats at the berths (founder 2026-10-19): water, power, pump-out, fuel, plus what a marina operator would not leave out: waste, provisioning, laundry, Wi-Fi, line handling
+  { id: 'yacht-services', name: 'Yacht services', zone: 'Z04', op: 'marina', what: 'What every berth gets: fresh water, shore power, pump-out and fuel; waste, provisioning, laundry and Wi-Fi on call.',
+    produces: { 'Fresh water': 'metered at every berth · ≈ 60 m³ a day', 'Shore power': '16 A to 400 A · ≈ 30,000 kWh a day', 'Pump-out (black and grey)': 'every berth · ≈ 40 m³ a day', 'Fuel bunkering': 'diesel and petrol at the fuel dock · ≈ 20 m³ a day', 'Waste and recycling': 'collected from the berth daily', 'Provisioning': 'from the dark store, to the boat in 30 min', 'Laundry': 'via the crew lounge · ≈ 300 kg a day', 'Wi-Fi and line handlers': 'on arrival, 24 h' },
+    consumes: { 'Water': 'from the desalination plant', 'Energy': 'from the power plant', 'Sewage': 'to the treatment plant', 'Fuel': 'tanker by the supply vessel, 2 calls a week' }, loadBase: 60,
+    liveFn: L => { const M = L.marina, per = { S: 1, M: 3, L: 10 }, u = ['S', 'M', 'L'].reduce((a, k) => a + ((M.byCls[k] || { moored: 0 }).moored) * per[k], 0), full = 50 * 1 + 32 * 3 + 8 * 10;
+      return [['Load', Math.min(100, Math.round(100 * u / full)) + ' %'], ['Boats on shore power', M.moored], ['Water drawn today', Math.round(60 * u / full * Math.min(1, L.hour / 24)) + ' m³'], ['Pump-outs today', Math.round(M.moored * 0.3 * Math.min(1, L.hour / 24))], ['Fuelled today', M.arrivalsLeft !== undefined ? Math.round(M.moored * 0.1 * Math.min(1, L.hour / 24)) : '—']]; } },
   { id: 'guest-dock', name: 'Guest arrivals dock', zone: 'Z04', op: 'hotels', what: 'The shuttle pier and the arrivals pavilion: face check-in, digital key, luggage to the room.',
     produces: { 'Arrivals a day (plan)': '≈ 500', 'Shuttle landings a day': 24, 'Check-in': 'face check-in, digital key' }, consumes: { 'Water': '≈ 5 m³ a day', 'Energy': '≈ 300 kWh a day' }, loadBase: 55,
     liveFn: L => [['Arrivals today', L.ops.arrivals], ['Departures today', L.ops.departures]] },
@@ -124,7 +130,7 @@ const SERVICES = [
 // Categories (founder 2026-10-19): the cards are grouped, not listed by zone
 const PRODUCT_GROUPS = [
   { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'villas', 'residences'] },
-  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'guest-dock', 'excursion-terminal', 'crew-lounge'] },
+  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'yacht-services', 'guest-dock', 'excursion-terminal', 'crew-lounge'] },
   { title: 'Food and beverage', ids: ['restaurant', 'village', 'beach-club', 'members-club'] },
   { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
 ];
@@ -189,10 +195,12 @@ function productInner(c, link = true) {
   const d = needs(c, OCC); const objs = c.units ? c.objects : c.objects;   // the marina's berths by class live in its table, not in the list
   return `${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
-  <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${c.capLabel || `${fmt(capacityOf(c))} ${c.unit}`}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel || `${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}`}</span></div></div>
+  <div class="sec"><div class="cap">Produces</div>${c.rooms ? roomRows(c) : `<p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${c.capLabel || `${fmt(capacityOf(c))} ${c.unit}`}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel || `${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}`}</span></div>`}</div>
   <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
   <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>`;
 }
+// accommodation: room types with their count and a live occupancy bar in the same row (founder 2026-10-19); no prose
+const roomRows = c => `<div class="rooms" data-rooms="${c.id}">${Object.entries(c.objects).map(([k, n]) => `<div class="rr"><span>${k}</span><div class="bar"><i style="width:0"></i></div><b>${n}</b></div>`).join('')}</div>`;
 const productCard = (c, link = true) => `<div class="con" id="${c.id}">${productInner(c, link)}</div>`;
 // the marina as a full-width block (founder 2026-10-19), like the Fleet Hub: the card on the left, the berths by class on the right
 const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c, OCC); return `<div class="con wide three" id="marina">
@@ -252,7 +260,7 @@ function refreshLive() {
   if (!L) return;
   const guestsNow = Object.values(L.products).reduce((a, b) => a + b, 0);
   const clock = document.getElementById('clock'); if (clock) clock.textContent = L.clock;
-  const st = document.getElementById('stLine'); if (st) st.innerHTML = `${L.day} · simulated time, 1 s = 1 min · <b>${fmt(Object.values(L.people).reduce((a, b) => a + b, 0) - (L.people.staff || 0))}</b> guests in the simulation, shown at the plan's scale (× ${L.scale}) · <b>${L.onShift}</b> staff on shift · ${L.events.length ? 'now: ' + L.events.join(', ') : 'no event running'}`;
+  const st = document.getElementById('stLine'); if (st) st.innerHTML = `${L.day} · simulated time, 1 s = 1 min · <b>${fmt(Object.values(L.people).reduce((a, b) => a + b, 0) - (L.people.staff || 0) - (L.people.crew || 0))}</b> guests in the simulation, shown at the plan's scale (× ${L.scale}) · <b>${L.onShift}</b> staff on shift · ${L.events.length ? 'now: ' + L.events.join(', ') : 'no event running'}`;
   refreshSchedule(L.hour); for (const td of document.querySelectorAll('[data-evrow]')) { const e = EVENTS[+td.dataset.evrow], b = bookings(e, L.hour); td.textContent = `${b.n} of ${e.cap} · ${b.label}`; }
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
@@ -266,6 +274,7 @@ function refreshLive() {
       const mn = document.getElementById('marinaNext'); if (mn) mn.innerHTML = (M.upcoming || []).length ? M.upcoming.map(u => `<tr><td>${u.at}</td><td>${u.kind === 'arrive' ? '↓ Arrival' : '↑ Departure'}</td><td>${u.cls}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">no more today</td></tr>'; }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
+    if (c.rooms) { const p = Math.min(100, Math.round(100 * g / cap)); for (const i of document.querySelectorAll(`[data-rooms="${c.id}"] .bar i`)) { i.style.width = p + '%'; i.classList.toggle('over', p >= 100); } }
   }
   for (const c of SERVICES) {
     const rows = c.liveFn ? c.liveFn(L) : [];

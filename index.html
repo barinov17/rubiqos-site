@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019n">
+<link rel="stylesheet" href="/site.css?v=20261019p">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -947,10 +947,11 @@ TYPES.resident = { title: 'Resident', role: 'Lives in a villa or a branded resid
 TYPES.day = { title: 'Day visitor', role: 'Comes for the day on the shuttle boat: Marina Village, the market, Beach Club and events; leaves on the evening shuttle.' };
 TYPES.A1 = { title: 'Helicopter', role: 'VIP charter helicopter, Airbus H145 class, 6–7 guests: five calls a day (09:00, 11:00, 13:00, 15:00, 17:00). A guest pod meets it at drop-off DO-23: arriving guests go to the Beach Hotel, departing guests come up from the hotel before take-off. Charter operator, not resort fleet.' };
 TYPES.yachtguest = { title: 'Yacht guest', role: 'Arrived on an own or chartered yacht in the marina: Marina Village, Beach Club, excursions and the regatta.' };
+TYPES.crew = { title: 'Yacht crew', role: 'Crews of the moored yachts: 1 on a small boat, 4 on a medium one, 12 on a superyacht. Live aboard; the crew lounge, the village, provisioning at the dark store; the count follows the berths.' };
 TYPES.member = { title: 'Member', role: 'Members Club member from the mainland: club house, beach, spa and sport by membership; comes by shuttle or own boat.' };
 TYPES.staff = { title: 'Staff', role: 'Housekeeping, F&B, engineers and butlers. Walk from the staff accommodation to the back of house at 07:00, 15:00 and 23:00.' };
-const COL = { hotel: 0x86aee0, resident: 0x9fcb7c, day: 0xf3c06b, yachtguest: 0xf4f1ea, member: 0xc9a3e6, staff: 0x15304a };
-const ACTORS = [['People', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['staff', COL.staff]]],
+const COL = { hotel: 0x86aee0, resident: 0x9fcb7c, day: 0xf3c06b, yachtguest: 0xf4f1ea, member: 0xc9a3e6, crew: 0x8c6d4f, staff: 0x15304a };
+const ACTORS = [['People', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['crew', COL.crew], ['staff', COL.staff]]],
   ['On land', [['L1', 0xe0795f], ['L2', 0xf3c06b], ['L3', 0x9fcb7c], ['L4', 0x15304a], ['L5', 0x6f9fd8]]],
   ['On water', [['W1', 0xf5f5f2], ['W2', 0xc0504d], ['W3', 0xf2efe6], ['Y2', 0x86aee0]]], ['In the air', [['A1', 0xf2efe6]]]];
 for (const [g, items] of ACTORS) {
@@ -965,7 +966,7 @@ for (const [g, items] of ACTORS) {
 }
 function updateActorCounts() {
   const n = {}; for (const f of people) if (!f.idle) n[f.type] = (n[f.type] || 0) + 1;
-  for (const t of ['hotel', 'resident', 'day', 'yachtguest', 'member', 'staff']) $('cnt-' + t).textContent = n[t] || 0;
+  for (const t of ['hotel', 'resident', 'day', 'yachtguest', 'member', 'crew', 'staff']) $('cnt-' + t).textContent = n[t] || 0;
   const v = {}; for (const f of ambient) { (v[f.type] ||= [0, 0])[1]++; if (f.path) v[f.type][0]++; }
   for (const t of ['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3', 'A1']) { const x = v[t] || [0, 0]; if ($('cnt-' + t)) $('cnt-' + t).textContent = `${x[0]}/${x[1]}`; }
   $('cnt-Y2').textContent = `${yachtMovers.filter(y => y.busy).length}/${berths.filter(b => b.occupied).length}`;   // yachts under way / moored in the marina
@@ -1526,6 +1527,7 @@ function stepYachts(dt) {
   while (yachtEvents.length && yachtEvents[0].h <= h) { const e = yachtEvents.shift(); if (!(e.kind === 'depart' ? yachtDepart(e.cls) : yachtArrive(e.cls))) console.info('marina: no', e.kind, 'possible for class', e.cls, 'at', clockAt(h)); }
   for (const y of yachtMovers) { if (y.dock) stepDock(y, dt); else if (y.path) stepMover(y, dt); y.marker.visible = y.busy; }
   if (ghostDirty) rebuildGhostLines();
+  if (!stepYachts.t || simT - stepYachts.t > 2) { stepYachts.t = simT; syncCrew(); }
 }
 
 // --- fleet step: trips, battery, charging, counters
@@ -1630,6 +1632,7 @@ const PROFILES = {
   day: [{ name: 'Shopper', w: { retail: 4, village: 2 } }, { name: 'Beach day', w: { beach: 4, food: 1.2 } }, { name: 'Sightseer', w: { promenade: 3, marina: 2.5, event: 2 } }, { name: 'Day foodie', w: { food: 3.5, village: 2 } }, { name: 'Family', w: { beach: 3, retail: 1.5, village: 1.5, event: 1.2 } }],
   yachtguest: [{ name: 'On board', w: { marina: 4, food: 1.2 } }, { name: 'Village regular', w: { village: 3.5, retail: 1.5, food: 1.5 } }, { name: 'Beach crew', w: { beach: 4, club: 1 } }, { name: 'Spa day', w: { spa: 4, promenade: 1.2 } }, { name: 'Explorer', w: { event: 2.5, promenade: 2, retail: 2, marina: 1.2 } }],
   member: [{ name: 'Club regular', w: { club: 4, food: 1.2 } }, { name: 'Beach member', w: { beach: 4, club: 1.5 } }, { name: 'Spa member', w: { spa: 4, club: 1.2 } }, { name: 'Sport member', w: { sport: 4, promenade: 1.5 }, runs: true }, { name: 'Social member', w: { food: 3, village: 2, event: 2 } }],
+  crew: [{ name: 'Deckhand', w: { marina: 4, village: 1.5, beach: 1 } }, { name: 'Chef', w: { marina: 3, village: 2, food: 1.5 } }, { name: 'Captain', w: { marina: 4, food: 1.5, promenade: 1 } }, { name: 'Steward', w: { marina: 3, village: 2, retail: 1.5 } }, { name: 'Engineer', w: { marina: 5, promenade: 1 } }],
   staff: [{ name: 'Housekeeping', w: {} }, { name: 'F&B', w: {} }, { name: 'Engineering', w: {} }, { name: 'Butler', w: {} }, { name: 'Landscape', w: {} }],
 };
 const pickW = (f, cats) => { const ws = cats.map(c => (f.profile && f.profile.w[c]) || 1), tot = ws.reduce((a, b) => a + b, 0); let r = rand() * tot; for (let i = 0; i < cats.length; i++) { r -= ws[i]; if (r <= 0) return cats[i]; } return cats[cats.length - 1]; };
@@ -1639,6 +1642,7 @@ function wantCat(f) {
   if (f.runs && (between(h, 6, 8.5) || between(h, 17.5, 19.5)) && rand() < 0.5) return 'promenade';       // running is an activity of a guest
   if (f.type === 'day' && (h < 10 || h >= 17.6)) return 'home';                                          // day visitors: on the island 10–18
   if (f.type === 'member' && h >= 21) return 'home';
+  if (f.type === 'crew') return between(h, 22, 7) ? 'home' : P('marina', 'village', 'promenade', 'beach', 'retail', 'food');   // crews: mostly aboard and around the marina, the village in the evening
   const ev = eventsNow(h).filter(e => !e.who || e.who === f.type || (e.who === 'guest' && f.type === 'hotel'));
   if (ev.length && rand() < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue; }
   if ((between(h, 12.3, 14.2) || between(h, 19, 21.5)) && rand() < 0.45) return 'food';                 // meal times: any F&B outlet on the island
@@ -1663,16 +1667,17 @@ function staffCat(f, h) {
 const staffOnShift = h => (between(h, 7, 15) ? 330 : between(h, 15, 23) ? 230 : 65);
 
 // --- crowd: instanced bodies, route cache between POIs, lateral offsets
-const N_PEOPLE = 300, N_ARRIVAL = 30;
+const N_PEOPLE = 300, N_ARRIVAL = 30, N_CREW = 80;                           // crew slots: filled from the moored yachts (founder 2026-10-19)
+const CREW_PER = { S: 0.25, M: 1, L: 3 };                                     // demo scale: 1 / 4 / 12 crew per boat at the plan's scale ÷ 4
 const RIDE_SHARE = 0.3;                                                        // founder 2026-10-18: about 30 % of the longer trips call a guest pod
 const nearestPoi = (list, p) => list.reduce((a, q) => (q.p.distanceTo(p) < a.p.distanceTo(p) ? q : a));
-const N_FIG = N_PEOPLE + N_ARRIVAL, matCloth = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+const N_FIG = N_PEOPLE + N_ARRIVAL + N_CREW, matCloth = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
 const crowdBody = new THREE.InstancedMesh(FIG.torso, matCloth, N_FIG), crowdHead = new THREE.InstancedMesh(FIG.head, new THREE.MeshStandardMaterial({ color: FIG.skin, roughness: 0.8 }), N_FIG);
 const crowdAll = [crowdBody, crowdHead]; for (const im of crowdAll) { im.frustumCulled = false; scene.add(im); }   // no cast: the shadow map is static
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
 const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44;   // people dots of the schematic style: guests blue, staff navy (founder 2026-10-19)
-const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * (N_PEOPLE + N_ARRIVAL)), 3)).setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * (N_PEOPLE + N_ARRIVAL)), 3)),
+const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)).setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)),
   new THREE.PointsMaterial({ vertexColors: true, size: 6, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5,
     map: (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.beginPath(); x.arc(16, 16, 14, 0, 7); x.fill(); return new THREE.CanvasTexture(c); })() }));   // round dots, one per person
 peopleDots.visible = false; peopleDots.frustumCulled = false; peopleDots.renderOrder = 8; scene.add(peopleDots);
@@ -1684,11 +1689,19 @@ function person(i, type, home) {
 }
 function setType(f, type) { f.type = type; f.profile = anyOf(PROFILES[type] || PROFILES.hotel); f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < (f.profile.runs ? 0.6 : 0.08); crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true;
   const dc = new THREE.Color(type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE); peopleDots.geometry.attributes.color.setXYZ(f.i, dc.r, dc.g, dc.b); peopleDots.geometry.attributes.color.needsUpdate = true; }   // dot colour: guests blue, staff dark
-const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.22 ? poiAny('villa') : poiAny('residence')), hotel: () => poiAny('hotel'), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina') };   // residents 80 villa : 285 residence (vault: Resort Population)
+const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.22 ? poiAny('villa') : poiAny('residence')), hotel: () => (rand() < 0.65 ? POI.hotel[0] : poiAny('hotel')), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina'), crew: () => poiAny('marina') };   // residents 80 villa : 285 residence (vault: Resort Population)
 for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   const type = i < 50 ? 'staff' : i < 120 ? 'resident' : i < 240 ? 'hotel' : i < 255 ? 'yachtguest' : i < 290 ? 'day' : 'member';
   const f = person(i, type, HOME[type]());
   if (type === 'day' || type === 'member') { f.idle = true; f.visible = false; }                   // they come by the shuttle
+}
+for (let i = N_PEOPLE + N_ARRIVAL; i < N_FIG; i++) { const f = person(i, 'crew', HOME.crew()); f.idle = true; f.visible = false; }
+// the crew count follows the berths: boats moored × crew per class; crews board or leave as the yachts come and go
+function syncCrew() {
+  const target = Math.round(berths.filter(b => b.occupied).reduce((a, b) => a + CREW_PER[b.cls], 0));
+  const crew = people.filter(f => f.type === 'crew'); let active = crew.filter(f => !f.idle).length;
+  for (const f of crew) { if (active >= target) break; if (!f.idle) continue; f.idle = false; f.visible = true; f.poi = HOME.crew(); f.home = f.poi; f.at = 'marina'; f.pos = f.poi.p.clone(); f.wait = 5 + rand() * 30; f.path = null; active++; }
+  for (const f of crew) { if (active <= target) break; if (f.idle || f.path || f.ride) continue; f.idle = true; f.visible = false; active--; }
 }
 const ops = { buggyTrips: 0, buggyRides: 0, deliveries: 0, truckRuns: 0, workOrders: 0, arrivals: 0, departures: 0, eventsAttended: 0 };
 // a guest pod called from a stop: riders waiting at the same stop for the same hop share one pod; hidden while aboard
@@ -1784,7 +1797,7 @@ const pct = (a, b) => Math.round(100 * a / Math.max(1, b));
 // window.__live; the proforma page runs this page headless in a hidden frame and reads it. Nothing is drawn on this page any more.
 function updateDash() {
   const h = hourOf();
-  const guests = people.filter(f => f.type !== 'staff' && !f.idle);
+  const guests = people.filter(f => f.type !== 'staff' && f.type !== 'crew' && !f.idle);
   const scale = PLAN.guests / Math.max(1, guests.length);
   const onShift = staffOnShift(h), shiftShare = onShift / 625;
   const fleet = {}; for (const f of ambient) { const r = fleet[f.type] ||= { plan: FLEET_PLAN[f.type] || 0, n: 0, mv: 0, ch: 0, bat: 0, nb: 0, task: '' }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
