@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019a">
+<link rel="stylesheet" href="/site.css?v=20261019b">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -167,7 +167,7 @@
 </style>
 </head>
 <body>
-<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/proforma/">Proforma</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/simulation/">Simulation</a><a href="/proforma/">Proforma</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
 <div id="stageRow">
 <div id="stage">
 <canvas id="c"></canvas>
@@ -505,13 +505,13 @@ function frameBox(box, k = 1.15) {
   c.y = Math.max(0, c.y);
   return { target: c, pos: c.clone().add(new THREE.Vector3(0.10, 0.92, 0.66).normalize().multiplyScalar(dist)) };   // founder's default view (2026-10-17): from the south, steep, marina bottom-left
 }
-function flyToZone(id) { setAutoCam(false); const f = frameBox(zoneBox[id], 1.3); flyTo(f.target, f.pos); }
+function flyToZone(id) { setAutoCam(false); stopFollow(); const f = frameBox(zoneBox[id], 1.3); flyTo(f.target, f.pos); }
 let OVER = frameBox(islandBox, 1.05);
 camera.position.copy(OVER.pos); controls.target.copy(OVER.target); controls.update();
 window.__reframe = () => { const atOver = camera.position.distanceTo(OVER.pos) < 1 && !fly; OVER = frameBox(islandBox, 1.05); if (atOver) { camera.position.copy(OVER.pos); controls.target.copy(OVER.target); } };
 resize();
-$('bOverview').onclick = () => { setAutoCam(false); flyTo(OVER.target, OVER.pos); };
-$('bCam').onclick = () => setAutoCam(!autoCam);
+$('bOverview').onclick = () => { setAutoCam(false); stopFollow(); flyTo(OVER.target, OVER.pos); };
+$('bCam').onclick = () => { stopFollow(); setAutoCam(!autoCam); };
 
 // ---------- hover / click: outline + card
 let pickables = [];
@@ -646,11 +646,35 @@ canvas.addEventListener('pointerdown', e => { const q = stageXY(e); downAt = [q.
 canvas.addEventListener('pointerup', e => {
   const q = stageXY(e); if (!downAt || Math.hypot(q.x - downAt[0], q.y - downAt[1]) > 4) return;
   const p = pick();
+  if (p && p.vehicle) { startFollow(p.vehicle, q); return; }                   // click on a vehicle: the camera locks on it (founder 2026-10-19)
+  stopFollow();
   if (p && p.object) { pinned = p.object; const sel = hoverSel(p.object); outline.selectedObjects = sel; tip.innerHTML = hoverHtml(p.object, showFootprint(sel)); tip.style.display = 'block'; tip.classList.add('pinned'); placeTip(q.x, q.y); }
   else { pinned = null; tip.classList.remove('pinned'); setHover(null); }
 });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') stopFollow(); });
+// --- follow camera: the view keeps its distance and angle and moves with the vehicle; orbit and zoom still work around it;
+// a click elsewhere, Overview, Live camera, a zone fly-to or Escape release it
+let follow = null;
+const _fp = new THREE.Vector3();
+function startFollow(v, q) {
+  const p = v.mesh.position, off = camera.position.clone().sub(controls.target), d = THREE.MathUtils.clamp(off.length(), 120, 260);
+  off.setLength(d); if (off.y < d * 0.35) { off.y = d * 0.35; off.setLength(d); }
+  setAutoCam(false); pinned = null; clearFootprint();
+  follow = { v, last: p.clone(), t: 0 };
+  flyTo(p.clone(), p.clone().add(off), 1.2);
+  outline.selectedObjects = [v.mesh]; tip.innerHTML = vehicleCard(v); tip.style.display = 'block'; tip.classList.add('pinned'); if (q) placeTip(q.x, q.y);
+}
+function stopFollow() { if (!follow) return; follow = null; tip.classList.remove('pinned'); tip.style.display = 'none'; outline.selectedObjects = []; }
+function stepFollow(dt) {
+  if (!follow) return;
+  const p = follow.v.mesh.position; _fp.copy(p).sub(follow.last); follow.last.copy(p);
+  if (fly) { fly.target.add(_fp); fly.pos.add(_fp); } else { controls.target.add(_fp); camera.position.add(_fp); }
+  follow.t += dt; if (follow.t > 0.5) { follow.t = 0; tip.innerHTML = vehicleCard(follow.v); }
+  const s = p.clone().setY(p.y + 4).project(camera); placeTip((s.x + 1) / 2 * stage.clientWidth, (1 - s.y) / 2 * stage.clientHeight);
+}
 function updateHover() {
   if (!hoverDirty) return; hoverDirty = false;
+  if (follow) return;                                                          // the card stays on the followed vehicle
   const p = pick();
   if (p && p.person) { if (!pinned) { const f = p.person, T = TYPES[f.type]; tip.innerHTML = `<b>${T.title}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${f.task || ('At ' + (POI_LABEL[f.at] || f.at))}</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = []; } return; }
   if (p && p.vehicle) { if (!pinned) { tip.innerHTML = vehicleCard(p.vehicle); tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = [p.vehicle.mesh]; } return; }
@@ -1786,6 +1810,7 @@ canvas.addEventListener('wheel', e => {
 }, { passive: false });
 const camTarget = new THREE.Vector3(), camWant = new THREE.Vector3();
 function directCamera(dt) {
+  stepFollow(dt);
   if (fly) { fly.t = Math.min(1, fly.t + dt / fly.dur); const e = fly.t < 0.5 ? 2 * fly.t * fly.t : 1 - Math.pow(-2 * fly.t + 2, 2) / 2; controls.target.lerpVectors(fly.fromT, fly.target, e); camera.position.lerpVectors(fly.fromP, fly.pos, e); if (fly.t >= 1) fly = null; return; }
   if (!autoCam) return;
   if (overview || !camFocus) { controls.target.lerp(OVER.target, dt * 0.8); camera.position.lerp(OVER.pos, dt * 0.8); return; }
@@ -2030,6 +2055,7 @@ loop();
 
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
+window.__follow = id => { const v = ambient.find(f => f.id === id) || yachtMovers.find(y => y.id === id) || actors[id]; if (v) startFollow(v); else stopFollow(); };   // console / QA: lock the camera on a vehicle by id (P4, T1, SH-1, HELI …)
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
 Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI, __applyMapStyle: applyMapStyle, __renderer: renderer, __composer: composer, __tick: tick, __berths: berths, __yachts: yachtMovers, __yachtDepart: yachtDepart, __yachtArrive: yachtArrive, __POI: POI, __ops: ops, __podJobs: podJobs });
 </script>

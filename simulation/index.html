@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RubiqOS · Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css?v=20261019b">
+<style>
+  body.site .hero p { max-width: 70ch; }
+  body.site .rule { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  body.site .card .cap { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 10px 0 4px; }
+  body.site .card .cap:first-child { margin-top: 0; }
+  body.site table.t td:first-child { white-space: normal; min-width: 150px; }
+  body.site table.t td small { color: var(--muted); }
+  body.site table.t.hours td:first-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  body.site table.t.hours td:nth-child(n+2) { min-width: 220px; }
+  body.site .scroll { overflow-x: auto; }
+  body.site .sw { vertical-align: -1px; }
+  body.site .pill { display: inline-block; font: 600 10px var(--body); letter-spacing: 0.04em; border-radius: 5px; padding: 1px 6px; background: var(--panel); color: var(--navy); margin-right: 4px; }
+  body.site .foot a { color: var(--muted); }
+</style>
+</head>
+<body class="site">
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Live demo</a><a href="/simulation/" class="on">Simulation</a><a href="/proforma/">Proforma</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
+<div class="wrap">
+  <div class="hero">
+    <h1>How the simulation moves</h1>
+    <p>The live demo is not an animation. Every person, vehicle, boat and the helicopter decides its next trip on its own, from the time of day, the event programme and the rules on this page. The system only dispatches: pods answer calls, trucks meet the supply vessel, the marina assigns berths. This page is the rulebook behind the map, in the same words the code uses.</p>
+    <div class="note">v1 · 2026-10-19. Rules read from the demo source (<code>prototype/resort-glb</code>) and the vault notes <em>Resort Population and Guest Day</em>, <em>Fleet Plan and Vehicle Scenarios</em>, <em>Event Programme</em>, <em>Helipad Model</em>. Numbers are the demo's, at reduced scale where stated.</div>
+  </div>
+
+  <section id="principles">
+    <h2>Six principles</h2>
+    <p class="lead">What holds for everything on the map.</p>
+    <div class="grid">
+      <div class="card"><h3>1 · Time</h3><p>One real second is one simulated minute. The day opens at 06:40; the week opens on Monday. Staff shifts change at 07:00, 15:00 and 23:00. Hours of the day decide what people want and what the fleet does.</p></div>
+      <div class="card"><h3>2 · Three networks, strictly</h3><p>Wheeled vehicles move only on roads and drop-off pads. People move only on walkways, promenades and village ground. Boats move only on a 10 m water grid with one cell of clearance off land, piers and the breakwater. Nothing cuts across a lawn or a quay.</p></div>
+      <div class="card"><h3>3 · Routes, not lines</h3><p>Every trip is an A* route on its own network. If no route exists, the trip does not happen: the actor waits and chooses again. A missing link is fixed in the master-plan model (a footpath, a road join), never faked in the code.</p></div>
+      <div class="card"><h3>4 · Decisions are local</h3><p>Each actor has one function: <em>where next?</em> It reads the clock, rolls a share from the guest-day table and looks at the events running now. There is no central script, except pod jobs raised by the system (helicopter transfers, pod calls).</p></div>
+      <div class="card"><h3>5 · Energy</h3><p>Pods, shuttles, carts, trucks and robots drain their battery while moving (a full charge is about 2.5 simulated hours of driving). Under 30 % they drive to their charger and charge 40 minutes to 100 %. About a fifth of the fleet is charging at any time.</p></div>
+      <div class="card"><h3>6 · Scale</h3><p>The plan is 1,000 guests on a peak day. The demo moves 330 people and a reduced fleet so the map stays readable; the dashboard scales what you see back to the plan.</p></div>
+    </div>
+  </section>
+
+  <section id="people">
+    <h2>People</h2>
+    <p class="lead">Six kinds of people, each with a home and a day. Walking speed 3–4 km/h, runners 6 km/h. At a place a person stays 2–7 simulated hours and strolls around it on the walkways (a 15–70 m radius, depending on the place).</p>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>Who</th><th>Demo count</th><th>Home</th><th>How the day goes</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="background:#86aee0"></span>Hotel guest</td><td>120</td><td>Beach Hotel lobby or a Hill Hotel block</td><td>Breakfast at the hotel restaurant, then beach, spa, marina or sport; lunch at the beach or in Marina Village; afternoon on the beach, at the spa, the promenade or the shops; sunset sport or a walk; dinner at the restaurant or in the village; home. 15 % are runners.</td></tr>
+        <tr><td><span class="sw" style="background:#9fcb7c"></span>Resident</td><td>70</td><td>A villa (22 %) or a branded residence (78 %)</td><td>Slow mornings at home or sport; marina, spa and beach before lunch; lunch in the village; afternoon marina, beach, spa or home; dinner in the village or the restaurant. Residents get the longevity workshop and the regatta.</td></tr>
+        <tr><td><span class="sw" style="background:#f3c06b"></span>Day visitor</td><td>35</td><td>Mainland · arrives at the guest dock</td><td>On the island 10:00–18:00 only. Marina Village 35 %, beach 25 %, shops 15 %, marina 10 %, promenade 15 %. Walks to the guest dock and leaves on the evening shuttle.</td></tr>
+        <tr><td><span class="sw" style="background:#f4f1ea;border-color:#bbb"></span>Yacht guest</td><td>15</td><td>A yacht in the marina</td><td>Marina 30 %, village 30 %, beach 20 %, spa 20 % by day; after 19:00 the village (60 %) or the restaurant.</td></tr>
+        <tr><td><span class="sw" style="background:#c9a3e6"></span>Member</td><td>30</td><td>Mainland · arrives at the guest dock</td><td>Members Club 40 %, beach 20 %, spa 15 %, sport 15 %, village 10 %; club or restaurant in the evening; leaves after 21:00.</td></tr>
+        <tr><td><span class="sw" style="background:#15304a"></span>Staff</td><td>50</td><td>Staff accommodation</td><td>Walks between the staff accommodation and the back-of-house places only: warehouse, Fleet Hub, utilities, office, waste. At a shift change half go in, half go out. On shift: 330 in the morning, 230 in the evening, 65 at night.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 style="font: 600 17px var(--body); color: var(--navy); margin: 24px 0 6px">Guest day · where a hotel guest or a resident goes next</h3>
+    <p class="lead">Shares rolled at the moment a person leaves a place. Before any of this, an event running now pulls 30 % of the people it is open to.</p>
+    <div class="scroll"><table class="t hours">
+      <thead><tr><th>Hours</th><th>Hotel guest</th><th>Resident</th></tr></thead>
+      <tbody>
+        <tr><td>06:00–08:30 · 17:30–19:30</td><td colspan="2">Runners (15 % of guests, residents and members): promenade, 50 % chance, at 6 km/h.</td></tr>
+        <tr><td>07:00–09:00</td><td>Restaurant 60 % · sport 15 % · home 25 %</td><td>Sport 20 % · home 80 %</td></tr>
+        <tr><td>09:00–12:30</td><td>Beach 45 % · spa 15 % · marina 10 % · sport 10 % · home 20 %</td><td>Marina 35 % · spa 15 % · beach 20 % · home 30 %</td></tr>
+        <tr><td>12:30–14:00</td><td>Beach 40 % · Marina Village 35 % · restaurant 25 %</td><td>Marina Village 50 % · beach 30 % · home 20 %</td></tr>
+        <tr><td>14:00–17:00</td><td>Beach 40 % · spa 15 % · promenade 10 % · shops 10 % · home 25 %</td><td>Marina 25 % · beach 25 % · spa 15 % · home 35 %</td></tr>
+        <tr><td>17:00–19:00</td><td colspan="2">Sport 20 % · promenade 25 % · shops 10 % · home 45 %</td></tr>
+        <tr><td>19:00–22:00</td><td>Restaurant 45 % · Marina Village 35 % · home 20 %</td><td>Marina Village 50 % · restaurant 30 % · home 20 %</td></tr>
+        <tr><td>22:00–07:00</td><td colspan="2">Home.</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="grid" style="margin-top:14px">
+      <div class="card"><h3>Calling a pod</h3><p>30 % of trips longer than 250 m go by guest pod: the person walks to the nearest drop-off, calls, and waits. Riders at the same stop for the same hop share one pod and are hidden aboard. After 40 minutes without a pod the person walks instead.</p></div>
+      <div class="card"><h3>Arrivals and departures</h3><p>Each mainland shuttle lands 12–50 people at the guest dock: half day visitors, 30 % hotel guests, 20 % members; after 17:00 all hotel guests. Hotel guests take a pod from the Marina stop to the hotel; the others walk to the village or the club. Departing day visitors and members walk to the dock and board. Helicopter guests appear in the Beach Hotel lobby after the pod transfer.</p></div>
+      <div class="card"><h3>Events pull people</h3><p>From 15 minutes before the start to the end, an event is a destination: 30 % of the people it is open to (everyone, residents only, or hotel guests only) choose its venue over the day table. Capacity is the venue's; events under 15 places do not pull the crowd.</p></div>
+    </div>
+  </section>
+
+  <section id="events">
+    <h2>Event programme</h2>
+    <p class="lead">Eighteen events a day across eight venues. The excursion boat and the regatta are events too.</p>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>Time</th><th>Event</th><th>Venue</th><th>Capacity</th><th>Who</th></tr></thead>
+      <tbody>
+        <tr><td>06:30–07:30</td><td>Guided run with a trainer</td><td>Promenade</td><td>20</td><td>Everyone</td></tr>
+        <tr><td>07:00–08:00</td><td>Sunrise yoga on the sand</td><td>Beach</td><td>40</td><td>Everyone</td></tr>
+        <tr><td>07:30–08:30</td><td>Group HIIT</td><td>Sport</td><td>25</td><td>Everyone</td></tr>
+        <tr><td>08:00–09:00</td><td>Breathwork and cold plunge</td><td>Spa</td><td>20</td><td>Everyone</td></tr>
+        <tr><td>09:00–12:00</td><td>Snorkelling excursion</td><td>Excursion boat</td><td>20</td><td>Everyone</td></tr>
+        <tr><td>10:00–12:00</td><td>Kids beach games</td><td>Beach</td><td>30</td><td>Everyone</td></tr>
+        <tr><td>10:00–13:00</td><td>Island market</td><td>Marina Village</td><td>200</td><td>Everyone</td></tr>
+        <tr><td>11:00–13:00</td><td>Art exhibition opening</td><td>Events Rotunda</td><td>120</td><td>Everyone</td></tr>
+        <tr><td>15:00–16:30</td><td>Longevity workshop</td><td>Spa</td><td>24</td><td>Residents</td></tr>
+        <tr><td>16:00–17:30</td><td>Public talk: Ocean futures</td><td>Events Rotunda</td><td>200</td><td>Everyone</td></tr>
+        <tr><td>16:30–18:00</td><td>Tennis clinic</td><td>Sport</td><td>18</td><td>Everyone</td></tr>
+        <tr><td>17:00–19:00</td><td>Sunset sailing regatta</td><td>Marina</td><td>40</td><td>Residents</td></tr>
+        <tr><td>17:30–19:30</td><td>Sunset cruise</td><td>Excursion boat</td><td>20</td><td>Everyone</td></tr>
+        <tr><td>17:30–20:00</td><td>Beach Club DJ sunset</td><td>Beach</td><td>180</td><td>Everyone</td></tr>
+        <tr><td>18:00–19:30</td><td>Wine tasting</td><td>Hotel restaurant</td><td>40</td><td>Hotel guests</td></tr>
+        <tr><td>18:00–19:30</td><td>Padel social</td><td>Sport</td><td>16</td><td>Everyone</td></tr>
+        <tr><td>19:30–22:30</td><td>Chef residency dinner</td><td>Marina Village</td><td>60</td><td>Everyone</td></tr>
+        <tr><td>20:30–22:00</td><td>Chamber concert</td><td>Events Rotunda</td><td>300</td><td>Everyone</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="land">
+    <h2>Fleet on land</h2>
+    <p class="lead">Roads and drop-off pads only. Every vehicle waits a few minutes between trips, then asks itself for the next one. Speeds are the demo's: pods about 20 km/h, shuttles and trucks 16, carts 14, robots 8.</p>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>Type</th><th>Plan · demo</th><th>Rule</th><th>Charges at</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="background:#e0795f"></span>L1 · Guest pod <small>4 seats</small></td><td>40 · 12</td><td>Takes a system job first (helicopter transfers, pod calls). Otherwise by the hour: 07:00–10:30 arrival transfers, Marina stop → hotel or a villa (60 % of trips); 12:30–14:00 the lunch wave to Marina Village; 18:00–21:30 the evening wave to the Events Rotunda; the rest on demand between any two drop-offs. A pod at the wave's destination pre-positions to another stop.</td><td>Fleet Hub, 18 bays under the canopies</td></tr>
+        <tr><td><span class="sw" style="background:#f3c06b"></span>L2 · Guest shuttle</td><td>4–6 · 3</td><td>Fixed loop without a call, 3-minute stops, 2–9 guests aboard: Terminal stop → Beach Hotel → Hill Hotel → Marina Village → Beach Club → Spa → back. The three shuttles start a third of the loop apart.</td><td>Fleet Hub</td></tr>
+        <tr><td><span class="sw" style="background:#9fcb7c"></span>L3 · Service cart</td><td>16 · 6</td><td>C1–C3 maintenance: a work order at a villa, residence or hotel (predicted by sensors, while the guests are out), then back to the workshop. C4 housekeeping: linen and amenities from the hotel linen room to a villa or residence and back. C5–C6: beach set-up 06:00–09:00, landscape rounds by day, irrigation checks 22:00–05:00.</td><td>Fleet Hub</td></tr>
+        <tr><td><span class="sw" style="background:#15304a"></span>L4 · Service truck</td><td>6 · 6</td><td>T1–T2 logistics: warehouse → a venue's back of house with a load (cold chain, beverages, dry stores, produce) and back empty; while the supply vessel is docked they shuttle containers dock → warehouse. T3–T4: linen runs to the hotels 09:00–11:30 (used linen to the laundry) and 15:00–17:00 (clean linen out), F&B restock in between. T5 waste: 23:00–05:00 only, venues → transfer station at the dock. T6 reserve.</td><td>Warehouse truck chargers</td></tr>
+        <tr><td><span class="sw" style="background:#6f9fd8"></span>L5 · Delivery robot</td><td>24 · 12</td><td>Out and back from a kitchen (Marina Village or Beach Hotel) or the warehouse, by the hour: 07:00–09:30 villa breakfasts; 10:00–12:00 and 15:00–18:00 luggage to the hotels; 12:00–14:00 and 19:00–21:00 room service to any home; otherwise amenities (towels, parcels, beach kits).</td><td>Robot dock at the warehouse</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="water">
+    <h2>On the water</h2>
+    <p class="lead">A 10 m water grid, A* routes, one cell of clearance. Inside the marina the boats use the drawn fairway network: a trunk channel inside the breakwater, a spur up every lane between the pontoons, and the exit leg to the south-west sea point.</p>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>Type</th><th>Plan · demo</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sw" style="background:#f5f5f2;border-color:#bbb"></span>W1 · Shuttle boat</td><td>3 · 3</td><td>Mainland line, SH-1 and SH-2: arrive at the guest dock on the hour and on the half hour with 12–50 guests, board 10 minutes, leave with 5–35. Island line, SH-3: guest dock → Beach Club pier → villas pier → guest dock, 3–22 guests a leg, 4-minute stops. About 18 km/h.</td></tr>
+        <tr><td><span class="sw" style="background:#c0504d"></span>W2 · Supply vessel</td><td>1 · 1 (charter)</td><td>Monday and Thursday 08:00: mainland → Service dock with 9 t of goods in 4 containers; 2 hours of unloading while trucks T1 and T2 shuttle to the warehouse; leaves empty with the waste containers.</td></tr>
+        <tr><td><span class="sw" style="background:#f2efe6;border-color:#bbb"></span>W3 · Excursion boat</td><td>3 · 1</td><td>By the event programme: out from the excursion dock through the marina at the event start with 12 guests, at sea until 20 minutes before the end, back through the marina.</td></tr>
+        <tr><td><span class="sw" style="background:#86aee0"></span>Yachts</td><td>marina 60 % full</td><td>Thirteen berth changes a day: 1 large, 4 medium, 8 small, each a departure then an arrival at another berth, at fixed hours. A yacht backs out of its berth onto the spur at 2 km/h, follows spur → trunk → exit at 6–9 km/h; an arrival runs the same way back and docks stern-to. The marina system matches the AIS track to the booking and assigns the berth.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="air">
+    <h2>In the air</h2>
+    <div class="grid">
+      <div class="card"><h3>A1 · VIP helicopter <small>charter</small></h3><p>Five calls a day: 09:00, 11:00, 13:00, 15:00, 17:00, 2–6 guests each. Approach from the WSW over the sea into the trade wind, 12 minutes on the pad, climb-out to the NW over the water. On landing the system raises two pod jobs: one brings the arriving guests from drop-off DO-23 to the Beach Hotel, another collects the departing guests at the hotel and brings them up before take-off.</p></div>
+      <div class="card"><h3>What the system does</h3><p>Dispatches pods to calls and jobs. Assigns berths from AIS tracks. Raises work orders from sensors. Books the excursion boat by the programme. Counts trips, deliveries, work orders, arrivals and departures for the dashboard under the map. The guest only taps; no phone calls.</p></div>
+      <div class="card"><h3>Reading the map</h3><p>Hover a person or a vehicle for its card and current task. Click a vehicle and the camera locks on it; orbit and zoom still work around it; click elsewhere, Overview, Live camera or Escape release it. Click a zone in the layers panel to filter; Live camera follows the scripted story.</p></div>
+    </div>
+  </section>
+
+  <p class="foot">RubiqOS · Simulation rules v1, 2026-10-19 · the demo at <a href="/">rubiqos.com</a>.</p>
+</div>
+</body>
+</html>
