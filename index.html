@@ -306,6 +306,8 @@ model.traverse(o => {
   if (a && a.nodes !== undefined && nodeDefs[a.nodes].name) o.name = nodeDefs[a.nodes].name;
   else if (o.isMesh && o.parent && o.parent !== model && !o.userData.group) { o.name = o.parent.name; o.userData = o.parent.userData; }   // multi-primitive node
 });
+// parts of an instanced asset keep the template's stem ("Villa.018 | roof" under every villa, v069+): give each part its own parent's stem
+{ let n = 0; for (const t of model.children) for (const c of t.children) { const k = c.name.indexOf(' | '); if (k > 0 && c.name.slice(0, k) !== t.name && !t.name.startsWith(c.name.slice(0, k))) { c.name = t.name + c.name.slice(k); n++; } } if (n) console.info('asset parts renamed to their parent stem:', n); }
 
 // ---------- structure from userData / manifest (never from names, colours or positions)
 const byName = new Map(), top = [];                                        // top = direct children of the GLB root (toggle units)
@@ -516,7 +518,7 @@ $('bCam').onclick = () => { stopFollow(); setAutoCam(!autoCam); };
 // ---------- hover / click: outline + card
 let pickables = [];
 // only buildings (objects with a function) and vehicles are pickable; terrain, water, roads, trees, marina are not
-const GROUND_PART = /green strip|service yard|courtyard$|yard$|ground$|\| path |access road$|drop-off$|deck$|pool water$|planters?$|roof garden$/;   // ground plates of a parcel: not a thing to hover (founder 2026-10-17)
+const GROUND_PART = /green strip|service yard|courtyard$|yard$|ground$|\| path |access road$|drop-off$|deck$|pool water$|\| pool$|\| posts$|planters?$|roof garden$/;   // ground plates of a parcel: not a thing to hover (founder 2026-10-17)
 function rebuildPickables() { pickables = []; model.traverse(o => { if (o.isMesh && o.userData.group === 'buildings' && o.visible && isShown(o) && !GROUND_PART.test(o.name) && !/^tennis court\.|^pickleball\.|^wellness-spa\./.test(o.name)) pickables.push(o); }); }
 function isShown(o) { for (let p = o; p && p !== model; p = p.parent) if (!p.visible) return false; return true; }
 rebuildPickables();
@@ -835,7 +837,7 @@ const nearestStop = p => stops.length ? stops.reduce((a, s) => (s.distanceTo(p) 
 const A = {
   terminal: centreOf('Terminal'), dock: prefixCentre('Service dock.001'), fleet: prefixCentre('Infrastructure zone | FH fleet hub'), reception: centreOf('Guest Arrivals Reception'),
   hotel: prefixCentre('Beach Hotel | lobby'), hillHotel: prefixCentre('Hotel 2.0'), village: prefixCentre('DINING.0'), spa: prefixCentre('wellness-spa'),
-  rotunda: prefixCentre('event hall museum.001 |'), villa: centreOf('villa.012'), boh: prefixCentre('Infrastructure zone | WH'), power: prefixCentre('Infrastructure zone | IF'),
+  rotunda: prefixCentre('event hall museum.001 |'), villa: centreOf(byName.has('villa.012') ? 'villa.012' : 'Villa.012'), boh: prefixCentre('Infrastructure zone | WH'), power: prefixCentre('Infrastructure zone | IF'),
 };
 // docks (founder 2026-10-17): the west pier (`marina support.002`) is the guest dock where the shuttle and the yacht land;
 // the `Terminal` object at the east root is the excursion dock. Boats enter and leave through the gap west of the breakwater.
@@ -923,7 +925,15 @@ function fleetModel(id) {                                                       
   const m = FM[id] || { length_m: 4, width_m: 2, height_m: 1.6, below_origin_m: 0 }, g = new THREE.Group();
   g.add(box(m.length_m, m.height_m, m.width_m, 0xdddddd, 0, m.height_m / 2 - (m.below_origin_m || 0))); return g;
 }
-function personModel(c = 0xe0795f) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.25, 8), mat(c)); b.position.y = 0.65; const h = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), mat(0xe9c9a8)); h.position.y = 1.5; g.add(b, h); g.scale.setScalar(1.7); return g; }
+// people as figures (founder 2026-10-19): torso and arms in the type colour, head, two legs that swing while walking; 1.75 m, origin at the feet, faces +X
+const FIG = { torso: new THREE.CylinderGeometry(0.17, 0.13, 0.62, 8).translate(0, 1.19, 0), head: new THREE.SphereGeometry(0.12, 10, 8).translate(0, 1.66, 0),
+  leg: new THREE.CylinderGeometry(0.075, 0.06, 0.86, 6).translate(0, -0.43, 0), arm: new THREE.CylinderGeometry(0.05, 0.045, 0.6, 6).translate(0, -0.3, 0),
+  hip: 0.88, shoulder: 1.47, legOff: 0.1, armOff: 0.23, skin: 0xe9c9a8, legs: 0x4a4f5a };
+function personModel(c = 0xe0795f) {
+  const g = new THREE.Group(), cloth = mat(c), add = (geo, m, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(0, y, z); g.add(o); };
+  add(FIG.torso, cloth, 0, 0); add(FIG.head, mat(FIG.skin), 0, 0); for (const s of [1, -1]) { add(FIG.leg, mat(FIG.legs), FIG.hip, FIG.legOff * s); add(FIG.arm, cloth, FIG.shoulder, FIG.armOff * s); }
+  return g;
+}
 function beacon(color) {
   const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
   x.fillStyle = '#' + color.toString(16).padStart(6, '0'); x.beginPath(); x.arc(32, 32, 20, 0, 7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 6; x.stroke();
@@ -1076,7 +1086,7 @@ const PRODUCTS = [
   { fp: [BC_NAME], hp: ['Beach Club', 'Beach club buildings'], name: 'Beach Club', zone: 'Z11', p: topOfObj(BC_NAME, 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
   { fp: ['Members Club | arc building', 'Members Club | pavilion'], hp: ['Members Club'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
 ];
-for (const n of [...byName.keys()].filter(n => /^villa\.\d+$/.test(n)).sort()) PRODUCTS.push({ fp: [n + ' |'], name: n.replace('villa.', 'Villa '), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
+for (const n of [...byName.keys()].filter(n => /^[Vv]illa\.\d+$/.test(n)).sort()) PRODUCTS.push({ fp: [n + ' |'], name: n.replace(/^[Vv]illa\./, 'Villa '), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
 // services: capacity and today's load (balance from the proforma)
 const SERVICES = [
   { name: 'WH-1 Laundry', fp: ['Infrastructure zone | WH-1 warehouse laundry'], p: topOfObj('Infrastructure zone | WH-1 warehouse laundry roof', 5), kpi: { 'Linen a day': '5,000 kg', 'Load today': '4,900 kg', 'Turnaround': '6 h' }, load: 98 },
@@ -1173,7 +1183,7 @@ const ambient = [];
 const hourOf = () => ((START_MIN + (window.SIM_T || 0)) / 60) % 24;
 const between = (h, a, b) => (a <= b ? h >= a && h < b : h >= a || h < b);
 const stopName = p => { const n = stopNames[stops.indexOf(p)] || ''; const m = n.match(/DO-(\d+)/); return m ? `Drop-off ${+m[1]}` : n.split(' | ')[0] + ' drop-off'; };
-const villas = [...byName.keys()].filter(n => /^villa\.\d+$/.test(n)).map(n => ({ name: n.replace('villa.', 'Villa '), p: centreOf(n) }));
+const villas = [...byName.keys()].filter(n => /^[Vv]illa\.\d+$/.test(n)).map(n => ({ name: n.replace(/^[Vv]illa\./, 'Villa '), p: centreOf(n) }));   // v069+: the B05 asset "Villa.NNN"
 const residences = ['branded residence BR1', 'branded residence BR2'].filter(n => byName.has(n)).map(n => ({ name: n.replace('branded residence ', 'Residences '), p: centreOf(n) }));
 const hotels = [{ name: 'Beach hotel', p: A.stopHotel }, { name: 'Hill hotel', p: A.hillHotel }];
 const kitchens = [{ name: 'Marina Village kitchen', p: A.village }, { name: 'Beach hotel kitchen', p: A.stopHotel }];
@@ -1466,7 +1476,9 @@ const yachtMovers = [];
 function yachtMover(id) {
   const free = yachtMovers.find(y => y.type === id && !y.busy); if (free) return free;
   const mesh = fleetModel(id); if (id === 'Y3') mesh.scale.x = 68 / 80; mesh.visible = false; scene.add(mesh); movers.push(mesh);   // the L berths hold the 68 m hull (e060)
-  const y = { id: `${id}-${yachtMovers.filter(v => v.type === id).length + 1}`, type: id, mesh, medium: 'water', path: null, s: 0, len: 0, speed: 0, heading: 0, task: '', busy: false, dock: null };
+  const mk = beacon(TYPE_COL[id] || 0xf2efe6); mk.scale.set(0.014, 0.014, 1); mk.position.y = (FM[id] ? FM[id].height_m : 6) + 4; mk.name = 'marker'; mesh.add(mk);   // marker like every other mover (founder 2026-10-19)
+  if (mapStyle === 'schematic') { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; mk.material.map = vehIcon(VEH_ICON[id] || 'boat'); mk.material.needsUpdate = true; mk.scale.set(0.024, 0.024, 1); }
+  const y = { id: `${id}-${yachtMovers.filter(v => v.type === id).length + 1}`, type: id, mesh, marker: mk, medium: 'water', path: null, s: 0, len: 0, speed: 0, heading: 0, task: '', busy: false, dock: null };
   mesh.traverse(o => { o.userData.vehicle = y; }); yachtMovers.push(y); return y;
 }
 function dockLeg(y, from, to, h0, h1, then) { y.dock = { from: from.clone(), to: to.clone(), len: from.distanceTo(to), s: 0, h0, h1, then }; }   // straight slow run, heading turns to h1, y follows the ends
@@ -1502,7 +1514,7 @@ function stepYachts(dt) {
   const h = hourOf(), day = dayIndex();
   if (day !== yachtDay) { yachtDay = day; yachtEvents = []; for (const [cls, pairs] of Object.entries(YACHT_PAIRS)) for (const [d, a] of pairs) yachtEvents.push({ h: d, cls, kind: 'depart' }, { h: a, cls, kind: 'arrive' }); yachtEvents = yachtEvents.filter(e => e.h >= h - 0.02).sort((p, q) => p.h - q.h); }
   while (yachtEvents.length && yachtEvents[0].h <= h) { const e = yachtEvents.shift(); if (!(e.kind === 'depart' ? yachtDepart(e.cls) : yachtArrive(e.cls))) console.info('marina: no', e.kind, 'possible for class', e.cls, 'at', clockAt(h)); }
-  for (const y of yachtMovers) { if (y.dock) stepDock(y, dt); else if (y.path) stepMover(y, dt); }
+  for (const y of yachtMovers) { if (y.dock) stepDock(y, dt); else if (y.path) stepMover(y, dt); y.marker.visible = y.busy; }
   if (ghostDirty) rebuildGhostLines();
 }
 
@@ -1626,10 +1638,11 @@ const staffOnShift = h => (between(h, 7, 15) ? 330 : between(h, 15, 23) ? 230 : 
 const N_PEOPLE = 300, N_ARRIVAL = 30;
 const RIDE_SHARE = 0.3;                                                        // founder 2026-10-18: about 30 % of the longer trips call a guest pod
 const nearestPoi = (list, p) => list.reduce((a, q) => (q.p.distanceTo(p) < a.p.distanceTo(p) ? q : a));
-const bodyGeo = new THREE.CylinderGeometry(0.3, 0.38, 1.25, 7).translate(0, 0.65, 0), headGeo = new THREE.SphereGeometry(0.25, 8, 6).translate(0, 1.5, 0);
-const crowdBody = new THREE.InstancedMesh(bodyGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }), N_PEOPLE + N_ARRIVAL);
-const crowdHead = new THREE.InstancedMesh(headGeo, new THREE.MeshStandardMaterial({ color: 0xe9c9a8, roughness: 0.8 }), N_PEOPLE + N_ARRIVAL);
-scene.add(crowdBody, crowdHead);                                                 // no cast: the shadow map is static
+const N_FIG = N_PEOPLE + N_ARRIVAL, matCloth = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+const crowdBody = new THREE.InstancedMesh(FIG.torso, matCloth, N_FIG), crowdHead = new THREE.InstancedMesh(FIG.head, new THREE.MeshStandardMaterial({ color: FIG.skin, roughness: 0.8 }), N_FIG);
+const crowdLegs = [0, 1].map(() => new THREE.InstancedMesh(FIG.leg, new THREE.MeshStandardMaterial({ color: FIG.legs, roughness: 0.9 }), N_FIG)), crowdArms = [0, 1].map(() => new THREE.InstancedMesh(FIG.arm, matCloth, N_FIG));
+const crowdAll = [crowdBody, crowdHead, ...crowdLegs, ...crowdArms]; for (const im of crowdAll) { im.frustumCulled = false; scene.add(im); }   // no cast: the shadow map is static
+const _pm = new THREE.Matrix4(), _m2 = new THREE.Matrix4();
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
 const SCHEMATIC_PEOPLE = 0x2856e0;   // people dots of the schematic style: round, blue (founder 2026-10-18)
@@ -1639,7 +1652,7 @@ function person(i, type, home) {
   const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 20, heading: 0, visible: true, goal: null, task: '', runs: false };
   f.baseSpeed = f.speed; setType(f, type); people.push(f); return f;
 }
-function setType(f, type) { f.type = type; f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < 0.15; crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true; }
+function setType(f, type) { f.type = type; f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < 0.15; const c = new THREE.Color(COL[type]); for (const im of [crowdBody, ...crowdArms]) { im.setColorAt(f.i, c); im.instanceColor.needsUpdate = true; } }
 const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.22 ? poiAny('villa') : poiAny('residence')), hotel: () => poiAny('hotel'), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina') };   // residents 80 villa : 285 residence (vault: Resort Population)
 for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   const type = i < 50 ? 'staff' : i < 120 ? 'resident' : i < 240 ? 'hotel' : i < 255 ? 'yachtguest' : i < 290 ? 'day' : 'member';
@@ -1693,7 +1706,7 @@ function stepPeople(dt) {
       if (!startWalk(f, to, (ev ? `${ev.name} · ` : '') + `${TYPES[f.type].title}${cat === 'promenade' && f.runs ? ' · running' : ''} → ${POI_LABEL[cat] || cat}`)) { f.wait = 10 + rand() * 20; f.leaving = false; }   // no walkway there: stay, choose again later
       continue;
     }
-    f.s = Math.min(f.len, f.s + f.speed * dt);
+    f.s = Math.min(f.len, f.s + f.speed * dt); f.phase = (f.phase || 0) + f.speed * dt * 4.2;   // one stride ≈ 1.5 m
     const { path, cum } = f; let i = 1; while (i < cum.length - 1 && cum[i] < f.s) i++;
     const seg = Math.max(1e-6, cum[i] - cum[i - 1]), t = (f.s - cum[i - 1]) / seg, a = path[i - 1], b = path[i];
     const ux = (b.x - a.x) / seg, uz = (b.z - a.z) / seg;
@@ -1715,10 +1728,15 @@ function drawPeople() {
   if (!crowdBody.visible) return;                                              // schematic style: the dots are enough
   for (const f of people) {
     const show = peopleOn && f.visible && f.pos;
-    if (!show) { _m.makeScale(0, 0, 0); } else { _e.set(0, f.heading, 0); _q.setFromEuler(_e); _m.compose(f.pos, _q, _s); }
+    if (!show) { for (const im of crowdAll) im.setMatrixAt(f.i, _zeroM); continue; }
+    _e.set(0, f.heading, 0); _q.setFromEuler(_e); _m.compose(f.pos, _q, _s);
     crowdBody.setMatrixAt(f.i, _m); crowdHead.setMatrixAt(f.i, _m);
+    const sw = f.path ? Math.sin(f.phase || 0) * 0.55 : 0;                     // stride: legs fore and aft, arms the other way
+    for (let k = 0; k < 2; k++) { const sgn = k ? -1 : 1;
+      _pm.makeRotationZ(sw * sgn); _pm.setPosition(0, FIG.hip, FIG.legOff * sgn); _m2.multiplyMatrices(_m, _pm); crowdLegs[k].setMatrixAt(f.i, _m2);
+      _pm.makeRotationZ(-sw * sgn * 0.8); _pm.setPosition(0, FIG.shoulder, FIG.armOff * sgn); _m2.multiplyMatrices(_m, _pm); crowdArms[k].setMatrixAt(f.i, _m2); }
   }
-  crowdBody.instanceMatrix.needsUpdate = true; crowdHead.instanceMatrix.needsUpdate = true;
+  for (const im of crowdAll) im.instanceMatrix.needsUpdate = true;
 }
 function spawnArrivals(n, at = null) {                                            // at: a POI where the guests appear (helicopter guests arrive by pod at the hotel)
   const h = hourOf(), free = people.filter(f => f.idle && f.type !== 'staff').slice(0, n); ops.arrivals += free.length;
@@ -1936,7 +1954,7 @@ function setPinStyle(sch) {
   stage.classList.toggle('schem', sch);
   for (const g of gpins) { const svg = g.el.querySelector('svg'); if (!svg) continue; const html = sch ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : PIN_SVG(g.colour); svg.outerHTML = html; }
 }
-const VEH_ICON = { L1: 'pod', L2: 'bus', L3: 'cart', L4: 'truck', L5: 'bot', W1: 'ship', W2: 'ship', W3: 'boat', Y2: 'boat', A1: 'heli', yacht: 'boat', buggy: 'pod', truck: 'truck', robot: 'bot' };
+const VEH_ICON = { L1: 'pod', L2: 'bus', L3: 'cart', L4: 'truck', L5: 'bot', W1: 'ship', W2: 'ship', W3: 'boat', Y1: 'boat', Y2: 'boat', Y3: 'ship', A1: 'heli', yacht: 'boat', buggy: 'pod', truck: 'truck', robot: 'bot' };
 const vehIconTex = new Map();
 function vehIcon(key) {
   if (vehIconTex.has(key)) return vehIconTex.get(key);
@@ -1946,7 +1964,7 @@ function vehIcon(key) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; vehIconTex.set(key, t); return t;
 }
 function setMarkerStyle(sch) {
-  for (const f of ambient) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
+  for (const f of [...ambient, ...yachtMovers]) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
     mk.material.map = sch ? vehIcon(VEH_ICON[f.type] || 'car') : mk.userData.stdMap; mk.material.needsUpdate = true; const k = sch ? 0.024 : mk.userData.stdScale; mk.scale.set(k, k, 1); }
 }
 const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception)/;   // the signature buildings, one muted blue
@@ -1993,7 +2011,7 @@ function applyMapStyle(name) {
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : o.userData.baseMat; });
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; o.material = sch ? (/glass/i.test(o.userData.baseMat.name) ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
-  crowdBody.visible = crowdHead.visible = !sch; peopleDots.visible = sch; shadowDirty();
+  for (const im of crowdAll) im.visible = !sch; peopleDots.visible = sch; shadowDirty();
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
   try { localStorage.setItem('mapStyle2', name); } catch (e) {}
 }
