@@ -29,7 +29,7 @@ body.site .con .live .cap { color: var(--muted); margin: 0 0 4px; }
 body.site .con .live .cap i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); margin-right: 6px; vertical-align: 0; }
 body.site .off .con .live .cap i { background: #c7ccd4; }
 body.site .con .bar { height: 7px; border-radius: 4px; background: rgba(10, 18, 32, 0.08); overflow: hidden; grid-column: 1 / -1; margin: -1px 0 3px; }
-body.site .con .bar i { display: block; height: 100%; background: var(--navy); border-radius: 4px; }
+body.site .con .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
 body.site .con .bar i.over { background: var(--bad); }
 body.site .con .rooms { display: grid; gap: 5px; margin-top: 4px; } body.site .con .rooms .rr { display: grid; grid-template-columns: minmax(0, 1fr) 72px 36px; gap: 10px; align-items: center; font-size: 12.5px; } body.site .con .rooms .rr span { color: var(--muted); } body.site .con .rooms .rr .bar { margin: 0; grid-column: auto; } body.site .con .rooms .rr b { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 body.site .bal .bar { height: 8px; border-radius: 4px; background: rgba(10, 18, 32, 0.08); overflow: hidden; }
