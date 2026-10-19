@@ -7,8 +7,8 @@
 <title>RubiqOS · Physical AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019x">
-<link rel="stylesheet" href="/proforma.css?v=20261019x">
+<link rel="stylesheet" href="/site.css?v=20261019y">
+<link rel="stylesheet" href="/proforma.css?v=20261019y">
 <style>
   body.site table.t.pa td:first-child { width: 1%; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
   body.site table.t.pa td:nth-child(2) { min-width: 180px; } body.site table.t.pa td:nth-child(2) b { color: var(--navy); }
@@ -18,6 +18,8 @@
   body.site .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 18px; }
   body.site .kpis .k { background: var(--panel); border-radius: 10px; padding: 12px 14px; } body.site .kpis .k b { display: block; font: 600 26px var(--body); color: var(--navy); } body.site .kpis .k span { font-size: 12.5px; color: var(--muted); }
   body.site .rule { font-size: 13.5px; color: var(--muted); max-width: 80ch; }
+  body.site .org { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-left: 6px; vertical-align: 1px; cursor: help; } body.site .org.founder { background: var(--ok); } body.site .org.claude { background: var(--bad); }
+  body.site .legend { font-size: 12.5px; color: var(--muted); margin: -8px 0 14px; } body.site .legend .org { margin: 0 4px 0 0; }
   @media (max-width: 720px) { body.site .scroll { overflow-x: auto; } body.site .scroll table.t { min-width: 760px; } }
 </style>
 </head>
@@ -30,6 +32,7 @@
     <div class="note" id="paNote">v2 · generated from the register · counts at the plan's scale.</div>
   </div>
   <div class="kpis" id="paKpis"></div>
+  <p class="legend"><span class="org founder"></span>asked for by the founder · <span class="org claude"></span>added by Claude — hover the dot: why, when, and whether it is a real product.</p>
 
   <section id="fleet">
     <h2>Shared fleet · moves between the objects</h2>
@@ -51,7 +54,7 @@
 
   <div class="foot">RubiqOS · Physical AI register v2, 2026-10-19 · platforms on the market per type: research note <em>physical-ai-platforms-2026</em> (v1 market map, 2026-10-17).</div>
 </div>
-<script src="/proforma-data.js?v=20261019x"></script>
+<script src="/proforma-data.js?v=20261019y"></script>
 <script>
 (() => {
   const ALL = [...PRODUCTS, ...SERVICES, FLEET_HUB];
@@ -61,7 +64,8 @@
   const link = w => `<a href="${ENTITY_URL(w.eid)}">${nameOf(w.eid)}</a>${w.n > 1 ? ' ' + w.n : ''}`;
   const rows = (scope, tb, numbered) => { let i = 0, total = 0; const out = [];
     for (const [rid, r] of Object.entries(ROBOTS)) { if (r.scope !== scope) continue; const ws = where[rid] || []; const n = scope === 'fleet' ? (FLEET_PLAN[rid] || 0) : ws.reduce((a, w) => a + w.n, 0); total += n; i++;
-      out.push(`<tr><td>${numbered ? i : rid}</td><td><b>${r.name}</b></td><td>${r.does}</td><td>${scope === 'fleet' ? '<a href="' + ENTITY_URL('fleet') + '">Fleet Hub</a> · dispatched to every object' : ws.map(link).join(' · ') || '—'}</td><td class="num">${fmt(n)}</td></tr>`); }
+      const o = (typeof ORIGIN !== 'undefined' && ORIGIN[rid]) || { by: 'claude', note: 'No origin recorded.' };
+      out.push(`<tr><td>${numbered ? i : rid}</td><td><b>${r.name}</b> <span class="org ${o.by}" title="${o.by === 'founder' ? 'Asked for by the founder. ' : 'Added by Claude. '}${o.note.replace(/"/g, '&quot;')}"></span></td><td>${r.does}</td><td>${scope === 'fleet' ? '<a href="' + ENTITY_URL('fleet') + '">Fleet Hub</a> · dispatched to every object' : ws.map(link).join(' · ') || '—'}</td><td class="num">${fmt(n)}</td></tr>`); }
     document.getElementById(tb).innerHTML = out.join(''); return { types: i, total }; };
   const f = rows('fleet', 'paFleet', false), b = rows('object', 'paBound', true), a = rows('auto', 'paAuto', true);
   document.getElementById('paKpis').innerHTML = [[f.types + b.types, 'robot types'], [f.total, 'fleet units, shared'], [b.total, 'robots bound to objects'], [a.total, 'fixed automation units (' + a.types + ' types)']]
