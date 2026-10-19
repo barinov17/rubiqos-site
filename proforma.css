@@ -75,6 +75,9 @@ body.site .con.wide .live { width: 100%; }
 body.site .con.wide .col .kv span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.site table.t td.bar-td { vertical-align: middle; } body.site table.t td.bar-td .bar { height: 7px; border-radius: 4px; background: rgba(10, 18, 32, 0.08); overflow: hidden; margin: 0; } body.site table.t td.bar-td .bar i { display: block; height: 100%; background: var(--navy); border-radius: 4px; }
 body.site .con.wide.three { grid-template-columns: minmax(280px, 1.1fr) minmax(240px, 1fr) minmax(220px, 0.9fr); }
+/* the marina block: five columns on the same grid as the standard cards (founder 2026-10-19) */
+body.site .con.wide.cols { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); column-gap: 14px; row-gap: 18px; }
+body.site .con.wide.cols .col .sec.team + .sec.team { margin-top: 6px; }
 body.site table.t.mini { font-size: 12px; border-radius: 10px; } body.site table.t.mini th { padding: 7px 10px; } body.site table.t.mini td { padding: 6px 10px; }
 @media (max-width: 1000px) { body.site .con.wide.three { grid-template-columns: 1fr 1fr; } } @media (max-width: 800px) { body.site .con.wide.three { grid-template-columns: 1fr; } }
 
