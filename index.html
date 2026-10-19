@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019b">
+<link rel="stylesheet" href="/site.css?v=20261019c">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -151,6 +151,8 @@
   .actor b { font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
   .actor .desc { display: none; position: absolute; left: 0; top: calc(100% + 6px); width: 280px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.4; color: #46505e; z-index: 5; box-shadow: 0 8px 24px rgba(10, 18, 32, 0.14); }
   .actor:hover .desc { display: block; }
+  #opsBar .row { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 2px; }   /* operators (founder 2026-10-19) */
+  #opsBar .actor b { margin-left: 2px; }
   #dash .two { grid-column: 1 / -1; display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: stretch; }
   #dash .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
   #dash .pair td small { color: var(--muted); }
@@ -195,6 +197,7 @@
 </div>
 <section id="dash">
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
+  <div class="card wide" id="opsBar"><h2>Operators<small>one manager per object · hover a manager to see what they run</small></h2><div class="row" id="opsRow"></div></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
   <div class="pair">
     <div class="card"><h2>Products<small>guests now · staff on shift</small></h2><table id="dProducts"><thead><tr><th>Product</th><th style="width:46%">Guests now</th><th>Staff</th></tr></thead><tbody></tbody></table></div>
@@ -338,6 +341,9 @@ model.traverse(o => {
 const berths = [];                                                           // { cls S/M/L, id Y1-3, slot, local, pos, quat, heading, bow, length, occupied }
 const yachtInst = {};                                                        // Y1-3 -> { parts: [InstancedMesh], ghost: [InstancedMesh] }
 const _zeroM = new THREE.Matrix4().makeScale(0, 0, 0);
+// one boat look for moored and moving craft (founder 2026-10-19): a light blue-grey hull, a mid blue-grey glass
+const boatHullMat = new THREE.MeshStandardMaterial({ color: 0xe2eaf1, roughness: 0.5, name: 'Yacht hull' }), boatGlassMat = new THREE.MeshStandardMaterial({ color: 0x8aa2b6, roughness: 0.3, name: 'Fleet glass' });
+const boatMat = m => (/glass/i.test(m.name || '') ? boatGlassMat : boatHullMat);
 // an empty berth = the hull outline as a light-blue dashed line (founder 2026-10-18); one LineSegments holds every empty berth
 const ghostLine = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x5a9be8, dashSize: 1.4, gapSize: 1.0, transparent: true, opacity: 0.9 }));
 ghostLine.frustumCulled = false; ghostLine.renderOrder = 7; scene.add(ghostLine);
@@ -362,7 +368,7 @@ function berthShow(b, on) {                                                  // 
       const nodes = yachts.filter(o => o.name.startsWith(id + ' ')); if (!nodes.length) continue;
       const tpl = nodes[0], parts = tpl.children.filter(c => c.isMesh);     // every yacht of a class is the same mesh (e060): the first one is the template
       const mk = (geo, mat, name) => { const im = new THREE.InstancedMesh(geo, mat, nodes.length); im.name = name; im.userData = { group: 'marina', function: 'marina', zone_id: tpl.userData.zone_id, zone_name: tpl.userData.zone_name, material: mat.name }; im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false; root.add(im); byName.set(name, im); return im; };
-      const inst = yachtInst[id] = { parts: parts.map((c, k) => mk(c.geometry, c.material, `${id} yachts | ${c.material.name || 'part'} ${k}`)) };
+      const inst = yachtInst[id] = { parts: parts.map((c, k) => mk(c.geometry, boatMat(c.material), `${id} yachts | ${c.material.name || 'part'} ${k}`)) };
       { const pts = [], v = new THREE.Vector3();                              // plan outline of the hull (convex), in yacht-local metres, for the empty-berth dashes
         for (const c of parts) { if (/glass/i.test(c.material.name)) continue; const p = c.geometry.attributes.position; for (let k = 0; k < p.count; k++) { v.fromBufferAttribute(p, k).applyMatrix4(c.matrix); pts.push([v.x, v.z]); } }
         inst.outline = hull2(pts); }
@@ -865,8 +871,7 @@ try {
   for (const m of FLEET.models) { const n = fg.scene.getObjectByName(m.node); if (n) fleetTpl.set(m.id, n); else console.warn('fleet model missing in the GLB:', m.node); }
 } catch (e) { console.warn('fleet-models.glb not loaded, box fallback', e); }
 const FM = Object.fromEntries(FLEET.models.map(m => [m.id, m]));
-{ const boatWhite = new THREE.MeshStandardMaterial({ color: 0xf7f7f5, roughness: 0.45 });   // founder 2026-10-18: every boat white (glass kept)
-  for (const id of ['W1', 'W2', 'W3', 'Y1', 'Y2', 'Y3']) { const t = fleetTpl.get(id); if (t) t.traverse(o => { if (o.isMesh && !/glass/i.test(o.material.name || '')) o.material = boatWhite; }); } }
+for (const id of ['W1', 'W2', 'W3', 'Y1', 'Y2', 'Y3']) { const t = fleetTpl.get(id); if (t) t.traverse(o => { if (o.isMesh) o.material = boatMat(o.material); }); }   // same look as the moored yachts (founder 2026-10-19)
 // --- helipad asset (vault "Helipad Model": ICAO Annex 14 Vol II, FATO 21.2 m, TLOF 12 m; placement from assets/helipad.placement.json)
 const groupOfMesh = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
 const ASSET_DIR = 'assets/';   // Model Register assets (vault: Model Register); the site build rewrites this to its own folder
@@ -1099,6 +1104,26 @@ const SERVICES = [
   { name: 'W Waste management', fp: ['Infrastructure zone | W waste management'], p: topOfPrefix('Infrastructure zone | W waste management', 5), kpi: { 'Waste a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, load: 84 },
   { name: 'IF Water, power, sewage', fp: ['Infrastructure zone | IF'], p: topOfPrefix('Infrastructure zone | IF', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
 ];
+// ===== operators (founder 2026-10-19): one manager per object; they are the parties of the transactions that come next
+const OPERATORS = [
+  { id: 'infra', name: 'Infrastructure manager', objects: ['IF Water, power, sewage', 'OFF Office'], note: 'Power, desalination, sewage and the operator console.' },
+  { id: 'waste', name: 'Waste management manager', objects: ['W Waste management'], note: 'Collection rounds, sorting, the night waste run, the transfer station at the dock.' },
+  { id: 'stores', name: 'Warehouses and laundry manager', objects: ['WH-1 Laundry', 'WH-2 Prep kitchen', 'WH-3 Cold storage', 'WH-4 Dry storage'], note: 'Receives the supply vessel, stores and issues to the kitchens; linen in and out.' },
+  { id: 'staffacc', name: 'Staff accommodation manager', objects: ['SA Staff accommodation'], note: 'Beds, canteen and the shift changes at 07:00, 15:00 and 23:00.' },
+  { id: 'fleet', name: 'Fleet manager', objects: ['FH Fleet Hub'], note: 'Pods, shuttles, carts, trucks, robots and boats: dispatch, charging, maintenance.' },
+  { id: 'hotels', name: 'Hotels manager', objects: ['Beach Hotel', 'Hill Hotel'], note: 'Both hotels: rooms, housekeeping, arrivals and departures.' },
+  { id: 'marina', name: 'Marina manager', objects: ['Marina'], note: 'Berths, AIS matching, the guest dock, shore power and water.' },
+  { id: 'village', name: 'Marina Village manager', objects: ['Marina Village'], note: 'F&B outlets, shops, the market and the village square.' },
+  { id: 'spa', name: 'Spa manager', objects: ['Spa & Wellness'], note: 'Treatments and the wellness programme.' },
+  { id: 'restaurant', name: 'Restaurant manager', objects: ['Restaurant'], note: 'The hotel restaurant: covers, the wine tasting.' },
+  { id: 'events', name: 'Events manager', objects: ['Events Rotunda'], note: 'The programme at the Events Rotunda.' },
+  { id: 'beachclub', name: 'Beach Club manager', objects: ['Beach Club', 'Members Club'], note: 'Sunbeds, beach F&B, the DJ sunset; the Members Club beach.' },
+  { id: 'sport', name: 'Sports club manager', objects: ['GYM & Sports'], note: 'Gym, courts, classes and clinics.' },
+  { id: 'villas', name: 'Villas manager', match: /^Villa /, note: 'All villas: butlers, housekeeping, villa breakfasts.' },
+  { id: 'residences', name: 'Residences manager', objects: ['Residences BR1', 'Residences BR2'], note: 'Both towers: owners, the rental pool, concierge.' },
+  { id: 'excursions', name: 'Excursions manager', objects: [], extra: 'Excursion dock, W3 boats', note: 'Snorkelling and sunset trips by the programme; the excursion dock.' },
+];
+const operatorOf = name => OPERATORS.find(o => (o.objects || []).includes(name) || (o.match && o.match.test(name)));
 // icons for the schematic style: simple 24 x 24 stroke paths, drawn white on the pin / marker
 const ICON = {
   bed: 'M3 18v-7h18v7M3 14h18M6 11V8h5v3M3 18v2M21 18v2',
@@ -1139,7 +1164,7 @@ const PIN_ICON_KEY = name => /Hotel$/.test(name) ? 'hotel' : /^Residences/.test(
   : /Staff/.test(name) ? 'users' : /Waste/.test(name) ? 'recycle' : /Water, power/.test(name) ? 'bolt' : /Reception|Arrival/.test(name) ? 'door' : 'star';
 const PIN_ICON_SVG = (c, key) => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.4"/><g transform="translate(5.6 5) scale(0.54)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON[key] || ICON.star}"/></g></svg>`;
 const PIN_SVG = c => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="11.4" r="4" fill="#fff"/></svg>`;
-const conceptHtml = d => `<b>${d.name}</b>${d.zone ? `<div class="k">${d.zone} · ${zoneInfo[d.zone].zone_name}</div>` : '<div class="k">Back of house · service</div>'}<div class="dash">${Object.entries(d.kpi).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}${d.load !== undefined ? `<div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div><span>Load today</span><span>${d.load} %</span>` : ''}</div>`;
+const conceptHtml = d => `<b>${d.name}</b>${d.zone ? `<div class="k">${d.zone} · ${zoneInfo[d.zone].zone_name}</div>` : '<div class="k">Back of house · service</div>'}${(op => op ? `<div class="k">Operator · ${op.name}</div>` : '')(operatorOf(d.name))}<div class="dash">${Object.entries(d.kpi).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('')}${d.load !== undefined ? `<div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div><span>Load today</span><span>${d.load} %</span>` : ''}</div>`;
 const VILLAGE_CLUSTERS = [   // founder 2026-10-17: Marina Village hovers as three clusters, not module by module (modules by x in the model)
   { name: 'Marina Village · west cluster', zone: 'Z03', hp: ['DINING.001', 'DINING.002', 'DINING.003', 'DINING.004', 'DINING.005', 'DINING.006', 'DINING.007', 'DINING.008', 'DINING.009'], kpi: { 'Modules': 9, 'Use': 'F&B and shops by the marina basin', 'Part of': 'Marina Village' } },
   { name: 'Marina Village · central cluster', zone: 'Z03', hp: ['DINING.010', 'DINING.011', 'DINING.012', 'DINING.013', 'DINING.014', 'DINING.015'], kpi: { 'Modules': 6, 'Use': 'Shops, cafés, the village square', 'Part of': 'Marina Village' } },
@@ -1159,6 +1184,20 @@ function makePin(d, cls, colour) {
 }
 for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
 for (const d of SERVICES) makePin(d, 'svc', '#5a6672');
+{ // operators row under the clock: one chip per manager; hover shows the footprints of everything they run
+  const row = $('opsRow');
+  for (const op of OPERATORS) {
+    const items = [...PRODUCTS, ...SERVICES].filter(d => operatorOf(d.name) === op);
+    const staff = items.reduce((s, d) => s + (typeof d.kpi.Staff === 'number' ? d.kpi.Staff : 0), 0);
+    const names = op.match ? `${items.length} villas` : items.map(d => d.name).join(', ') || op.extra || '';
+    const col = items[0] && items[0].zone ? ZC[items[0].zone] : '#5a6672';
+    const el = document.createElement('div'); el.className = 'actor op';
+    el.innerHTML = `<i style="background:${col}"></i>${op.name}<b>${staff || ''}</b><span class="desc"><b>${op.name}</b><div>${names}</div><div style="margin-top:3px">${op.note}</div></span>`;
+    el.onpointerenter = () => { if (pinned || follow) return; const ms = items.flatMap(d => d.fpMeshes ? d.fpMeshes() : []); if (ms.length) showFootprint(ms); };
+    el.onpointerleave = () => { if (!pinned) clearFootprint(); };
+    row.appendChild(el);
+  }
+}
 conceptList = [...VILLAGE_CLUSTERS, ...PRODUCTS, ...SERVICES];   // clusters first, so a village module resolves to its cluster, not to the whole village
 // the self-check runs in idle time after the page shows, 8 objects a slot, and never over a live hover; it also warms the footprint cache
 { const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))]));
@@ -1924,6 +1963,7 @@ const SCHEMATIC = {
   roadMain: 0x34477a, walk: 0xc4c7cc, plaza: 0xcfd2d7, infra: 0xc6c9cf, infraBld: 0xa4a9b2, pier: 0xdfe6f2, breakwater: 0xeef2f8,
   tree: 0xcfdcf5, treeDark: 0xb8cbf1, palm: 0xd6e2f7, trunk: 0xe3e9f5,   // light, so the trees do not compete with the buildings
   glassDarken: 0.82, pool: 0x8cc2f0, sig: 0x4f73d4, people: 0x1d3a8f, plinth: 0xb4b8c0, yachtGlass: 0xc9dcf6,
+  guestPad: 0x9dbdf0, hatchBase: 0xe4e9f3, hatchLine: 0x5d7fd6, hatchStep: 1.6,   /* drop-offs (founder 2026-10-19): guest pads light blue, back-of-house pads hatched at 45 deg */
   heli: { lawn: 0xffffff, 'grass pavers': 0xe8edf6, hedge: 0xd6e0f1, pavers: 0xc4c7cc, FATO: 0xc4c7cc, TLOF: 0x9aa3b3, white: 0xffffff, yellow: 0x4f73d4 },
   fn: { hotel: 0x2856e0, 'apart hotel': 0x3a66e4, residences: 0x4f7ae9, villas: 0x7c9cf0, 'food & retail': 0x9db6f4, dining: 0x6f8fee,
         'events & culture': 0x1a3fb8, 'spa & wellness': 0x8aa9f2, wellness: 0x8aa9f2, 'wellness & sport': 0x8aa9f2, sport: 0xb4c8f6, courts: 0xb4c8f6,
@@ -1937,6 +1977,17 @@ const STD = { toneMapping: renderer.toneMapping, sky: [skyMat.uniforms.top.value
   water: Object.fromEntries(['deep', 'mid', 'shallow', 'sand', 'skyC', 'fresK', 'specK'].map(k => [k, waterMat.uniforms[k].value.clone ? waterMat.uniforms[k].value.clone() : waterMat.uniforms[k].value])) };
 const schemCache = new Map();
 const flatMat = (hex, rough = 0.95) => { const k = 'f' + hex; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 })); return schemCache.get(k); };
+const hatchMat = () => {                                                            // world-space 45° hatching (x + z), no UVs needed
+  if (schemCache.has('hatch')) return schemCache.get('hatch');
+  const m = new THREE.MeshStandardMaterial({ color: SCHEMATIC.hatchBase, roughness: 1, metalness: 0 });
+  m.onBeforeCompile = sh => {
+    sh.uniforms.hatchCol = { value: new THREE.Color(SCHEMATIC.hatchLine) }; sh.uniforms.hatchStep = { value: SCHEMATIC.hatchStep };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform vec3 hatchCol; uniform float hatchStep;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n{ float g = (vWP.x + vWP.z) / hatchStep; float d = abs(fract(g) - 0.5); float w = fwidth(g);\n  diffuseColor.rgb = mix(hatchCol, diffuseColor.rgb, smoothstep(0.18 - w, 0.18 + w, d)); }');
+  };
+  schemCache.set('hatch', m); return m;
+};
 const schemGhost = () => { if (!schemCache.has('ghost')) schemCache.set('ghost', new THREE.MeshStandardMaterial({ color: 0xcfdcf0, roughness: 1, metalness: 0, transparent: true, opacity: 0.6, depthWrite: false })); return schemCache.get('ghost'); };   // empty-berth silhouette
 const dotMat = () => {                                                              // world-space dot pattern, so no UVs are needed
   if (schemCache.has('dots')) return schemCache.get('dots');
@@ -1973,7 +2024,8 @@ const meshGroup = o => { let g = o.userData.group, q = o; while (!g && q.parent)
 const meshFn = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q.userData.function || o.userData.function || ''; };
 function schematicMat(o) {
   const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), S = SCHEMATIC;
-  if (g === 'zoning' || n === 'Sea' || n === 'Shallow water' || /drop-off$|^Drop-off \| DO-/.test(n)) return null;
+  if (/drop-off$|^Drop-off \| DO-/.test(n)) return /\(BOH\)|service drop-off$/.test(n) ? hatchMat() : flatMat(S.guestPad, 0.9);   // back-of-house pads hatched, guest pads light blue
+  if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
   if (n.startsWith('Infrastructure zone')) return /GREEN/.test(mn) ? dotMat() : /Road surface/.test(mn) ? flatMat(S.roadMain) : /Village stone|Hotel glass|Hotel white|Village roof/.test(mn) ? flatMat(S.infraBld) : flatMat(S.infra);   // back of house: greys
   if (/Pool water/.test(mn)) return flatMat(S.pool, 0.4);
   if (g === 'trees') return flatMat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);

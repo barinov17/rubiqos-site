@@ -7,7 +7,7 @@
 <title>RubiqOS · Simulation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019b">
+<link rel="stylesheet" href="/site.css?v=20261019c">
 <style>
   body.site .hero p { max-width: 70ch; }
   body.site .rule { display: grid; grid-template-columns: 1fr; gap: 14px; }
@@ -29,7 +29,7 @@
   <div class="hero">
     <h1>How the simulation moves</h1>
     <p>The live demo is not an animation. Every person, vehicle, boat and the helicopter decides its next trip on its own, from the time of day, the event programme and the rules on this page. The system only dispatches: pods answer calls, trucks meet the supply vessel, the marina assigns berths. This page is the rulebook behind the map, in the same words the code uses.</p>
-    <div class="note">v1 · 2026-10-19. Rules read from the demo source (<code>prototype/resort-glb</code>) and the vault notes <em>Resort Population and Guest Day</em>, <em>Fleet Plan and Vehicle Scenarios</em>, <em>Event Programme</em>, <em>Helipad Model</em>. Numbers are the demo's, at reduced scale where stated.</div>
+    <div class="note">v1.1 · 2026-10-19 (operators added). Rules read from the demo source (<code>prototype/resort-glb</code>) and the vault notes <em>Resort Population and Guest Day</em>, <em>Fleet Plan and Vehicle Scenarios</em>, <em>Event Programme</em>, <em>Helipad Model</em>. Numbers are the demo's, at reduced scale where stated.</div>
   </div>
 
   <section id="principles">
@@ -43,6 +43,32 @@
       <div class="card"><h3>5 · Energy</h3><p>Pods, shuttles, carts, trucks and robots drain their battery while moving (a full charge is about 2.5 simulated hours of driving). Under 30 % they drive to their charger and charge 40 minutes to 100 %. About a fifth of the fleet is charging at any time.</p></div>
       <div class="card"><h3>6 · Scale</h3><p>The plan is 1,000 guests on a peak day. The demo moves 330 people and a reduced fleet so the map stays readable; the dashboard scales what you see back to the plan.</p></div>
     </div>
+  </section>
+
+  <section id="operators">
+    <h2>Operators</h2>
+    <p class="lead">One manager per object. They are the parties of the resort: the transactions between them (orders, deliveries, work orders, hand-overs) are the next layer of the simulation. Today the demo shows who runs what: the Operators row under the map, and the operator's name on every object card.</p>
+    <div class="scroll"><table class="t">
+      <thead><tr><th>Operator</th><th>Runs</th><th>Staff <small>(proforma)</small></th></tr></thead>
+      <tbody>
+        <tr><td>Hotels manager</td><td>Beach Hotel, Hill Hotel</td><td>405</td></tr>
+        <tr><td>Villas manager</td><td>All villas</td><td>—</td></tr>
+        <tr><td>Residences manager</td><td>Residences BR1, Residences BR2</td><td>95</td></tr>
+        <tr><td>Marina manager</td><td>Marina, guest dock, berths</td><td>28</td></tr>
+        <tr><td>Marina Village manager</td><td>Marina Village: F&amp;B outlets, shops, the market</td><td>85</td></tr>
+        <tr><td>Restaurant manager</td><td>Hotel restaurant</td><td>60</td></tr>
+        <tr><td>Spa manager</td><td>Spa &amp; Wellness</td><td>32</td></tr>
+        <tr><td>Events manager</td><td>Events Rotunda</td><td>10</td></tr>
+        <tr><td>Beach Club manager</td><td>Beach Club, Members Club beach</td><td>70</td></tr>
+        <tr><td>Sports club manager</td><td>Gym, courts, classes</td><td>15</td></tr>
+        <tr><td>Excursions manager</td><td>Excursion dock, W3 excursion boats</td><td>—</td></tr>
+        <tr><td>Fleet manager</td><td>Fleet Hub: pods, shuttles, carts, trucks, robots, shuttle boats</td><td>—</td></tr>
+        <tr><td>Warehouses and laundry manager</td><td>WH-1 Laundry, WH-2 Prep kitchen, WH-3 Cold storage, WH-4 Dry storage</td><td>—</td></tr>
+        <tr><td>Staff accommodation manager</td><td>Staff accommodation, canteen</td><td>—</td></tr>
+        <tr><td>Waste management manager</td><td>Waste management, transfer station at the dock</td><td>—</td></tr>
+        <tr><td>Infrastructure manager</td><td>Water, power, sewage; the office and the operator console</td><td>—</td></tr>
+      </tbody>
+    </table></div>
   </section>
 
   <section id="people">
