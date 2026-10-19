@@ -151,17 +151,6 @@
   .actor b { font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
   .actor .desc { display: none; position: absolute; left: 0; top: calc(100% + 6px); width: 280px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.4; color: #46505e; z-index: 5; box-shadow: 0 8px 24px rgba(10, 18, 32, 0.14); }
   .actor:hover .desc { display: block; }
-  #opsBar .row { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 2px; }   /* operators (founder 2026-10-19) */
-  #opsBar .actor b { margin-left: 2px; }
-  #dash .two { grid-column: 1 / -1; display: grid; grid-template-columns: 2fr 1fr; gap: 14px; align-items: stretch; }
-  #dash .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
-  #dash .pair td small { color: var(--muted); }
-  #dash .lb { display: flex; align-items: center; gap: 6px; } #dash .lb .bar { width: 54px; margin: 0; flex: none; } #dProducts .lb .bar { flex: 1 1 auto; } #dProducts .lb { gap: 10px; font-weight: 600; color: var(--navy); }
-  @media (max-width: 900px) { #dash .two, #dash .pair { grid-template-columns: 1fr; } }
-  .ticker .d { color: #46505e; font-size: 12px; margin-top: 1px; }
-  .ticker { max-height: 360px; overflow: auto; scroll-behavior: smooth; font-size: 12.5px; }
-  .ticker > div { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(10, 18, 32, 0.06); animation: in 0.4s; }
-  .ticker > div > span { color: var(--muted); font-variant-numeric: tabular-nums; }
   @media (max-width: 900px) {
     #feed { top: auto; bottom: 74px; width: 210px; }
     #feed .note:nth-child(n+3) { display: none; }
@@ -197,17 +186,11 @@
 </div>
 <section id="dash">
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
-  <div class="card wide" id="opsBar"><h2>Operators<small>one manager per object · hover a manager to see what they run</small></h2><div class="row" id="opsRow"></div></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
-  <div class="pair">
-    <div class="card"><h2>Products<small>guests now · staff on shift</small></h2><table id="dProducts"><thead><tr><th>Product</th><th style="width:46%">Guests now</th><th>Staff</th></tr></thead><tbody></tbody></table></div>
-    <div class="card"><h2>Services<small>base parameters · load today</small></h2><table id="dServices"><thead><tr><th>Service</th><th>Base parameters</th><th>Load</th></tr></thead><tbody></tbody></table></div>
-  </div>
-  <div class="two">
-    <div class="card"><h2>Fleet<small>plan vs demo</small></h2><table id="dFleet"><thead><tr><th>Type</th><th>Plan</th><th>Demo</th><th>Moving</th><th>Charging</th><th>Battery</th></tr></thead><tbody></tbody></table></div>
-    <div class="card"><h2>Operations log<small>live, newest at the bottom</small></h2><div class="ticker" id="dLog"></div></div>
-  </div>
 </section>
+<!-- founder 2026-10-19: the demo page keeps the scene and the actors bar only; products, services, operators, fleet and the log live on /proforma/,
+     fed by this page running headless in a hidden frame (?headless=1 → no rendering, window.__live = the snapshot) -->
+
 
 <script type="importmap">
 { "imports": {
@@ -1198,20 +1181,6 @@ function makePin(d, cls, colour) {
 }
 for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
 for (const d of SERVICES) makePin(d, 'svc', '#5a6672');
-{ // operators row under the clock: one chip per manager; hover shows the footprints of everything they run
-  const row = $('opsRow');
-  for (const op of OPERATORS) {
-    const items = [...PRODUCTS, ...SERVICES].filter(d => operatorOf(d.name) === op);
-    const staff = items.reduce((s, d) => s + (typeof d.kpi.Staff === 'number' ? d.kpi.Staff : 0), 0);
-    const names = op.match ? `${items.length} villas` : items.map(d => d.name).join(', ') || op.extra || '';
-    const col = items[0] && items[0].zone ? ZC[items[0].zone] : '#5a6672';
-    const el = document.createElement('div'); el.className = 'actor op';
-    el.innerHTML = `<i style="background:${col}"></i>${op.name}<b>${staff || ''}</b><span class="desc"><b>${op.name}</b><div>${names}</div><div style="margin-top:3px">${op.note}</div></span>`;
-    el.onpointerenter = () => { if (pinned || follow) return; const ms = items.flatMap(d => d.fpMeshes ? d.fpMeshes() : []); if (ms.length) showFootprint(ms); };
-    el.onpointerleave = () => { if (!pinned) clearFootprint(); };
-    row.appendChild(el);
-  }
-}
 conceptList = [...VILLAGE_CLUSTERS, ...PRODUCTS, ...SERVICES];   // clusters first, so a village module resolves to its cluster, not to the whole village
 // the self-check runs in idle time after the page shows, 8 objects a slot, and never over a live hover; it also warms the footprint cache
 { const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))]));
@@ -1830,30 +1799,34 @@ const logAll = [];
 const PLAN = { guests: 1000, keys: { 'Beach Hotel': 240, 'Hill Hotel': 120, 'Branded Residences': 208, 'Villas': 18 } };
 const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3, A1: 1 };   // Fleet Register counts (A1 = charter helicopter)
 const pct = (a, b) => Math.round(100 * a / Math.max(1, b));
+// the live snapshot (founder 2026-10-19): everything the proforma cards show is computed here once a second and published as
+// window.__live; the proforma page runs this page headless in a hidden frame and reads it. Nothing is drawn on this page any more.
 function updateDash() {
   const h = hourOf();
   const guests = people.filter(f => f.type !== 'staff' && !f.idle);
-  const where = {}; for (const f of guests) { const k = f.path ? 'transit' : (f.at === 'villa' || f.at === 'residence' || f.at === 'hotel' ? 'home' : f.at === 'club' ? 'beach' : f.at === 'terminal' ? 'marina' : f.at === 'food' ? 'restaurant' : f.at); where[k] = (where[k] || 0) + 1; }
   const scale = PLAN.guests / Math.max(1, guests.length);
-  const order = ['home', 'beach', 'restaurant', 'village', 'retail', 'spa', 'sport', 'marina', 'event', 'promenade', 'transit'];
-  const lab = { home: 'In rooms, villas and residences', beach: 'Beach, pools, Beach Club', restaurant: 'Hotel restaurant', village: 'Marina Village F&B', retail: 'Shops', spa: 'Spa', sport: 'Gym and courts', marina: 'Marina and boats', event: 'Events Rotunda', promenade: 'Promenade', transit: 'On the move' };
-  // the Guests / Staff / Today summary cards were removed on 2026-10-18 (founder); the simulation keeps counting for the Products and Services tables
-  const staff = people.filter(f => f.type === 'staff'); const onShift = staffOnShift(h);
-  const rows = {}; for (const f of ambient) { const k = f.type; const r = rows[k] ||= { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
-  $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = rows[k] || { n: 0, mv: 0, ch: 0, bat: 0, nb: 0 }; return `<tr><td>${TYPES[k] ? TYPES[k].title : k}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.nb ? Math.round(r.bat / r.nb) + ' %' : '—'}</td></tr>`; }).join('');
-  const lg = $('dLog'), stick = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
-  if (lg.dataset.n !== String(logAll.length)) { lg.dataset.n = String(logAll.length); lg.innerHTML = logAll.slice(-80).map(l => `<div><span>${l.t}</span><div><b>${l.title}</b><div class="d">${l.body}</div></div></div>`).join(''); if (stick) lg.scrollTop = lg.scrollHeight; }
-  // products: guests at each product now (sim, scaled to the plan), staff on shift (proforma staff x share of the shift)
+  const onShift = staffOnShift(h), shiftShare = onShift / 625;
+  const fleet = {}; for (const f of ambient) { const r = fleet[f.type] ||= { plan: FLEET_PLAN[f.type] || 0, n: 0, mv: 0, ch: 0, bat: 0, nb: 0, task: '' }; r.n++; if (f.path) r.mv++; if (f.charging > 0) r.ch++; if (DRAIN[f.type]) { r.bat += f.battery; r.nb++; } }
+  for (const r of Object.values(fleet)) { r.bat = r.nb ? Math.round(r.bat / r.nb) : null; delete r.nb; }
+  // products: guests at each product now (sim, scaled to the plan)
   const prodOf = f => { const c = f.at, n = (f.poi && f.poi.name) || '';
     return c === 'food' ? (f.poi && f.poi.prod) || null : c === 'hotel' ? (n.startsWith('Hill') ? 'Hill Hotel' : 'Beach Hotel') : c === 'residence' ? (n.includes('BR2') ? 'Residences BR2' : 'Residences BR1') : c === 'villa' ? 'Villas'
-      : c === 'restaurant' ? 'Restaurant' : c === 'event' ? 'Events Rotunda' : c === 'spa' ? 'Spa & Wellness' : c === 'marina' || c === 'terminal' || c === 'excursion' ? 'Marina'
+      : c === 'restaurant' ? 'Restaurant' : c === 'event' ? 'Events Rotunda' : c === 'spa' ? 'Spa & Wellness' : c === 'sport' ? 'GYM & Sports' : c === 'marina' || c === 'terminal' || c === 'excursion' ? 'Marina'
       : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? 'Beach Club' : c === 'club' ? 'Members Club' : null; };
   const pg = {}; for (const f of guests) { if (f.path && !f.strolling) continue; const k = prodOf(f); if (k) pg[k] = (pg[k] || 0) + 1; }
-  const shiftShare = onShift / 625, villaN = PRODUCTS.filter(d => d.small).length;
-  const prows = PRODUCTS.filter(d => !d.small).map(d => [d.name, d.kpi.Staff || 0, ZC[d.zone] || '#15304a']).concat([['Villas', villaN * 4, ZC.Z05 || '#15304a']]);
-  const pmax = Math.max(1, ...prows.map(([n]) => pg[n] || 0));
-  $('dProducts').querySelector('tbody').innerHTML = prows.map(([n, st, col]) => `<tr><td>${n}</td><td><div class="lb"><div class="bar" style="width:70%"><i style="width:${pct(pg[n] || 0, pmax)}%;background:${col}"></i></div>${Math.round((pg[n] || 0) * scale)}</div></td><td>${Math.round(st * shiftShare)}</td></tr>`).join('');
-  $('dServices').querySelector('tbody').innerHTML = SERVICES.map(d => `<tr><td>${d.name}</td><td><small>${Object.entries(d.kpi).slice(0, 2).map(([k, v]) => `${k} ${v}`).join(' · ')}</small></td><td><div class="lb"><div class="bar"><i style="width:${d.load}%;background:${d.load >= 98 ? '#c0504d' : 'var(--navy)'}"></i></div>${d.load} %</div></td></tr>`).join('');
+  const products = {}; for (const [k, v] of Object.entries(pg)) products[k] = Math.round(v * scale);
+  const byType = {}; for (const f of people) if (!f.idle) byType[f.type] = (byType[f.type] || 0) + 1;
+  const byCls = {}; for (const b of berths) { const c = byCls[b.cls] ||= { moored: 0, berths: 0 }; c.berths++; if (b.occupied) c.moored++; }
+  const w1 = ambient.filter(f => f.type === 'W1' && /^Mainland/.test(f.task)).map(f => f.task), sv = ambient.find(f => f.type === 'W2'), ex = ambient.find(f => f.type === 'W3');
+  const riders = people.filter(f => f.ride && f.ride.waiting && f.visible).length, aboard = people.filter(f => f.ride && !f.visible).length;
+  window.__live = {
+    clock: clockText(), hour: +h.toFixed(2), day: DAYN[dayIndex() % 7], guestsSim: guests.length, scale: +scale.toFixed(2), onShift, shiftShare: +shiftShare.toFixed(3),
+    people: byType, products, fleet,
+    marina: { berths: berths.length, moored: berths.filter(b => b.occupied).length, underway: yachtMovers.filter(y => y.busy).length, byCls,
+              arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
+    reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
+    ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`), log: logAll.slice(-40),
+  };
   updateActorCounts();
 }
 
@@ -2185,17 +2158,18 @@ function tick(rdt, draw = true) {
   stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE);
   for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].until) { waiters[i].res(); waiters.splice(i, 1); }
   directCamera(rdt); controls.update();
+  if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }   // the snapshot, drawn or not (headless frame)
   if (!draw) return;
   const ct = clockText(); if (ct !== clockShown) { clockShown = ct; $('time').textContent = ct; }
   for (let i = pins.length - 1; i >= 0; i--) { const p = pins[i]; const s = toScreen(anchorPos(p.anchor)); if (simT > p.until || !s) { p.el.remove(); pins.splice(i, 1); continue; } p.el.style.left = s[0] + 'px'; p.el.style.top = s[1] + 'px'; }
   if (viewChanged()) { updateLabels(); updatePins(); }
   updateHover(); drawPeople(); adaptScale(rdt);
-  if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }
   waterMat.uniforms.time.value = performance.now() / 1000;
   composer.render();
 }
 let last = performance.now();
-renderer.setAnimationLoop(now => { const rdt = Math.min(0.1, (now - last) / 1000); last = now; tick(rdt); });
+const HEADLESS = new URLSearchParams(location.search).has('headless');        // the proforma's hidden frame: simulation only, nothing drawn
+renderer.setAnimationLoop(now => { const rdt = Math.min(0.1, (now - last) / 1000); last = now; tick(rdt, !HEADLESS); });
 // ===== warm start: the day begins in the morning; 30 minutes are run before the page shows so nobody starts from a standstill
 for (let t = 0; t < 30; t += 0.05) tick(0.05, false);
 shadowDirty();                                                                 // first shadow pass, after every load-time change to the scene
