@@ -1394,16 +1394,31 @@ const MAR = (() => {
   const ax = new THREE.Vector3(b0.bow.x, 0, b0.bow.z), al = new THREE.Vector3(-b0.bow.z, 0, b0.bow.x);                        // across / along the pontoons
   const U = p => p.x * ax.x + p.z * ax.z, V = p => p.x * al.x + p.z * al.z, XZ = (u, v, y = waterY) => new THREE.Vector3(u * ax.x + v * al.x, y, u * ax.z + v * al.z);
   for (const b of berths) { b.u = U(b.pos); b.v = V(b.pos); b.sgn = Math.sign(b.bow.x * ax.x + b.bow.z * ax.z) || 1; b.ua = b.u + b.sgn * 1.3 * b.length; }
-  const fairways = [];                                                        // berths facing the same water lane cluster by their approach coordinate
-  for (const b of [...berths].sort((p, q) => p.ua - q.ua)) { const f = fairways[fairways.length - 1]; if (f && b.ua - f.last < 14) { f.members.push(b); f.last = b.ua; } else fairways.push({ members: [b], last: b.ua }); }
-  const vTrunk = Math.min(...berths.map(b => b.v)) - 40;                      // 40 m south of the southernmost berth, inside the breakwater
-  for (const f of fairways) { f.u = f.members.reduce((s, b) => s + b.ua, 0) / f.members.length; f.top = XZ(f.u, Math.max(...f.members.map(b => b.v)) + 12); f.foot = XZ(f.u, vTrunk); for (const b of f.members) { b.fairway = f; b.approach = XZ(f.u, b.v); } }
+  let rows = [];                                                              // rows of berths by their approach coordinate; two rows facing each other share one lane
+  for (const b of [...berths].sort((p, q) => p.ua - q.ua)) { const f = rows[rows.length - 1]; if (f && b.ua - f.last < 14) { f.members.push(b); f.last = b.ua; } else rows.push({ members: [b], last: b.ua }); }
+  const tip = b => b.u + b.sgn * b.length / 2, sgnOf = f => Math.sign(f.members.reduce((s, b) => s + b.sgn, 0));
+  const fairways = [];
+  for (let i = 0; i < rows.length; i++) {
+    const f = rows[i], g = rows[i + 1];
+    if (g && sgnOf(f) > 0 && sgnOf(g) < 0) { fairways.push({ members: [...f.members, ...g.members], u: (Math.max(...f.members.map(tip)) + Math.min(...g.members.map(tip))) / 2 }); i++; }   // one lane between the bows
+    else fairways.push({ members: f.members, u: f.members.reduce((s, b) => s + b.ua, 0) / f.members.length });
+  }
+  const vTrunk = Math.min(...berths.map(b => b.v)) - 18;                      // the trunk runs just off the pontoon ends (founder sketch)
+  for (const f of fairways) {
+    const vMax = Math.max(...f.members.map(b => b.v)); let vt = vMax + 12;                                            // the lane ends 12 m past the last berth, or at the quay
+    while (vt > vMax - 24) { const p = XZ(f.u, vt); if (isWater(p.x, p.z)) break; vt -= 3; }
+    const wet = u => { for (let t = 0; t <= 1; t += 0.02) { const p = XZ(u, vt + (vTrunk - vt) * t); if (!isWater(p.x, p.z)) return false; } return true; };
+    for (const du of [0, 4, -4, 8, -8, 12, -12, 16, -16]) if (wet(f.u + du)) { f.u += du; break; }                     // slide the lane line off a finger or pier head if it clips one
+    f.top = XZ(f.u, vt); f.foot = XZ(f.u, vTrunk); for (const b of f.members) { b.fairway = f; b.approach = XZ(f.u, b.v); }
+  }
   const uW = Math.max(U(A.entrance), ...fairways.map(f => f.u)), uE = Math.min(...fairways.map(f => f.u));
-  const west = XZ(uW, vTrunk), east = XZ(uE, vTrunk), westNav = seaR.posOf(...seaR.nearest(west));
-  const out = seaLegs([westNav, A.entrance, SEA.out]) || [westNav, A.entrance.clone().setY(waterY), SEA.out.clone().setY(waterY)];
-  const dry = []; const check = (p, q, tag) => { for (let t = 0; t <= 1; t += 0.05) { const m = p.clone().lerp(q, t); if (!isWater(m.x, m.z)) { dry.push(tag); break; } } };
+  const west = XZ(uW, vTrunk), east = XZ(uE, vTrunk);
+  const dry = []; const check = (p, q, tag) => { for (let t = 0; t <= 1; t += 0.05) { const m = p.clone().lerp(q, t); if (!isWater(m.x, m.z)) { dry.push(tag); return false; } } return true; };
+  // open-sea leg: straight from the trunk's west end through the entrance and out (founder sketch); the water grid only if that crosses land
+  let out = [A.entrance.clone().setY(waterY), SEA.out.clone().setY(waterY)];
+  if (!check(west, out[0], 'exit') || !check(out[0], out[1], 'sea')) { dry.length = 0; out = (seaLegs([seaR.posOf(...seaR.nearest(west)), A.entrance, SEA.out]) || out); }
   for (const f of fairways) check(f.top, f.foot, 'spur ' + Math.round(f.u)); check(east, west, 'trunk');
-  if (dry.length) console.warn('marina fairway network crosses land:', dry); else console.info('marina fairway network:', fairways.length, 'spurs + trunk, all on water');
+  if (dry.length) console.warn('marina fairway network crosses land:', dry); else console.info('marina fairway network:', fairways.length, 'lanes + trunk + exit, all on water');
   return { fairways, west, east, out: [west.clone(), ...out] };
 })();
 if (MAR) {                                                                  // the designed routes, dashed on the water
