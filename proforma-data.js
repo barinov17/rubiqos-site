@@ -20,6 +20,7 @@ const OPERATORS = [
   { id: 'fleet', name: 'Fleet manager', note: 'Pods, shuttles, carts, trucks, robots and boats: dispatch, charging, maintenance.' },
   { id: 'stores', name: 'Warehouses and laundry manager', note: 'Receives the supply vessel, stores and issues to the kitchens; linen in and out; the dark store.' },
   { id: 'staffacc', name: 'Staff accommodation manager', note: 'Beds, canteen and the shift changes at 07:00, 15:00 and 23:00.' },
+  { id: 'cleaning', name: 'Cleaning manager', note: 'Housekeeping, public areas, beaches, cleaning robots.' },
   { id: 'waste', name: 'Waste management manager', note: 'Collection rounds, sorting, the night waste run, the transfer station at the dock.' },
   { id: 'infra', name: 'Infrastructure manager', note: 'Power, desalination, sewage, the network and the operator console.' },
   { id: 'guestservices', name: 'Guest services manager', note: 'Concierge, butlers and the guest-app desk.' },
@@ -88,6 +89,9 @@ const SERVICES = [
     produces: { 'Meals a day': '1,000', 'Seats': 160, 'Service windows': '06:00–08:00 · 14:00–16:00 · 22:00–24:00' }, consumes: { 'Food': '≈ 0.4 t a day (from the prep kitchen)', 'Water': '≈ 12 m³ a day', 'Energy': '≈ 350 kWh a day' },
     liveFn: L => { const h = L.hour, open = (h >= 6 && h < 8) || (h >= 14 && h < 16) || (h >= 22); const p = open ? Math.min(100, Math.round(100 * L.onShift * 0.5 / 160)) : 10;
       return [['Load', p + ' %'], ['Service', open ? 'open · shift meal' : 'closed · next ' + (h < 6 ? '06:00' : h < 14 ? '14:00' : h < 22 ? '22:00' : '06:00')], ['Staff on the island', L.onShift]]; } },
+  { id: 'cleaning', name: 'Cleaning', zone: 'Z09', op: 'cleaning', what: 'Housekeeping of every room, villa and apartment, public areas, beaches and the back of house; robots on floors and lawns.',
+    produces: { 'Rooms and units a day': '≈ 400 turned, ≈ 300 serviced', 'Public areas': '≈ 60,000 m² a day', 'Beaches': '2, raked daily', 'Housekeepers on shift (plan)': 120 }, consumes: { 'Water': '≈ 40 m³ a day', 'Energy': '≈ 900 kWh a day', 'Chemicals and amenities': 'from the dark store', 'Linen': 'from the laundry' }, loadBase: 70,
+    liveFn: L => { const h = L.hour, peak = h >= 9 && h < 15; const guests = Object.values(L.products).reduce((a, b) => a + b, 0); return [['Load', (peak ? Math.min(100, Math.round(55 + guests / 20)) : 25) + ' %'], ['Housekeepers on shift', Math.round(120 * L.shiftShare)], ['Rooms in service now', peak ? Math.round(400 * ((h - 9) / 6)) + ' of 400' : h >= 15 ? '400 of 400' : '0 of 400'], ['Robots on floors and lawns', h >= 22 || h < 6 ? 'night run' : 'daytime rounds']]; } },
   { id: 'waste', name: 'Waste management', zone: 'Z09', op: 'waste', what: 'Sorting, compactors and the night run to the dock transfer station.',
     produces: { 'Waste handled a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, consumes: { 'Energy': '≈ 400 kWh a day' }, key: 'waste', capacity: 5,
     liveFn: L => [['Night run', L.hour >= 23 || L.hour < 5 ? 'running' : 'from 23:00']] },
@@ -126,7 +130,7 @@ const PRODUCT_GROUPS = [
 ];
 const SERVICE_GROUPS = [
   { title: 'Utilities', ids: ['power', 'desal', 'sewage', 'network'] },
-  { title: 'Back of house', ids: ['stores', 'darkstore', 'laundry', 'dock', 'waste', 'staffacc', 'canteen'] },
+  { title: 'Back of house', ids: ['stores', 'darkstore', 'laundry', 'cleaning', 'waste', 'dock', 'staffacc', 'canteen'] },
   { title: 'Guest care', ids: ['guestservices', 'medical', 'security'] },
 ];
 // Fleet Hub: its own block (founder 2026-10-19): the vehicles belong to no other card
