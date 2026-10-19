@@ -236,10 +236,9 @@ function refreshLive() {
   const clock = document.getElementById('clock'); if (clock) clock.textContent = L.clock;
   const st = document.getElementById('stLine'); if (st) st.innerHTML = `${L.day} · simulated time, 1 s = 1 min · <b>${fmt(Object.values(L.people).reduce((a, b) => a + b, 0) - (L.people.staff || 0))}</b> guests in the simulation, shown at the plan's scale (× ${L.scale}) · <b>${L.onShift}</b> staff on shift · ${L.events.length ? 'now: ' + L.events.join(', ') : 'no event running'}`;
   refreshSchedule(L.hour); for (const td of document.querySelectorAll('[data-evrow]')) { const e = EVENTS[+td.dataset.evrow], b = bookings(e, L.hour); td.textContent = `${b.n} of ${e.cap} · ${b.label}`; }
-  const gMax = Math.max(1, ...PRODUCTS.map(c => c.live.reduce((a, n) => a + (L.products[n] || 0), 0)));   // the guests bar compares the products with each other, as the old demo table did (founder 2026-10-19)
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
-    const rows = [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">· capacity ${fmt(cap)}</small>`], ['bar', bar(Math.round(100 * g / gMax), 101)], ['Staff on shift', stf]];
+    const rows = [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', stf]];   // the bar = share of the product's own capacity (founder 2026-10-19)
     if (c.id === 'marina') { const M = L.marina; rows.push(['Boats moored', `${M.moored} of ${M.berths} berths`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)], ['Under way', M.underway], ['Expected today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`], ['Next', M.next]); }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
