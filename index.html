@@ -188,7 +188,7 @@
   <button id="bCam">Live camera</button>
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
-<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="standard" class="on">Standard</button><button data-style="schematic">Schematic</button></div>
+<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="standard" class="on">Standard</button><button data-style="schematic">Schematic</button><button data-style="arch">Architectural</button></div>
 </div>
 <div id="tip" class="panel"></div>
 <button id="bApp" class="panel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 5.5h3M11 18.5h2"/></svg><span>Guest app</span></button>
@@ -2006,23 +2006,23 @@ const SCHEMATIC = {
   sky: [0xeef3fb, 0xf6f8fc], fog: 0xf3f6fb, fogRange: [6000, 20000], exposure: 1.0, toneMapping: THREE.NoToneMapping,   // no tone curve: the palette shows as drawn
   hemi: [0xffffff, 0xd5ddee, 2.9], sun: [0xffffff, 1.5], aoBlend: 0.15, /* three r170: diffuse = albedo x light / pi, so (2.9 + 1.5 x 0.74) / pi = 1.28: white land stays white */ grade: { sat: 1.0, con: 1.0, lift: 0.0, tint: 0xffffff },
 };
-const STD = { toneMapping: renderer.toneMapping, sky: [skyMat.uniforms.top.value.getHex(), skyMat.uniforms.horizon.value.getHex()], fog: scene.fog.color.getHex(), fogRange: [scene.fog.near, scene.fog.far],
+const STD = { toneMapping: renderer.toneMapping, shadow: 1, sky: [skyMat.uniforms.top.value.getHex(), skyMat.uniforms.horizon.value.getHex()], fog: scene.fog.color.getHex(), fogRange: [scene.fog.near, scene.fog.far],
   exposure: renderer.toneMappingExposure, hemi: [hemi.color.getHex(), hemi.groundColor.getHex(), hemi.intensity], sun: [sun.color.getHex(), sun.intensity], aoBlend: gtao.blendIntensity,
   grade: { sat: grade.uniforms.sat.value, con: grade.uniforms.con.value, lift: grade.uniforms.lift.value, tint: grade.uniforms.tint.value.getHex() },
   water: Object.fromEntries(['deep', 'mid', 'shallow', 'sand', 'skyC', 'fresK', 'specK'].map(k => [k, waterMat.uniforms[k].value.clone ? waterMat.uniforms[k].value.clone() : waterMat.uniforms[k].value])) };
 const flatMat = (hex, rough = 0.95) => { const k = 'f' + hex; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 })); return schemCache.get(k); };
 const schemPeople = () => { if (!schemCache.has('people')) schemCache.set('people', new THREE.MeshStandardMaterial({ color: SCHEMATIC.people, roughness: 1, metalness: 0 })); return schemCache.get('people'); };
 const schemGhost = () => { if (!schemCache.has('ghost')) schemCache.set('ghost', new THREE.MeshStandardMaterial({ color: 0xcfdcf0, roughness: 1, metalness: 0, transparent: true, opacity: 0.6, depthWrite: false })); return schemCache.get('ghost'); };   // empty-berth silhouette
-const dotMat = () => {                                                              // world-space dot pattern, so no UVs are needed
-  if (schemCache.has('dots')) return schemCache.get('dots');
-  const m = new THREE.MeshStandardMaterial({ color: SCHEMATIC.green, roughness: 1, metalness: 0 });
+const dotMat = (base = SCHEMATIC.green, dot = SCHEMATIC.greenDot, step = SCHEMATIC.dotStep, r = SCHEMATIC.dotR) => {   // world-space dot pattern, so no UVs are needed
+  const key = 'dots' + base + '/' + dot + '/' + step + '/' + r; if (schemCache.has(key)) return schemCache.get(key);
+  const m = new THREE.MeshStandardMaterial({ color: base, roughness: 1, metalness: 0 });
   m.onBeforeCompile = sh => {
-    sh.uniforms.dotCol = { value: new THREE.Color(SCHEMATIC.greenDot) }; sh.uniforms.dotStep = { value: SCHEMATIC.dotStep }; sh.uniforms.dotR = { value: SCHEMATIC.dotR };
+    sh.uniforms.dotCol = { value: new THREE.Color(dot) }; sh.uniforms.dotStep = { value: step }; sh.uniforms.dotR = { value: r };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform vec3 dotCol; uniform float dotStep, dotR;')
       .replace('#include <color_fragment>', '#include <color_fragment>\n{ vec2 g = vWP.xz / dotStep; vec2 o = vec2(mod(floor(g.y), 2.0) * 0.5, 0.0); vec2 f = fract(g + o) - 0.5; float d = length(f); float w = fwidth(d);\n  diffuseColor.rgb = mix(dotCol, diffuseColor.rgb, smoothstep(dotR - w, dotR + w, d)); }');
   };
-  schemCache.set('dots', m); return m;
+  schemCache.set(key, m); return m;
 };
 const SCHEM_PIN = { product: '#2457e6', service: '#6b7a96' };
 function setPinStyle(sch) {
@@ -2069,33 +2069,82 @@ function schematicMat(o) {
   if (/roof|slab|white|parapet|top band/i.test(mn + ' ' + n)) return flatMat(base.clone().lerp(new THREE.Color(0xffffff), 0.55).getHex());
   return flatMat(base.getHex());
 }
+// ===== architectural style (founder 2026-10-19, after the reference boards): a white model with fine dark edge lines on every
+// building, paper-pale ground, sage lawns with a grey stipple, light warm-grey roads, a desaturated blue-grey sea, dark figures,
+// soft shadows. Edges = EdgesGeometry (crease 24°) of every building / marina / helipad mesh, built once on the first switch.
+const ARCH = {
+  sea: 0x7d97a8, land: 0xf1efe8, beach: 0xebe5d6, rock: 0xe0ddd5,
+  green: 0xc3cfae, greenDot: 0x97a68a, dotStep: 3.0, dotR: 0.22,
+  roadMain: 0xd6d1c7, walk: 0xeae6dd, plaza: 0xe8c9a4, pier: 0xe9e5dc, breakwater: 0xe2ded5,
+  tree: 0xa3b78d, treeDark: 0x8ea47a, palm: 0xadc296, trunk: 0xbdb5a5,
+  wall: 0xf3f3f0, roof: 0xf8f8f6, glass: 0xd3dae0, plinth: 0xe4e4e0, pool: 0xa9c6d2,
+  guestPad: 0xc9d8ea, hatchBase: 0xeae6dd, hatchLine: 0x8a8f96,
+  yachtHull: 0xf5f5f2, yachtGlass: 0xb6c2cb, people: 0x3b3f45, edge: 0x2f3338,
+  sky: [0xdfe7ec, 0xf5f4f0], fog: 0xf1f0ec, fogRange: [5000, 20000], exposure: 1.0, toneMapping: THREE.NoToneMapping,
+  hemi: [0xffffff, 0xd9d5cc, 2.4], sun: [0xffffff, 1.3], shadow: 0.35, aoBlend: 0.55, grade: { sat: 0.92, con: 1.0, lift: 0.0, tint: 0xffffff },
+};
+const archFlat = (hex, rough = 1) => { const k = 'a' + hex + '/' + rough; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 })); return schemCache.get(k); };   // offset: the edge lines win the depth test
+const archPeople = () => archFlat(ARCH.people);
+function archMat(o) {
+  const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), S = ARCH, lawn = () => dotMat(S.green, S.greenDot, S.dotStep, S.dotR);
+  if (/drop-off$|^Drop-off \| DO-/.test(n)) return /\(BOH\)|service drop-off$/.test(n) ? hatchMat(S.hatchBase, S.hatchLine) : archFlat(S.guestPad);
+  if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
+  if (/Pool water/.test(mn)) return archFlat(S.pool, 0.4);
+  if (g === 'trees') return archFlat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);
+  if (g === 'terrain') return /BEACH/.test(mn) ? archFlat(S.beach) : /Rocky/.test(mn) ? archFlat(S.rock) : /GREEN/.test(mn) ? lawn() : archFlat(S.land);
+  if (g === 'landscape') return /GREEN|Planting/.test(mn) ? lawn() : archFlat(S.land);
+  if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? archFlat(S.roadMain) : /Plaza|Urban/.test(mn) ? archFlat(S.plaza) : archFlat(S.walk);
+  if (g === 'marina') return /ghost/i.test(mn) ? schemGhost() : /Boat|Yacht/.test(mn) ? archFlat(S.yachtHull, 0.5) : /glass/i.test(mn) ? archFlat(S.yachtGlass, 0.4) : /Pier deck/.test(mn) ? archFlat(S.pier) : archFlat(S.breakwater);
+  if (/GREEN|Planting|roof garden|planters/i.test(mn + ' ' + n)) return lawn();
+  if (/Road surface/.test(mn) || /access road$|service road/.test(n)) return archFlat(S.roadMain);
+  if (/Promenade|Plaza|Urban ground|Villa deck|deck$|yard$|courtyard$|forecourt$|ground$|path/i.test(mn + ' ' + n)) return archFlat(S.walk);
+  if (/glass/i.test(mn)) return archFlat(S.glass, 0.4);
+  if (/(\| |)(plinth|podium|base)$/i.test(n)) return archFlat(S.plinth);
+  if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return archFlat(S.roof);
+  return archFlat(S.wall);
+}
+let archEdges = null;
+function buildArchEdges() {
+  const grp = new THREE.Group(); grp.name = 'arch edges'; const mat = new THREE.LineBasicMaterial({ color: ARCH.edge, transparent: true, opacity: 0.85 }); let n = 0;
+  model.updateMatrixWorld(true);
+  const add = o => { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 24), mat); ln.matrixAutoUpdate = false; ln.matrix.copy(o.matrixWorld); grp.add(ln); n++; };
+  model.traverse(o => {
+    if (!o.isMesh || o.isInstancedMesh || !isShown(o)) return; const g = meshGroup(o);
+    if (!(g === 'buildings' || g === 'marina') || /drop-off$|^Drop-off \| DO-|Pool water|^MARINA( \| apron slope)?$/.test(o.name) || /ghost|glass/i.test(o.userData.material || (o.material && o.material.name) || '')) return;
+    add(o);
+  });
+  if (window.__helipadRoot && window.__helipadRoot.parent !== model) window.__helipadRoot.traverse(o => { if (o.isMesh) add(o); });
+  grp.renderOrder = 9; scene.add(grp); console.info('architectural edges:', n, 'meshes'); return grp;
+}
 let mapStyle = 'standard';
 function applyMapStyle(name) {
-  const sch = name === 'schematic', st = sch ? SCHEMATIC : STD; mapStyle = name;
+  const sch = name === 'schematic', arch = name === 'arch', st = sch ? SCHEMATIC : arch ? ARCH : STD, matFn = sch ? schematicMat : arch ? archMat : null; mapStyle = name;
   model.traverse(o => {
     if (!o.isMesh) return;
     if (!o.userData.baseMat) o.userData.baseMat = o.material;
-    const m = sch ? schematicMat(o) : null; o.material = m || o.userData.baseMat;
+    const m = matFn ? matFn(o) : null; o.material = m || o.userData.baseMat;
   });
   skyMat.uniforms.top.value.set(st.sky[0]); skyMat.uniforms.horizon.value.set(st.sky[1]); scene.fog.color.set(st.fog); scene.fog.near = st.fogRange[0]; scene.fog.far = st.fogRange[1];
-  renderer.toneMapping = st.toneMapping; renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2]; sun.color.set(st.sun[0]); sun.intensity = st.sun[1];
+  renderer.toneMapping = st.toneMapping; renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2]; sun.color.set(st.sun[0]); sun.intensity = st.sun[1]; sun.shadow.intensity = st.shadow ?? 1;
   gtao.blendIntensity = st.aoBlend; grade.uniforms.sat.value = st.grade.sat; grade.uniforms.con.value = st.grade.con; grade.uniforms.lift.value = st.grade.lift; grade.uniforms.tint.value.set(st.grade.tint);
   const W = waterMat.uniforms;
-  if (sch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(SCHEMATIC.sea); W.fresK.value = 0; W.specK.value = 0; }   // one flat light-blue sea
+  if (sch || arch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(st.sea); W.fresK.value = 0; W.specK.value = arch ? 0.1 : 0; }   // one flat sea
   else for (const [k, v] of Object.entries(STD.water)) { if (W[k].value.copy) W[k].value.copy(v); else W[k].value = v; }
   setPinStyle(sch); setMarkerStyle(sch);
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
-    o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : o.userData.baseMat; });
-  for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; o.material = sch ? (/glass/i.test(o.userData.baseMat.name) ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
-  for (const im of crowdAll) {                                                 // schematic: the same figures in one blue (founder 2026-10-19: models, not dots)
+    o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : arch ? (/lawn|grass|hedge/.test(k || '') ? archFlat(ARCH.green) : archFlat(ARCH.walk)) : o.userData.baseMat; });
+  for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
+    o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : arch ? (gl ? archFlat(ARCH.yachtGlass, 0.4) : archFlat(ARCH.yachtHull, 0.5)) : o.userData.baseMat; });   // moving yachts match the moored ones
+  for (const im of crowdAll) {                                                 // schematic / architectural: the same figures in one colour (founder 2026-10-19: models, not dots)
     if (!im.userData.baseMat) { im.userData.baseMat = im.material; im.userData.baseColor = im.instanceColor; }
-    im.material = sch ? schemPeople() : im.userData.baseMat; im.instanceColor = sch ? null : im.userData.baseColor; }
+    im.material = sch ? schemPeople() : arch ? archPeople() : im.userData.baseMat; im.instanceColor = sch || arch ? null : im.userData.baseColor; }
+  if (arch && !archEdges) archEdges = buildArchEdges(); if (archEdges) archEdges.visible = arch;
   peopleDots.visible = false; shadowDirty();
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
   try { localStorage.setItem('mapStyle2', name); } catch (e) {}
 }
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
-{ let saved = 'standard'; try { saved = localStorage.getItem('mapStyle2') || 'standard'; } catch (e) {} if (saved === 'schematic') applyMapStyle('schematic'); }
+{ let saved = 'standard'; try { saved = localStorage.getItem('mapStyle2') || 'standard'; } catch (e) {} if (saved === 'schematic' || saved === 'arch') applyMapStyle(saved); }
 
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
