@@ -7,8 +7,8 @@
 <title>RubiqOS · Entity</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019zc">
-<link rel="stylesheet" href="/proforma.css?v=20261019zc">
+<link rel="stylesheet" href="/site.css?v=20261019zd">
+<link rel="stylesheet" href="/proforma.css?v=20261019zd">
 <style>
   body.site .crumb { font-size: 12.5px; color: var(--muted); margin: 18px 0 0; } body.site .crumb a { color: var(--muted); }
   body.site .ent { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 20px; align-items: start; margin-top: 14px; }
@@ -33,7 +33,7 @@
   <p class="foot">RubiqOS · one page per product and service · <a href="/proforma/">all cards</a> · the demo at <a href="/">rubiqos.com</a>.</p>
 </div>
 <iframe id="sim" src="/?headless=1" title="simulation"></iframe>
-<script src="/proforma-data.js?v=20261019zc"></script>
+<script src="/proforma-data.js?v=20261019zd"></script>
 <script>
 const id = new URLSearchParams(location.search).get('id') || 'beach-hotel', c = entityOf(id);
 if (!c) { document.getElementById('card').innerHTML = '<div class="con"><h3>Unknown entity</h3><p>No product or service with the id “' + id + '”.</p></div>'; }
@@ -45,7 +45,6 @@ else {
   const ev = EVENTS.filter(e => e.venue === c.id);
   const uses = kind === 'product' ? `<div class="card"><h3>Services it uses</h3><p>Power, water and sewage from the utilities; food from the warehouse and the dark store; linen from the laundry; the fleet for guests and goods; the network for every device; guest services, the clinic and security on call.</p></div>` : '';
   document.getElementById('aside').innerHTML = `<div><div class="kind">${kind === 'product' ? 'Product' : 'Service'} · ${c.zone} ${ZONE_NAME[c.zone] || ''}</div><div class="title">${c.name}</div><div class="meta">${c.what}</div></div>
-    <div class="card"><h3>Operator</h3><p><b>${op.name}</b> · <code>${op.id}</code></p><p>${op.note}</p>${siblings.length ? `<p class="muted">Also runs: ${siblings.map(s => `<a href="${ENTITY_URL(s.id)}">${s.name}</a>`).join(', ')}</p>` : ''}</div>
     ${ev.length ? `<div><h2>Events here</h2>${eventsTable(ev)}</div>` : kind === 'product' ? `<div class="card"><h3>Events</h3><p>No programme events at this venue.</p></div>` : ''}
     ${uses}`;
 }

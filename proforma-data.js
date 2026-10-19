@@ -198,7 +198,7 @@ const BALANCE_ROWS = [['Water, m³', 'water', 150, 0, '+150 m³ staff housing an
 const LOAD = {};
 for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTotal : sum(k, OCC) + extra; LOAD[k] = Math.round(100 * avg / capOf(k)); }
 // --- card html
-const opTag = id => `<span class="op"><b>Operator</b>${OP[id].name}</span>`;
+const opTag = id => '';   // operators are not shown on the cards for now (founder 2026-10-19); the OP data stays for later
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
 const NO_MODEL = new Set(['apart-hotel', 'water-sports', 'network', 'darkstore', 'guestservices', 'medical', 'security', 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
 const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3>${NO_MODEL.has(c.id) ? '<span class="nomodel" title="No physical object on the master plan yet"></span>' : ''}</div>`;   // no zone id and no colour dot (founder 2026-10-19)
