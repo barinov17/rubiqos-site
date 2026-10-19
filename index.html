@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   /* palette = the pitch deck (navy #0A1220, blue #2457E6, light #F3F5F8, panel #E4E9F0); the guest-app button keeps the slide-02 orange (founder 2026-10-18) */
@@ -206,7 +208,7 @@
 
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js",
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
   "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.8.0/build/index.module.js"
 } }
@@ -222,6 +224,7 @@ import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
 THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
@@ -239,6 +242,10 @@ const stageXY = e => { const r = canvas.getBoundingClientRect(); return { x: e.c
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// the sun does not move and the buildings do not either: the 4096² shadow map is rendered once and again only when the scene
+// changes (style, layers); vehicles and people do not cast, so a frame costs two scene passes instead of three
+renderer.shadowMap.autoUpdate = false; const shadowDirty = () => { renderer.shadowMap.needsUpdate = true; };
+let viewDirty = true;                                                        // pins and zone labels are re-placed only when the camera or the stage changes
 renderer.toneMapping = THREE.AgXToneMapping; renderer.toneMappingExposure = 1.3;   // presentation look (founder reference 2026-10-16); lighter per founder 2026-10-17
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0xdde8ee, 2400, 11500);                           // haze toward the horizon
@@ -278,7 +285,8 @@ const grade = new ShaderPass({
 composer.addPass(grade);
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
-  renderer.setSize(w, h); composer.setSize(w, h); gtao.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h); composer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); viewDirty = true; shadowDirty();   // a first frame drawn at 0 × 0 (hidden tab) must not leave an empty shadow map behind
+  const k = renderer.getPixelRatio() * 0.5; gtao.setSize(Math.max(2, Math.round(w * k)), Math.max(2, Math.round(h * k)));   // AO at half resolution: it is soft and denoised, a quarter of the GPU work
   if (window.__reframe) window.__reframe();                                   // the overview depends on the stage aspect
 }
 addEventListener('resize', resize); new ResizeObserver(resize).observe(stage); resize();   // the stage narrows when the guest app opens
@@ -311,7 +319,7 @@ model.traverse(o => {
   if (o.parent === model) { top.push(o); (groups[u.group] ||= []).push(o); }
   if (u.group === 'buildings' && o.parent === model) (functions[u.function] ||= []).push(o);
   if (o.isMesh) {
-    o.geometry.computeBoundsTree();
+    if (u.group === 'buildings' || u.group === 'terrain') o.geometry.computeBoundsTree();   // BVH only where rays go: hover picking (buildings), ground probes (terrain)
     const casts = ['buildings', 'marina', 'trees'].includes(u.group);
     o.castShadow = casts; o.receiveShadow = true;
     if (u.group === 'zoning') {
@@ -322,6 +330,25 @@ model.traverse(o => {
   }
   if (u.group === 'zoning') o.visible = false;                              // overlay, hidden by default
 });
+// the marina plan (yachts, pontoons: ~380 small meshes, never hovered) is static scenery: merged per material into a few draw calls
+{
+  const root = byName.get('Marina (SketchUp plan)');
+  if (root) {
+    root.updateWorldMatrix(true, true);
+    const inv = root.matrixWorld.clone().invert(), byMat = new Map(), old = [];
+    root.traverse(m => { if (!m.isMesh) return; old.push(m); const k = m.material.uuid + '|' + (m.geometry.index ? 'i|' : 'n|') + Object.keys(m.geometry.attributes).sort().join(','); (byMat.get(k) || byMat.set(k, []).get(k)).push(m); });
+    let n = 0;
+    for (const list of byMat.values()) {
+      const g = mergeGeometries(list.map(m => m.geometry.clone().applyMatrix4(inv.clone().multiply(m.matrixWorld))), false);
+      if (!g) continue;
+      const first = list[0], mesh = new THREE.Mesh(g, first.material);
+      mesh.name = `${root.name} | ${first.material.name || 'part'} ×${list.length}`; mesh.userData = { ...first.userData, group: 'marina' };
+      mesh.castShadow = true; mesh.receiveShadow = true; root.add(mesh); byName.set(mesh.name, mesh); n++;
+      for (const m of list) { m.parent.remove(m); m.geometry.dispose(); byName.delete(m.name); }
+    }
+    console.info('marina plan merged:', old.length, 'meshes →', n);
+  }
+}
 const zones = manifest.zones;
 const zoneInfo = Object.fromEntries(zones.map(z => [z.zone_id, z]));
 const bboxOf = o => new THREE.Box3().setFromObject(o);
@@ -346,7 +373,7 @@ const landMask = (() => {
   const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blur), qs = new THREE.Scene(); qs.add(quad); const qc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   let src = rtA, dst = rtB;
   for (let i = 0; i < 3; i++) for (const dir of [[1, 0], [0, 1]]) { blur.uniforms.t.value = src.texture; blur.uniforms.d.value.set(dir[0] / MASK.n * 4.0, dir[1] / MASK.n * 4.0); renderer.setRenderTarget(dst); renderer.render(qs, qc); [src, dst] = [dst, src]; }
-  renderer.setRenderTarget(null); return src.texture;
+  renderer.setRenderTarget(null); dst.dispose(); blur.dispose(); quad.geometry.dispose(); white.dispose(); return src.texture;   // only the finished mask stays on the GPU
 })();
 const waterMat = new THREE.ShaderMaterial({
   fog: true,
@@ -380,7 +407,7 @@ for (const n of ['Sea']) { const o = byName.get(n); o && o.traverse(m => { if (m
 const groupList = $('groupList');
 function toggleRow(text, onChange, sub = false, checked = true) {
   const l = document.createElement('label'); if (sub) l.className = 'sub';
-  const i = document.createElement('input'); i.type = 'checkbox'; i.checked = checked; i.onchange = () => { onChange(i.checked); rebuildPickables(); };
+  const i = document.createElement('input'); i.type = 'checkbox'; i.checked = checked; i.onchange = () => { onChange(i.checked); rebuildPickables(); shadowDirty(); };
   l.append(i, document.createTextNode(text)); groupList.appendChild(l); return i;
 }
 const layerState = {};
@@ -398,7 +425,8 @@ var zoningChk;
 function setGroup(g, v) {
   layerState[g] = v;
   for (const o of groups[g]) o.visible = g === 'buildings' ? v && layerState['fn:' + o.userData.function] !== false : v;
-  if (g === 'zoning') { $('bZoneOverlay').classList.toggle('on', v); zoningChk.checked = v; }
+  if (g === 'zoning') { $('bZoneOverlay').classList.toggle('on', v); zoningChk.checked = v; viewDirty = true; }
+  shadowDirty();
 }
 $('bZoneOverlay').onclick = () => { setGroup('zoning', !layerState.zoning); rebuildPickables(); };
 const boxToggle = (btn, box, other) => { $(btn).onclick = () => { const open = !$(box).classList.contains('open'); $(box).classList.toggle('open', open); $(btn).classList.toggle('on', open); if (open) { $(other[0]).classList.remove('open'); $(other[1]).classList.remove('on'); } $('layersPanel').classList.toggle('open', $('layersBox').classList.contains('open') || $('zonesBox').classList.contains('open')); }; };
@@ -426,7 +454,7 @@ function setZoneFilter(id) {
     if (!o.userData.origMat) o.userData.origMat = o.material;
     o.material = id && o.userData.zone_id !== id ? dimmed(o.userData.origMat) : o.userData.origMat;
   });
-  if (id) flyToZone(id);
+  shadowDirty(); if (id) flyToZone(id);
 }
 
 // ---------- camera: start from the south-east over the whole island, fly-to per zone
@@ -499,7 +527,7 @@ function footprintOf(meshes) {
   if (parts.length === 1) area = parts[0].a;
   else if (parts.length) {
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity; for (const P of parts) for (const [x, z] of P.ring) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
-    const d = Math.max(0.5, Math.max(x1 - x0, z1 - z0) / 900); let n = 0;
+    const d = Math.max(0.5, Math.max(x1 - x0, z1 - z0) / 400); let n = 0;   // ≤ 160,000 samples: the area is right to about 1 %
     for (let z = z0 + d / 2; z < z1; z += d) for (let x = x0 + d / 2; x < x1; x += d) if (parts.some(P => inRing([x, z], P.ring))) n++;
     area = n * d * d;
   }
@@ -527,7 +555,7 @@ function footprintMeshes(o) {                                                   
 }
 // self-check (runs at load): draws every footprint exactly as hover does and checks the drawn outline sits under its object.
 // It tests the rendered result, so a transform error (like the old z mirror) is caught, not only a wrong calculation.
-function checkFootprints(list) {
+function checkFootprints(list, quiet = false) {
   const bad = []; const gb = new THREE.Box3(), ob = new THREE.Box3(), _fb = new THREE.Box3(), gc = new THREE.Vector3(), oc = new THREE.Vector3();
   for (const [label, meshes] of list) {
     if (!meshes.length) continue; showFootprint(meshes); if (!fpGroup.children.length) continue;
@@ -538,6 +566,7 @@ function checkFootprints(list) {
     if (Math.abs(gc.x - oc.x) > tol || Math.abs(gc.z - oc.z) > tol) bad.push(`${label} (off by ${Math.round(Math.hypot(gc.x - oc.x, gc.z - oc.z))} m)`);
   }
   clearFootprint();
+  if (quiet) return bad;
   if (bad.length) console.error('footprint drawn away from its object:', bad); else console.info('footprints checked:', list.length, 'all under their objects');
   return bad;
 }
@@ -681,25 +710,38 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
     for (let r = 0; r < 120; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) if (Math.max(Math.abs(dx), Math.abs(dz)) === r && ok(cx + dx, cz + dz)) return [cx + dx, cz + dz];
     return null;
   }
+  // components after bridging: a route between two components does not exist, so route() says so at once instead of
+  // flooding the whole network first (strolls and no-walkway trips used to cost a full search each)
+  const N = W * H, comp = new Int32Array(N).fill(-1); let ncomp = 0;
+  { const stack = []; for (let k = 0; k < N; k++) { if (isNaN(y[k]) || comp[k] >= 0) continue; stack.push(k); comp[k] = ncomp;
+      while (stack.length) { const q = stack.pop(), qx = q % W, qz = (q / W) | 0; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { const nx = qx + dx, nz = qz + dz; if (!ok(nx, nz)) continue; const nk = nz * W + nx; if (comp[nk] < 0) { comp[nk] = ncomp; stack.push(nk); } } }
+      ncomp++; } }
+  // A* state on typed arrays, stamped with a generation number: nothing is allocated or cleared between calls
+  const gS = new Float32Array(N), came = new Int32Array(N), seen = new Int32Array(N), done = new Int32Array(N); let gen = 0;
+  const hf = [], hk = [];                                                     // binary heap: f values and cell keys
+  const push = (f, k) => { let i = hf.length; hf.push(f); hk.push(k); while (i > 0) { const p = (i - 1) >> 1; if (hf[p] <= hf[i]) break; [hf[p], hf[i]] = [hf[i], hf[p]]; [hk[p], hk[i]] = [hk[i], hk[p]]; i = p; } };
+  const pop = () => { const r = hk[0], lf = hf.pop(), lk = hk.pop(); if (hf.length) { hf[0] = lf; hk[0] = lk; let i = 0; for (;;) { let m = i; const a = 2 * i + 1, b = a + 1; if (a < hf.length && hf[a] < hf[m]) m = a; if (b < hf.length && hf[b] < hf[m]) m = b; if (m === i) break; [hf[m], hf[i]] = [hf[i], hf[m]]; [hk[m], hk[i]] = [hk[i], hk[m]]; i = m; } } return r; };
+  const SQ2 = Math.SQRT2;
   function route(from, to) {                                        // A* with 8 neighbours; result = world points (smoothed)
     const s = nearest(from), t = nearest(to); if (!s || !t) return null;
     const S = s[1] * W + s[0], T = t[1] * W + t[0];
-    const gS = new Map([[S, 0]]), came = new Map(), open = [[0, S]], closed = new Set();
-    const h = k => Math.hypot((k % W) - t[0], Math.floor(k / W) - t[1]);
-    const push = (f, k) => { let i = open.length; open.push([f, k]); while (i > 0) { const p = (i - 1) >> 1; if (open[p][0] <= open[i][0]) break; [open[p], open[i]] = [open[i], open[p]]; i = p; } };
-    const pop = () => { const r = open[0], l = open.pop(); if (open.length) { open[0] = l; let i = 0; for (;;) { let m = i; const a = 2 * i + 1, b = a + 1; if (a < open.length && open[a][0] < open[m][0]) m = a; if (b < open.length && open[b][0] < open[m][0]) m = b; if (m === i) break; [open[m], open[i]] = [open[i], open[m]]; i = m; } } return r; };
+    if (comp[S] !== comp[T]) return null;
+    gen++; hf.length = 0; hk.length = 0;
+    const h = k => { const dx = Math.abs((k % W) - t[0]), dz = Math.abs(((k / W) | 0) - t[1]); return dx + dz - (2 - SQ2) * Math.min(dx, dz); };   // octile: admissible for √2 diagonals
+    gS[S] = 0; seen[S] = gen; came[S] = -1; push(h(S), S);
     let found = false;
-    while (open.length) {
-      const [, k] = pop(); if (k === T) { found = true; break; } if (closed.has(k)) continue; closed.add(k);
-      const gx = k % W, gz = Math.floor(k / W), g0 = gS.get(k);
+    while (hk.length) {
+      const k = pop(); if (k === T) { found = true; break; } if (done[k] === gen) continue; done[k] = gen;
+      const gx = k % W, gz = (k / W) | 0, g0 = gS[k], yk = y[k];
       for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dz) continue; const nx = gx + dx, nz = gz + dz; if (!ok(nx, nz)) continue;
-        const nk = nz * W + nx, g = g0 + Math.hypot(dx, dz) + Math.abs(y[nk] - y[k]) * 2;
-        if (g < (gS.get(nk) ?? Infinity)) { gS.set(nk, g); came.set(nk, k); push(g + h(nk), nk); }
+        const nk = nz * W + nx; if (done[nk] === gen) continue;
+        const g = g0 + (dx && dz ? SQ2 : 1) + Math.abs(y[nk] - yk) * 2;
+        if (seen[nk] !== gen || g < gS[nk]) { seen[nk] = gen; gS[nk] = g; came[nk] = k; push(g + h(nk), nk); }
       }
     }
     if (!found) return null;
-    const cells = []; for (let k = T; k !== undefined; k = came.get(k)) cells.push(k); cells.reverse();
+    const cells = []; for (let k = T; k >= 0; k = came[k]) cells.push(k); cells.reverse();
     const cxy = cells.map(k => [k % W, Math.floor(k / W)]);
     const clear = (p, q) => { const n = Math.max(Math.abs(q[0] - p[0]), Math.abs(q[1] - p[1])); for (let i = 1; i < n; i++) { const gx = Math.round(p[0] + (q[0] - p[0]) * i / n), gz = Math.round(p[1] + (q[1] - p[1]) * i / n); if (!ok(gx, gz)) return false; } return true; };
     const keep = [cxy[0]];                                                     // string pulling: longest straight runs that stay on the surface
@@ -712,7 +754,7 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
     for (let i = 1; i < pts.length - 1; i++) pts[i].y = (pts[i - 1].y + pts[i].y + pts[i + 1].y) / 3;
     return pts;
   }
-  return { route, nearest, posOf, cellOf, ok, cell, y, W, H, ox, oz, count: y.filter(v => !isNaN(v)).length };
+  return { route, nearest, posOf, cellOf, ok, cell, y, W, H, ox, oz, comp, ncomp, count: y.filter(v => !isNaN(v)).length };
 }
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
 const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|service drop-off$| \| access road$/.test(n)).flatMap(meshOf);   // pads and every parcel access road are drivable
@@ -756,7 +798,7 @@ try {
   FLEET = await fetch(FLEET_MAN, { cache: 'no-store' }).then(r => r.json());
   const fg = await new Promise((res, rej) => loader.load(FLEET_GLB + '?v=' + encodeURIComponent(FLEET.exported || FLEET.source || '1'), res, undefined, rej));
   const fa = fg.parser.associations, fn = fg.parser.json.nodes;                   // exact names (GLTFLoader turns spaces into _)
-  fg.scene.traverse(o => { const x = fa.get(o); if (x && x.nodes !== undefined && fn[x.nodes].name) o.name = fn[x.nodes].name; if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+  fg.scene.traverse(o => { const x = fa.get(o); if (x && x.nodes !== undefined && fn[x.nodes].name) o.name = fn[x.nodes].name; if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });   // movers do not cast: the shadow map is static
   for (const m of FLEET.models) { const n = fg.scene.getObjectByName(m.node); if (n) fleetTpl.set(m.id, n); else console.warn('fleet model missing in the GLB:', m.node); }
 } catch (e) { console.warn('fleet-models.glb not loaded, box fallback', e); }
 const FM = Object.fromEntries(FLEET.models.map(m => [m.id, m]));
@@ -813,14 +855,14 @@ else try {
   } catch (e) { if (String(e.message) !== 'in master') console.warn('wellness spa asset not loaded', e); }
 }
 const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.75, ...o });
-function box(w, h, d, c, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); m.castShadow = true; return m; }
+function box(w, h, d, c, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); return m; }
 function fleetModel(id) {                                                         // true scale, front = +X, origin on the ground / waterline
   const t = fleetTpl.get(id);
   if (t) { const c = t.clone(true); c.position.set(0, 0, 0); c.rotation.set(0, 0, 0); c.scale.set(1, 1, 1); return c; }
   const m = FM[id] || { length_m: 4, width_m: 2, height_m: 1.6, below_origin_m: 0 }, g = new THREE.Group();
   g.add(box(m.length_m, m.height_m, m.width_m, 0xdddddd, 0, m.height_m / 2 - (m.below_origin_m || 0))); return g;
 }
-function personModel(c = 0xe0795f) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.25, 8), mat(c)); b.position.y = 0.65; b.castShadow = true; const h = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), mat(0xe9c9a8)); h.position.y = 1.5; g.add(b, h); g.scale.setScalar(1.7); return g; }
+function personModel(c = 0xe0795f) { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.36, 1.25, 8), mat(c)); b.position.y = 0.65; const h = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), mat(0xe9c9a8)); h.position.y = 1.5; g.add(b, h); g.scale.setScalar(1.7); return g; }
 function beacon(color) {
   const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
   x.fillStyle = '#' + color.toString(16).padStart(6, '0'); x.beginPath(); x.arc(32, 32, 20, 0, 7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 6; x.stroke();
@@ -891,15 +933,16 @@ actor('guestA', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk')
 actor('guestB', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk');
 const task = (id, text) => { actors[id].task = text; };
 const lift = { water: boatY, road: 0.03, walk: 0.1, air: 0 };
-function placeAt(a, p, heading = a.heading || 0) { a.pos = p; a.heading = heading; a.mesh.visible = true; a.mesh.position.set(p.x, a.medium === 'water' ? boatY : p.y + lift[a.medium], p.z); a.mesh.rotation.y = heading; }
+function placeAt(a, p, heading = a.heading || 0) { a.pos = (a._pos || (a._pos = new THREE.Vector3())).copy(p); /* own copy: p may be a scratch vector or a shared point */ a.heading = heading; a.mesh.visible = true; a.mesh.position.set(p.x, a.medium === 'water' ? boatY : p.y + lift[a.medium], p.z); a.mesh.rotation.y = heading; }
 function setPath(a, pts) { const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1])); Object.assign(a, { path: pts, cum, len: cum[cum.length - 1], s: 0 }); }
 function move(a, pts, speed) { return new Promise(res => { if (!pts || pts.length < 2) { console.warn('no route for', a.id); res(); return; } setPath(a, pts); a.speed = speed; a.onDone = res; a.mesh.visible = true; }); }
+const _mv = new THREE.Vector3();
 function stepMover(a, dt) {
   if (!a.path) return;
   a.s = Math.min(a.len, a.s + a.speed * dt);
   const { path, cum } = a; let i = 1; while (i < cum.length - 1 && cum[i] < a.s) i++;
   const t = (a.s - cum[i - 1]) / Math.max(1e-6, cum[i] - cum[i - 1]);
-  const p = path[i - 1].clone().lerp(path[i], t);
+  const p = _mv.lerpVectors(path[i - 1], path[i], t);
   const want = Math.atan2(-(path[i].z - path[i - 1].z), path[i].x - path[i - 1].x);
   let d = want - (a.heading || 0); d = Math.atan2(Math.sin(d), Math.cos(d));
   placeAt(a, p, (a.heading || 0) + d * Math.min(1, dt * 4));                  // gentle steering
@@ -1042,7 +1085,12 @@ function makePin(d, cls, colour) {
 for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
 for (const d of SERVICES) makePin(d, 'svc', '#5a6672');
 conceptList = [...VILLAGE_CLUSTERS, ...PRODUCTS, ...SERVICES];   // clusters first, so a village module resolves to its cluster, not to the whole village
-{ const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))])); window.__fpBad = checkFootprints(list); window.__fpCheck = () => checkFootprints(list); window.__fpGroup = fpGroup; }
+// the self-check runs in idle time after the page shows, 8 objects a slot, and never over a live hover; it also warms the footprint cache
+{ const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))]));
+  window.__fpBad = null; window.__fpCheck = () => checkFootprints(list); window.__fpGroup = fpGroup;
+  const idle = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 2000 }) : f => setTimeout(f, 100);
+  window.__fpSchedule = () => { let i = 0, bad = []; const step = () => { if (hovered || pinned) return idle(step); bad = bad.concat(checkFootprints(list.slice(i, i += 8), true));
+    if (i < list.length) idle(step); else { window.__fpBad = bad; if (bad.length) console.error('footprint drawn away from its object:', bad); else console.info('footprints checked:', list.length, 'all under their objects'); } }; idle(step); }; }
 function updatePins() { for (const g of gpins) { const sc = toScreen(g.p); if (!sc) { g.el.style.display = 'none'; continue; } g.el.style.display = ''; g.el.style.left = sc[0] + 'px'; g.el.style.top = sc[1] + 'px'; } }
 
 // ===== Marina Village: four clusters are the F&B outlets of the retail zone (vault: Resort Population and Guest Day)
@@ -1082,7 +1130,7 @@ const TYPE_COL = { A1: 0xf2efe6, L1: 0xe0795f, L2: 0xf3c06b, L3: 0x9fcb7c, L4: 0
 function follower(type, label, medium, speed, next, home) {
   const mesh = fleetModel(type); scene.add(mesh); movers.push(mesh); mesh.visible = false;
   const mk = beacon(TYPE_COL[type] || 0xffffff); mk.scale.set(0.014, 0.014, 1); mk.position.y = (FM[type] ? FM[type].height_m : 2) + 4; mk.name = 'marker'; mesh.add(mk);
-  const f = { id: label, type, mesh, medium, speed, next, path: null, wait: rand() * 8, battery: 22 + Math.floor(rand() * 78), task: '', place: home || null, bay: -1 };
+  const f = { id: label, type, mesh, marker: mk, medium, speed, next, path: null, wait: rand() * 8, battery: 22 + Math.floor(rand() * 78), task: '', place: home || null, bay: -1 };
   if (home) { placeAt(f, medium === 'road' ? roadR.posOf(...roadR.nearest(home)) : home); f.task = 'Standby'; }
   mesh.traverse(o => { o.userData.vehicle = f; }); ambient.push(f); return f;
 }
@@ -1165,27 +1213,41 @@ for (let k = 0; k < 2; k++) follower('L3', `C${k + 5}`, 'road', 16, f => {
 }, A.fleet);
 
 // --- water: open-water points probed in the model, sea routes that keep off the land
-const _wr = new THREE.Raycaster(); _wr.firstHitOnly = true;
-const isWater = (x, z) => { _wr.set(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)); const h = _wr.intersectObject(model, true).filter(h => h.object.userData.group !== 'zoning')[0]; return !!h && (h.object.name === 'Sea' || h.object.name === 'Shallow water'); };
+// water grid for the boats: 10 m cells over the island and its approaches; a cell is navigable when it and its 8 neighbours are
+// water (one cell of clearance off the land, the breakwater and the piers). Routes = A* on this grid, like the vehicles on the roads.
+// Land = the top-most surface above the waterline, found by one top-down render of the land meshes (instead of ~100,000 rays).
+const seaR = (() => {
+  const cell = 10, x0 = islandBox.min.x - 700, z0 = islandBox.min.z - 700, W = Math.ceil((islandBox.max.x - islandBox.min.x + 1400) / cell) + 1, H = Math.ceil((islandBox.max.z - islandBox.min.z + 1400) / cell) + 1;
+  const landMeshes = []; model.traverse(o => { if (!o.isMesh) return; let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } if (g === 'terrain' || g === 'marina' || g === 'buildings' || g === 'mobility' || g === 'landscape') landMeshes.push(o); });
+  const tmp = new THREE.Scene(); tmp.background = new THREE.Color(0x000000);
+  const landMat = new THREE.ShaderMaterial({ side: THREE.DoubleSide, uniforms: { lvl: { value: waterY - 0.5 } },
+    vertexShader: 'varying float vY; void main(){ vY = (modelMatrix * vec4(position, 1.0)).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform float lvl; varying float vY; void main(){ gl_FragColor = vec4(step(lvl, vY), 0.0, 0.0, 1.0); }' });   // red = land above the waterline
+  for (const m of landMeshes) { m.updateWorldMatrix(true, false); const c = new THREE.Mesh(m.geometry, landMat); c.matrixAutoUpdate = false; c.matrix.copy(m.matrixWorld); tmp.add(c); }
+  const cam = new THREE.OrthographicCamera(-W * cell / 2, W * cell / 2, H * cell / 2, -H * cell / 2, 1, 2000);   // one pixel per cell, pixel centres on the grid points
+  cam.position.set(x0 + (W - 1) * cell / 2, 300, z0 + (H - 1) * cell / 2); cam.rotation.x = -Math.PI / 2; cam.updateMatrixWorld();
+  const rt = new THREE.WebGLRenderTarget(W, H), px = new Uint8Array(W * H * 4);
+  renderer.setRenderTarget(rt); renderer.render(tmp, cam); renderer.readRenderTargetPixels(rt, 0, 0, W, H, px); renderer.setRenderTarget(null); rt.dispose(); landMat.dispose();
+  const wet = new Uint8Array(W * H);
+  for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) wet[gz * W + gx] = px[((H - 1 - gz) * W + gx) * 4] > 127 ? 0 : 1;   // image rows run bottom-up (camera up = -z)
+  const y = new Float32Array(W * H).fill(NaN);
+  for (let gz = 1; gz < H - 1; gz++) for (let gx = 1; gx < W - 1; gx++) { let ok = true; for (let dz = -1; dz <= 1 && ok; dz++) for (let dx = -1; dx <= 1; dx++) if (!wet[(gz + dz) * W + gx + dx]) { ok = false; break; } if (ok) y[gz * W + gx] = waterY; }
+  for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) {                                   // the dock slip is narrower than the clearance: its wet cells are navigable as they are
+    const px = x0 + gx * cell, pz = z0 + gz * cell; if (wet[gz * W + gx] && px >= A.slip.x0 - 12 && px <= A.slip.x1 && pz >= A.slip.z0 && pz <= A.slip.z1) y[gz * W + gx] = waterY; }
+  const R = finishGrid(y, W, H, x0, z0, cell, 0); R.wet = wet; return R;
+})();
+console.info('water grid', seaR.count, 'navigable cells');
+const seaBox = bboxOf(byName.get('Sea'));
+const isWater = (x, z) => {                                                       // the wet raster (no clearance); beyond it, the Sea plate
+  const gx = Math.round((x - seaR.ox) / seaR.cell), gz = Math.round((z - seaR.oz) / seaR.cell);
+  if (gx < 0 || gz < 0 || gx >= seaR.W || gz >= seaR.H) return x >= seaBox.min.x && x <= seaBox.max.x && z >= seaBox.min.z && z <= seaBox.max.z;
+  return !!seaR.wet[gz * seaR.W + gx];
+};
 { // open sea from the entrance: first bearing whose whole 950 m leg is water
   const ok = deg => { for (let r = 40; r <= 950; r += 30) { const q = bearing(A.entrance, deg, r); if (!isWater(q.x, q.z)) return false; } return true; };
   const deg = [105, 95, 115, 85, 125, 75, 135].find(ok); if (deg !== undefined) A.sea = bearing(A.entrance, deg, 950); else console.warn('no open-sea bearing from the marina entrance');
   for (const k of ['berth', 'excBerth', 'entrance', 'basin']) if (!isWater(A[k].x, A[k].z)) console.warn('marina waypoint not on water:', k, A[k].toArray().map(v => v | 0));
 }
-// water grid for the boats: 10 m cells over the island and its approaches; a cell is navigable when it and its 8 neighbours are
-// water (one cell of clearance off the land, the breakwater and the piers). Routes = A* on this grid, like the vehicles on the roads.
-const seaR = (() => {
-  const cell = 10, x0 = islandBox.min.x - 700, z0 = islandBox.min.z - 700, W = Math.ceil((islandBox.max.x - islandBox.min.x + 1400) / cell) + 1, H = Math.ceil((islandBox.max.z - islandBox.min.z + 1400) / cell) + 1;
-  const landMeshes = []; model.traverse(o => { if (!o.isMesh) return; let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } if (g === 'terrain' || g === 'marina' || g === 'buildings' || g === 'mobility' || g === 'landscape') landMeshes.push(o); });
-  const wet = new Uint8Array(W * H), ray = new THREE.Raycaster(); ray.firstHitOnly = true; const o = new THREE.Vector3(), d = new THREE.Vector3(0, -1, 0);
-  for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) { o.set(x0 + gx * cell, 300, z0 + gz * cell); ray.set(o, d); const hits = ray.intersectObjects(landMeshes, false); wet[gz * W + gx] = hits.length && hits[0].point.y > waterY - 0.5 ? 0 : 1; }
-  const y = new Float32Array(W * H).fill(NaN);
-  for (let gz = 1; gz < H - 1; gz++) for (let gx = 1; gx < W - 1; gx++) { let ok = true; for (let dz = -1; dz <= 1 && ok; dz++) for (let dx = -1; dx <= 1; dx++) if (!wet[(gz + dz) * W + gx + dx]) { ok = false; break; } if (ok) y[gz * W + gx] = waterY; }
-  for (let gz = 0; gz < H; gz++) for (let gx = 0; gx < W; gx++) {                                   // the dock slip is narrower than the clearance: its wet cells are navigable as they are
-    const px = x0 + gx * cell, pz = z0 + gz * cell; if (wet[gz * W + gx] && px >= A.slip.x0 - 12 && px <= A.slip.x1 && pz >= A.slip.z0 && pz <= A.slip.z1) y[gz * W + gx] = waterY; }
-  return finishGrid(y, W, H, x0, z0, cell, 0);
-})();
-console.info('water grid', seaR.count, 'navigable cells');
 for (const k of ['berth', 'excBerth', 'entrance', 'basin', 'cargoBerth']) {                       // a marina edit can put a waypoint on a pier: snap it to the nearest navigable water (same object, so references stay)
   if (isWater(A[k].x, A[k].z)) continue; const c = seaR.nearest(A[k]); if (c) { const q = seaR.posOf(...c); console.info('marina waypoint moved to water:', k, [A[k].x | 0, A[k].z | 0], '->', [q.x | 0, q.z | 0]); A[k].set(q.x, A[k].y, q.z); } }
 const seaLegs = pts => {                                                           // water route through the waypoints; null if a leg has no water route
@@ -1287,7 +1349,7 @@ function stepAmbient(dt) {
     const key = f.type; (fleetCount[key] ||= [0, 0])[1]++;
     if (f.path) {
       fleetCount[key][0]++; if (DRAIN[f.type]) f.battery = Math.max(3, f.battery - DRAIN[f.type] * dt); stepMover(f, dt);
-      { const mk = f.mesh.getObjectByName('marker'); if (mk) mk.visible = !!f.path; }
+      f.marker.visible = !!f.path;
       if (!f.path) {                                                               // trip just finished: counters, arrivals
         if (f.type === 'L1' || f.type === 'L2') ops.buggyTrips++; else if (f.type === 'L5' && !/^Empty/.test(f.task)) ops.deliveries++;
         else if (f.type === 'L4' && !/^Empty/.test(f.task)) ops.truckRuns++; else if (f.type === 'L3' && /^WO-/.test(f.task)) ops.workOrders++;
@@ -1304,7 +1366,7 @@ function stepAmbient(dt) {
     if (DRAIN[f.type] && f.battery < 30) { const c = CHARGE[f.type]; pts = trip(f, f.place || c.p, c.p, `Battery ${Math.round(f.battery)} % · to the ${c.name} to charge`); f.toCharge = true; if (!pts) { f.charging = CHARGE_MIN; f.toCharge = false; continue; } }
     else pts = f.next(f);
     if (pts && pts.length > 1) { setPath(f, pts); f.mesh.visible = fleetOn; } else if (f.wait <= 0) f.wait = 6;
-    const mk = f.mesh.getObjectByName('marker'); if (mk) mk.visible = !!f.path;
+    f.marker.visible = !!f.path;
   }
   $('fleetLine').textContent = 'Fleet on the move · ' + Object.entries(fleetCount).map(([k, v]) => `${k} ${v[0]}/${v[1]}`).join(' · ');
 }
@@ -1395,7 +1457,7 @@ const N_PEOPLE = 300, N_ARRIVAL = 30;
 const bodyGeo = new THREE.CylinderGeometry(0.3, 0.38, 1.25, 7).translate(0, 0.65, 0), headGeo = new THREE.SphereGeometry(0.25, 8, 6).translate(0, 1.5, 0);
 const crowdBody = new THREE.InstancedMesh(bodyGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }), N_PEOPLE + N_ARRIVAL);
 const crowdHead = new THREE.InstancedMesh(headGeo, new THREE.MeshStandardMaterial({ color: 0xe9c9a8, roughness: 0.8 }), N_PEOPLE + N_ARRIVAL);
-crowdBody.castShadow = true; scene.add(crowdBody, crowdHead);
+scene.add(crowdBody, crowdHead);                                                 // no cast: the shadow map is static
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
 const SCHEMATIC_PEOPLE = 0x2856e0;   // people dots of the schematic style: round, blue (founder 2026-10-18)
@@ -1444,7 +1506,7 @@ function stepPeople(dt) {
     const seg = Math.max(1e-6, cum[i] - cum[i - 1]), t = (f.s - cum[i - 1]) / seg, a = path[i - 1], b = path[i];
     const ux = (b.x - a.x) / seg, uz = (b.z - a.z) / seg;
     _pp.set(a.x + (b.x - a.x) * t - uz * f.off, a.y + (b.y - a.y) * t + 0.1, a.z + (b.z - a.z) * t + ux * f.off);
-    f.heading = Math.atan2(-uz, ux); f.pos = _pp.clone();
+    f.heading = Math.atan2(-uz, ux); (f.pos || (f.pos = new THREE.Vector3())).copy(_pp);
     if (f.s >= f.len && f.strolling) { f.path = null; f.strolling = false; f.speed = f.baseSpeed; continue; }
     if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300; }   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
@@ -1457,6 +1519,7 @@ function drawPeople() {
   if (peopleDots.visible) { const a = peopleDots.geometry.attributes.position.array; let n = 0;
     for (const f of people) { if (!(peopleOn && f.visible && f.pos)) continue; a[n * 3] = f.pos.x; a[n * 3 + 1] = f.pos.y + 1.2; a[n * 3 + 2] = f.pos.z; n++; }
     peopleDots.geometry.setDrawRange(0, n); peopleDots.geometry.attributes.position.needsUpdate = true; }
+  if (!crowdBody.visible) return;                                              // schematic style: the dots are enough
   for (const f of people) {
     const show = peopleOn && f.visible && f.pos;
     if (!show) { _m.makeScale(0, 0, 0); } else { _e.set(0, f.heading, 0); _q.setFromEuler(_e); _m.compose(f.pos, _q, _s); }
@@ -1691,7 +1754,7 @@ function vehIcon(key) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; vehIconTex.set(key, t); return t;
 }
 function setMarkerStyle(sch) {
-  for (const f of ambient) { const mk = f.mesh.getObjectByName('marker'); if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
+  for (const f of ambient) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
     mk.material.map = sch ? vehIcon(VEH_ICON[f.type] || 'car') : mk.userData.stdMap; mk.material.needsUpdate = true; const k = sch ? 0.024 : mk.userData.stdScale; mk.scale.set(k, k, 1); }
 }
 const SIG = /^(Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception)/;   // the signature buildings, one muted blue
@@ -1735,7 +1798,7 @@ function applyMapStyle(name) {
   setPinStyle(sch); setMarkerStyle(sch);
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : o.userData.baseMat; });
-  crowdBody.visible = crowdHead.visible = !sch; peopleDots.visible = sch;
+  crowdBody.visible = crowdHead.visible = !sch; peopleDots.visible = sch; shadowDirty();
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
   try { localStorage.setItem('mapStyle2', name); } catch (e) {}
 }
@@ -1754,6 +1817,21 @@ $('bFleet').classList.add('on');
 $('bFleet').onclick = () => { fleetOn = !fleetOn; $('bFleet').classList.toggle('on', fleetOn); for (const f of ambient) f.mesh.visible = fleetOn; };
 
 // ---------- frame loop
+// pins and zone labels are DOM: they are re-placed only when the camera moved (or the stage / layers changed)
+const _camKey = new THREE.Matrix4();
+function viewChanged() {
+  camera.updateMatrixWorld(); const e = camera.matrixWorld.elements, k = _camKey.elements;
+  let same = !viewDirty; for (let i = 0; i < 16 && same; i++) if (e[i] !== k[i]) same = false;
+  if (same) return false; _camKey.copy(camera.matrixWorld); viewDirty = false; return true;
+}
+// render scale: starts at the device ratio (≤ 2); on a slow machine it steps down to 1.0 while frames stay above 30 ms, and back up when they are fast
+const DPR_MAX = Math.min(devicePixelRatio, 2); let dpr = DPR_MAX, frameAcc = 0, frameN = 0;
+function adaptScale(rdt) {
+  frameAcc += rdt; if (++frameN < 90) return; const avg = frameAcc / frameN; frameAcc = 0; frameN = 0;
+  const want = avg > 0.030 && dpr > 1 ? Math.max(1, dpr - 0.25) : avg < 0.012 && dpr < DPR_MAX ? Math.min(DPR_MAX, dpr + 0.25) : dpr;
+  if (want !== dpr) { dpr = want; renderer.setPixelRatio(dpr); resize(); console.info('render scale', dpr, '· avg frame', Math.round(avg * 1000), 'ms'); }
+}
+let clockShown = '';
 function tick(rdt, draw = true) {
   const dt = playing ? rdt * speedMul : 0;
   simT += dt; window.SIM_T = simT;
@@ -1763,9 +1841,10 @@ function tick(rdt, draw = true) {
   for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].until) { waiters[i].res(); waiters.splice(i, 1); }
   directCamera(rdt); controls.update();
   if (!draw) return;
-  $('time').textContent = clockText();
+  const ct = clockText(); if (ct !== clockShown) { clockShown = ct; $('time').textContent = ct; }
   for (let i = pins.length - 1; i >= 0; i--) { const p = pins[i]; const s = toScreen(anchorPos(p.anchor)); if (simT > p.until || !s) { p.el.remove(); pins.splice(i, 1); continue; } p.el.style.left = s[0] + 'px'; p.el.style.top = s[1] + 'px'; }
-  updateLabels(); updatePins(); updateHover(); drawPeople();
+  if (viewChanged()) { updateLabels(); updatePins(); }
+  updateHover(); drawPeople(); adaptScale(rdt);
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }
   waterMat.uniforms.time.value = performance.now() / 1000;
   composer.render();
@@ -1774,13 +1853,15 @@ let last = performance.now();
 renderer.setAnimationLoop(now => { const rdt = Math.min(0.1, (now - last) / 1000); last = now; tick(rdt); });
 // ===== warm start: the day begins in the morning; 30 minutes are run before the page shows so nobody starts from a standstill
 for (let t = 0; t < 30; t += 0.05) tick(0.05, false);
-$('load').style.opacity = 0; setTimeout(() => $('load').remove(), 500);
+shadowDirty();                                                                 // first shadow pass, after every load-time change to the scene
+$('load').style.opacity = 0; setTimeout(() => { $('load').remove(); window.__fpSchedule(); }, 500);
+console.info('ready in', ((performance.now() - t0) / 1000).toFixed(1), 's');
 loop();
 
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
 window.__look = (x, z, dist = 300, elev = 0.6) => { setAutoCam(false); flyTo(new THREE.Vector3(x, 0, z), new THREE.Vector3(x + dist * 0.5, dist * elev, z + dist * 0.6), 0.05); };
-Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI, __applyMapStyle: applyMapStyle });
+Object.assign(window, { __scene: scene, __model: model, __OVER: OVER, __controls: controls, __islandBox: islandBox, __byName: byName, __A: A, __actors: actors, __fleet: ambient, __cam: camera, __flyToZone: flyToZone, __setZoneFilter: setZoneFilter, __roadR: roadR, __walkR: walkR, __manifest: manifest, __people: people, __hoverSel: hoverSel, __hoverHtml: hoverHtml, __seaR: seaR, __noRoute: noRoute, __heli: heli, __HELI: HELI, __applyMapStyle: applyMapStyle, __renderer: renderer, __composer: composer, __tick: tick });
 </script>
 </body>
 </html>
