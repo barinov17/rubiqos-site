@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019p">
+<link rel="stylesheet" href="/site.css?v=20261019q">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -1245,6 +1245,22 @@ for (let k = 0; k < 3; k++) follower('L2', `S${k + 1}`, 'road', 18, f => {
   f.wait = 3; return trip(f, from, to[1], `Loop · ${n} guests on board · ${LOOP[f.i][0]} → ${to[0]}`);
 }, LOOP[0][1]);
 
+// --- supply chain (founder 2026-10-19): vessel → Service dock → warehouse stores → F&B outlets → meals. Plan scale, kg.
+const STORE = { dry: { cap: 30000, stock: 17000 }, cold: { cap: 12000, stock: 6500 }, bev: { cap: 15000, stock: 8500 } };   // days of cover: dry 14, cold 3–4, beverages 10
+const CARGO = { dry: 4000, cold: 3600, bev: 1400 };                                   // 9 t a call, 4 calls a week ≈ 36 t = 4.5 t a day + beverages
+const MIX = { dry: 0.45, cold: 0.40, bev: 0.15 }, MEAL_KG = 0.65;                      // kg of food and drink per cover (hotel F&B norm 0.5–0.8 kg)
+const OUTLET_PAR = { 'Beach Hotel': 2000, 'Hill Hotel': 1200, 'Restaurant': 900, 'Marina Village': 1000, 'Beach Club': 700, 'Members Club': 500, 'Staff canteen': 600 };
+const outlets = {}; for (const k in OUTLET_PAR) outlets[k] = { par: OUTLET_PAR[k], stock: Math.round(OUTLET_PAR[k] * (0.55 + 0.3 * rand())), pending: 0, meals: 0 };
+const supply = { calls: 0, inKg: 0, wasteOutKg: 0, truckKg: 0, meals: 0, day: -1 };
+const VENUE_OUTLET = { 'Marina Village': 'Marina Village', 'Beach hotel': 'Beach Hotel', 'Hill hotel': 'Hill Hotel', 'Events Rotunda': 'Restaurant' };
+const takeFromStore = kg => { let got = 0; for (const k in MIX) { const want = kg * MIX[k], g = Math.min(want, STORE[k].stock); STORE[k].stock -= g; got += g; } return got; };
+const fill = o => (o.stock + o.pending) / o.par;                                       /* stock on hand plus what is already on a truck */
+const restockTrip = (f, from) => {                                                   /* the truck takes the emptiest outlet below par: up to 1 t, split by the store mix */
+  const v = venues.slice().sort((a, b) => fill(outlets[VENUE_OUTLET[a.name]]) - fill(outlets[VENUE_OUTLET[b.name]]))[0], o = outlets[VENUE_OUTLET[v.name]];
+  const kg = Math.round(takeFromStore(Math.min(1000, Math.max(0, o.par - o.stock - o.pending)))); if (kg < 50) { f.task = 'Standby at the warehouse · outlets stocked'; f.wait = 15; return null; }
+  f.cargo = { to: VENUE_OUTLET[v.name], kg }; o.pending += kg; return trip(f, from, v.p, `F&B restock · ${kg} kg (${anyOf(loads)}) → ${v.name}`); };
+const unloadCargo = f => { if (f.cargo) { const o = outlets[f.cargo.to]; o.stock += f.cargo.kg; o.pending -= f.cargo.kg; supply.truckKg += f.cargo.kg; f.cargo = null; } };
+const eatAt = (prod, n) => { const o = outlets[prod]; if (!o) return; const kg = Math.min(o.stock, MEAL_KG * n); o.stock -= kg; o.meals += n; supply.meals += n; };
 // --- L4 service trucks (6): 2 logistics (meet the supply vessel), 2 linen + F&B, 1 waste (night), 1 reserve
 const loads = ['Seafood, cold chain 2 °C', 'Beverages, 24 cases', 'Dry stores, 18 pallets', 'Fresh produce, 40 crates'];
 let vesselDocked = false;
@@ -1252,13 +1268,13 @@ for (let k = 0; k < 2; k++) follower('L4', `T${k + 1}`, 'road', 18, f => {
   const from = f.place || A.boh;
   if (vesselDocked) return f.place === A.dock ? trip(f, from, A.boh, 'Containers from the supply vessel → warehouse') : trip(f, from, A.dock, 'Empty · to the Service dock, vessel unloading');
   if (f.place === A.dock) return trip(f, from, A.boh, 'Last containers → warehouse');
-  const v = anyOf(venues); return f.place === A.boh ? trip(f, from, v.p, `${anyOf(loads)} → ${v.name} back of house`) : trip(f, from, A.boh, 'Empty · back to the warehouse');
+  if (f.place === A.boh) return restockTrip(f, from); unloadCargo(f); return trip(f, from, A.boh, 'Empty · back to the warehouse');
 }, A.boh);
 for (let k = 0; k < 2; k++) follower('L4', `T${k + 3}`, 'road', 18, f => {
   const h = hourOf(), from = f.place || A.boh, hotel = anyOf(hotels);
   if (between(h, 9, 11.5)) return f.place === A.boh ? trip(f, from, hotel.p, `Linen run · empty → ${hotel.name}`) : trip(f, from, A.boh, 'Used linen, 640 kg → laundry');
   if (between(h, 15, 17)) return f.place === A.boh ? trip(f, from, hotel.p, `Clean linen → ${hotel.name}`) : trip(f, from, A.boh, 'Empty · back to the laundry');
-  const v = anyOf(venues); return f.place === A.boh ? trip(f, from, v.p, `F&B restock · ${anyOf(loads)} → ${v.name}`) : trip(f, from, A.boh, 'Empty · back to the warehouse');
+  if (f.place === A.boh) return restockTrip(f, from); unloadCargo(f); return trip(f, from, A.boh, 'Empty · back to the warehouse');
 }, A.boh);
 follower('L4', 'T5', 'road', 18, f => {
   const h = hourOf(), from = f.place || A.boh;
@@ -1378,15 +1394,17 @@ else console.warn('island shuttle line: no open water found off the Beach Club o
 // --- W2 supply vessel (register 1, charter): Monday and Thursday, mainland → Service dock 08:00, 2 h unloading, trucks T1 / T2 meet it
 const dayIndex = () => Math.floor((START_MIN + (window.SIM_T || 0)) / 1440);     // day 0 = Monday
 const DAYN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-follower('W2', 'SV-1', 'water', 14, f => {
-  const h = hourOf(), d = dayIndex() % 7, callDay = d === 0 || d === 3;
+// two autonomous vessels, one remote operator (founder 2026-10-19): SV-1 Monday and Thursday, SV-2 Tuesday and Friday; 9 t in, waste containers out
+for (const [k, days, next] of [[1, [0, 3], d => d < 3 ? 'Thursday' : 'Monday'], [2, [1, 4], d => d < 1 || d > 4 ? 'Tuesday' : d < 4 ? 'Friday' : 'Tuesday']]) follower('W2', `SV-${k}`, 'water', 14, f => {
+  const h = hourOf(), d = dayIndex() % 7, callDay = days.includes(d);
   if (f.place === A.cargoSea) {
-    if (!(callDay && between(h, 7.6, 8.1))) { f.task = `At the mainland port · next call ${d < 3 ? 'Thursday' : 'Monday'} 08:00`; f.wait = 5; return null; }
+    if (!(callDay && between(h, 7.6, 8.1))) { f.task = `At the mainland port · next call ${next(d)} 08:00`; f.wait = 5; return null; }
     return trip(f, A.cargoSea, A.cargoBerth, `Supply call · ${DAYN[d]} · 9 t of goods, 4 containers · mainland → Service dock`);
   }
   if (f.dockedAt === undefined) { f.dockedAt = h; vesselDocked = true; }
   if (h < f.dockedAt + 2) { f.task = `Unloading at the Service dock · trucks T1 and T2 shuttle to the warehouse · done ${String(Math.floor(f.dockedAt + 2)).padStart(2, '0')}:${String(Math.round(((f.dockedAt + 2) % 1) * 60)).padStart(2, '0')}`; f.wait = 3; return null; }
   f.dockedAt = undefined; vesselDocked = false;
+  for (const c in CARGO) STORE[c].stock = Math.min(STORE[c].cap, STORE[c].stock + CARGO[c]); supply.calls++; supply.inKg += 9000; supply.wasteOutKg += 8750;   /* 5 t of waste a day ÷ 4 calls */
   return trip(f, A.cargoBerth, A.cargoSea, 'Empty, waste containers aboard · Service dock → mainland');
 }, A.cargoSea);
 
@@ -1528,6 +1546,8 @@ function stepYachts(dt) {
   for (const y of yachtMovers) { if (y.dock) stepDock(y, dt); else if (y.path) stepMover(y, dt); y.marker.visible = y.busy; }
   if (ghostDirty) rebuildGhostLines();
   if (!stepYachts.t || simT - stepYachts.t > 2) { stepYachts.t = simT; syncCrew(); }
+  { const d = dayIndex(); if (supply.day !== d) { supply.day = d; supply.meals = 0; for (const k in outlets) outlets[k].meals = 0; supply.canteenT = simT; }
+    const h = hourOf(), open = (h >= 6 && h < 8) || (h >= 14 && h < 16) || h >= 22; if (open && simT - (supply.canteenT || 0) > 6) { supply.canteenT = simT; eatAt('Staff canteen', 1000 / 60); } }   /* 1,000 staff meals a day over three 2-hour windows */
 }
 
 // --- fleet step: trips, battery, charging, counters
@@ -1760,6 +1780,7 @@ function stepPeople(dt) {
     f.heading = Math.atan2(-uz, ux); (f.pos || (f.pos = new THREE.Vector3())).copy(_pp);
     if (f.s >= f.len && f.strolling) { f.path = null; f.strolling = false; f.speed = f.baseSpeed; continue; }
     if (f.s >= f.len && f.ride && f.goal === f.ride.a) { f.path = null; f.poi = f.goal; f.at = 'stop'; f.ride.waiting = true; f.ride.since = simT; f.wait = 1e9; f.task = `${f.ride.text} · waiting for the pod at ${f.ride.a.name}`; podCall(f); continue; }
+    if (f.s >= f.len && !f.leaving && (f.goal.cat === 'food' || f.goal.cat === 'club')) eatAt(f.goal.cat === 'club' ? 'Members Club' : f.goal.prod, PLAN.guests / N_PEOPLE);   /* one cover per visit, at the plan's scale */
     if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300; }   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
 }
@@ -1791,7 +1812,7 @@ $('bPeople').onclick = () => { peopleOn = !peopleOn; $('bPeople').classList.togg
 
 // --- dashboard (updated once a second)
 const PLAN = { guests: 1000, keys: { 'Beach Hotel': 240, 'Hill Hotel': 120, 'Branded Residences': 208, 'Villas': 18 } };
-const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3, A1: 1 };   // Fleet Register counts (A1 = charter helicopter)
+const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 4, W2: 2, W3: 3, A1: 1 };   // W1 4 and W2 2 autonomous boats, one operator each (founder 2026-10-19)   // Fleet Register counts (A1 = charter helicopter)
 const pct = (a, b) => Math.round(100 * a / Math.max(1, b));
 // the live snapshot (founder 2026-10-19): everything the proforma cards show is computed here once a second and published as
 // window.__live; the proforma page runs this page headless in a hidden frame and reads it. Nothing is drawn on this page any more.
@@ -1818,6 +1839,7 @@ function updateDash() {
     people: byType, products, fleet,
     marina: { berths: berths.length, moored: berths.filter(b => b.occupied).length, underway: yachtMovers.filter(y => y.busy).length, byCls,
               arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
+    supply: { store: STORE, outlets, calls: supply.calls, inKg: supply.inKg, wasteOutKg: supply.wasteOutKg, truckKg: supply.truckKg, meals: Math.round(supply.meals), vessels: ambient.filter(f => f.type === 'W2').map(f => f.task) },
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
     ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`),
   };

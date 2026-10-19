@@ -40,8 +40,10 @@ const PRODUCTS = [
     produces: 'Villa nights · butler service · villa breakfasts', capacity: 144, objects: { '4-BR villas': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
   { id: 'residences', name: 'Branded Residences', zone: 'Z10', op: 'residences', unit: 'residents', live: ['Residences BR1', 'Residences BR2'], what: 'Apartment towers by the village; most units in the hotel rental pool.',
     produces: 'Apartment nights (rental pool) · owner services · concierge', capacity: 812, objects: { '1-BR apartments': 62, '2-BR apartments': 94, '3-BR apartments': 42, 'Penthouses': 10 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
+  { id: 'apart-hotel', rooms: true, noSim: true, name: 'Apart-hotel', zone: 'Z03', op: 'hotels', unit: 'guests', live: [], what: 'Serviced apartments by the village for longer stays; not on the master plan yet.',
+    produces: 'Apartment nights · kitchenettes · hotel services on call', capacity: 110, objects: { 'Studios': 24, '1-BR apartments': 16, '2-BR apartments': 6 }, staff: 30, per: { water: 350, energy: 30, food: 0.8, laundry: 2, waste: 2.0 } },
   { id: 'village', name: 'Marina Village', zone: 'Z03', op: 'village', unit: 'people at once', turns: 3, live: ['Marina Village'], what: 'Pedestrian heart: cafes, restaurants, shops, the market, an apart-hotel.',
-    produces: 'Covers at four F&B outlets · retail · the island market', capacity: 600, objects: { 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20, 'Apart-hotel units': 40 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
+    produces: 'Covers at four F&B outlets · retail · the island market', capacity: 600, objects: { 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
   { id: 'restaurant', name: 'Restaurant', zone: 'Z02', op: 'restaurant', unit: 'people at once', turns: 4, live: ['Restaurant'], what: 'Signature round pavilion on the hill: dinner service, the wine tasting.',
     produces: 'Covers · the wine programme', capacity: 220, objects: { 'Seats': 220, 'Private dining rooms': 2 }, staff: 60, per: { water: 30, energy: 8, food: 0.9, laundry: 0.3, waste: 0.6 } },
   { id: 'beach-club', name: 'Beach Club', zone: 'Z11', op: 'beachclub', unit: 'people at once', turns: 1.5, live: ['Beach Club'], what: 'Day club on the south beach: sunbeds, cabanas, restaurant, bar, DJ.',
@@ -75,8 +77,9 @@ const SERVICES = [
       const dev = Math.round(guests * 2.2 + L.onShift * 1.1 + veh * 3 + 400); const a = Math.round(100 * dev * 0.55 / 3300), b = Math.round(100 * dev * 0.45 / 2700);   // 400 fixed sensors and cameras; mast A serves the west (marina, village, back of house), mast B the east
       return [['Load', Math.round(100 * dev / 6000) + ' %'], ['Devices online', dev.toLocaleString('en-US')], ['Mast A (west)', a + ' %'], ['Mast B (east)', b + ' %']]; } },
   { id: 'stores', name: 'Warehouse and cold chain', zone: 'Z09', op: 'stores', what: 'Warehouse bar: prep kitchen, cold and dry stores; receives the vessel.',
-    produces: { 'Food throughput a day': '4.5 t', 'Meals prepared a day': '4,100', 'Cold storage': '600 m²', 'Dry storage': '900 m²' }, consumes: { 'Supply calls a week': 2, 'Energy (cold rooms)': '≈ 1,800 kWh a day' }, key: 'food', capacity: 4.5,
-    liveFn: L => [['Supply vessel', L.reception.vesselDocked ? 'at the dock, unloading' : (L.reception.vessel || '').replace(/^At the mainland port · /, '') || '—']] },
+    produces: { 'Food throughput a day': '4.5 t', 'Meals prepared a day': '4,100', 'Dry store': '30 t · 14 days of cover', 'Cold store': '12 t · 3–4 days of cover', 'Beverage store': '15 t · 10 days of cover' }, consumes: { 'Supply calls a week': '4 (two vessels)', 'Energy (cold rooms)': '≈ 1,800 kWh a day' }, key: 'food', capacity: 4.5,
+    liveFn: L => { const S = L.supply ? L.supply.store : null; if (!S) return []; const t = k => (S[k].stock / 1000).toFixed(1) + ' t'; const pc = k => Math.round(100 * S[k].stock / S[k].cap);
+      return [['Dry store', `${t('dry')} <small style="color:var(--muted)">of 30 t</small>`], ['bar', bar(pc('dry'))], ['Cold store', `${t('cold')} <small style="color:var(--muted)">of 12 t</small>`], ['bar', bar(pc('cold'))], ['Beverages', `${t('bev')} <small style="color:var(--muted)">of 15 t</small>`], ['bar', bar(pc('bev'))], ['Sent to outlets today', (L.supply.truckKg / 1000).toFixed(1) + ' t'], ['Covers served today', fmt(L.supply.meals)]]; } },
   { id: 'darkstore', name: 'Dark Store', zone: 'Z09', op: 'stores', what: 'Guest-app orders picked and packed for delivery; in the warehouse for now.',
     produces: { 'Orders a day (plan)': '≈ 600', 'SKUs': '1,200', 'Pick to door': '≤ 30 min' }, consumes: { 'Stock': 'from the warehouse, daily', 'Energy': '≈ 600 kWh a day' }, loadBase: 70,
     liveFn: L => [['Orders fulfilled today', L.ops.deliveries]] },
@@ -88,16 +91,19 @@ const SERVICES = [
   { id: 'canteen', name: 'Staff canteen', zone: 'Z09', op: 'staffacc', what: 'Staff canteen in the accommodation block: three meals at the shift changes.',
     produces: { 'Meals a day': '1,000', 'Seats': 160, 'Service windows': '06:00–08:00 · 14:00–16:00 · 22:00–24:00' }, consumes: { 'Food': '≈ 0.4 t a day (from the prep kitchen)', 'Water': '≈ 12 m³ a day', 'Energy': '≈ 350 kWh a day' },
     liveFn: L => { const h = L.hour, open = (h >= 6 && h < 8) || (h >= 14 && h < 16) || (h >= 22); const p = open ? Math.min(100, Math.round(100 * L.onShift * 0.5 / 160)) : 10;
-      return [['Load', p + ' %'], ['Service', open ? 'open · shift meal' : 'closed · next ' + (h < 6 ? '06:00' : h < 14 ? '14:00' : h < 22 ? '22:00' : '06:00')], ['Staff on the island', L.onShift]]; } },
+      const o = L.supply && L.supply.outlets['Staff canteen']; return [['Load', p + ' %'], ['Service', open ? 'open · shift meal' : 'closed · next ' + (h < 6 ? '06:00' : h < 14 ? '14:00' : h < 22 ? '22:00' : '06:00')], ['Meals today', o ? fmt(o.meals) : '—'], ['Kitchen stock', o ? Math.round(o.stock) + ' kg of ' + o.par : '—']]; } },
   { id: 'cleaning', name: 'Cleaning', zone: 'Z09', op: 'cleaning', what: 'Housekeeping of every room, villa and apartment, public areas, beaches and the back of house; robots on floors and lawns.',
     produces: { 'Rooms and units a day': '≈ 400 turned, ≈ 300 serviced', 'Public areas': '≈ 60,000 m² a day', 'Beaches': '2, raked daily', 'Housekeepers on shift (plan)': 120 }, consumes: { 'Water': '≈ 40 m³ a day', 'Energy': '≈ 900 kWh a day', 'Chemicals and amenities': 'from the dark store', 'Linen': 'from the laundry' }, loadBase: 70,
     liveFn: L => { const h = L.hour, peak = h >= 9 && h < 15; const guests = Object.values(L.products).reduce((a, b) => a + b, 0); return [['Load', (peak ? Math.min(100, Math.round(55 + guests / 20)) : 25) + ' %'], ['Housekeepers on shift', Math.round(120 * L.shiftShare)], ['Rooms in service now', peak ? Math.round(400 * ((h - 9) / 6)) + ' of 400' : h >= 15 ? '400 of 400' : '0 of 400'], ['Robots on floors and lawns', h >= 22 || h < 6 ? 'night run' : 'daytime rounds']]; } },
+  { id: 'landscaping', name: 'Landscaping', zone: 'Z09', op: 'cleaning', what: 'Gardens, lawns, palms and the dunes: gardeners by day, robot mowers and smart irrigation at night.',
+    produces: { 'Green area kept': '≈ 180,000 m²', 'Lawns mown a week': '≈ 60,000 m², by robots', 'Irrigation a day': '≈ 450 m³ of reclaimed water', 'Plant nursery': 'in the back of house' }, consumes: { 'Reclaimed water': 'from the sewage plant, all of it', 'Energy': '≈ 300 kWh a day (mowers, pumps)' }, loadBase: 60,
+    liveFn: L => { const h = L.hour, night = h >= 22 || h < 6; return [['Load', (night ? 85 : h < 12 ? 70 : 40) + ' %'], ['Robot mowers', night ? '12 mowing' : h < 12 ? '4 on the dunes' : 'docked, charging'], ['Irrigation', night ? 'running' : 'off until 22:00'], ['Gardeners on shift', Math.round(27 * L.shiftShare)]]; } },
   { id: 'waste', name: 'Waste management', zone: 'Z09', op: 'waste', what: 'Sorting, compactors and the night run to the dock transfer station.',
     produces: { 'Waste handled a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, consumes: { 'Energy': '≈ 400 kWh a day' }, key: 'waste', capacity: 5,
     liveFn: L => [['Night run', L.hour >= 23 || L.hour < 5 ? 'running' : 'from 23:00']] },
   { id: 'dock', name: 'Service dock', zone: 'Z04', op: 'stores', what: 'Supply vessel berth with crane; containers go straight onto trucks.',
-    produces: { 'Vessel capacity': '9 t', 'Unloading': '2 h', 'Fuel bunkering': 'yes' }, consumes: { 'Calls a week': 'Monday and Thursday 08:00' },
-    liveFn: L => [['Vessel', L.reception.vesselDocked ? 'docked, unloading' : 'at sea / mainland'], ['Next call', (L.reception.vessel.match(/next call (.+)$/) || [, '—'])[1]]] },
+    produces: { 'Supply vessels': '2, autonomous, 9 t each', 'Calls a week': '4 · Mon, Tue, Thu, Fri 08:00', 'Unloading': '2 h, crane to trucks', 'Waste out': 'containers on the return leg' }, consumes: { 'Goods a week': '≈ 36 t (dry 16 · cold 14 · beverages 6)', 'Fuel bunkering': 'yes' },
+    liveFn: L => { const V = L.supply ? L.supply.vessels : []; return [['Vessel', L.reception.vesselDocked ? 'docked, unloading' : 'at sea / mainland'], ...V.map((t, i) => [`SV-${i + 1}`, t.replace(/^At the mainland port · /, '').replace(/^Supply call · /, '')]), ['Goods landed', (L.supply ? L.supply.inKg / 1000 : 0).toFixed(0) + ' t'], ['Waste shipped', (L.supply ? L.supply.wasteOutKg / 1000 : 0).toFixed(1) + ' t']]; } },
   { id: 'guestservices', name: 'Guest services', zone: 'Z08', op: 'guestservices', what: 'Concierge, butlers and the guest-app desk: the human layer on call.',
     produces: { 'Requests a day (plan)': '≈ 1,500', 'Butlers': 24, 'Concierge desks': 3, 'Answer time': '≤ 2 min' }, consumes: { 'Energy': '≈ 150 kWh a day' }, loadBase: 65,
     liveFn: L => [['Pod calls today', L.ops.buggyRides], ['Guests on the island', fmt(Object.values(L.products).reduce((a, b) => a + b, 0))]] },
@@ -112,11 +118,10 @@ const SERVICES = [
     produces: { 'Harbour office': '24 h', 'Berth services': 'see the card below', 'Chandlery and workshop': 'parts, small repairs', 'Crew facilities': 'in the crew lounge' }, consumes: { 'Energy (building)': '≈ 900 kWh a day', 'Water (building)': '≈ 12 m³ a day' }, loadBase: 60,
     liveFn: L => { const M = L.marina; return [['Load', Math.round(100 * M.moored / M.berths) + ' %'], ['Boats in the harbour', M.moored]]; } },   // the berths and the movements are in the marina block, not here
   // services for the boats at the berths (founder 2026-10-19): water, power, pump-out, fuel, plus what a marina operator would not leave out: waste, provisioning, laundry, Wi-Fi, line handling
-  { id: 'yacht-services', name: 'Yacht services', zone: 'Z04', op: 'marina', what: 'What every berth gets: fresh water, shore power, pump-out and fuel; waste, provisioning, laundry and Wi-Fi on call.',
-    produces: { 'Fresh water': 'metered at every berth · ≈ 60 m³ a day', 'Shore power': '16 A to 400 A · ≈ 30,000 kWh a day', 'Pump-out (black and grey)': 'every berth · ≈ 40 m³ a day', 'Fuel bunkering': 'diesel and petrol at the fuel dock · ≈ 20 m³ a day', 'Waste and recycling': 'collected from the berth daily', 'Provisioning': 'from the dark store, to the boat in 30 min', 'Laundry': 'via the crew lounge · ≈ 300 kg a day', 'Wi-Fi and line handlers': 'on arrival, 24 h' },
-    consumes: { 'Water': 'from the desalination plant', 'Energy': 'from the power plant', 'Sewage': 'to the treatment plant', 'Fuel': 'tanker by the supply vessel, 2 calls a week' }, loadBase: 60,
+  { id: 'yacht-services', name: 'Yacht services', zone: 'Z04', op: 'marina', what: 'At every berth: water, shore power, pump-out, fuel. On call: waste, provisioning, laundry.',
+    produces: { 'Fresh water': '≈ 60 m³ a day', 'Shore power': '≈ 30,000 kWh a day', 'Pump-out': '≈ 40 m³ a day', 'Fuel': '≈ 20 m³ a day' }, consumes: { 'Water, power, sewage': 'the island utilities', 'Fuel': 'by the supply vessel' }, loadBase: 60,
     liveFn: L => { const M = L.marina, per = { S: 1, M: 3, L: 10 }, u = ['S', 'M', 'L'].reduce((a, k) => a + ((M.byCls[k] || { moored: 0 }).moored) * per[k], 0), full = 50 * 1 + 32 * 3 + 8 * 10;
-      return [['Load', Math.min(100, Math.round(100 * u / full)) + ' %'], ['Boats on shore power', M.moored], ['Water drawn today', Math.round(60 * u / full * Math.min(1, L.hour / 24)) + ' m³'], ['Pump-outs today', Math.round(M.moored * 0.3 * Math.min(1, L.hour / 24))], ['Fuelled today', M.arrivalsLeft !== undefined ? Math.round(M.moored * 0.1 * Math.min(1, L.hour / 24)) : '—']]; } },
+      return [['Load', Math.min(100, Math.round(100 * u / full)) + ' %'], ['Boats connected', M.moored], ['Pump-outs today', Math.round(M.moored * 0.3 * Math.min(1, L.hour / 24))]]; } },
   { id: 'guest-dock', name: 'Guest arrivals dock', zone: 'Z04', op: 'hotels', what: 'The shuttle pier and the arrivals pavilion: face check-in, digital key, luggage to the room.',
     produces: { 'Arrivals a day (plan)': '≈ 500', 'Shuttle landings a day': 24, 'Check-in': 'face check-in, digital key' }, consumes: { 'Water': '≈ 5 m³ a day', 'Energy': '≈ 300 kWh a day' }, loadBase: 55,
     liveFn: L => [['Arrivals today', L.ops.arrivals], ['Departures today', L.ops.departures]] },
@@ -129,21 +134,21 @@ const SERVICES = [
 ];
 // Categories (founder 2026-10-19): the cards are grouped, not listed by zone
 const PRODUCT_GROUPS = [
-  { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'villas', 'residences'] },
+  { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'apart-hotel', 'villas', 'residences'] },
   { title: 'Marina', wide: 'marina', ids: ['marina-support', 'yacht-services', 'guest-dock', 'excursion-terminal', 'crew-lounge'] },
   { title: 'Food and beverage', ids: ['restaurant', 'village', 'beach-club', 'members-club'] },
   { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
 ];
 const SERVICE_GROUPS = [
   { title: 'Utilities', ids: ['power', 'desal', 'sewage', 'network'] },
-  { title: 'Back of house', ids: ['stores', 'darkstore', 'laundry', 'cleaning', 'waste', 'dock', 'staffacc', 'canteen'] },
+  { title: 'Back of house', ids: ['stores', 'darkstore', 'laundry', 'cleaning', 'landscaping', 'waste', 'dock', 'staffacc', 'canteen'] },
   { title: 'Guest care', ids: ['guestservices', 'medical', 'security'] },
 ];
 // Fleet Hub: its own block (founder 2026-10-19): the vehicles belong to no other card
 const FLEET_HUB = { id: 'fleet', name: 'Fleet Hub', zone: 'Z08', op: 'fleet', what: 'Charging, parking and workshop for the whole fleet; dispatch by RubiqOS.',
   produces: { 'Pod trips a day (plan)': '≈ 1,200', 'Charging posts': 30 }, consumes: { 'Energy (charging)': '≈ 2,400 kWh a day' } };
 const FLEET_TITLES = { L1: 'L1 · Guest pod', L2: 'L2 · Guest shuttle', L3: 'L3 · Service cart', L4: 'L4 · Service truck', L5: 'L5 · Delivery robot', W1: 'W1 · Shuttle boat', W2: 'W2 · Supply vessel', W3: 'W3 · Excursion boat', A1: 'A1 · Helicopter' };
-const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3, A1: 1 };
+const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 4, W2: 2, W3: 3, A1: 1 };
 // Event programme: venue = the entity the event happens at (null = the promenade, no entity)
 const EVENTS = [
   { time: '06:30–07:30', venue: null, venueName: 'Promenade', name: 'Guided run with a trainer', who: 'all', cap: 20, ops: '—' },
@@ -188,7 +193,7 @@ for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTota
 // --- card html
 const opTag = id => `<span class="op"><b>Operator</b>${OP[id].name}</span>`;
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3><span class="zone" title="${ZONE_NAME[c.zone] || ''}"><i style="background:${Z[c.zone]}"></i></span></div>`;   // zone = colour dot only (founder 2026-10-19: the Z ids confused)
+const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3></div>`;   // no zone id and no colour dot (founder 2026-10-19)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
 const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
 function productInner(c, link = true) {
@@ -197,8 +202,51 @@ function productInner(c, link = true) {
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div>${c.rooms ? roomRows(c) : `<p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${c.capLabel || `${fmt(capacityOf(c))} ${c.unit}`}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel || `${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}`}</span></div>`}</div>
   <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
-  <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>`;
+  <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
+  ${teamHtml(c.id)}`;
 }
+// People and robots (founder 2026-10-19): every entity names who works there and which robots do a specific job. Numbers at the plan's scale;
+// the product rows sum to the card's staff positions. Shared robots (the L5 delivery fleet) are counted once, in the Fleet Hub.
+const OUTLET_OF = { 'beach-hotel': 'Beach Hotel', 'hill-hotel': 'Hill Hotel', restaurant: 'Restaurant', village: 'Marina Village', 'beach-club': 'Beach Club', 'members-club': 'Members Club' };
+const TEAM = {
+  'beach-hotel': { people: { 'Front office and concierge': 24, 'Housekeeping': 70, 'F&B service': 60, 'Kitchen (chefs and cooks)': 44, 'Butlers': 12, 'Engineering': 14, 'Pool and beach attendants': 20, 'Management and admin': 26 }, robots: { 'Floor-scrubbing robots (corridors, lobby)': 6, 'Delivery robots assigned (L5)': 8, 'Luggage robots': 2, 'Pool-cleaning robots': 2 } },
+  'apart-hotel': { people: { 'Reception and concierge': 6, 'Housekeeping': 14, 'Maintenance': 4, 'Management': 6 }, robots: { 'Floor-scrubbing robots': 2, 'Delivery robots assigned (L5)': 2, 'Parcel lockers (automated)': 1 } },
+  'hill-hotel': { people: { 'Front office and concierge': 12, 'Housekeeping': 38, 'F&B service': 28, 'Kitchen (chefs and cooks)': 22, 'Butlers': 6, 'Engineering': 8, 'Attendants': 8, 'Management and admin': 13 }, robots: { 'Floor-scrubbing robots': 3, 'Delivery robots assigned (L5)': 4, 'Luggage robot': 1, 'Pool-cleaning robot': 1 } },
+  villas: { people: { 'Butlers': 18, 'Housekeeping': 12, 'Villa chefs': 6, 'Maintenance': 4 }, robots: { 'Pool-cleaning robots': 6, 'Delivery robots assigned (L5)': 4, 'Robot mowers (villa gardens)': 3 } },
+  residences: { people: { 'Concierge': 12, 'Housekeeping': 46, 'Maintenance': 14, 'Owner services': 8, 'Management and admin': 15 }, robots: { 'Floor-scrubbing robots': 4, 'Delivery robots assigned (L5)': 6, 'Parcel lockers (automated)': 2 } },
+  village: { people: { 'F&B service': 36, 'Kitchen (chefs and cooks)': 24, 'Retail': 16, 'Market': 5, 'Management': 4 }, robots: { 'Table-service robots (cafés)': 6, 'Floor-scrubbing robots': 3, 'Delivery robots assigned (L5)': 4 } },
+  restaurant: { people: { 'Head chef and brigade': 22, 'Service': 28, 'Sommeliers': 3, 'Stewards': 5, 'Management': 2 }, robots: { 'Dish-washing line (automated)': 1, 'Cocktail robot at the bar': 1 } },
+  'beach-club': { people: { 'Service': 18, 'Kitchen': 10, 'Beach attendants': 8, 'Management': 4 }, robots: { 'Beach-raking robot': 1, 'Delivery robots assigned (L5)': 3, 'Cocktail robot': 1 } },
+  'members-club': { people: { 'Service': 14, 'Kitchen': 8, 'Membership and events': 4, 'Management': 4 }, robots: { 'Floor-scrubbing robot': 1, 'Delivery robots assigned (L5)': 2 } },
+  spa: { people: { 'Therapists': 18, 'Reception': 6, 'Attendants': 6, 'Longevity doctors': 2 }, robots: { 'Pool and thermal-area cleaning robots': 2, 'Linen AGV': 1 } },
+  sport: { people: { 'Trainers': 8, 'Reception': 3, 'Court staff': 4 }, robots: { 'Court-sweeping robot': 1, 'Ball-collecting robots': 2 } },
+  marina: { people: { 'Harbour master and office': 6, 'Dock hands': 14, 'Technical': 6, 'Fuel dock': 2 }, robots: { 'Smart shore-power and water pedestals': 90, 'Pump-out carts': 2, 'Hull-cleaning robot': 1, 'Patrol drone': 1 } },
+  events: { people: { 'Event managers': 4, 'Technicians (sound, light)': 4, 'Set-up crew': 2 }, robots: { 'Stage automation': 1, 'Floor-scrubbing robots': 2 } },
+  power: { people: { 'Plant engineers (3 shifts)': 8 }, robots: { 'Solar-panel cleaning robots': 2, 'Plant control (SCADA, unmanned at night)': 1 } },
+  desal: { people: { 'Operators': 4 }, robots: { 'RO plant control (automated)': 1, 'Membrane cleaning (CIP) automation': 1 } },
+  sewage: { people: { 'Operators': 3 }, robots: { 'Plant control (automated)': 1, 'Pipe-inspection robot': 1 } },
+  network: { people: { 'Network engineers (NOC)': 4 }, robots: { 'Self-healing network, mast monitoring': 1 } },
+  stores: { people: { 'Receiving and storekeepers': 12, 'Prep-kitchen cooks': 20 }, robots: { 'Warehouse AGVs': 4, 'Automated cold-store racking': 1, 'Prep-kitchen robots (vegetables, portioning)': 2 } },
+  darkstore: { people: { 'Pickers and packers': 10 }, robots: { 'Picking robots': 4, 'Delivery robots (the L5 fleet)': 24 } },
+  laundry: { people: { 'Loaders and finishers': 18 }, robots: { 'Tunnel washer and dryer line': 1, 'Folding robots': 2, 'Linen AGVs': 2 } },
+  staffacc: { people: { 'Reception': 4, 'Housekeeping': 8 }, robots: { 'Floor-scrubbing robots': 2 } },
+  canteen: { people: { 'Service and loading': 6 }, robots: { 'Robot kitchen (hot line)': 1, 'Dish-washing robot': 1, 'Self-checkout': 4 } },
+  cleaning: { people: { 'Housekeepers': 120, 'Public-area cleaners': 30, 'Supervisors': 10 }, robots: { 'Floor-scrubbing robots': 16, 'Beach-raking robots': 2, 'Window and façade robots': 2 } },
+  landscaping: { people: { 'Gardeners': 24, 'Irrigation technicians': 2, 'Arborist': 1 }, robots: { 'Robot mowers': 12, 'Hedge-trimming robots': 2, 'Smart irrigation (sensors, valves)': 1 } },
+  waste: { people: { 'Sorters': 8, 'Drivers': 2 }, robots: { 'Sorting robot': 1, 'Compactors (automated)': 4 } },
+  dock: { people: { 'Dock crew': 4, 'Vessel operator (remote, both vessels)': 1 }, robots: { 'Autonomous supply vessels (W2)': 2, 'Remote-operated crane': 1 } },
+  guestservices: { people: { 'Butlers': 24, 'Concierge': 9, 'Guest-app operators': 6 }, robots: { 'AI concierge in the app': 1, 'Delivery robots (the L5 fleet)': 24 } },
+  medical: { people: { 'Doctors': 3, 'Nurses': 6 }, robots: { 'Telemedicine kiosks': 2, 'AED drone': 1 } },
+  security: { people: { 'Control room': 6, 'Patrol': 12, 'Lifeguards': 8, 'Fire crew': 6 }, robots: { 'Patrol drones': 2, 'Marine drone': 1, 'Cameras and sensors': 400 } },
+  'marina-support': { people: { 'Harbour office': 6, 'Technicians': 4 }, robots: { 'Remote metering of power and water': 1 } },
+  'yacht-services': { people: { 'Dock hands': 8, 'Fuel attendants': 2 }, robots: { 'Automated fuel dock': 1, 'Pump-out carts': 2, 'Hull-cleaning robot': 1 } },
+  'guest-dock': { people: { 'Dock staff': 6, 'Shuttle operator (remote, all boats)': 1, 'Porters': 4 }, robots: { 'Autonomous shuttle boats (W1)': 4, 'Luggage robots': 4, 'Face check-in gates': 3 } },
+  'excursion-terminal': { people: { 'Guides': 4, 'Desk': 2, 'Skippers (guests aboard)': 3 }, robots: { 'Booking and weather automation': 1 } },
+  'crew-lounge': { people: { 'Attendants': 3 }, robots: { 'Self-service laundry machines': 6, 'Provisioning kiosk': 1 } },
+  fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: { 'Guest pods L1 (autonomous)': 40, 'Shuttles L2': 5, 'Service carts L3': 16, 'Trucks L4 (autonomous)': 6, 'Delivery robots L5': 24, 'Boats W1 · W2 (autonomous)': 6, 'Charging robots': 2 } },
+};
+const tsum = o => Object.values(o).reduce((a, b) => a + b, 0);
+const teamHtml = id => { const t = TEAM[id]; if (!t) return ''; return `<div class="sec team"><div class="cap">People and robots</div><div class="kv"><span class="sub">People · ${fmt(tsum(t.people))}</span><span></span>${kv(t.people)}<span class="sub">Robots · ${fmt(tsum(t.robots))}</span><span></span>${kv(t.robots)}</div></div>`; };
 // accommodation: room types with their count and a live occupancy bar in the same row (founder 2026-10-19); no prose
 const roomRows = c => `<div class="rooms" data-rooms="${c.id}">${Object.entries(c.objects).map(([k, n]) => `<div class="rr"><span>${k}</span><div class="bar"><i style="width:0"></i></div><b>${n}</b></div>`).join('')}</div>`;
 const productCard = (c, link = true) => `<div class="con" id="${c.id}">${productInner(c, link)}</div>`;
@@ -210,16 +258,19 @@ const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c
   <div class="col">
     <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv"><span>Capacity</span><span>${c.capLabel}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel}</span></div></div>
     <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
-    <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
+    <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
+    ${teamHtml('marina')}</div>
   <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div></div>`; };
 const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
-  <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div></div>`;
+  <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
+  ${teamHtml(c.id)}</div>`;
 const fleetCard = (link = true) => `<div class="con wide" id="fleetCard"><div class="col">${hdHtml(FLEET_HUB, link)}${opTag(FLEET_HUB.op)}<p>${FLEET_HUB.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="fleet"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
-  <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div></div>
+  <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div>
+  ${teamHtml('fleet')}</div>
   <div class="col"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;
 // --- the event programme as a schedule (founder 2026-10-19): the event, its time, its venue, its bookings against capacity. Nothing else.
 EVENTS.forEach((e, i) => { e.i = i; const [a, b] = e.time.split('–').map(t => { const [h, m] = t.split(':').map(Number); return h + m / 60; }); e.start = a; e.end = b; });
@@ -264,7 +315,7 @@ function refreshLive() {
   refreshSchedule(L.hour); for (const td of document.querySelectorAll('[data-evrow]')) { const e = EVENTS[+td.dataset.evrow], b = bookings(e, L.hour); td.textContent = `${b.n} of ${e.cap} · ${b.label}`; }
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
-    const rows = [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', stf]];   // the bar = share of the product's own capacity (founder 2026-10-19)
+    const rows = c.noSim ? [['Guests now', '<small style="color:var(--muted);font-weight:400">not in the model yet</small>'], ['Staff on shift', stf]] : [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', stf]];   // the bar = share of the product's own capacity (founder 2026-10-19)
     if (c.id === 'marina') {                                                 // the marina's capacity is berths (founder 2026-10-19); the classes live in the table on the right, not twice
       const M = L.marina; rows.length = 0;
       rows.push(['Berths occupied', `${M.moored} / ${M.berths}`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)], ['Staff on shift', stf]);
@@ -274,6 +325,7 @@ function refreshLive() {
       const mn = document.getElementById('marinaNext'); if (mn) mn.innerHTML = (M.upcoming || []).length ? M.upcoming.map(u => `<tr><td>${u.at}</td><td>${u.kind === 'arrive' ? '↓ Arrival' : '↑ Departure'}</td><td>${u.cls}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">no more today</td></tr>'; }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
+    const o = L.supply && OUTLET_OF[c.id] && L.supply.outlets[OUTLET_OF[c.id]]; if (o) rows.push(['Covers served today', fmt(o.meals)], ['Kitchen stock', `${Math.round(o.stock)} kg <small style="color:var(--muted);font-weight:400">of ${o.par} par</small>`], ['bar', bar(Math.round(100 * o.stock / o.par), 101)]);
     if (c.rooms) { const p = Math.min(100, Math.round(100 * g / cap)); for (const i of document.querySelectorAll(`[data-rooms="${c.id}"] .bar i`)) { i.style.width = p + '%'; i.classList.toggle('over', p >= 100); } }
   }
   for (const c of SERVICES) {
