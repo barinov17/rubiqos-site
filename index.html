@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019r">
+<link rel="stylesheet" href="/site.css?v=20261019s">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -1665,6 +1665,7 @@ function wantCat(f) {
   if (f.type === 'crew') return between(h, 22, 7) ? 'home' : P('marina', 'village', 'promenade', 'beach', 'retail', 'food');   // crews: mostly aboard and around the marina, the village in the evening
   const ev = eventsNow(h).filter(e => !e.who || e.who === f.type || (e.who === 'guest' && f.type === 'hotel'));
   if (ev.length && rand() < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue; }
+  if (between(h, 8, 21) && rand() < 0.12) return 'walk';                                                  // a walk for its own sake: promenade, marina, beach, village (founder 2026-10-19)
   if ((between(h, 12.3, 14.2) || between(h, 19, 21.5)) && rand() < 0.45) return 'food';                 // meal times: any F&B outlet on the island
   if (f.type === 'day') return P('village', 'beach', 'retail', 'marina', 'promenade', 'food');
   if (f.type === 'yachtguest') return between(h, 19, 23) ? P('village', 'food', 'marina') : P('marina', 'village', 'beach', 'spa', 'retail');
@@ -1687,6 +1688,7 @@ function staffCat(f, h) {
 const staffOnShift = h => (between(h, 7, 15) ? 330 : between(h, 15, 23) ? 230 : 65);
 
 // --- crowd: instanced bodies, route cache between POIs, lateral offsets
+const HOME_CATS = new Set(['hotel', 'villa', 'residence']), INDOOR_SHARE = 0.8;         // share of people at home who are inside (founder 2026-10-19: not everyone is outdoors)
 const N_PEOPLE = 300, N_ARRIVAL = 30, N_CREW = 80;                           // crew slots: filled from the moored yachts (founder 2026-10-19)
 const CREW_PER = { S: 0.25, M: 1, L: 3 };                                     // demo scale: 1 / 4 / 12 crew per boat at the plan's scale ÷ 4
 const RIDE_SHARE = 0.3;                                                        // founder 2026-10-18: about 30 % of the longer trips call a guest pod
@@ -1716,6 +1718,7 @@ for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   if (type === 'day' || type === 'member') { f.idle = true; f.visible = false; }                   // they come by the shuttle
 }
 for (let i = N_PEOPLE + N_ARRIVAL; i < N_FIG; i++) { const f = person(i, 'crew', HOME.crew()); f.idle = true; f.visible = false; }
+for (const f of people) if (!f.idle && HOME_CATS.has(f.at)) f.indoor = rand() < INDOOR_SHARE;   /* at the start most people are still inside */
 // the crew count follows the berths: boats moored × crew per class; crews board or leave as the yachts come and go
 function syncCrew() {
   const target = Math.round(berths.filter(b => b.occupied).reduce((a, b) => a + CREW_PER[b.cls], 0));
@@ -1739,14 +1742,16 @@ function podCall(f) {
   job.riders.push(f); f.ride.job = job;
 }
 function startWalk(f, to, text) { let pts = walkBetween(f.poi, to); if (!pts) return false; if (f.pos && pts.length && f.pos.distanceTo(pts[0]) > 1.5) pts = [f.pos.clone(), ...pts]; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; return true; }
+let WALK_POIS = [];                                                                       // filled after the POIs exist: promenade, marina, beaches, village, shops
 const MILL = { village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, food: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
 function stepPeople(dt) {
+  if (!WALK_POIS.length) WALK_POIS = ['promenade', 'marina', 'beach', 'village', 'retail'].flatMap(c => POI[c] || []);
   for (const f of people) {
     if (f.idle) continue;
     if (!f.path) {
       if (f.ride && f.ride.waiting) { if (f.visible && simT - f.ride.since > 40) { f.ride = null; f.wait = 1; f.task = ''; } continue; }   // at the stop; 40 simulated minutes without a pod: walk instead
       f.wait -= dt;
-      if (f.wait > 6 && f.pos && f.type !== 'staff' || (f.type === 'staff' && f.wait > 6 && f.pos && f.at !== 'staff')) {   // stroll around the place
+      if (!f.indoor && f.wait > 6 && f.pos && f.type !== 'staff' || (f.type === 'staff' && f.wait > 6 && f.pos && f.at !== 'staff')) {   // stroll around the place
         f.stroll = (f.stroll ?? rand() * 12) - dt;
         if (f.stroll <= 0) {
           f.stroll = 8 + rand() * 18;
@@ -1758,12 +1763,13 @@ function stepPeople(dt) {
       }
       if (f.wait > 0) continue;
       if (f.leaving) { f.idle = true; f.visible = false; f.leaving = false; continue; }          // boarded a buggy / took the shuttle home
-      const cat = wantCat(f); const to = cat === 'home' ? f.home : poiAny(cat); if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
+      const cat = wantCat(f); const to = cat === 'home' ? f.home : cat === 'walk' ? anyOf(WALK_POIS.filter(q => q !== f.poi && q.p.distanceTo(f.poi.p) < 700)) : poiAny(cat); if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
+      f.walkOnly = cat === 'walk'; f.indoor = false;
       if ((f.type === 'day' || f.type === 'member') && cat === 'home') f.leaving = true;             // walks to the Terminal and leaves on the shuttle
       const ev = eventAt(cat); if (ev && cat !== 'home') ops.eventsAttended++;
-      const dest = cat === 'food' ? to.name : (POI_LABEL[cat] || cat);
+      const dest = cat === 'food' ? to.name : cat === 'walk' ? `a walk to ${to.name}` : (POI_LABEL[cat] || cat);
       if (f.type !== 'staff' && POI.stop.length > 1) {                                  // a longer trip by guest pod: walk to the nearest stop, call, ride, walk the last bit
-        const far = f.poi.p.distanceTo(to.p), pRide = far < 250 ? 0 : far < 500 ? RIDE_SHARE : 0.85;   // past a comfortable walk almost everyone calls a pod
+        const far = f.poi.p.distanceTo(to.p), pRide = f.walkOnly ? 0 : far < 250 ? 0 : far < 500 ? RIDE_SHARE : 0.85;   // past a comfortable walk almost everyone calls a pod
         const sA = nearestPoi(POI.stop, f.poi.p), sB = nearestPoi(POI.stop, to.p);
         if (rand() < pRide && sA !== sB && sA.p.distanceTo(f.poi.p) < far * 0.4 && sB.p.distanceTo(to.p) < 220 && startWalk(f, sA, `${TYPES[f.type].title} · calls a pod → walks to ${sA.name}`)) {
           f.ride = { a: sA, b: sB, dest: to, text: `${TYPES[f.type].title} → ${dest}` }; f.speed = f.baseSpeed; continue; }
@@ -1781,17 +1787,18 @@ function stepPeople(dt) {
     if (f.s >= f.len && f.strolling) { f.path = null; f.strolling = false; f.speed = f.baseSpeed; continue; }
     if (f.s >= f.len && f.ride && f.goal === f.ride.a) { f.path = null; f.poi = f.goal; f.at = 'stop'; f.ride.waiting = true; f.ride.since = simT; f.wait = 1e9; f.task = `${f.ride.text} · waiting for the pod at ${f.ride.a.name}`; podCall(f); continue; }
     if (f.s >= f.len && !f.leaving && (f.goal.cat === 'food' || f.goal.cat === 'club')) eatAt(f.goal.cat === 'club' ? 'Members Club' : f.goal.prod, PLAN.guests / N_PEOPLE);   /* one cover per visit, at the plan's scale */
-    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300; }   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
+    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.walkOnly ? 6 + rand() * 12 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300;
+      if (HOME_CATS.has(f.at) && !f.leaving) f.indoor = rand() < INDOOR_SHARE; }                               /* at home most people are inside: not drawn, still counted */   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
 }
 function drawPeople() {
   if (peopleDots.visible) {                                                   // schematic: one dot per person, colour per vertex (guest / staff); the dot keeps the person's index
     const a = peopleDots.geometry.attributes.position.array;
-    for (const f of people) { const on = peopleOn && f.visible && f.pos; a[f.i * 3] = on ? f.pos.x : 0; a[f.i * 3 + 1] = on ? f.pos.y + 1.2 : -1e4; a[f.i * 3 + 2] = on ? f.pos.z : 0; }
+    for (const f of people) { const on = peopleOn && f.visible && !f.indoor && f.pos; a[f.i * 3] = on ? f.pos.x : 0; a[f.i * 3 + 1] = on ? f.pos.y + 1.2 : -1e4; a[f.i * 3 + 2] = on ? f.pos.z : 0; }
     peopleDots.geometry.attributes.position.needsUpdate = true; }
   if (!crowdBody.visible) return;                                              // schematic style: the dots are enough
   for (const f of people) {
-    const show = peopleOn && f.visible && f.pos;
+    const show = peopleOn && f.visible && !f.indoor && f.pos;
     if (!show) { _m.makeScale(0, 0, 0); } else { _e.set(0, f.heading, 0); _q.setFromEuler(_e); _m.compose(f.pos, _q, _s); }
     crowdBody.setMatrixAt(f.i, _m); crowdHead.setMatrixAt(f.i, _m);
   }
@@ -1836,7 +1843,7 @@ function updateDash() {
   const riders = people.filter(f => f.ride && f.ride.waiting && f.visible).length, aboard = people.filter(f => f.ride && !f.visible).length;
   window.__dbg = window.__dbg || { POI, A, beachClubP };                      /* positions for debugging from the console; not used by the pages */
   window.__live = {
-    clock: clockText(), hour: +h.toFixed(2), day: DAYN[dayIndex() % 7], guestsSim: guests.length, scale: +scale.toFixed(2), onShift, shiftShare: +shiftShare.toFixed(3),
+    clock: clockText(), hour: +h.toFixed(2), indoors: people.filter(f => !f.idle && f.indoor).length, walking: people.filter(f => !f.idle && f.walkOnly && f.path).length, day: DAYN[dayIndex() % 7], guestsSim: guests.length, scale: +scale.toFixed(2), onShift, shiftShare: +shiftShare.toFixed(3),
     people: byType, products, fleet,
     marina: { berths: berths.length, moored: berths.filter(b => b.occupied).length, underway: yachtMovers.filter(y => y.busy).length, byCls,
               arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },

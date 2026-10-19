@@ -73,8 +73,8 @@ const PRODUCTS = [
 const SERVICES = [
   { id: 'power', name: 'Power plant', zone: 'Z09', op: 'infra', what: 'Gas generators plus solar on the back-of-house roofs; battery buffer.',
     produces: { 'Peak power': '9 MW', 'Energy a day': '95,000 kWh', 'Solar share': '18 %' }, consumes: { 'Gas a day': '≈ 19,000 m³ (0.24 m³/kWh generated)', 'Fuel autonomy': '14 days' }, key: 'energy', capacity: 95000 },
-  { id: 'desal', name: 'Desalination (RO)', zone: 'Z09', op: 'infra', what: 'Reverse-osmosis plant with potable storage tanks.',
-    produces: { 'Potable water a day': '900 m³', 'Potable storage': '1,200 m³' }, consumes: { 'Energy': '≈ 3,150 kWh a day (3.5 kWh/m³)', 'Sea water intake': '≈ 2,250 m³ a day (40 % recovery)' }, key: 'water', capacity: 900 },
+  { id: 'desal', name: 'Water production', zone: 'Z09', op: 'infra', what: 'Reverse-osmosis plant: three trains, four potable tanks; 900 m³ a day.',
+    produces: { 'Production rate': '40 m³/h · 900 m³ a day', 'RO trains': '3 × 15 m³/h (one in reserve by day)', 'Storage tanks': '4 × 300 m³ = 1,200 m³ (1.3 days)' }, consumes: { 'Energy': '≈ 3,150 kWh a day (3.5 kWh/m³)', 'Sea water intake': '≈ 2,250 m³ a day (40 % recovery)' }, key: 'water', capacity: 900 },
   { id: 'sewage', name: 'Sewage treatment', zone: 'Z09', op: 'infra', what: 'Treatment plant; reclaimed water goes to irrigation.',
     produces: { 'Treated a day': '700 m³', 'Reclaimed for irrigation': '450 m³' }, consumes: { 'Energy': '≈ 420 kWh a day (0.6 kWh/m³)' }, key: 'sewage', capacity: 700 },
   { id: 'network', name: 'Network and connectivity', zone: 'Z09', op: 'infra', what: 'Two masts (not on the plan yet): private 5G, Wi-Fi, fibre ring.',
@@ -200,7 +200,8 @@ for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTota
 // --- card html
 const opTag = id => `<span class="op"><b>Operator</b>${OP[id].name}</span>`;
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3></div>`;   // no zone id and no colour dot (founder 2026-10-19)
+const NO_MODEL = new Set(['apart-hotel', 'water-sports', 'network', 'darkstore', 'guestservices', 'medical', 'security', 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
+const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3>${NO_MODEL.has(c.id) ? '<span class="nomodel" title="No physical object on the master plan yet"></span>' : ''}</div>`;   // no zone id and no colour dot (founder 2026-10-19)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
 const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
 function productInner(c, link = true) {
