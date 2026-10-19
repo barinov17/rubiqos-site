@@ -161,7 +161,7 @@
 </style>
 </head>
 <body>
-<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/simulation/">Simulation</a><a href="/proforma/">Proforma</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
 <div id="stageRow">
 <div id="stage">
 <canvas id="c"></canvas>
@@ -177,7 +177,6 @@
   <button id="bPlay" class="on">Pause</button>
   <button id="bSpeed">Speed 1×</button>
   <button id="bOverview" class="on">Overview</button>
-  <button id="bCam">Live camera</button>
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
 <div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button></div>
@@ -511,7 +510,6 @@ camera.position.copy(OVER.pos); controls.target.copy(OVER.target); controls.upda
 window.__reframe = () => { const atOver = camera.position.distanceTo(OVER.pos) < 1 && !fly; OVER = frameBox(islandBox, 1.05); if (atOver) { camera.position.copy(OVER.pos); controls.target.copy(OVER.target); } };
 resize();
 $('bOverview').onclick = () => { setAutoCam(false); stopFollow(); flyTo(OVER.target, OVER.pos); };
-$('bCam').onclick = () => { stopFollow(); setAutoCam(!autoCam); };
 
 // ---------- hover / click: outline + card
 let pickables = [];
@@ -979,20 +977,7 @@ function vehicleCard(v) {
 }
 
 // --- actors: scripted (story) and ambient followers
-const actors = {};
-function actor(id, type, label, mesh, color, medium = 'road') {
-  const b = beacon(color); b.position.y = 9; mesh.add(b); mesh.visible = false; scene.add(mesh); movers.push(mesh);
-  const a = { id: label, key: id, type, mesh, path: null, s: 0, len: 0, speed: 0, onDone: null, medium, battery: 70 + Math.floor(rand() * 28), task: 'Waiting' };
-  mesh.traverse(o => { o.userData.vehicle = a; }); return (actors[id] = a);
-}
-actor('buggy', 'L1', 'P3', fleetModel('L1'), 0xe0795f);
-actor('truck', 'L4', 'T1', fleetModel('L4'), 0x15304a);
-actor('truck2', 'L4', 'T2', fleetModel('L4'), 0x15304a);
-actor('robot', 'L5', 'D2', fleetModel('L5'), 0x6f9fd8);
-actor('robot2', 'L5', 'D7', fleetModel('L5'), 0x6f9fd8);
-actor('guestA', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk');
-actor('guestB', 'hotel', 'Smith party', personModel(0x86aee0), 0x86aee0, 'walk');
-const task = (id, text) => { actors[id].task = text; };
+const actors = {};                                                             // the scripted story and its actors were removed (founder 2026-10-19); the simulation is the only scenario
 const lift = { water: boatY, road: 0.03, walk: 0.1, air: 0 };
 function placeAt(a, p, heading = a.heading || 0) { a.pos = (a._pos || (a._pos = new THREE.Vector3())).copy(p); /* own copy: p may be a scratch vector or a shared point */ a.heading = heading; a.mesh.visible = true; a.mesh.position.set(p.x, a.medium === 'water' ? boatY : p.y + lift[a.medium], p.z); a.mesh.rotation.y = heading; }
 function setPath(a, pts) { const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1])); Object.assign(a, { path: pts, cum, len: cum[cum.length - 1], s: 0 }); }
@@ -1792,7 +1777,6 @@ let peopleOn = true;
 $('bPeople').onclick = () => { peopleOn = !peopleOn; $('bPeople').classList.toggle('on', peopleOn); };
 
 // --- dashboard (updated once a second)
-const logAll = [];
 const PLAN = { guests: 1000, keys: { 'Beach Hotel': 240, 'Hill Hotel': 120, 'Branded Residences': 208, 'Villas': 18 } };
 const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3, A1: 1 };   // Fleet Register counts (A1 = charter helicopter)
 const pct = (a, b) => Math.round(100 * a / Math.max(1, b));
@@ -1822,7 +1806,7 @@ function updateDash() {
     marina: { berths: berths.length, moored: berths.filter(b => b.occupied).length, underway: yachtMovers.filter(y => y.busy).length, byCls,
               arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
-    ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`), log: logAll.slice(-40),
+    ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`),
   };
   if (!HEADLESS) $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = fleet[k] || { n: 0, mv: 0, ch: 0, bat: null }; return `<tr><td>${TYPES[k] ? TYPES[k].title : k}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.bat === null ? '—' : r.bat + ' %'}</td></tr>`; }).join('');
   updateActorCounts();
@@ -1832,22 +1816,15 @@ const BALANCE = [['Water, m³', '874', '1,185', '900', 97], ['Energy, kWh', '104
 $('dBalance').querySelector('tbody').innerHTML = BALANCE.map(([n, a, p, c, l]) => `<tr><td>${n}</td><td>${a}</td><td>${p}</td><td>${c}</td><td><div class="lb"><div class="bar"><i style="width:${Math.min(100, l)}%;background:${l > 100 ? '#c0504d' : 'var(--navy)'}"></i></div>${l} %</div></td></tr>`).join('');
 
 // --- notifications, clock, camera director (same UI and timing as resort-cad-3d)
-const pins = [];
 let simT = 0, speedMul = 1, playing = true;
 const MOTION = 2, MOTION_PEOPLE = 6;          // vehicles 2x, people 6x: a 2 km walk takes ~15 simulated minutes
 const clockText = () => { const m = START_MIN + Math.floor(simT); return `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
-const SHOW_MAP_NOTES = false;   // founder 2026-10-17: no pop-up notes on the map until a new principle is agreed; the log keeps every event
-function notify({ icon, tag, title, body, anchor, accent }) {
-  logAll.push({ t: clockText(), title: `${icon} ${tag} · ${title}`, body });
-  if (anchor && SHOW_MAP_NOTES) { const el = document.createElement('div'); el.className = 'pin' + (accent ? ' accent' : ''); el.textContent = title; stage.appendChild(el); pins.push({ el, anchor, until: simT + 5.5 }); }
-}
-const anchorPos = a => (typeof a === 'string' ? actors[a].mesh.position.clone().add(new THREE.Vector3(0, 16, 0)) : a.clone().add(new THREE.Vector3(0, 22, 0)));
+function notify() {}                                                           // the operations log and the map notes are gone (founder 2026-10-19)
 const waiters = [];
 const wait = sec => new Promise(res => waiters.push({ until: simT + sec, res }));
-const say = t => { $('step').textContent = t; };
 let autoCam = false, camFocus = null, camDist = 260, overview = false;       // the scene opens on the overview; Live camera follows the script
 function focus(f, dist = 220) { camFocus = f; camDist = dist; overview = false; }
-function setAutoCam(v) { autoCam = v; $('bCam').classList.toggle('on', v); $('bOverview').classList.toggle('on', !v); }
+function setAutoCam(v) { autoCam = v; $('bOverview').classList.toggle('on', !v); }
 controls.addEventListener('start', () => { if (autoCam) setAutoCam(false); });
 // Wheel / two-finger scroll = zoom (founder 2026-10-17: a wheel must never tilt the camera). Shift = pan along the ground,
 // Alt = orbit; a horizontal-only trackpad swipe also orbits. Drag with the mouse orbits as before (OrbitControls).
@@ -1883,85 +1860,6 @@ function directCamera(dt) {
   const p = typeof camFocus === 'string' ? actors[camFocus].mesh.position : camFocus;
   camTarget.copy(p); camWant.copy(p).add(new THREE.Vector3(camDist * 0.45, camDist * 0.62, camDist * 0.55));
   controls.target.lerp(camTarget, dt * 2.2); camera.position.lerp(camWant, dt * 1.6);
-}
-
-// --- the scenario (one loop): every vehicle is autonomous; the system dispatches, the guest only taps
-const SPEED = { boat: 20, buggy: 22, truck: 18, robot: 9, walk: 5 };
-const hide = (...ids) => ids.forEach(i => { actors[i].mesh.visible = false; });
-async function loop() {
-  while (true) {
-    for (const a of Object.values(actors)) { a.path = null; a.mesh.visible = false; }
-    say('Arrival by sea · berth assigned by the system'); focus(A.guestDock, 420);   // the yachts themselves come and go in the marina simulation (founder 2026-10-19: no story yacht)
-    notify({ icon: '⚓', tag: 'Marina AI', title: 'Yacht Aurora moored', body: 'AIS track matched to the Smith booking; berth assigned by the system. Concierge on the pier.', anchor: A.guestDock, accent: true });
-    await wait(4);
-
-    say('Guests walk to the stop · a guest pod and a delivery robot come to meet them'); focus(A.stopMarina, 300);
-    const pierLand = walkR.posOf(...walkR.nearest(A.terminal));
-    placeAt(actors.guestA, pierLand); placeAt(actors.guestB, pierLand.clone().add(new THREE.Vector3(1.5, 0, 1.5)));
-    placeAt(actors.buggy, roadR.posOf(...roadR.nearest(A.fleet))); placeAt(actors.robot, roadR.posOf(...roadR.nearest(A.boh)));
-    notify({ icon: '🚶', tag: 'Guest app', title: 'Walk 3 min to the stop', body: 'The app guides the guests along the promenade.', anchor: 'guestA' });
-    notify({ icon: '🚙', tag: 'Fleet AI', title: 'Guest pod P3 dispatched', body: 'Fleet Hub → stop at the marina. No driver.', anchor: 'buggy' });
-    notify({ icon: '🤖', tag: 'Logistics', title: 'Delivery robot D2', body: 'Picks the bags up at the stop.', anchor: 'robot' });
-    task('guestA', 'Walking from the Terminal to the stop'); task('guestB', 'Walking from the Terminal to the stop');
-    task('buggy', 'Empty · Fleet Hub → marina stop (booked by the app)'); task('robot', 'Empty · back of house → marina stop for 6 bags');
-    const walkTo = walk(A.terminal, A.stopMarina);
-    await Promise.all([
-      move(actors.guestA, walkTo, SPEED.walk), move(actors.guestB, walkTo && walkTo.map(q => q.clone().add(new THREE.Vector3(1.5, 0, 1.5))), SPEED.walk * 0.97),
-      move(actors.buggy, road(A.fleet, A.stopMarina), SPEED.buggy), move(actors.robot, road(A.boh, A.stopMarina), SPEED.robot * 2),
-    ]);
-    hide('guestA', 'guestB');
-    notify({ icon: '👋', tag: 'Stop', title: 'Guests on board', body: 'Face check-in done. Bags in the robot.', anchor: A.stopMarina, accent: true });
-    await wait(4);
-
-    say('Guest pod to the beach hotel on the road · robot follows with the bags'); focus('buggy', 320);
-    notify({ icon: '🔑', tag: 'Front desk', title: 'Suite 214 ready', body: 'Digital key on 4 phones. Room pre-cooled.', anchor: 'buggy' });
-    task('buggy', '4 guests · marina stop → hotel stop'); task('robot', '6 bags · marina stop → Beach hotel, Suite 214');
-    const lug = move(actors.robot, road(A.stopMarina, A.stopHotel), SPEED.robot * 2);
-    await move(actors.buggy, road(A.stopMarina, A.stopHotel), SPEED.buggy);
-    say('Guests walk from the stop to the lobby'); focus('guestA', 200);
-    const toLobby = walk(A.stopHotel, A.hotel);
-    placeAt(actors.guestA, toLobby ? toLobby[0] : A.stopHotel); placeAt(actors.guestB, (toLobby ? toLobby[0] : A.stopHotel).clone().add(new THREE.Vector3(2, 0, 0)));
-    task('guestA', 'Walking from the stop to the lobby'); task('guestB', 'Walking from the stop to the lobby');
-    await Promise.all([move(actors.guestA, toLobby, SPEED.walk), move(actors.guestB, toLobby && toLobby.map(q => q.clone().add(new THREE.Vector3(1.5, 0, -1.5))), SPEED.walk)]);
-    notify({ icon: '🏨', tag: 'Beach hotel', title: 'Checked in · Smith party', body: 'Pier to suite in 9 min. Buggy back to the stop loop.', anchor: A.hotel, accent: true });
-    hide('guestA', 'guestB', 'buggy');
-    await lug; hide('robot');
-    notify({ icon: '🧳', tag: 'Logistics', title: 'Luggage in Suite 214', body: 'Robot D2 returns to the back of house.', anchor: A.hotel });
-    await wait(4);
-
-    say('Service dock · truck collects the delivery for the back of house'); focus(A.dock, 420);
-    notify({ icon: '🚢', tag: 'Port', title: 'Supply vessel W2 · Monday and Thursday', body: 'Containers wait on the Service dock. Cold chain checked.', anchor: A.dock });
-    placeAt(actors.truck, roadR.posOf(...roadR.nearest(A.boh))); task('truck', 'Empty · back of house → Service dock');
-    await move(actors.truck, road(A.boh, A.dock), SPEED.truck);
-    notify({ icon: '🏗️', tag: 'Service dock', title: 'Loaded in 18 min', body: 'Truck T1 takes the cold container to the back of house.', anchor: A.dock, accent: true });
-    task('truck', 'Cold container · Service dock → back of house');
-    focus('truck', 320);
-    await move(actors.truck, road(A.dock, A.boh), SPEED.truck);
-    notify({ icon: '📦', tag: 'Back of house', title: 'Stock updated', body: '214 items received, shelves assigned by the system.', anchor: A.boh });
-    hide('truck'); await wait(3);
-
-    say('Guest orders lunch · back of house resupplies the kitchen'); focus(A.hotel, 320);
-    notify({ icon: '🍽️', tag: 'Guest app', title: 'Order · lunch for 4', body: 'Marina Village kitchen, delivery to Suite 214 at 14:30.', anchor: A.hotel, accent: true });
-    await wait(4);
-    placeAt(actors.truck2, roadR.posOf(...roadR.nearest(A.boh))); focus('truck2', 320);
-    notify({ icon: '🚚', tag: 'Back of house', title: 'Truck T2 · Marina Village kitchen', body: 'Seafood for the lunch rush. Roads only, no walkways.', anchor: 'truck2' });
-    task('truck2', 'Seafood, cold chain 2 °C · back of house → Marina Village kitchen');
-    await move(actors.truck2, road(A.boh, A.village), SPEED.truck);
-    notify({ icon: '✅', tag: 'Kitchen', title: 'Supplies received', body: 'Lunch for Suite 214 goes on the line.', anchor: A.village, accent: true });
-    hide('truck2'); await wait(4);
-
-    say('Delivery robot takes the order to the suite'); focus('robot2', 240);
-    placeAt(actors.robot2, roadR.posOf(...roadR.nearest(A.village)));
-    notify({ icon: '🤖', tag: 'Room service', title: 'Delivery robot D7 out', body: 'Hot box sealed. ETA 6 min.', anchor: 'robot2' });
-    task('robot2', 'Lunch for 4, hot box · Marina Village → Beach hotel, Suite 214');
-    await move(actors.robot2, road(A.village, A.stopHotel), SPEED.robot * 2);
-    notify({ icon: '🌴', tag: 'Beach hotel', title: 'Delivered · Suite 214', body: 'Order to table in 24 min. Guest rating 5/5.', anchor: A.hotel, accent: true });
-    hide('robot2'); await wait(4);
-
-    say('One loop: guests on foot, autonomous buggy, trucks and robots, 0 phone calls'); overview = true; camFocus = null;
-    notify({ icon: '◎', tag: 'Island OS', title: 'Loop complete', body: 'Arrival, transfer, check-in, resupply, order, delivery. People walk, machines drive.' });
-    await wait(9);
-  }
 }
 
 // ===== map styles (founder 2026-10-18): Standard = the model as exported; Schematic = deck palette (blue on white).
@@ -2107,7 +2005,6 @@ function tick(rdt, draw = true) {
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }   // the snapshot, drawn or not (headless frame)
   if (!draw) return;
   const ct = clockText(); if (ct !== clockShown) { clockShown = ct; $('time').textContent = ct; }
-  for (let i = pins.length - 1; i >= 0; i--) { const p = pins[i]; const s = toScreen(anchorPos(p.anchor)); if (simT > p.until || !s) { p.el.remove(); pins.splice(i, 1); continue; } p.el.style.left = s[0] + 'px'; p.el.style.top = s[1] + 'px'; }
   if (viewChanged()) { updateLabels(); updatePins(); }
   updateHover(); drawPeople(); adaptScale(rdt);
   waterMat.uniforms.time.value = performance.now() / 1000;
@@ -2120,7 +2017,6 @@ for (let t = 0; t < 30; t += 0.05) tick(0.05, false);
 shadowDirty();                                                                 // first shadow pass, after every load-time change to the scene
 $('load').style.opacity = 0; setTimeout(() => { $('load').remove(); window.__fpSchedule(); }, 500);
 console.info('ready in', ((performance.now() - t0) / 1000).toFixed(1), 's');
-loop();
 
 // debug hooks
 window.__advance = async sec => { for (let t = 0; t < sec; t += 0.05) { tick(0.05, t + 0.05 >= sec); if (Math.round(t * 20) % 10 === 0) await Promise.resolve(); } return clockText(); };
