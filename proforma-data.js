@@ -82,8 +82,12 @@ const SERVICES = [
   { id: 'laundry', name: 'Laundry', zone: 'Z09', op: 'stores', what: 'Central laundry in the warehouse bar; linen out to the hotels in the morning, back by the evening.',
     produces: { 'Linen a day': '5,000 kg', 'Turnaround': '6 h' }, consumes: { 'Water': '≈ 75 m³ a day (15 L/kg)', 'Energy': '≈ 5,000 kWh a day (1 kWh/kg)' }, key: 'laundry', capacity: 5000 },
   { id: 'staffacc', name: 'Staff accommodation', zone: 'Z09', op: 'staffacc', what: 'Four-floor block with canteen; the rest of the staff commute by the staff shuttle.',
-    produces: { 'Beds': 420, 'Canteen meals a day': '1,000' }, consumes: { 'Water': '≈ 60 m³ a day', 'Energy': '≈ 2,500 kWh a day', 'Food': '≈ 0.4 t a day' }, key: 'staff', capacity: 900,
+    produces: { 'Beds': 420, 'Staff shuttle': 'mainland, 3 runs a shift' }, consumes: { 'Water': '≈ 48 m³ a day', 'Energy': '≈ 2,150 kWh a day' }, key: 'staff', capacity: 900,
     liveFn: L => [['Staff on shift', L.onShift], ['Shift', L.hour >= 7 && L.hour < 15 ? 'morning 07–15' : L.hour >= 15 && L.hour < 23 ? 'evening 15–23' : 'night 23–07'], ['Load', Math.round(100 * L.onShift / 330) + ' %']] },
+  { id: 'canteen', name: 'Staff canteen', zone: 'Z09', op: 'staffacc', what: 'The canteen in the staff accommodation block: three meals around the shift changes, cooked by the prep kitchen; the place every shift starts and ends.',
+    produces: { 'Meals a day': '1,000', 'Seats': 160, 'Service windows': '06:00–08:00 · 14:00–16:00 · 22:00–24:00' }, consumes: { 'Food': '≈ 0.4 t a day (from the prep kitchen)', 'Water': '≈ 12 m³ a day', 'Energy': '≈ 350 kWh a day' },
+    liveFn: L => { const h = L.hour, open = (h >= 6 && h < 8) || (h >= 14 && h < 16) || (h >= 22); const p = open ? Math.min(100, Math.round(100 * L.onShift * 0.5 / 160)) : 10;
+      return [['Load', p + ' %'], ['Service', open ? 'open · shift meal' : 'closed · next ' + (h < 6 ? '06:00' : h < 14 ? '14:00' : h < 22 ? '22:00' : '06:00')], ['Staff on the island', L.onShift]]; } },
   { id: 'waste', name: 'Waste management', zone: 'Z09', op: 'waste', what: 'Sorting, compactors and the night waste run to the transfer station at the dock.',
     produces: { 'Waste handled a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, consumes: { 'Energy': '≈ 400 kWh a day' }, key: 'waste', capacity: 5,
     liveFn: L => [['Night run', L.hour >= 23 || L.hour < 5 ? 'running' : 'from 23:00']] },
