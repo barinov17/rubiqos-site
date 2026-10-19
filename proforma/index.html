@@ -11,7 +11,14 @@
 <style>
   body.site .pf { max-width: none; padding: 0 20px; }
   body.site .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-  body.site .con { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  /* every card is a subgrid of the cards grid: the same section sits on the same row across a row of cards (founder 2026-10-19) */
+  body.site .cards { grid-auto-rows: auto; }
+  body.site .con { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; grid-template-rows: subgrid; grid-row: span 7; row-gap: 8px; align-content: start; }
+  body.site .con.svc { grid-row: span 6; }
+  body.site .con .sec { display: flex; flex-direction: column; gap: 4px; }
+  body.site .con .sec .cap { margin-top: 0; }
+  body.site .con .live { align-self: start; }
+  @supports not (grid-template-rows: subgrid) { body.site .con { display: flex; flex-direction: column; gap: 8px; } }
   body.site .con .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   body.site .con h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
   body.site .con .zone { font: 500 11px var(--body); color: var(--muted); white-space: nowrap; }
@@ -212,15 +219,15 @@ const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</
 document.getElementById('productCards').innerHTML = PRODUCTS.map(c => { const d = needs(c, OCC); const objs = c.units ? Object.fromEntries([...c.units.map(u => [u.name, u.n]), ...Object.entries(c.objects)]) : c.objects; return `<div class="con" id="${c.id}">
   <div class="hd"><h3>${c.name}</h3><span class="zone"><i style="background:${Z[c.zone]}"></i>${c.zone}</span></div>${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
-  <div class="cap">Produces</div><p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${fmt(capacityOf(c))} ${c.unit}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}</span></div>
-  <div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div>
-  <div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div>
+  <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${fmt(capacityOf(c))} ${c.unit}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}</span></div></div>
+  <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
+  <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
 </div>`; }).join('');
 document.getElementById('serviceCards').innerHTML = SERVICES.map(c => `<div class="con svc" id="${c.id}">
   <div class="hd"><h3>${c.name}</h3><span class="zone"><i style="background:${Z[c.zone]}"></i>${c.zone}</span></div>${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
-  <div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div>
-  <div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div>
+  <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
+  <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
 </div>`).join('');
 // --- balance (plan): products' needs against the services' capacity
 const staffTotal = PRODUCTS.reduce((a, c) => a + c.staff, 0) + 120;   // + administration, utilities, security, landscape
