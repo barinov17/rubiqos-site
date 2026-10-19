@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019w">
+<link rel="stylesheet" href="/site.css?v=20261019x">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -114,6 +114,20 @@
   #tip b { color: var(--navy); font-size: 13px; }
   #tip .k { color: var(--muted); }
   #tip.pinned { pointer-events: auto; }
+  /* vehicle panel: shown while the camera follows a vehicle (founder 2026-10-19) */
+  #vcard { position: absolute; right: 16px; bottom: 16px; width: 320px; padding: 12px 14px 12px; font-size: 12.5px; line-height: 1.45; display: none; z-index: 41; }
+  #vcard .hd { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 2px; }
+  #vcard .hd b { flex: 1; color: var(--navy); font-size: 14px; }
+  #vcard .hd button { flex: 0 0 auto; width: 24px; height: 24px; border: 0; border-radius: 6px; background: rgba(10, 18, 32, 0.08); color: var(--navy); font-size: 16px; line-height: 1; cursor: pointer; }
+  #vcard .hd button:hover { background: rgba(10, 18, 32, 0.16); }
+  #vcard .k { color: var(--muted); font-size: 11.5px; }
+  #vcard .now { margin: 8px 0 6px; color: var(--navy); }
+  #vcard .kv { display: grid; grid-template-columns: 74px 1fr; gap: 3px 10px; }
+  #vcard .kv span:nth-child(2n+1) { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding-top: 2px; }
+  #vcard .kv span:nth-child(2n) { color: var(--navy); font-weight: 500; }
+  #vcard .bar { height: 5px; border-radius: 3px; background: rgba(10, 18, 32, 0.1); overflow: hidden; grid-column: 1 / -1; margin: -1px 0 2px; }
+  #vcard .bar i { display: block; height: 100%; background: var(--navy); }
+  #vcard .ft { margin-top: 8px; color: var(--muted); font-size: 11px; }
 
   #load { position: absolute; inset: 0; display: grid; place-items: center; background: #e4e9f0; color: var(--navy); font-family: var(--display); font-size: 20px; z-index: 5; transition: opacity 0.5s; }
   #load small { display: block; font: 12px var(--body); color: #46505e; margin-top: 8px; text-align: center; }
@@ -161,7 +175,7 @@
 </style>
 </head>
 <body>
-<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/" class="on">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/physical-ai/">Physical AI</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
 <div id="stageRow">
 <div id="stage">
 <canvas id="c"></canvas>
@@ -182,6 +196,7 @@
 <div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button></div>
 </div>
 <div id="tip" class="panel"></div>
+<div id="vcard" class="panel" role="dialog" aria-label="Vehicle"></div>
 <button id="bApp" class="panel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 5.5h3M11 18.5h2"/></svg><span>Guest app</span></button>
 </div>
 <div id="appPanel"><iframe id="appFrame" title="Guest app"></iframe></div>
@@ -660,16 +675,18 @@ function startFollow(v, q) {
   setAutoCam(false); pinned = null; clearFootprint();
   follow = { v, last: p.clone(), t: 0 };
   flyTo(p.clone(), p.clone().add(off), 1.2);
-  outline.selectedObjects = [v.mesh]; tip.innerHTML = vehicleCard(v); tip.style.display = 'block'; tip.classList.add('pinned'); if (q) placeTip(q.x, q.y);
+  outline.selectedObjects = [v.mesh]; tip.classList.remove('pinned'); tip.style.display = 'none';
+  vcard.innerHTML = vehiclePanel(v); vcard.style.display = 'block';                       // the vehicle panel replaces the hover card while following
 }
-function stopFollow() { if (!follow) return; follow = null; tip.classList.remove('pinned'); tip.style.display = 'none'; outline.selectedObjects = []; }
+function stopFollow() { if (!follow) return; follow = null; tip.classList.remove('pinned'); tip.style.display = 'none'; vcard.style.display = 'none'; outline.selectedObjects = []; }
 function stepFollow(dt) {
   if (!follow) return;
   const p = follow.v.mesh.position; _fp.copy(p).sub(follow.last); follow.last.copy(p);
   if (fly) { fly.target.add(_fp); fly.pos.add(_fp); } else { controls.target.add(_fp); camera.position.add(_fp); }
-  follow.t += dt; if (follow.t > 0.5) { follow.t = 0; tip.innerHTML = vehicleCard(follow.v); }
-  const s = p.clone().setY(p.y + 4).project(camera); placeTip((s.x + 1) / 2 * stage.clientWidth, (1 - s.y) / 2 * stage.clientHeight);
+  follow.t += dt; if (follow.t > 0.5) { follow.t = 0; vcard.innerHTML = vehiclePanel(follow.v); }
 }
+const vcard = document.getElementById('vcard');
+vcard.addEventListener('click', e => { if (e.target.closest('button[data-close]')) stopFollow(); });
 function updateHover() {
   if (!hoverDirty) return; hoverDirty = false;
   if (follow) return;                                                          // the card stays on the followed vehicle
@@ -976,6 +993,49 @@ function vehicleCard(v) {
   return `<b>${T.title} · ${v.id}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${v.task || 'Waiting for the next job'}</div>`
     + (v.path ? `<div>${kmh} km/h · ETA ${eta < 1 ? '<1' : Math.round(eta)} min` : '<div>Parked') + (DRAIN[v.type] ? ` · battery ${Math.round(v.battery)}%` : '') + '</div>';
 }
+// --- vehicle panel (founder 2026-10-19): the followed vehicle's job — from, to, what is on board, speed, ETA, battery; × or Escape releases it
+const NAMED = [];                                                               // [name, point] pairs for naming a route end; filled once the anchors exist (namedPlaces)
+function namedPlaces() {
+  if (NAMED.length) return NAMED;
+  const add = (n, p) => { if (p && p.isVector3) NAMED.push([n, p]); };
+  add('Fleet Hub', A.fleet); add('Warehouse', A.boh); add('Service dock', A.dock); add('Guest dock', A.guestDock); add('Excursion dock', A.excDock); add('Mainland port', A.cargoSea); add('Marina Village', A.village); add('Events Rotunda', A.rotunda); add('Spa', A.spa); add('Hill Hotel', A.hillHotel); add('Beach Hotel', A.hotel);
+  if (typeof SEA === 'object') { add('Mainland pier', SEA.yacht); add('Open sea', SEA.out); add('Beach Club pier', SEA.beachClub); add('Villas pier', SEA.villas); }
+  if (typeof HELI === 'object') { add('Helipad', HELI.pad); add('Mainland heliport', HELI.far2); add('Mainland heliport', HELI.far); }
+  for (const h of homes) add(h.name, h.p);
+  for (const v of venues) add(v.name, v.p);
+  stops.forEach((p, i) => add(stopName(p), p));
+  return NAMED;
+}
+function placeName(p) {
+  if (!p || !p.isVector3) return '—';
+  let best = null, bd = 1e9;
+  for (const [n, q] of namedPlaces()) { const d = Math.hypot(p.x - q.x, p.z - q.z); if (d < bd) { bd = d; best = n; } }
+  return bd <= 60 ? best : '—';
+}
+function onBoard(v) {
+  const t = v.task || '';
+  if (v.type === 'L1') { const n = v.job && v.job.riders ? v.job.riders.filter(r => !r.visible).length : 0; if (n) return `${n} guest${n > 1 ? 's' : ''}`; const m = t.match(/(\d+) guest/); return /^(Pod call|Pre-positioning|Return trip|Battery|Charging)/.test(t) ? 'Empty' : m ? `${m[1]} guest${+m[1] > 1 ? 's' : ''}` : 'Empty'; }
+  if (v.type === 'L2') { const m = t.match(/(\d+) guests on board/); return m ? `${m[1]} guests` : 'Empty'; }
+  if (v.type === 'L4') { if (v.cargo) return `${v.cargo.kg} kg of goods for ${v.cargo.to}`; const m = t.match(/(\d[\d.,]*\s?(?:kg|t)\b[^·→]*)/); return /^(Empty|Reserve|Waste truck · standby)/.test(t) ? 'Empty' : m ? m[1].trim() : /Containers/.test(t) ? 'Containers from the vessel' : 'Empty'; }
+  if (v.type === 'L3') { const m = t.match(/·\s*([^·→]+?)\s*→/); return /^WO-/.test(t) ? 'Engineer and parts' : /Housekeeping trolley/.test(t) ? 'Linen and amenities' : /^Empty|Standby|back to/.test(t) ? 'Empty' : m ? m[1] : 'Crew'; }
+  if (v.type === 'L5') { if (/^(Empty|Standby|Charging|Battery)/.test(t)) return 'Empty'; const m = t.match(/^([^·→]+?)\s*(?:·|→)/); return m ? m[1].trim() : 'Order'; }
+  if (v.type === 'W1') { const m = t.match(/(\d+) (arriving|departing|guests)/); return m ? `${m[1]} passengers` : /boarding/.test(t) ? 'Boarding' : 'Empty'; }
+  if (v.type === 'W2') return /waste containers aboard/.test(t) ? 'Waste containers' : /9 t of goods/.test(t) ? '9 t of goods, 4 containers' : /Unloading/.test(t) ? 'Unloading' : 'Empty';
+  if (v.type === 'W3') return /at sea/.test(t) ? 'Guests on the excursion' : 'Empty';
+  if (v.type === 'A1') return /guests aboard/.test(t) ? 'VIP guests' : /no guests/.test(t) ? 'Empty' : /inbound|arrival/i.test(t) ? 'VIP guests' : '—';
+  return '—';
+}
+function vehiclePanel(v) {
+  const T = TYPES[v.type] || { title: v.type, role: '' };
+  const moving = !!v.path, left = moving ? Math.max(0, v.len - v.s) : 0, kmh = moving ? Math.round(v.speed * 3.6 / 4) : 0, eta = left / Math.max(1, v.speed * 2);
+  const from = placeName(v.from), to = placeName(v.to || v.place);
+  const route = moving ? `${from} → ${to}` : (to !== '—' ? `At ${to}` : '—');
+  const rows = [['Route', route], ['On board', onBoard(v)], ['Status', moving ? `${kmh} km/h · ETA ${eta < 1 ? '<1' : Math.round(eta)} min` : (v.charging > 0 ? 'Charging' : 'Parked')]];
+  if (DRAIN[v.type]) rows.push(['Battery', `${Math.round(v.battery)} %`], ['bar', `<div class="bar"><i style="width:${Math.round(v.battery)}%"></i></div>`]);
+  return `<div class="hd"><b>${T.title} · ${v.id}</b><button data-close aria-label="Release the vehicle" title="Release (Esc)">×</button></div><div class="k">${T.role}</div>` +
+    `<div class="now"><b>Now:</b> ${v.task || 'Waiting for the next job'}</div><div class="kv">${rows.map(([k, x]) => k === 'bar' ? x : `<span>${k}</span><span>${x}</span>`).join('')}</div>` +
+    `<div class="ft">Camera follows this vehicle · orbit and zoom still work · × or Esc releases</div>`;
+}
 
 // --- actors: scripted (story) and ambient followers
 const actors = {};                                                             // the scripted story and its actors were removed (founder 2026-10-19); the simulation is the only scenario
@@ -1219,7 +1279,7 @@ function follower(type, label, medium, speed, next, home) {
   if (home) { placeAt(f, medium === 'road' ? roadR.posOf(...roadR.nearest(home)) : home); f.task = 'Standby'; }
   mesh.traverse(o => { o.userData.vehicle = f; }); ambient.push(f); return f;
 }
-const trip = (f, from, to, text) => { f.task = text; f.place = to; return f.medium === 'water' ? via(f, [from, to], text) : road(from, to); };
+const trip = (f, from, to, text) => { f.task = text; f.from = from; f.to = to; f.place = to; return f.medium === 'water' ? via(f, [from, to], text) : road(from, to); };   // from / to kept for the vehicle panel
 
 // --- L1 guest pods (register ~40, demo 12): on demand, arrival transfers, lunch and evening waves; 4 seats
 const podJobs = [];                                                               // scripted pod trips (helicopter guests); a free pod takes the next job
@@ -1358,7 +1418,7 @@ const seaLegs = pts => {                                                        
   out[0] = pts[0].clone().setY(waterY); out[out.length - 1] = pts[pts.length - 1].clone().setY(waterY);   // exact berth and sea points at the ends
   return out;
 };
-const via = (f, pts, text, flight = false) => { f.task = text; f.place = pts[pts.length - 1]; if (flight) return pts.map(q => q.clone()); const r = seaLegs(pts); if (!r) f.wait = 10; return r; };
+const via = (f, pts, text, flight = false) => { f.task = text; f.from = pts[0]; f.to = pts[pts.length - 1]; f.place = pts[pts.length - 1]; if (flight) return pts.map(q => q.clone()); const r = seaLegs(pts); if (!r) f.wait = 10; return r; };
 function waterPoint(from, bearings, maxR = 700, off = 70) {
   for (const deg of bearings) for (let r = 20; r <= maxR; r += 20) if (isWater(bearing(from, deg, r).x, bearing(from, deg, r).z)) { let q = bearing(from, deg, r + off); if (isWater(q.x, q.z)) return q; }
   return null;
