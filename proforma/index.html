@@ -71,17 +71,8 @@
     <div class="cards" id="serviceCards"></div>
   </section>
 
-  <section id="fleet">
-    <h2>Fleet</h2>
-    <p class="lead">Plan against the demo, live: on the move, charging, battery.</p>
-    <div class="scroll"><table class="t" id="fleetTable"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody></tbody></table></div>
-  </section>
-
-  <section id="balance">
-    <h2>Balance</h2>
-    <p class="lead">Resources across every product on an average and a peak day against the services' capacity.</p>
-    <table class="t bal" id="balanceT"><thead><tr><th>Resource</th><th>Average day</th><th>Peak day</th><th>Capacity</th><th>Load, average day</th><th></th></tr></thead><tbody></tbody></table>
-  </section>
+  <!-- the Fleet and Balance overview lives on the live-demo page under the actors bar (founder 2026-10-19); the balance rows are still computed here for the utility cards' load -->
+  <table id="balanceT" style="display:none"><tbody></tbody></table>
 
   <section id="programme">
     <h2>Event programme</h2>
@@ -241,8 +232,6 @@ document.querySelector('#balanceT tbody').innerHTML = ROWS.map(([label, k, extra
   const p = Math.round(100 * avg / cap), pp = Math.round(100 * peak / cap); LOAD[k] = p;
   return `<tr><td>${label}</td><td>${fmt(avg, dec)}</td><td>${fmt(peak, dec)}</td><td>${fmt(cap, dec)}</td><td style="min-width:160px"><div class="bar"><i class="${p > 100 ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div></td><td class="muted"><span class="${p > 100 ? 'over-txt' : ''}">${p} %</span> average · <span class="${pp > 100 ? 'over-txt' : ''}">${pp} %</span> peak · ${note}</td></tr>`; }).join('');
 // --- live: the simulation runs headless in the hidden frame; its window.__live is read once a second
-const FLEET_TITLES = { L1: 'L1 · Guest pod', L2: 'L2 · Guest shuttle', L3: 'L3 · Service cart', L4: 'L4 · Service truck', L5: 'L5 · Delivery robot', W1: 'W1 · Shuttle boat', W2: 'W2 · Supply vessel', W3: 'W3 · Excursion boat', A1: 'A1 · Helicopter' };
-const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3, A1: 1 };
 const bar = (p, over = 98) => `<div class="bar"><i class="${p >= over ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div>`;
 const setLive = (id, rows) => { const el = document.querySelector(`[data-live="${id}"]`); if (el) el.innerHTML = rows.map(([k, v]) => k === 'bar' ? v : `<span>${k}</span><span>${v}</span>`).join(''); };
 let L = null;
@@ -282,8 +271,6 @@ function refresh() {
     else if (op.id === 'events') now = L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ');
     else if (op.id === 'infra') now = `energy ${LOAD.energy} % · water ${LOAD.water} % · sewage ${LOAD.sewage} % of capacity (plan)`;
     return `<tr><td>${op.name}</td><td>${[...prods, ...svcs].map(c => c.name).join(', ') || 'Excursion dock, W3 boats'}</td><td class="num">${prods.length ? fmt(g) : '—'}</td><td class="num">${pos ? st : '—'}</td><td class="num">${pos || '—'}</td><td class="muted">${now || op.note}</td></tr>`; }).join('');
-  // fleet
-  document.querySelector('#fleetTable tbody').innerHTML = Object.keys(FLEET_PLAN).map(k => { const r = L.fleet[k] || { n: 0, mv: 0, ch: 0, bat: null }; return `<tr><td>${FLEET_TITLES[k]}</td><td class="num">${FLEET_PLAN[k]}</td><td class="num">${r.n}</td><td class="num">${r.mv}</td><td class="num">${r.ch}</td><td class="num">${r.bat === null ? '—' : r.bat + ' %'}</td></tr>`; }).join('');
   // log
   const lg = document.getElementById('log'), stick = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
   if (lg.dataset.n !== String(L.log.length) + (L.log[L.log.length - 1] || {}).t) { lg.dataset.n = String(L.log.length) + (L.log[L.log.length - 1] || {}).t; lg.innerHTML = L.log.map(l => `<div><span>${l.t}</span><div><b>${l.title}</b><div class="d">${l.body}</div></div></div>`).join(''); if (stick) lg.scrollTop = lg.scrollHeight; }

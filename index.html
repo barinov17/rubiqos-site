@@ -138,6 +138,9 @@
   #dash .ev { display: grid; grid-template-columns: 90px 1fr auto; gap: 8px; font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid rgba(10, 18, 32, 0.06); }
   #dash .ev.now { color: var(--navy); font-weight: 600; }
   #dash .ev small { color: var(--muted); font-weight: 400; }
+  #dash .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }   /* overview under the actors (founder 2026-10-19): fleet + balance */
+  #dash .lb { display: flex; align-items: center; gap: 8px; } #dash .lb .bar { width: 70px; margin: 0; flex: none; }
+  @media (max-width: 900px) { #dash .pair { grid-template-columns: 1fr; } }
   #actorsBar { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; padding: 10px 16px; }
   #actorsBar .row { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
   #actorsBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); width: 110px; flex: none; }
@@ -187,6 +190,10 @@
 <section id="dash">
   <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
+  <div class="pair">
+    <div class="card"><h2>Fleet<small>plan vs demo · live</small></h2><table id="dFleet"><thead><tr><th>Type</th><th>Plan</th><th>Demo</th><th>Moving</th><th>Charging</th><th>Battery</th></tr></thead><tbody></tbody></table></div>
+    <div class="card"><h2>Balance<small>products' needs against the services' capacity (proforma)</small></h2><table id="dBalance"><thead><tr><th>Resource</th><th>Average day</th><th>Peak day</th><th>Capacity</th><th>Load</th></tr></thead><tbody></tbody></table></div>
+  </div>
 </section>
 <!-- founder 2026-10-19: the demo page keeps the scene and the actors bar only; products, services, operators, fleet and the log live on /proforma/,
      fed by this page running headless in a hidden frame (?headless=1 → no rendering, window.__live = the snapshot) -->
@@ -217,6 +224,7 @@ THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 const $ = id => document.getElementById(id);
+const HEADLESS = new URLSearchParams(location.search).has('headless');        // the proforma's hidden frame: simulation only, nothing drawn
 const GLB = 'resort-masterplan.glb';
 const MANIFEST = 'resort-masterplan.manifest.json';
 const SKY = 0x9cc7e0;
@@ -1827,8 +1835,12 @@ function updateDash() {
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
     ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`), log: logAll.slice(-40),
   };
+  if (!HEADLESS) $('dFleet').querySelector('tbody').innerHTML = Object.entries(FLEET_PLAN).map(([k, plan]) => { const r = fleet[k] || { n: 0, mv: 0, ch: 0, bat: null }; return `<tr><td>${TYPES[k] ? TYPES[k].title : k}</td><td>${plan}</td><td>${r.n}</td><td>${r.mv}</td><td>${r.ch}</td><td>${r.bat === null ? '—' : r.bat + ' %'}</td></tr>`; }).join('');
   updateActorCounts();
 }
+// the balance (proforma v2 numbers, 2026-10-19: average occupancy 70 %, services' capacity as sized): the same rows the proforma computes
+const BALANCE = [['Water, m³', '874', '1,185', '900', 97], ['Energy, kWh', '104,705', '144,436', '95,000', 110], ['Sewage, m³', '736', '1,000', '700', 105], ['Food and beverage, t', '5.33', '7.44', '4.5', 118], ['Laundry, kg', '6,087', '8,439', '5,000', 122], ['Waste, t', '5.81', '8.18', '5', 116], ['Staff positions', '960', '960', '900', 107]];
+$('dBalance').querySelector('tbody').innerHTML = BALANCE.map(([n, a, p, c, l]) => `<tr><td>${n}</td><td>${a}</td><td>${p}</td><td>${c}</td><td><div class="lb"><div class="bar"><i style="width:${Math.min(100, l)}%;background:${l > 100 ? '#c0504d' : 'var(--navy)'}"></i></div>${l} %</div></td></tr>`).join('');
 
 // --- notifications, clock, camera director (same UI and timing as resort-cad-3d)
 const pins = [];
@@ -2168,7 +2180,6 @@ function tick(rdt, draw = true) {
   composer.render();
 }
 let last = performance.now();
-const HEADLESS = new URLSearchParams(location.search).has('headless');        // the proforma's hidden frame: simulation only, nothing drawn
 renderer.setAnimationLoop(now => { const rdt = Math.min(0.1, (now - last) / 1000); last = now; tick(rdt, !HEADLESS); });
 // ===== warm start: the day begins in the morning; 30 minutes are run before the page shows so nobody starts from a standstill
 for (let t = 0; t < 30; t += 0.05) tick(0.05, false);
