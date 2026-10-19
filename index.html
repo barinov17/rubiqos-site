@@ -685,7 +685,7 @@ function updateHover() {
   if (!hoverDirty) return; hoverDirty = false;
   if (follow) return;                                                          // the card stays on the followed vehicle
   const p = pick();
-  if (p && p.person) { if (!pinned) { const f = p.person, T = TYPES[f.type]; tip.innerHTML = `<b>${T.title}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${f.task || ('At ' + (POI_LABEL[f.at] || f.at))}</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = []; } return; }
+  if (p && p.person) { if (!pinned) { const f = p.person, T = TYPES[f.type]; tip.innerHTML = `<b>${T.title}${f.profile ? ' · ' + f.profile.name : ''}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${f.task || ('At ' + (POI_LABEL[f.at] || f.at))}</div>`; tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = []; } return; }
   if (p && p.vehicle) { if (!pinned) { tip.innerHTML = vehicleCard(p.vehicle); tip.style.display = 'block'; placeTip(pointer.x, pointer.y); outline.selectedObjects = [p.vehicle.mesh]; } return; }
   const o = p ? p.object : null;
   if (o !== hovered) setHover(o); else if (o && !pinned) placeTip(pointer.x, pointer.y);
@@ -829,7 +829,7 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
 const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|service drop-off$| \| access road$/.test(n)).flatMap(meshOf);   // pads and every parcel access road are drivable
 const roadR = surfaceGrid([...meshOf('ROADS_SERVICE surface'), ...meshOf('ROADS_SERVICE (block) surface'), ...meshOf('loading zone surface'), ...[...byName.keys()].filter(n => / service road \| surface$/.test(n)).flatMap(meshOf), ...padMeshes], 3);   // + service roads added by edits
-const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...meshOf('Infrastructure zone | path FH'), ...meshOf('Infrastructure zone | path SA'), ...meshOf('GYM & Sports | deck'), ...[...byName.keys()].filter(n => n.startsWith('Footpath links') || / \| path .*\| surface$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/\(BOH\)|service drop-off$/.test(m.name))], 2.5, 12);   // + paths added by edits; service pads are not walkways   // strict (founder 2026-10-17): walkways only; 12 m bridging covers kerbs, missing paths are added to the model (e021)
+const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...meshOf('Infrastructure zone | path FH'), ...meshOf('Infrastructure zone | path SA'), ...meshOf('GYM & Sports | deck'), ...[...byName.keys()].filter(n => n.startsWith('Footpath links') || / \| path .*\| surface$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/\(BOH\)|service drop-off$/.test(m.name)), ...meshOf('BEACH.001'), ...meshOf('BEACH.003'), ...meshOf('Beach Club | footprint deck'), ...meshOf('Beach Club | cantilever deck')], 2.5, 12);   // + the two sand beaches: people walk and stay on the sand (founder 2026-10-19)   // + paths added by edits; service pads are not walkways   // strict (founder 2026-10-17): walkways only; 12 m bridging covers kerbs, missing paths are added to the model (e021)
 $('stats').textContent = `model ${manifest.version} (${manifest.exported}) · ${top.length} objects · loaded in ${timeStat} s · road grid ${roadR.count} cells · walk grid ${walkR.count} cells`;
 
 // --- anchors: objects by name (centre of their bounds)
@@ -1609,6 +1609,13 @@ const addPoi = (cat, name, p) => { if (!p) return null; const c = walkR.nearest(
 const has = n => byName.has(n);
 addPoi('restaurant', 'Hotel restaurant', A.hotel);
 for (const f of villageFB) addPoi('village', f.name, f.p);
+// 'food' = every F&B outlet on the island; a meal is a random pick among them (founder 2026-10-19). prod = the product it counts for
+{ const foodPoi = (name, p, prod) => { const q = addPoi('food', name, p); if (q) q.prod = prod; };
+  foodPoi('Hotel restaurant', A.hotel, 'Beach Hotel'); if (has('Rotunda Restaurant')) foodPoi('Rotunda Restaurant', centreOf('Rotunda Restaurant'), 'Restaurant');
+  for (const f of villageFB) foodPoi(f.name, f.p, 'Marina Village'); foodPoi('Beach Club restaurant', beachClubP, 'Beach Club'); }
+// beach spots: five along each sand beach, taken from the beach's own raster, so they lie on the sand, not on the promenade
+for (const n of ['BEACH.001', 'BEACH.003']) { const ms = meshOf(n); if (!ms.length) continue; const bg = surfaceGrid(ms, 6, 0); const cells = []; for (let k = 0; k < bg.W * bg.H; k++) if (!isNaN(bg.y[k])) cells.push(k);
+  cells.sort((a, b) => (a % bg.W) - (b % bg.W)); for (let i = 0; i < 5; i++) { const k = cells[Math.floor((i + 0.5) / 5 * cells.length)]; if (k !== undefined) addPoi('beach', `${n === 'BEACH.001' ? 'North' : 'South'} beach ${i + 1}`, bg.posOf(k % bg.W, (k / bg.W) | 0)); } }
 for (const o of villageClusters) if (!o.userData.use) addPoi('retail', o.name.replace('DINING.', 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
 addPoi('beach', 'Beach Club', beachClubP);
 addPoi('beach', 'Hotel pool', has('Beach Hotel | pool') ? centreOf('Beach Hotel | pool') : A.hotel);
@@ -1633,7 +1640,7 @@ addPoi('stop', 'Marina stop', A.stopMarina); POI.stop[0].road = A.stopMarina;
 for (const s of stops) if (s !== A.stopMarina) { const q = addPoi('stop', stopName(s), s); if (q) q.road = s; }   // every guest drop-off is a pod stop: people call a pod from the nearest one
 addPoi('club', 'Members Club', has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : POI.beach[0].p);
 const poiAny = cat => (POI[cat] && POI[cat].length ? anyOf(POI[cat]) : POI.hotel[0]);
-const POI_LABEL = { club: 'the Members Club', restaurant: 'the hotel restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the guest dock', excursion: 'the excursion dock', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
+const POI_LABEL = { club: 'the Members Club', restaurant: 'the hotel restaurant', food: 'a restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the guest dock', excursion: 'the excursion dock', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
 
 // --- event programme (vault: Event Programme)
 const EVENTS = [
@@ -1659,24 +1666,35 @@ const EVENTS = [
 const eventsNow = h => EVENTS.filter(e => h >= e.start - 0.25 && h < e.end);
 const eventAt = cat => { const h = hourOf(); return EVENTS.find(e => e.venue === cat && h >= e.start - 0.25 && h < e.end); };
 
-// --- where a person goes next (shares from the guest-day table; active events pull people to their venue)
+// --- who wants what (founder 2026-10-19): five profiles per type with weights over the activities; the time of day says which
+// activities are on offer (guest-day table), the profile says which of them this person prefers. Meals go to any F&B outlet.
+const PROFILES = {
+  hotel: [{ name: 'Beach lover', w: { beach: 4, food: 1.2, spa: 0.6 } }, { name: 'Foodie', w: { food: 3, village: 2, retail: 1.2 } }, { name: 'Wellness guest', w: { spa: 4, sport: 1.5, promenade: 1.5 } }, { name: 'Sporty guest', w: { sport: 4, promenade: 2, beach: 1.2 }, runs: true }, { name: 'Explorer', w: { village: 2.5, retail: 2, marina: 2, event: 2, promenade: 1.5 } }],
+  resident: [{ name: 'Homebody', w: { home: 4, village: 1.2 } }, { name: 'Sailor', w: { marina: 4, club: 1.5, food: 1.2 } }, { name: 'Wellness resident', w: { spa: 3.5, sport: 2, promenade: 1.5 } }, { name: 'Social resident', w: { village: 3, food: 2.5, event: 2 } }, { name: 'Beach resident', w: { beach: 4, promenade: 1.5 }, runs: true }],
+  day: [{ name: 'Shopper', w: { retail: 4, village: 2 } }, { name: 'Beach day', w: { beach: 4, food: 1.2 } }, { name: 'Sightseer', w: { promenade: 3, marina: 2.5, event: 2 } }, { name: 'Day foodie', w: { food: 3.5, village: 2 } }, { name: 'Family', w: { beach: 3, retail: 1.5, village: 1.5, event: 1.2 } }],
+  yachtguest: [{ name: 'On board', w: { marina: 4, food: 1.2 } }, { name: 'Village regular', w: { village: 3.5, retail: 1.5, food: 1.5 } }, { name: 'Beach crew', w: { beach: 4, club: 1 } }, { name: 'Spa day', w: { spa: 4, promenade: 1.2 } }, { name: 'Explorer', w: { event: 2.5, promenade: 2, retail: 2, marina: 1.2 } }],
+  member: [{ name: 'Club regular', w: { club: 4, food: 1.2 } }, { name: 'Beach member', w: { beach: 4, club: 1.5 } }, { name: 'Spa member', w: { spa: 4, club: 1.2 } }, { name: 'Sport member', w: { sport: 4, promenade: 1.5 }, runs: true }, { name: 'Social member', w: { food: 3, village: 2, event: 2 } }],
+  staff: [{ name: 'Housekeeping', w: {} }, { name: 'F&B', w: {} }, { name: 'Engineering', w: {} }, { name: 'Butler', w: {} }, { name: 'Landscape', w: {} }],
+};
+const pickW = (f, cats) => { const ws = cats.map(c => (f.profile && f.profile.w[c]) || 1), tot = ws.reduce((a, b) => a + b, 0); let r = rand() * tot; for (let i = 0; i < cats.length; i++) { r -= ws[i]; if (r <= 0) return cats[i]; } return cats[cats.length - 1]; };
 function wantCat(f) {
-  const h = hourOf(), r = rand(), isRes = f.type === 'resident';
+  const h = hourOf(), isRes = f.type === 'resident', P = (...c) => pickW(f, c);
   if (f.type === 'staff') return staffCat(f, h);
-  if (f.runs && (between(h, 6, 8.5) || between(h, 17.5, 19.5)) && r < 0.5) return 'promenade';       // running is an activity of a guest
+  if (f.runs && (between(h, 6, 8.5) || between(h, 17.5, 19.5)) && rand() < 0.5) return 'promenade';       // running is an activity of a guest
   if (f.type === 'day' && (h < 10 || h >= 17.6)) return 'home';                                          // day visitors: on the island 10–18
   if (f.type === 'member' && h >= 21) return 'home';
   const ev = eventsNow(h).filter(e => !e.who || e.who === f.type || (e.who === 'guest' && f.type === 'hotel'));
-  if (ev.length && r < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue; }
-  if (f.type === 'day') return r < 0.35 ? 'village' : r < 0.6 ? 'beach' : r < 0.75 ? 'retail' : r < 0.85 ? 'marina' : 'promenade';
-  if (f.type === 'yachtguest') return between(h, 19, 23) ? (r < 0.6 ? 'village' : 'restaurant') : r < 0.3 ? 'marina' : r < 0.6 ? 'village' : r < 0.8 ? 'beach' : 'spa';
-  if (f.type === 'member') return between(h, 19, 21) ? (r < 0.5 ? 'club' : 'restaurant') : r < 0.4 ? 'club' : r < 0.6 ? 'beach' : r < 0.75 ? 'spa' : r < 0.9 ? 'sport' : 'village';
-  if (between(h, 7, 9)) return isRes ? (r < 0.2 ? 'sport' : 'home') : (r < 0.6 ? 'restaurant' : r < 0.75 ? 'sport' : 'home');
-  if (between(h, 9, 12.5)) return isRes ? (r < 0.35 ? 'marina' : r < 0.5 ? 'spa' : r < 0.7 ? 'beach' : 'home') : (r < 0.45 ? 'beach' : r < 0.6 ? 'spa' : r < 0.7 ? 'marina' : r < 0.8 ? 'sport' : 'home');
-  if (between(h, 12.5, 14)) return isRes ? (r < 0.5 ? 'village' : r < 0.8 ? 'beach' : 'home') : (r < 0.4 ? 'beach' : r < 0.75 ? 'village' : 'restaurant');
-  if (between(h, 14, 17)) return isRes ? (r < 0.25 ? 'marina' : r < 0.5 ? 'beach' : r < 0.65 ? 'spa' : 'home') : (r < 0.4 ? 'beach' : r < 0.55 ? 'spa' : r < 0.65 ? 'promenade' : r < 0.75 ? 'retail' : 'home');
-  if (between(h, 17, 19)) return r < 0.2 ? 'sport' : r < 0.45 ? 'promenade' : r < 0.55 ? 'retail' : 'home';
-  if (between(h, 19, 22)) return isRes ? (r < 0.5 ? 'village' : r < 0.8 ? 'restaurant' : 'home') : (r < 0.45 ? 'restaurant' : r < 0.8 ? 'village' : 'home');
+  if (ev.length && rand() < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue; }
+  if ((between(h, 12.3, 14.2) || between(h, 19, 21.5)) && rand() < 0.45) return 'food';                 // meal times: any F&B outlet on the island
+  if (f.type === 'day') return P('village', 'beach', 'retail', 'marina', 'promenade', 'food');
+  if (f.type === 'yachtguest') return between(h, 19, 23) ? P('village', 'food', 'marina') : P('marina', 'village', 'beach', 'spa', 'retail');
+  if (f.type === 'member') return between(h, 19, 21) ? P('club', 'food') : P('club', 'beach', 'spa', 'sport', 'village');
+  if (between(h, 7, 9)) return isRes ? P('sport', 'home', 'promenade') : P('food', 'sport', 'home', 'beach');
+  if (between(h, 9, 12.5)) return isRes ? P('marina', 'spa', 'beach', 'home') : P('beach', 'spa', 'marina', 'sport', 'home');
+  if (between(h, 12.5, 14)) return isRes ? P('village', 'beach', 'home', 'food') : P('beach', 'village', 'food');
+  if (between(h, 14, 17)) return isRes ? P('marina', 'beach', 'spa', 'home') : P('beach', 'spa', 'promenade', 'retail', 'home');
+  if (between(h, 17, 19)) return P('sport', 'promenade', 'retail', 'home', 'beach');
+  if (between(h, 19, 22)) return isRes ? P('village', 'food', 'home') : P('food', 'village', 'home');
   return 'home';
 }
 const SHIFTS = [7, 15, 23];
@@ -1706,7 +1724,7 @@ function person(i, type, home) {
   const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 20, heading: 0, visible: true, goal: null, task: '', runs: false };
   f.baseSpeed = f.speed; setType(f, type); people.push(f); return f;
 }
-function setType(f, type) { f.type = type; f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < 0.15; const c = new THREE.Color(COL[type]); for (const im of [crowdBody, ...crowdArms]) { im.setColorAt(f.i, c); im.instanceColor.needsUpdate = true; } }
+function setType(f, type) { f.type = type; f.profile = anyOf(PROFILES[type] || PROFILES.hotel); f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < (f.profile.runs ? 0.6 : 0.08); const c = new THREE.Color(COL[type]); for (const im of [crowdBody, ...crowdArms]) { im.setColorAt(f.i, c); im.instanceColor.needsUpdate = true; } }
 const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.22 ? poiAny('villa') : poiAny('residence')), hotel: () => poiAny('hotel'), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina') };   // residents 80 villa : 285 residence (vault: Resort Population)
 for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   const type = i < 50 ? 'staff' : i < 120 ? 'resident' : i < 240 ? 'hotel' : i < 255 ? 'yachtguest' : i < 290 ? 'day' : 'member';
@@ -1729,7 +1747,7 @@ function podCall(f) {
   job.riders.push(f); f.ride.job = job;
 }
 function startWalk(f, to, text) { let pts = walkBetween(f.poi, to); if (!pts) return false; if (f.pos && pts.length && f.pos.distanceTo(pts[0]) > 1.5) pts = [f.pos.clone(), ...pts]; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; return true; }
-const MILL = { village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
+const MILL = { village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, food: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
 function stepPeople(dt) {
   for (const f of people) {
     if (f.idle) continue;
@@ -1751,13 +1769,15 @@ function stepPeople(dt) {
       const cat = wantCat(f); const to = cat === 'home' ? f.home : poiAny(cat); if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
       if ((f.type === 'day' || f.type === 'member') && cat === 'home') f.leaving = true;             // walks to the Terminal and leaves on the shuttle
       const ev = eventAt(cat); if (ev && cat !== 'home') ops.eventsAttended++;
-      if (f.type !== 'staff' && POI.stop.length > 1 && rand() < RIDE_SHARE) {          // a longer trip by guest pod: walk to the nearest stop, call, ride, walk the last bit
-        const far = f.poi.p.distanceTo(to.p), sA = nearestPoi(POI.stop, f.poi.p), sB = nearestPoi(POI.stop, to.p);
-        if (far > 250 && sA !== sB && sA.p.distanceTo(f.poi.p) < far * 0.4 && sB.p.distanceTo(to.p) < 220 && startWalk(f, sA, `${TYPES[f.type].title} · calls a pod → walks to ${sA.name}`)) {
-          f.ride = { a: sA, b: sB, dest: to, text: `${TYPES[f.type].title} → ${POI_LABEL[cat] || cat}` }; f.speed = f.baseSpeed; continue; }
+      const dest = cat === 'food' ? to.name : (POI_LABEL[cat] || cat);
+      if (f.type !== 'staff' && POI.stop.length > 1) {                                  // a longer trip by guest pod: walk to the nearest stop, call, ride, walk the last bit
+        const far = f.poi.p.distanceTo(to.p), pRide = far < 250 ? 0 : far < 500 ? RIDE_SHARE : 0.85;   // past a comfortable walk almost everyone calls a pod
+        const sA = nearestPoi(POI.stop, f.poi.p), sB = nearestPoi(POI.stop, to.p);
+        if (rand() < pRide && sA !== sB && sA.p.distanceTo(f.poi.p) < far * 0.4 && sB.p.distanceTo(to.p) < 220 && startWalk(f, sA, `${TYPES[f.type].title} · calls a pod → walks to ${sA.name}`)) {
+          f.ride = { a: sA, b: sB, dest: to, text: `${TYPES[f.type].title} → ${dest}` }; f.speed = f.baseSpeed; continue; }
       }
       f.speed = cat === 'promenade' && f.runs ? 7 : f.baseSpeed;
-      if (!startWalk(f, to, (ev ? `${ev.name} · ` : '') + `${TYPES[f.type].title}${cat === 'promenade' && f.runs ? ' · running' : ''} → ${POI_LABEL[cat] || cat}`)) { f.wait = 10 + rand() * 20; f.leaving = false; }   // no walkway there: stay, choose again later
+      if (!startWalk(f, to, (ev ? `${ev.name} · ` : '') + `${TYPES[f.type].title}${cat === 'promenade' && f.runs ? ' · running' : ''} → ${dest}`)) { f.wait = 10 + rand() * 20; f.leaving = false; }   // no walkway there: stay, choose again later
       continue;
     }
     f.s = Math.min(f.len, f.s + f.speed * dt); f.phase = (f.phase || 0) + f.speed * dt * 4.2;   // one stride ≈ 1.5 m
@@ -1785,7 +1805,7 @@ function drawPeople() {
     if (!show) { for (const im of crowdAll) im.setMatrixAt(f.i, _zeroM); continue; }
     _e.set(0, f.heading, 0); _q.setFromEuler(_e); _m.compose(f.pos, _q, _s);
     crowdBody.setMatrixAt(f.i, _m); crowdHead.setMatrixAt(f.i, _m);
-    const sw = f.path ? Math.sin(f.phase || 0) * 0.55 : 0;                     // stride: legs fore and aft, arms the other way
+    const sw = 0;                                                              // static figures (founder 2026-10-19: models, no animation)
     for (let k = 0; k < 2; k++) { const sgn = k ? -1 : 1;
       _pm.makeRotationZ(sw * sgn); _pm.setPosition(0, FIG.hip, FIG.legOff * sgn); _m2.multiplyMatrices(_m, _pm); crowdLegs[k].setMatrixAt(f.i, _m2);
       _pm.makeRotationZ(-sw * sgn * 0.8); _pm.setPosition(0, FIG.shoulder, FIG.armOff * sgn); _m2.multiplyMatrices(_m, _pm); crowdArms[k].setMatrixAt(f.i, _m2); }
@@ -1813,7 +1833,7 @@ const pct = (a, b) => Math.round(100 * a / Math.max(1, b));
 function updateDash() {
   const h = hourOf();
   const guests = people.filter(f => f.type !== 'staff' && !f.idle);
-  const where = {}; for (const f of guests) { const k = f.path ? 'transit' : (f.at === 'villa' || f.at === 'residence' || f.at === 'hotel' ? 'home' : f.at === 'club' ? 'beach' : f.at === 'terminal' ? 'marina' : f.at); where[k] = (where[k] || 0) + 1; }
+  const where = {}; for (const f of guests) { const k = f.path ? 'transit' : (f.at === 'villa' || f.at === 'residence' || f.at === 'hotel' ? 'home' : f.at === 'club' ? 'beach' : f.at === 'terminal' ? 'marina' : f.at === 'food' ? 'restaurant' : f.at); where[k] = (where[k] || 0) + 1; }
   const scale = PLAN.guests / Math.max(1, guests.length);
   const order = ['home', 'beach', 'restaurant', 'village', 'retail', 'spa', 'sport', 'marina', 'event', 'promenade', 'transit'];
   const lab = { home: 'In rooms, villas and residences', beach: 'Beach, pools, Beach Club', restaurant: 'Hotel restaurant', village: 'Marina Village F&B', retail: 'Shops', spa: 'Spa', sport: 'Gym and courts', marina: 'Marina and boats', event: 'Events Rotunda', promenade: 'Promenade', transit: 'On the move' };
@@ -1825,7 +1845,7 @@ function updateDash() {
   if (lg.dataset.n !== String(logAll.length)) { lg.dataset.n = String(logAll.length); lg.innerHTML = logAll.slice(-80).map(l => `<div><span>${l.t}</span><div><b>${l.title}</b><div class="d">${l.body}</div></div></div>`).join(''); if (stick) lg.scrollTop = lg.scrollHeight; }
   // products: guests at each product now (sim, scaled to the plan), staff on shift (proforma staff x share of the shift)
   const prodOf = f => { const c = f.at, n = (f.poi && f.poi.name) || '';
-    return c === 'hotel' ? (n.startsWith('Hill') ? 'Hill Hotel' : 'Beach Hotel') : c === 'residence' ? (n.includes('BR2') ? 'Residences BR2' : 'Residences BR1') : c === 'villa' ? 'Villas'
+    return c === 'food' ? (f.poi && f.poi.prod) || null : c === 'hotel' ? (n.startsWith('Hill') ? 'Hill Hotel' : 'Beach Hotel') : c === 'residence' ? (n.includes('BR2') ? 'Residences BR2' : 'Residences BR1') : c === 'villa' ? 'Villas'
       : c === 'restaurant' ? 'Restaurant' : c === 'event' ? 'Events Rotunda' : c === 'spa' ? 'Spa & Wellness' : c === 'marina' || c === 'terminal' || c === 'excursion' ? 'Marina'
       : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? 'Beach Club' : c === 'club' ? 'Members Club' : null; };
   const pg = {}; for (const f of guests) { if (f.path && !f.strolling) continue; const k = prodOf(f); if (k) pg[k] = (pg[k] || 0) + 1; }
@@ -1991,6 +2011,7 @@ const STD = { toneMapping: renderer.toneMapping, sky: [skyMat.uniforms.top.value
   grade: { sat: grade.uniforms.sat.value, con: grade.uniforms.con.value, lift: grade.uniforms.lift.value, tint: grade.uniforms.tint.value.getHex() },
   water: Object.fromEntries(['deep', 'mid', 'shallow', 'sand', 'skyC', 'fresK', 'specK'].map(k => [k, waterMat.uniforms[k].value.clone ? waterMat.uniforms[k].value.clone() : waterMat.uniforms[k].value])) };
 const flatMat = (hex, rough = 0.95) => { const k = 'f' + hex; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 })); return schemCache.get(k); };
+const schemPeople = () => { if (!schemCache.has('people')) schemCache.set('people', new THREE.MeshStandardMaterial({ color: SCHEMATIC.people, roughness: 1, metalness: 0 })); return schemCache.get('people'); };
 const schemGhost = () => { if (!schemCache.has('ghost')) schemCache.set('ghost', new THREE.MeshStandardMaterial({ color: 0xcfdcf0, roughness: 1, metalness: 0, transparent: true, opacity: 0.6, depthWrite: false })); return schemCache.get('ghost'); };   // empty-berth silhouette
 const dotMat = () => {                                                              // world-space dot pattern, so no UVs are needed
   if (schemCache.has('dots')) return schemCache.get('dots');
@@ -2066,7 +2087,10 @@ function applyMapStyle(name) {
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : o.userData.baseMat; });
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; o.material = sch ? (/glass/i.test(o.userData.baseMat.name) ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
-  for (const im of crowdAll) im.visible = !sch; peopleDots.visible = sch; shadowDirty();
+  for (const im of crowdAll) {                                                 // schematic: the same figures in one blue (founder 2026-10-19: models, not dots)
+    if (!im.userData.baseMat) { im.userData.baseMat = im.material; im.userData.baseColor = im.instanceColor; }
+    im.material = sch ? schemPeople() : im.userData.baseMat; im.instanceColor = sch ? null : im.userData.baseColor; }
+  peopleDots.visible = false; shadowDirty();
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
   try { localStorage.setItem('mapStyle2', name); } catch (e) {}
 }
