@@ -113,11 +113,14 @@ const SERVICES = [
   { id: 'excursion-terminal', name: 'Excursion terminal', zone: 'Z04', op: 'excursions', what: 'Pier and booking desk for the snorkelling and sunset trips; departures by the event programme.',
     produces: { 'Trips a day': 2, 'Seats a trip': 12, 'Booking': 'in the guest app, weather cancels' }, consumes: { 'Energy': '≈ 60 kWh a day' }, loadBase: 40,
     liveFn: L => [['Now', (L.reception.excursion || '—').replace(/^Excursion boat · /, '')]] },
+  { id: 'crew-lounge', name: 'Crew lounge', zone: 'Z04', op: 'marina', what: 'Lounge, showers, laundry and a canteen for the crews of the moored yachts; provisioning desk for the boats.',
+    produces: { 'Lounge seats': 40, 'Showers and lockers': 16, 'Crew laundry a day': '300 kg', 'Provisioning orders a day (plan)': 25 }, consumes: { 'Water': '≈ 8 m³ a day', 'Energy': '≈ 250 kWh a day', 'Food': 'from the dark store' },
+    liveFn: L => { const M = L.marina, per = { S: 1, M: 4, L: 12 }; const crew = ['S', 'M', 'L'].reduce((a, k) => a + ((M.byCls[k] || { moored: 0 }).moored) * per[k], 0); return [['Load', Math.min(100, Math.round(100 * crew * 0.3 / 40)) + ' %'], ['Crew on the island', crew], ['In the lounge now', Math.round(crew * (L.hour >= 11 && L.hour < 23 ? 0.3 : 0.1))]]; } },
 ];
 // Categories (founder 2026-10-19): the cards are grouped, not listed by zone
 const PRODUCT_GROUPS = [
   { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'villas', 'residences'] },
-  { title: 'Marina', ids: ['marina', 'marina-support', 'guest-dock', 'excursion-terminal'] },
+  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'guest-dock', 'excursion-terminal', 'crew-lounge'] },
   { title: 'Food and beverage', ids: ['restaurant', 'village', 'beach-club', 'members-club'] },
   { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
 ];
@@ -177,15 +180,20 @@ const opTag = id => `<span class="op"><b>Operator</b>${OP[id].name}</span>`;
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
 const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3><span class="zone" title="${ZONE_NAME[c.zone] || ''}"><i style="background:${Z[c.zone]}"></i></span></div>`;   // zone = colour dot only (founder 2026-10-19: the Z ids confused)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
-const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3><div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
-function productCard(c, link = true) {
+const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
+function productInner(c, link = true) {
   const d = needs(c, OCC); const objs = c.units ? Object.fromEntries([...c.units.map(u => [u.name, u.n]), ...Object.entries(c.objects)]) : c.objects;
-  return `<div class="con" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
+  return `${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${c.capLabel || `${fmt(capacityOf(c))} ${c.unit}`}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel || `${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}`}</span></div></div>
   <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
-  <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>`;
+  <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>`;
 }
+const productCard = (c, link = true) => `<div class="con" id="${c.id}">${productInner(c, link)}</div>`;
+// the marina as a full-width block (founder 2026-10-19), like the Fleet Hub: the card on the left, the berths by class on the right
+const marinaBlock = (link = true) => { const c = entityOf('marina'); return `<div class="con wide" id="marina"><div class="col">${productInner(c, link)}</div>
+  <div class="col"><div class="cap">Berths · plan vs model, live</div><div class="scroll"><table class="t"><thead><tr><th>Class</th><th class="num">Plan</th><th class="num">In the model</th><th class="num">Occupied</th><th class="num">Free</th><th class="num">Load</th></tr></thead><tbody id="marinaRows"></tbody></table></div>
+  <div class="cap" style="margin-top:10px">Movements today</div><div class="kv" data-live="marina-moves"><span>—</span><span>—</span></div></div></div>`; };
 const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
@@ -243,7 +251,10 @@ function refreshLive() {
       const M = L.marina, cls = { S: 'to 15 m', M: 'to 35 m', L: 'to 80 m' }; rows.length = 0;
       rows.push(['Berths occupied', `${M.moored} <small style="color:var(--muted);font-weight:400">of ${M.berths} · ${Math.round(100 * M.moored / M.berths)} %</small>`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)]);
       for (const k of ['S', 'M', 'L']) { const b = M.byCls[k] || { moored: 0, berths: 0 }; rows.push([`${k} · boats ${cls[k]}`, `${b.moored} <small style="color:var(--muted);font-weight:400">of ${b.berths}</small>`], ['bar', bar(Math.round(100 * b.moored / Math.max(1, b.berths)), 101)]); }
-      rows.push(['Under way', M.underway], ['Expected today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`], ['Next', M.next], ['Staff on shift', stf]); }
+      rows.push(['Staff on shift', stf]);
+      const PLAN = { S: 50, M: 32, L: 8 }, NAME = { S: 'S · to 15 m', M: 'M · to 35 m', L: 'L · to 80 m' };
+      const mr = document.getElementById('marinaRows'); if (mr) mr.innerHTML = ['S', 'M', 'L'].map(k => { const b = M.byCls[k] || { moored: 0, berths: 0 }; return `<tr><td>${NAME[k]}</td><td class="num">${PLAN[k]}</td><td class="num">${b.berths}</td><td class="num">${b.moored}</td><td class="num">${b.berths - b.moored}</td><td class="num">${Math.round(100 * b.moored / Math.max(1, b.berths))} %</td></tr>`; }).join('') + `<tr><td><b>All</b></td><td class="num">90</td><td class="num">${M.berths}</td><td class="num">${M.moored}</td><td class="num">${M.berths - M.moored}</td><td class="num">${Math.round(100 * M.moored / M.berths)} %</td></tr>`;
+      setLive('marina-moves', [['Under way now', M.underway], ['Arrivals left today', M.arrivalsLeft], ['Departures left today', M.departuresLeft], ['Next movement', M.next]]); }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
   }

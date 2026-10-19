@@ -7,8 +7,8 @@
 <title>RubiqOS · Entity</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019i">
-<link rel="stylesheet" href="/proforma.css?v=20261019i">
+<link rel="stylesheet" href="/site.css?v=20261019k">
+<link rel="stylesheet" href="/proforma.css?v=20261019k">
 <style>
   body.site .crumb { font-size: 12.5px; color: var(--muted); margin: 18px 0 0; } body.site .crumb a { color: var(--muted); }
   body.site .ent { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 20px; align-items: start; margin-top: 14px; }
@@ -33,14 +33,14 @@
   <p class="foot">RubiqOS · one page per product and service · <a href="/proforma/">all cards</a> · the demo at <a href="/">rubiqos.com</a>.</p>
 </div>
 <iframe id="sim" src="/?headless=1" title="simulation"></iframe>
-<script src="/proforma-data.js?v=20261019i"></script>
+<script src="/proforma-data.js?v=20261019k"></script>
 <script>
 const id = new URLSearchParams(location.search).get('id') || 'beach-hotel', c = entityOf(id);
 if (!c) { document.getElementById('card').innerHTML = '<div class="con"><h3>Unknown entity</h3><p>No product or service with the id “' + id + '”.</p></div>'; }
 else {
   const kind = kindOf(c); document.title = `RubiqOS · ${c.name}`; document.getElementById('crumbKind').textContent = kind === 'product' ? 'Product' : 'Service';
-  document.getElementById('card').innerHTML = kind === 'product' ? productCard(c, false) : kind === 'fleet' ? fleetCard(false) : serviceCard(c, false);
-  if (kind === 'fleet') { const cd = document.getElementById('card'); cd.classList.remove('cards'); }
+  document.getElementById('card').innerHTML = c.id === 'marina' ? marinaBlock(false) : kind === 'product' ? productCard(c, false) : kind === 'fleet' ? fleetCard(false) : serviceCard(c, false);
+  if (kind === 'fleet' || c.id === 'marina') { const cd = document.getElementById('card'); cd.classList.remove('cards'); document.querySelector('.ent').style.gridTemplateColumns = '1fr'; }
   const op = OP[c.op], siblings = (kind === 'product' ? PRODUCTS : SERVICES).filter(s => s.op === c.op && s !== c);
   const ev = EVENTS.filter(e => e.venue === c.id);
   const uses = kind === 'product' ? `<div class="card"><h3>Services it uses</h3><p>Power, water and sewage from the utilities; food from the warehouse and the dark store; linen from the laundry; the fleet for guests and goods; the network for every device; guest services, the clinic and security on call.</p></div>` : '';
