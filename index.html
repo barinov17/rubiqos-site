@@ -1000,6 +1000,7 @@ const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k 
 const ZC = Object.fromEntries(zones.map(z => [z.zone_id, z.colour]));
 const topOfObj = (n, up = 6) => { const o = byName.get(n); if (!o) return null; const b = bboxOf(o); const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
 const topOfPrefix = (pre, up = 6) => { const b = new THREE.Box3(); let any = false; byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh) { b.expandByObject(o); any = true; } }); if (!any) return null; const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
+const BC_NAME = byName.has('Beach Club') ? 'Beach Club' : 'Beach club buildings.001';   // e066: the B04 asset replaces the DWG volume
 // products: kpis from the proforma (rubiqos.com/proforma); numbers per day at peak
 const PRODUCTS = [
   { fp: ['Beach Hotel | west block', 'Beach Hotel | middle block', 'Beach Hotel | east block', 'Beach Hotel | link', 'Beach Hotel | lobby'], hp: ['Beach Hotel'], name: 'Beach Hotel', zone: 'Z01', p: topOfPrefix('Beach Hotel | middle block', 8), kpi: { 'Keys': 240, 'Guests at 75 %': 342, 'Staff': 270, 'Water': '205 m³', 'Energy': '14,400 kWh', 'Sewage': '175 m³' } },
@@ -1012,7 +1013,7 @@ const PRODUCTS = [
   { fp: ['Wellness Spa'], hp: ['Wellness Spa', 'wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfObj('Wellness Spa', 6) || topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['marina support.001', 'Terminal'], name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.011', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
-  { fp: ['Beach club buildings.001'], name: 'Beach Club', zone: 'Z11', p: topOfObj('Beach club buildings.001', 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
+  { fp: [BC_NAME], hp: ['Beach Club', 'Beach club buildings'], name: 'Beach Club', zone: 'Z11', p: topOfObj(BC_NAME, 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
   { fp: ['Members Club | arc building', 'Members Club | pavilion'], hp: ['Members Club'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
 ];
 for (const n of [...byName.keys()].filter(n => /^villa\.\d+$/.test(n)).sort()) PRODUCTS.push({ fp: [n + ' |'], name: n.replace('villa.', 'Villa '), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
@@ -1031,6 +1032,10 @@ const SERVICES = [
 // icons for the schematic style: simple 24 x 24 stroke paths, drawn white on the pin / marker
 const ICON = {
   bed: 'M3 18v-7h18v7M3 14h18M6 11V8h5v3M3 18v2M21 18v2',
+  hotel: 'M5 21V4h14v17M3 21h18M9 8h2M13 8h2M9 12h2M13 12h2M9 16h2M13 16h2M10 21v-3h4v3',   // hotel block with a door (founder 2026-10-18: a building, not a bed)
+  pod: 'M3 15v-3l3-4h8l4 4h3v3zM3 15h18M9 8v4M7 18a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM17 18a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z',   // guest pod: one body, two wheels
+  bot: 'M5 16V9h14v7zM12 9V5M9 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM15 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z',   // delivery robot: a box on two wheels with an antenna
+  lotus: 'M12 4c2.5 3 2.5 7 0 10-2.5-3-2.5-7 0-10zM5 8c3 1 6 4 7 6-3 0-6-2-7-6zM19 8c-3 1-6 4-7 6 3 0 6-2 7-6zM3 15c3 4 15 4 18 0',   // spa: lotus
   building: 'M6 21V4h12v17M9 8h2M13 8h2M9 12h2M13 12h2M9 16h2M13 16h2M4 21h16',
   home: 'M4 11l8-6 8 6M6 10v10h12V10M10 20v-5h4v5',
   utensils: 'M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 1-3 4-3 7h3v11',
@@ -1058,9 +1063,9 @@ const ICON = {
   boat: 'M3 17h18l-2 3H5zM12 3v14M12 4l6 10h-6',
   heli: 'M3 5h18M12 5v3M6 11a4 4 0 0 1 4-3h4a4 4 0 0 1 0 8h-4a4 4 0 0 1-4-5zM18 12h4M9 16v3h8',
 };
-const PIN_ICON_KEY = name => /Hotel$/.test(name) ? 'bed' : /^Residences/.test(name) ? 'building' : /^Villa/.test(name) ? 'home' : /Restaurant/.test(name) ? 'utensils'
-  : /Events/.test(name) ? 'star' : /Spa/.test(name) ? 'leaf' : name === 'Marina' ? 'anchor' : /Marina Village/.test(name) ? 'shop' : /Beach Club/.test(name) ? 'umbrella'
-  : /Members/.test(name) ? 'glass' : /GYM/.test(name) ? 'dumbbell' : /^WH-/.test(name) ? 'box' : /Fleet Hub/.test(name) ? 'golf' : /Office/.test(name) ? 'briefcase'
+const PIN_ICON_KEY = name => /Hotel$/.test(name) ? 'hotel' : /^Residences/.test(name) ? 'building' : /^Villa/.test(name) ? 'home' : /Restaurant/.test(name) ? 'utensils'
+  : /Events/.test(name) ? 'star' : /Spa/.test(name) ? 'lotus' : name === 'Marina' ? 'anchor' : /Marina Village/.test(name) ? 'shop' : /Beach Club/.test(name) ? 'glass'
+  : /Members/.test(name) ? 'glass' : /GYM/.test(name) ? 'dumbbell' : /^WH-/.test(name) ? 'box' : /Fleet Hub/.test(name) ? 'pod' : /Office/.test(name) ? 'briefcase'
   : /Staff/.test(name) ? 'users' : /Waste/.test(name) ? 'recycle' : /Water, power/.test(name) ? 'bolt' : /Reception|Arrival/.test(name) ? 'door' : 'star';
 const PIN_ICON_SVG = (c, key) => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.4"/><g transform="translate(5.6 5) scale(0.54)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON[key] || ICON.star}"/></g></svg>`;
 const PIN_SVG = c => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="11.4" r="4" fill="#fff"/></svg>`;
@@ -1150,7 +1155,7 @@ for (let k = 0; k < 12; k++) follower('L1', `P${k + 4}`, 'road', 22, f => {
 }, A.fleet);
 
 // --- L2 guest shuttles (register 4–6, demo 3): fixed loop Terminal → hotels → Marina Village → Beach Club → spa, guest drop-offs only
-const beachClubP = byName.has('Beach club buildings.001') ? centreOf('Beach club buildings.001') : A.hotel;
+const beachClubP = byName.has(BC_NAME) ? centreOf(BC_NAME) : A.hotel;
 const LOOP_RAW = [['Terminal stop', A.stopMarina], ['Beach Hotel', A.stopHotel], ['Hill Hotel', stopNear(A.hillHotel)], ['Marina Village', A.stopVillage], ['Beach Club', stopNear(beachClubP)], ['Spa', stopNear(A.spa)]];
 const LOOP = LOOP_RAW.filter((x, i) => LOOP_RAW.findIndex(y => y[1] === x[1]) === i);
 for (let k = 0; k < 3; k++) follower('L2', `S${k + 1}`, 'road', 18, f => {
@@ -1378,7 +1383,7 @@ const has = n => byName.has(n);
 addPoi('restaurant', 'Hotel restaurant', A.hotel);
 for (const f of villageFB) addPoi('village', f.name, f.p);
 for (const o of villageClusters) if (!o.userData.use) addPoi('retail', o.name.replace('DINING.', 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
-addPoi('beach', 'Beach Club', has('Beach club buildings.001') ? centreOf('Beach club buildings.001') : A.hotel);
+addPoi('beach', 'Beach Club', beachClubP);
 addPoi('beach', 'Hotel pool', has('Beach Hotel | pool') ? centreOf('Beach Hotel | pool') : A.hotel);
 addPoi('beach', 'Members Club beach', has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : A.hotel);
 addPoi('spa', 'Spa', A.spa);
@@ -1714,7 +1719,7 @@ const SCHEMATIC = {
   green: 0xf4f7fd, greenDot: 0x6f98e3, dotStep: 4.0, dotR: 0.25,   /* stronger dots (founder 2026-10-18) */                       // lawns: white with blue dots (halftone of the reference)
   roadMain: 0x34477a, walk: 0xc4c7cc, plaza: 0xcfd2d7, infra: 0xc6c9cf, infraBld: 0xa4a9b2, pier: 0xdfe6f2, breakwater: 0xeef2f8,
   tree: 0xcfdcf5, treeDark: 0xb8cbf1, palm: 0xd6e2f7, trunk: 0xe3e9f5,   // light, so the trees do not compete with the buildings
-  glassDarken: 0.82, pool: 0x8cc2f0, sig: 0x4f73d4, people: 0x1d3a8f, plinth: 0xb4b8c0,
+  glassDarken: 0.82, pool: 0x8cc2f0, sig: 0x4f73d4, people: 0x1d3a8f, plinth: 0xb4b8c0, yachtGlass: 0xc9dcf6,
   heli: { lawn: 0xffffff, 'grass pavers': 0xe8edf6, hedge: 0xd6e0f1, pavers: 0xc4c7cc, FATO: 0xc4c7cc, TLOF: 0x9aa3b3, white: 0xffffff, yellow: 0x4f73d4 },
   fn: { hotel: 0x2856e0, 'apart hotel': 0x3a66e4, residences: 0x4f7ae9, villas: 0x7c9cf0, 'food & retail': 0x9db6f4, dining: 0x6f8fee,
         'events & culture': 0x1a3fb8, 'spa & wellness': 0x8aa9f2, wellness: 0x8aa9f2, 'wellness & sport': 0x8aa9f2, sport: 0xb4c8f6, courts: 0xb4c8f6,
@@ -1744,7 +1749,7 @@ function setPinStyle(sch) {
   stage.classList.toggle('schem', sch);
   for (const g of gpins) { const svg = g.el.querySelector('svg'); if (!svg) continue; const html = sch ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : PIN_SVG(g.colour); svg.outerHTML = html; }
 }
-const VEH_ICON = { L1: 'golf', L2: 'bus', L3: 'cart', L4: 'truck', L5: 'robot', W1: 'ship', W2: 'ship', W3: 'boat', Y2: 'boat', A1: 'heli', yacht: 'boat', buggy: 'golf', truck: 'truck', robot: 'robot' };
+const VEH_ICON = { L1: 'pod', L2: 'bus', L3: 'cart', L4: 'truck', L5: 'bot', W1: 'ship', W2: 'ship', W3: 'boat', Y2: 'boat', A1: 'heli', yacht: 'boat', buggy: 'pod', truck: 'truck', robot: 'bot' };
 const vehIconTex = new Map();
 function vehIcon(key) {
   if (vehIconTex.has(key)) return vehIconTex.get(key);
@@ -1757,7 +1762,7 @@ function setMarkerStyle(sch) {
   for (const f of ambient) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
     mk.material.map = sch ? vehIcon(VEH_ICON[f.type] || 'car') : mk.userData.stdMap; mk.material.needsUpdate = true; const k = sch ? 0.024 : mk.userData.stdScale; mk.scale.set(k, k, 1); }
 }
-const SIG = /^(Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception)/;   // the signature buildings, one muted blue
+const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception)/;   // the signature buildings, one muted blue
 const meshTop = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q; };
 const meshGroup = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
 const meshFn = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q.userData.function || o.userData.function || ''; };
@@ -1770,7 +1775,7 @@ function schematicMat(o) {
   if (g === 'terrain') return /BEACH/.test(mn) ? flatMat(S.beach) : /Rocky/.test(mn) ? flatMat(S.rock) : /GREEN/.test(mn) ? dotMat() : flatMat(S.land);
   if (g === 'landscape') return /GREEN|Planting/.test(mn) ? dotMat() : flatMat(S.land);
   if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? flatMat(S.roadMain) : /Plaza|Urban/.test(mn) ? flatMat(S.plaza) : flatMat(S.walk);
-  if (g === 'marina') return /MARINA$/.test(mn) ? flatMat(S.breakwater) : /Pier deck/.test(mn) ? flatMat(S.pier) : /Boat/.test(mn) ? flatMat(0xffffff) : flatMat(S.fn['arrival & mobility']);
+  if (g === 'marina') return /MARINA$/.test(mn) ? flatMat(S.breakwater) : /Pier deck/.test(mn) ? flatMat(S.pier) : /Boat|Yacht/.test(mn) ? flatMat(0xffffff) : /glass/i.test(mn) ? flatMat(S.yachtGlass, 0.5) : flatMat(S.fn['arrival & mobility']);   // yachts white, glass light blue (founder 2026-10-18)
   if (/GREEN|Planting|roof garden|planters/i.test(mn + ' ' + n)) return dotMat();
   if (/Road surface/.test(mn) || /access road$|service road/.test(n)) return flatMat(S.roadMain);
   if (/Promenade|Plaza|Urban ground|Villa deck|deck$|yard$|courtyard$|forecourt$|ground$|path/i.test(mn + ' ' + n)) return flatMat(S.walk);
