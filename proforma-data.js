@@ -208,6 +208,7 @@ function productInner(c, link = true) {
   const d = needs(c, OCC); const objs = c.units ? c.objects : c.objects;   // the marina's berths by class live in its table, not in the list
   return `${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
+  ${chartHtml(c)}
   <div class="sec"><div class="cap">Produces</div>${c.rooms ? roomRows(c) : `<p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${c.capLabel || `${fmt(capacityOf(c))} ${c.unit}`}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel || `${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}`}</span></div>`}</div>
   <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
   <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
@@ -257,7 +258,21 @@ const TEAM = {
   fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: { 'Guest pods L1 (autonomous)': 40, 'Shuttles L2': 5, 'Service carts L3': 16, 'Trucks L4 (autonomous)': 6, 'Delivery robots L5': 24, 'Boats W1 · W2 (autonomous)': 6, 'Charging robots': 2 } },
 };
 const tsum = o => Object.values(o).reduce((a, b) => a + b, 0);
-const teamHtml = id => { const t = TEAM[id]; if (!t) return ''; return `<div class="sec team"><div class="cap">People and robots</div><div class="kv"><span class="sub">People · ${fmt(tsum(t.people))}</span><span></span>${kv(t.people)}<span class="sub">Robots · ${fmt(tsum(t.robots))}</span><span></span>${kv(t.robots)}</div></div>`; };
+const kvc = (o, cls) => Object.entries(o).map(([k, v]) => `<span class="${cls}">${k}</span><span class="${cls}">${v}</span>`).join('');
+const teamHtml = id => { const t = TEAM[id]; if (!t) return ''; return `<div class="sec team"><div class="cap">Labor force</div><div class="kv"><span class="sub pp">People · ${fmt(tsum(t.people))}</span><span class="sub pp"></span>${kvc(t.people, 'pp')}<span class="sub rb">Robots · ${fmt(tsum(t.robots))}</span><span class="sub rb"></span>${kvc(t.robots, 'rb')}</div></div>`; };
+// 30-day occupancy (founder 2026-10-19): today is day 5; days 1–4 are actuals, today is live, days 6–30 are the forecast.
+// The month runs from low to high season (base 48 % → 78 %), Friday and Saturday nights +12, Sunday +4, product factor, deterministic noise.
+const TODAY_IDX = 4, DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const FC_FACTOR = { 'beach-hotel': 1.0, 'hill-hotel': 0.95, 'apart-hotel': 0.85, villas: 0.9, residences: 0.72, village: 0.9, restaurant: 0.9, 'beach-club': 1.0, 'members-club': 0.8, 'hotel-beach': 0.95, 'club-beach': 0.9, 'water-sports': 0.8, spa: 0.85, sport: 0.75, marina: 0.8, events: 0.8 };
+const hash = str => { let h = 2166136261; for (const ch of str) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const forecast = (c, todayDow = 0) => { const f = FC_FACTOR[c.id] || 0.85, h0 = hash(c.id), out = [];
+  for (let d = 0; d < 30; d++) { const dow = (todayDow + d - TODAY_IDX + 70) % 7, we = dow === 4 || dow === 5 ? 12 : dow === 6 ? 4 : 0, wePeak = c.id === 'villas' || c.id === 'beach-club' || c.id === 'club-beach' ? we * 1.6 : we;
+    const noise = ((hash(c.id + d) % 900) / 100) - 4.5; out.push(Math.max(10, Math.min(100, Math.round((48 + 30 * d / 29) * f + wePeak + noise)))); }
+  return out; };
+const chartHtml = c => { const v = forecast(c); return `<div class="sec"><div class="cap">30 days · occupancy <small>actual · today · forecast</small></div><div class="f30" data-f30="${c.id}">${v.map((p, d) => `<i class="${d < TODAY_IDX ? 'past' : d === TODAY_IDX ? 'today' : 'fc'}" style="height:${p}%" title="Day ${d + 1} · ${p} %"></i>`).join('')}</div><div class="f30x"><span>day 1</span><span>today · day 5</span><span>day 30 · month avg ${Math.round(v.reduce((a, b) => a + b, 0) / 30)} %</span></div></div>`; };
+const refreshCharts = (L, loads) => { const todayDow = Math.max(0, DOW.indexOf((L.day || 'Mon').slice(0, 3)));
+  for (const c of PRODUCTS) { const el = document.querySelector(`[data-f30="${c.id}"]`); if (!el) continue; const v = forecast(c, todayDow), bars = el.children;
+    for (let d = 0; d < 30; d++) { const dow = DOW[(todayDow + d - TODAY_IDX + 70) % 7], p = d === TODAY_IDX && loads[c.id] !== undefined ? loads[c.id] : v[d]; bars[d].style.height = p + '%'; bars[d].title = `Day ${d + 1} · ${dow} · ${p} %${d === TODAY_IDX ? ' · live' : d < TODAY_IDX ? ' · actual' : ' · forecast'}`; bars[d].classList.toggle('we', dow === 'Fri' || dow === 'Sat'); } } };
 // accommodation: room types with their count and a live occupancy bar in the same row (founder 2026-10-19); no prose
 const roomRows = c => `<div class="rooms" data-rooms="${c.id}">${Object.entries(c.objects).map(([k, n]) => `<div class="rr"><span>${k}</span><div class="bar"><i style="width:0"></i></div><b>${n}</b></div>`).join('')}</div>`;
 const productCard = (c, link = true) => `<div class="con" id="${c.id}">${productInner(c, link)}</div>`;
@@ -265,6 +280,7 @@ const productCard = (c, link = true) => `<div class="con" id="${c.id}">${product
 const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c, OCC); return `<div class="con wide three" id="marina">
   <div class="col">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
     <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="marina"><span>Berths occupied</span><span>—</span></div></div>
+    ${chartHtml(c)}
     <div class="sec"><div class="cap">By class · live</div><table class="t mini"><thead><tr><th>Class</th><th class="num">Berths</th><th class="num">Occupied</th><th style="width:38%"></th></tr></thead><tbody id="marinaRows"></tbody></table><p class="muted" style="font-size:11.5px;margin:4px 0 0">Plan 90 berths (50 S · 32 M · 8 L); the model holds 126.</p></div></div>
   <div class="col">
     <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv"><span>Capacity</span><span>${c.capLabel}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel}</span></div></div>
@@ -324,6 +340,7 @@ function refreshLive() {
   const clock = document.getElementById('clock'); if (clock) clock.textContent = L.clock;
   const st = document.getElementById('stLine'); if (st) st.innerHTML = `${L.day} · simulated time, 1 s = 1 min · <b>${fmt(Object.values(L.people).reduce((a, b) => a + b, 0) - (L.people.staff || 0) - (L.people.crew || 0))}</b> guests in the simulation, shown at the plan's scale (× ${L.scale}) · <b>${L.onShift}</b> staff on shift · ${L.events.length ? 'now: ' + L.events.join(', ') : 'no event running'}`;
   refreshSchedule(L.hour); for (const td of document.querySelectorAll('[data-evrow]')) { const e = EVENTS[+td.dataset.evrow], b = bookings(e, L.hour); td.textContent = `${b.n} of ${e.cap} · ${b.label}`; }
+  const loads = {};
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
     const keys = c.rooms ? Object.values(c.objects).reduce((x, y) => x + y, 0) : 0, inHouse = c.rooms && L.booked ? c.live.reduce((x, n) => x + (L.booked[n] || 0), 0) : 0, booked = c.rooms ? Math.min(keys, Math.round(inHouse / (cap / keys))) : 0, pb = keys ? Math.round(100 * booked / keys) : 0;
@@ -339,9 +356,11 @@ function refreshLive() {
       const mn = document.getElementById('marinaNext'); if (mn) mn.innerHTML = (M.upcoming || []).length ? M.upcoming.map(u => `<tr><td>${u.at}</td><td>${u.kind === 'arrive' ? '↓ Arrival' : '↑ Departure'}</td><td>${u.cls}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">no more today</td></tr>'; }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
+    if (!c.noSim) loads[c.id] = c.rooms ? pb : c.id === 'marina' ? Math.round(100 * L.marina.moored / L.marina.berths) : Math.min(100, Math.round(100 * g / cap));   // today's bar = the live level; for venues the peak of the day stays in the forecast
     const o = L.supply && OUTLET_OF[c.id] && L.supply.outlets[OUTLET_OF[c.id]]; if (o) rows.push(['Covers served today', fmt(o.meals)], ['Kitchen stock', `${Math.round(o.stock)} kg <small style="color:var(--muted);font-weight:400">of ${o.par} par</small>`], ['bar', bar(Math.round(100 * o.stock / o.par), 101)]);
     if (c.rooms) { const p = pb; for (const i of document.querySelectorAll(`[data-rooms="${c.id}"] .bar i`)) { i.style.width = p + '%'; i.classList.toggle('over', p >= 100); } }
   }
+  refreshCharts(L, loads);
   for (const c of SERVICES) {
     const rows = c.liveFn ? c.liveFn(L) : [];
     const base = c.key && LOAD[c.key] !== undefined ? LOAD[c.key] : c.loadBase;
