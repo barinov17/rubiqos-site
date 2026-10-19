@@ -7,8 +7,8 @@
 <title>RubiqOS · Proforma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019f">
-<link rel="stylesheet" href="/proforma.css?v=20261019f">
+<link rel="stylesheet" href="/site.css?v=20261019g">
+<link rel="stylesheet" href="/proforma.css?v=20261019g">
 </head>
 <body class="site off">
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Live demo</a><a href="/proforma/" class="on">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
@@ -17,14 +17,14 @@
 
   <section id="products">
     <h2>Products</h2>
-    <p class="lead">What earns: lodging, dining, the clubs, the marina, events, sport. Each card: what it produces for the guest, what it consumes a day (average occupancy), who runs it, who is there now. Every card opens its own page.</p>
-    <div class="cards" id="productCards"></div>
+    <p class="lead">What earns, by category: accommodation, the marina with its own infrastructure, food and beverage, venues. Each card: what it produces for the guest, what it consumes a day (average occupancy), who runs it, who is there now. Every card opens its own page.</p>
+    <div id="productCards"></div>
   </section>
 
   <section id="services">
     <h2>Services</h2>
-    <p class="lead">What produces for the products: power, water, sewage, the network, stores, the dark store, laundry, staff housing, waste, the dock, guest services, the clinic, security. Each card: output, inputs, operator, load now. Every card opens its own page.</p>
-    <div class="cards" id="serviceCards"></div>
+    <p class="lead">What produces for the products, by category: utilities, back of house, guest care. Each card: output, inputs, operator, load now. Every card opens its own page.</p>
+    <div id="serviceCards"></div>
   </section>
 
   <section id="fleethub">
@@ -42,10 +42,10 @@
   <p class="foot">RubiqOS · Proforma v2, 2026-10-19 · products and services as cards with operators and live load · the demo at <a href="/">rubiqos.com</a>.</p>
 </div>
 <iframe id="sim" src="/?headless=1" title="simulation"></iframe>
-<script src="/proforma-data.js?v=20261019f"></script>
+<script src="/proforma-data.js?v=20261019g"></script>
 <script>
-document.getElementById('productCards').innerHTML = PRODUCTS.map(c => productCard(c)).join('');
-document.getElementById('serviceCards').innerHTML = SERVICES.map(c => serviceCard(c)).join('');
+document.getElementById('productCards').innerHTML = groupsHtml(PRODUCT_GROUPS);
+document.getElementById('serviceCards').innerHTML = groupsHtml(SERVICE_GROUPS);
 document.getElementById('fleetCard').outerHTML = fleetCard();
 document.getElementById('programmeT').innerHTML = eventsTable(EVENTS);
 </script>

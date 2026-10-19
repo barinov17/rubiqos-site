@@ -48,3 +48,6 @@ body.site .log > div { display: grid; grid-template-columns: 44px 1fr; gap: 8px;
 body.site .log > div > span { color: var(--muted); font-variant-numeric: tabular-nums; }
 body.site .log .d { color: var(--text); font-size: 12px; margin-top: 1px; }
 #sim { position: fixed; width: 2px; height: 2px; left: -10px; top: -10px; opacity: 0; pointer-events: none; border: 0; }
+body.site h3.grp { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 18px 0 8px; }   /* category of a card group (founder 2026-10-19) */
+body.site h3.grp:first-child { margin-top: 4px; }
+body.site .con .zone i { margin-right: 0; width: 10px; height: 10px; }

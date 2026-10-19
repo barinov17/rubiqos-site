@@ -11,7 +11,7 @@ const OPERATORS = [
   { id: 'residences', name: 'Residences manager', note: 'Both towers: owners, the rental pool, concierge.' },
   { id: 'marina', name: 'Marina manager', note: 'Berths, AIS matching, the guest dock, shore power and water.' },
   { id: 'village', name: 'Marina Village manager', note: 'F&B outlets, shops, the market and the village square.' },
-  { id: 'restaurant', name: 'Restaurant manager', note: 'The Rotunda Restaurant: covers, the wine tasting.' },
+  { id: 'restaurant', name: 'Restaurant manager', note: 'The Restaurant: covers, the wine tasting.' },
   { id: 'spa', name: 'Spa manager', note: 'Treatments and the wellness programme.' },
   { id: 'events', name: 'Events manager', note: 'The programme at the Events Rotunda.' },
   { id: 'beachclub', name: 'Beach Club manager', note: 'Sunbeds, beach F&B, the DJ sunset; the Members Club.' },
@@ -41,7 +41,7 @@ const PRODUCTS = [
     produces: 'Apartment nights (rental pool) · owner services · concierge', capacity: 812, objects: { 'One-bedroom apartments': 62, 'Two-bedroom apartments': 94, 'Three-bedroom apartments': 42, 'Penthouses': 10 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
   { id: 'village', name: 'Marina Village', zone: 'Z03', op: 'village', unit: 'people at once', turns: 3, live: ['Marina Village'], what: 'Pedestrian heart: cafes, restaurants, shops, the market, an apart-hotel.',
     produces: 'Covers at four F&B outlets · retail · the island market', capacity: 600, objects: { 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20, 'Apart-hotel units': 40 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
-  { id: 'restaurant', name: 'Rotunda Restaurant', zone: 'Z02', op: 'restaurant', unit: 'people at once', turns: 4, live: ['Restaurant'], what: 'Signature round pavilion on the hill: dinner service, the wine tasting.',
+  { id: 'restaurant', name: 'Restaurant', zone: 'Z02', op: 'restaurant', unit: 'people at once', turns: 4, live: ['Restaurant'], what: 'Signature round pavilion on the hill: dinner service, the wine tasting.',
     produces: 'Covers · the wine programme', capacity: 220, objects: { 'Seats': 220, 'Private dining rooms': 2 }, staff: 60, per: { water: 30, energy: 8, food: 0.9, laundry: 0.3, waste: 0.6 } },
   { id: 'beach-club', name: 'Beach Club', zone: 'Z11', op: 'beachclub', unit: 'people at once', turns: 1.5, live: ['Beach Club'], what: 'Day club on the south beach: sunbeds, cabanas, restaurant, bar, DJ.',
     produces: 'Sunbed days · covers · the DJ sunset', capacity: 320, objects: { 'Sunbeds': 180, 'Cabanas': 12, 'Restaurant seats': 90, 'Bar seats': 40 }, staff: 40, per: { water: 60, energy: 8, food: 0.9, laundry: 1.0, waste: 0.6 } },
@@ -103,9 +103,28 @@ const SERVICES = [
   { id: 'security', name: 'Safety and security', zone: 'Z08', op: 'security', what: 'Control room, patrols, lifeguards and fire crew; face and key access.',
     produces: { 'Control room': '24 h', 'Patrols': '2 land, 1 marine', 'Lifeguards': '4 by day', 'Fire crew': 6 }, consumes: { 'Energy': '≈ 400 kWh a day', 'Cameras and sensors': '≈ 400 devices' }, loadBase: 45,
     liveFn: L => [['Lifeguards', L.hour >= 8 && L.hour < 19 ? 'on both beaches' : 'off duty, beaches closed'], ['Events watched', L.events.length ? L.events.map(e => e.split(' · ')[0]).join(', ') : '—']] },
-  { id: 'reception', name: 'Arrivals Reception', zone: 'Z08', op: 'hotels', what: 'Arrivals pavilion at the guest dock: check-in, luggage to the room.',
-    produces: { 'Arrivals a day (plan)': '≈ 500', 'Check-in': 'face check-in, digital key' }, consumes: { 'Water': '≈ 5 m³ a day', 'Energy': '≈ 300 kWh a day' },
+  // the marina's own infrastructure (founder 2026-10-19): shown in the Marina category with the berths
+  { id: 'marina-support', name: 'Marina support building', zone: 'Z04', op: 'marina', what: 'Harbour office, shore power and water distribution, fuel, pump-out, crew facilities, chandlery.',
+    produces: { 'Shore power connections': 90, 'Fuel': 'diesel and petrol', 'Pump-out and water': 'every berth', 'Harbour office': '24 h' }, consumes: { 'Energy (distributed to berths)': '≈ 30,000 kWh a day at full occupancy', 'Water (to berths)': '≈ 60 m³ a day' }, loadBase: 60,
+    liveFn: L => { const M = L.marina; return [['Load', Math.round(100 * M.moored / M.berths) + ' %'], ['Berths on shore power', `${M.moored} of ${M.berths}`], ['Movements left today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`]]; } },
+  { id: 'guest-dock', name: 'Guest arrivals dock', zone: 'Z04', op: 'hotels', what: 'The shuttle pier and the arrivals pavilion: face check-in, digital key, luggage to the room.',
+    produces: { 'Arrivals a day (plan)': '≈ 500', 'Shuttle landings a day': 24, 'Check-in': 'face check-in, digital key' }, consumes: { 'Water': '≈ 5 m³ a day', 'Energy': '≈ 300 kWh a day' }, loadBase: 55,
     liveFn: L => [['Arrivals today', L.ops.arrivals], ['Departures today', L.ops.departures]] },
+  { id: 'excursion-terminal', name: 'Excursion terminal', zone: 'Z04', op: 'excursions', what: 'Pier and booking desk for the snorkelling and sunset trips; departures by the event programme.',
+    produces: { 'Trips a day': 2, 'Seats a trip': 12, 'Booking': 'in the guest app, weather cancels' }, consumes: { 'Energy': '≈ 60 kWh a day' }, loadBase: 40,
+    liveFn: L => [['Now', (L.reception.excursion || '—').replace(/^Excursion boat · /, '')]] },
+];
+// Categories (founder 2026-10-19): the cards are grouped, not listed by zone
+const PRODUCT_GROUPS = [
+  { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'villas', 'residences'] },
+  { title: 'Marina', ids: ['marina', 'marina-support', 'guest-dock', 'excursion-terminal'] },
+  { title: 'Food and beverage', ids: ['restaurant', 'village', 'beach-club', 'members-club'] },
+  { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
+];
+const SERVICE_GROUPS = [
+  { title: 'Utilities', ids: ['power', 'desal', 'sewage', 'network'] },
+  { title: 'Back of house', ids: ['stores', 'darkstore', 'laundry', 'dock', 'waste', 'staffacc', 'canteen'] },
+  { title: 'Guest care', ids: ['guestservices', 'medical', 'security'] },
 ];
 // Fleet Hub: its own block (founder 2026-10-19): the vehicles belong to no other card
 const FLEET_HUB = { id: 'fleet', name: 'Fleet Hub', zone: 'Z08', op: 'fleet', what: 'Charging, parking and workshop for the whole fleet; dispatch by RubiqOS.',
@@ -156,7 +175,9 @@ for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTota
 // --- card html
 const opTag = id => `<span class="op"><b>Operator</b>${OP[id].name}</span>`;
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3><span class="zone"><i style="background:${Z[c.zone]}"></i>${c.zone}</span></div>`;
+const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3><span class="zone" title="${ZONE_NAME[c.zone] || ''}"><i style="background:${Z[c.zone]}"></i></span></div>`;   // zone = colour dot only (founder 2026-10-19: the Z ids confused)
+const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
+const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3><div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
 function productCard(c, link = true) {
   const d = needs(c, OCC); const objs = c.units ? Object.fromEntries([...c.units.map(u => [u.name, u.n]), ...Object.entries(c.objects)]) : c.objects;
   return `<div class="con" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
@@ -188,9 +209,10 @@ function refreshLive() {
   const guestsNow = Object.values(L.products).reduce((a, b) => a + b, 0);
   const clock = document.getElementById('clock'); if (clock) clock.textContent = L.clock;
   const st = document.getElementById('stLine'); if (st) st.innerHTML = `${L.day} · simulated time, 1 s = 1 min · <b>${fmt(Object.values(L.people).reduce((a, b) => a + b, 0) - (L.people.staff || 0))}</b> guests in the simulation, shown at the plan's scale (× ${L.scale}) · <b>${L.onShift}</b> staff on shift · ${L.events.length ? 'now: ' + L.events.join(', ') : 'no event running'}`;
+  const gMax = Math.max(1, ...PRODUCTS.map(c => c.live.reduce((a, n) => a + (L.products[n] || 0), 0)));   // the guests bar compares the products with each other, as the old demo table did (founder 2026-10-19)
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
-    const rows = [['Guests', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)}</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', stf]];
+    const rows = [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">· capacity ${fmt(cap)}</small>`], ['bar', bar(Math.round(100 * g / gMax), 101)], ['Staff on shift', stf]];
     if (c.id === 'marina') { const M = L.marina; rows.push(['Boats moored', `${M.moored} of ${M.berths} berths`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)], ['Under way', M.underway], ['Expected today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`], ['Next', M.next]); }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
