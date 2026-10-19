@@ -7,8 +7,8 @@ const OCC = 0.70;   // average occupancy applied to every product
 // Operators: one manager per object. `id` is the variable the system (and later the agent) is addressed by.
 const OPERATORS = [
   { id: 'hotels', name: 'Hotels manager', note: 'Both hotels: rooms, housekeeping, arrivals and departures.' },
-  { id: 'villas', rooms: true, name: 'Villas manager', note: 'All villas: butlers, housekeeping, villa breakfasts.' },
-  { id: 'residences', rooms: true, name: 'Residences manager', note: 'Both towers: owners, the rental pool, concierge.' },
+  { id: 'villas', name: 'Villas manager', note: 'All villas: butlers, housekeeping, villa breakfasts.' },
+  { id: 'residences', name: 'Residences manager', note: 'Both towers: owners, the rental pool, concierge.' },
   { id: 'marina', name: 'Marina manager', note: 'Berths, AIS matching, the guest dock, shore power and water.' },
   { id: 'village', name: 'Marina Village manager', note: 'F&B outlets, shops, the market and the village square.' },
   { id: 'restaurant', name: 'Restaurant manager', note: 'The Restaurant: covers, the wine tasting.' },
@@ -36,9 +36,9 @@ const PRODUCTS = [
     produces: 'Room nights · breakfast and the hotel restaurant · the beach in front', capacity: 528, objects: { 'Deluxe rooms': 140, 'Sea-view rooms': 60, '1-BR suites': 32, 'Signature suites': 8 }, staff: 270, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
   { id: 'hill-hotel', rooms: true, name: 'Hill Hotel', zone: 'Z02', op: 'hotels', unit: 'guests', live: ['Hill Hotel'], what: 'Boutique hotel of low blocks over the central hill; large rooms, views.',
     produces: 'Room nights · suites with terraces', capacity: 280, objects: { 'Hillside rooms': 56, 'Terrace rooms': 36, '1-BR suites': 22, '2-BR suites': 6 }, staff: 135, per: { water: 500, energy: 42, food: 2.0, laundry: 4, waste: 2.5 } },
-  { id: 'villas', name: 'East Villas', zone: 'Z05', op: 'villas', unit: 'guests', live: ['Villas'], what: 'Private villas on the eastern cape, owned or let, served by butlers.',
+  { id: 'villas', rooms: true, name: 'East Villas', zone: 'Z05', op: 'villas', unit: 'guests', live: ['Villas'], what: 'Private villas on the eastern cape, owned or let, served by butlers.',
     produces: 'Villa nights · butler service · villa breakfasts', capacity: 144, objects: { '4-BR villas': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
-  { id: 'residences', name: 'Branded Residences', zone: 'Z10', op: 'residences', unit: 'residents', live: ['Residences BR1', 'Residences BR2'], what: 'Apartment towers by the village; most units in the hotel rental pool.',
+  { id: 'residences', rooms: true, name: 'Branded Residences', zone: 'Z10', op: 'residences', unit: 'residents', live: ['Residences BR1', 'Residences BR2'], what: 'Apartment towers by the village; most units in the hotel rental pool.',
     produces: 'Apartment nights (rental pool) · owner services · concierge', capacity: 812, objects: { '1-BR apartments': 62, '2-BR apartments': 94, '3-BR apartments': 42, 'Penthouses': 10 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
   { id: 'apart-hotel', rooms: true, noSim: true, name: 'Apart-hotel', zone: 'Z03', op: 'hotels', unit: 'guests', live: [], what: 'Serviced apartments by the village for longer stays; not on the master plan yet.',
     produces: 'Apartment nights · kitchenettes · hotel services on call', capacity: 110, objects: { 'Studios': 24, '1-BR apartments': 16, '2-BR apartments': 6 }, staff: 30, per: { water: 350, energy: 30, food: 0.8, laundry: 2, waste: 2.0 } },
@@ -326,7 +326,10 @@ function refreshLive() {
   refreshSchedule(L.hour); for (const td of document.querySelectorAll('[data-evrow]')) { const e = EVENTS[+td.dataset.evrow], b = bookings(e, L.hour); td.textContent = `${b.n} of ${e.cap} · ${b.label}`; }
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
-    const rows = c.noSim ? [['Guests now', '<small style="color:var(--muted);font-weight:400">not in the model yet</small>'], ['Staff on shift', stf]] : [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', stf]];   // the bar = share of the product's own capacity (founder 2026-10-19)
+    const keys = c.rooms ? Object.values(c.objects).reduce((x, y) => x + y, 0) : 0, inHouse = c.rooms && L.booked ? c.live.reduce((x, n) => x + (L.booked[n] || 0), 0) : 0, booked = c.rooms ? Math.min(keys, Math.round(inHouse / (cap / keys))) : 0, pb = keys ? Math.round(100 * booked / keys) : 0;
+    const rows = c.noSim ? [['Booked tonight', '<small style="color:var(--muted);font-weight:400">not in the model yet</small>'], ['Staff on shift', stf]]
+      : c.rooms ? [['Booked tonight', `${booked} <small style="color:var(--muted);font-weight:400">of ${keys} keys · ${pb} %</small>`], ['bar', bar(pb, 101)], ['Guests in house', fmt(inHouse)], ['On the premises now', fmt(g)], ['Staff on shift', stf]]   // bookings = guests whose home is here, at the plan's scale (founder 2026-10-19)
+      : [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', stf]];   // the bar = share of the product's own capacity (founder 2026-10-19)
     if (c.id === 'marina') {                                                 // the marina's capacity is berths (founder 2026-10-19); the classes live in the table on the right, not twice
       const M = L.marina; rows.length = 0;
       rows.push(['Berths occupied', `${M.moored} / ${M.berths}`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)], ['Staff on shift', stf]);
@@ -337,7 +340,7 @@ function refreshLive() {
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
     const o = L.supply && OUTLET_OF[c.id] && L.supply.outlets[OUTLET_OF[c.id]]; if (o) rows.push(['Covers served today', fmt(o.meals)], ['Kitchen stock', `${Math.round(o.stock)} kg <small style="color:var(--muted);font-weight:400">of ${o.par} par</small>`], ['bar', bar(Math.round(100 * o.stock / o.par), 101)]);
-    if (c.rooms) { const p = Math.min(100, Math.round(100 * g / cap)); for (const i of document.querySelectorAll(`[data-rooms="${c.id}"] .bar i`)) { i.style.width = p + '%'; i.classList.toggle('over', p >= 100); } }
+    if (c.rooms) { const p = pb; for (const i of document.querySelectorAll(`[data-rooms="${c.id}"] .bar i`)) { i.style.width = p + '%'; i.classList.toggle('over', p >= 100); } }
   }
   for (const c of SERVICES) {
     const rows = c.liveFn ? c.liveFn(L) : [];

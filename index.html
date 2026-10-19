@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261019t">
+<link rel="stylesheet" href="/site.css?v=20261019u">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -1838,6 +1838,9 @@ function updateDash() {
   const pg = {}; for (const f of guests) { if (f.path && !f.strolling) continue; const k = prodOf(f); if (k) pg[k] = (pg[k] || 0) + 1; }
   const products = {}; for (const [k, v] of Object.entries(pg)) products[k] = Math.round(v * scale);
   const byType = {}; for (const f of people) if (!f.idle) byType[f.type] = (byType[f.type] || 0) + 1;
+  const homeProd = f => { const c = f.home && f.home.cat, n = (f.home && f.home.name) || ''; return c === 'hotel' ? (n.startsWith('Hill') ? 'Hill Hotel' : 'Beach Hotel') : c === 'villa' ? 'Villas' : c === 'residence' ? (n.includes('BR2') ? 'Residences BR2' : 'Residences BR1') : null; };
+  const bk = {}; for (const f of people) { if (f.idle || f.type === 'staff' || f.type === 'crew') continue; const k = homeProd(f); if (k) bk[k] = (bk[k] || 0) + 1; }
+  const booked = {}; for (const [k, v] of Object.entries(bk)) booked[k] = Math.round(v * scale);   /* guests in house by home, at the plan's scale: the booking side */
   const byCls = {}; for (const b of berths) { const c = byCls[b.cls] ||= { moored: 0, berths: 0 }; c.berths++; if (b.occupied) c.moored++; }
   const w1 = ambient.filter(f => f.type === 'W1' && /^Mainland/.test(f.task)).map(f => f.task), sv = ambient.find(f => f.type === 'W2'), ex = ambient.find(f => f.type === 'W3');
   const riders = people.filter(f => f.ride && f.ride.waiting && f.visible).length, aboard = people.filter(f => f.ride && !f.visible).length;
@@ -1847,6 +1850,7 @@ function updateDash() {
     people: byType, products, fleet,
     marina: { berths: berths.length, moored: berths.filter(b => b.occupied).length, underway: yachtMovers.filter(y => y.busy).length, byCls,
               arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
+    booked,
     supply: { store: STORE, outlets, calls: supply.calls, inKg: supply.inKg, wasteOutKg: supply.wasteOutKg, truckKg: supply.truckKg, meals: Math.round(supply.meals), vessels: ambient.filter(f => f.type === 'W2').map(f => f.task) },
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
     ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`),
