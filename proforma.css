@@ -72,3 +72,4 @@ body.site .con .kv span:nth-of-type(2n) { text-align: right; font-weight: 600; c
 body.site .con .live .kv span:nth-of-type(2n) { font-size: 14px; }
 body.site .con.wide .live { width: 100%; }
 body.site .con.wide .col .kv span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.site table.t td.bar-td { vertical-align: middle; } body.site table.t td.bar-td .bar { height: 7px; border-radius: 4px; background: rgba(10, 18, 32, 0.08); overflow: hidden; margin: 0; } body.site table.t td.bar-td .bar i { display: block; height: 100%; background: var(--navy); border-radius: 4px; }
