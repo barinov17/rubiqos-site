@@ -398,12 +398,14 @@ const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdH
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
   <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
   ${teamHtml(c.id)}</div>`;
-const fleetCard = (link = true) => `<div class="con wide" id="fleetCard"><div class="col">${hdHtml(FLEET_HUB, link)}${opTag(FLEET_HUB.op)}<p>${FLEET_HUB.what}</p>
-  <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="fleet"><span>Load</span><span>—</span></div></div>
-  <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
-  <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div>
-  ${teamHtml('fleet')}</div>
-  <div class="col"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;
+const fleetCard = (link = true) => `<div class="con wide cols" id="fleetCard">
+  <div class="col">${hdHtml(FLEET_HUB, link)}${opTag(FLEET_HUB.op)}<p>${FLEET_HUB.what}</p>
+    <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="fleet"><span>Load</span><span>—</span></div></div></div>
+  <div class="col">
+    <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
+    <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div></div>
+  <div class="col">${teamHtml('fleet')}</div>
+  <div class="col span2"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;   // the same vertical blocks as the marina (founder 2026-10-19); the fleet table takes two columns
 // --- the event programme as a schedule (founder 2026-10-19): the event, its time, its venue, its bookings against capacity. Nothing else.
 EVENTS.forEach((e, i) => { e.i = i; const [a, b] = e.time.split('–').map(t => { const [h, m] = t.split(':').map(Number); return h + m / 60; }); e.start = a; e.end = b; });
 const SCHED = { h0: 6, h1: 24 };
