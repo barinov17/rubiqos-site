@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RubiqOS · Physical AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css?v=20261019x">
+<link rel="stylesheet" href="/proforma.css?v=20261019x">
+<style>
+  body.site table.t.pa td:first-child { width: 1%; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+  body.site table.t.pa td:nth-child(2) { min-width: 180px; } body.site table.t.pa td:nth-child(2) b { color: var(--navy); }
+  body.site table.t.pa td:nth-child(3) { min-width: 280px; }
+  body.site table.t.pa td:nth-child(4) { color: var(--muted); font-size: 12.5px; } body.site table.t.pa td:nth-child(4) a { color: var(--navy); text-decoration: none; } body.site table.t.pa td:nth-child(4) a:hover { text-decoration: underline; }
+  body.site table.t.pa td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body.site .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 18px; }
+  body.site .kpis .k { background: var(--panel); border-radius: 10px; padding: 12px 14px; } body.site .kpis .k b { display: block; font: 600 26px var(--body); color: var(--navy); } body.site .kpis .k span { font-size: 12.5px; color: var(--muted); }
+  body.site .rule { font-size: 13.5px; color: var(--muted); max-width: 80ch; }
+  @media (max-width: 720px) { body.site .scroll { overflow-x: auto; } body.site .scroll table.t { min-width: 760px; } }
+</style>
+</head>
+<body class="site">
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/physical-ai/" class="on">Physical AI</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
+<div class="wrap">
+  <div class="hero">
+    <h1>Physical AI</h1>
+    <p>Every robot type the island uses, in one list, and what each one does. The list is the register in <code>proforma-data.js</code> (<code>ROBOTS</code>): the product and service cards and this page read the same source, so a change in one place shows up everywhere.</p>
+    <div class="note" id="paNote">v2 · generated from the register · counts at the plan's scale.</div>
+  </div>
+  <div class="kpis" id="paKpis"></div>
+
+  <section id="fleet">
+    <h2>Shared fleet · moves between the objects</h2>
+    <p class="rule">Owned and dispatched by the Fleet Hub. A delivery robot is not part of any hotel or villa: it serves them all, so it is counted once, here. Counts = Fleet Register / <code>FLEET_PLAN</code>.</p>
+    <div class="scroll"><table class="t pa"><thead><tr><th>ID</th><th>Type</th><th>What it does</th><th>Where</th><th class="num">Units</th></tr></thead><tbody id="paFleet"></tbody></table></div>
+  </section>
+
+  <section id="bound">
+    <h2>Bound to one object · works inside it</h2>
+    <p class="rule">A floor scrubber lives on its hotel's floors, a pool robot in its villa's pool. These appear on the card of the object that holds them; the total here is the sum of those cards.</p>
+    <div class="scroll"><table class="t pa"><thead><tr><th>#</th><th>Type</th><th>What it does</th><th>Where (units)</th><th class="num">Units</th></tr></thead><tbody id="paBound"></tbody></table></div>
+  </section>
+
+  <section id="auto">
+    <h2>Fixed automation · not robots</h2>
+    <p class="rule">Machines and installations that run a step without a person: a wash line, a crane, lockers, sensors. Listed apart so they do not inflate the robot count.</p>
+    <div class="scroll"><table class="t pa"><thead><tr><th>#</th><th>Type</th><th>What it does</th><th>Where (units)</th><th class="num">Units</th></tr></thead><tbody id="paAuto"></tbody></table></div>
+  </section>
+
+  <div class="foot">RubiqOS · Physical AI register v2, 2026-10-19 · platforms on the market per type: research note <em>physical-ai-platforms-2026</em> (v1 market map, 2026-10-17).</div>
+</div>
+<script src="/proforma-data.js?v=20261019x"></script>
+<script>
+(() => {
+  const ALL = [...PRODUCTS, ...SERVICES, FLEET_HUB];
+  const nameOf = id => (entityOf(id) || { name: id }).name;
+  const where = {};                                                       // robot id → [{entity, n}]
+  for (const [eid, t] of Object.entries(TEAM)) for (const [rid, n] of Object.entries(t.robots)) (where[rid] = where[rid] || []).push({ eid, n });
+  const link = w => `<a href="${ENTITY_URL(w.eid)}">${nameOf(w.eid)}</a>${w.n > 1 ? ' ' + w.n : ''}`;
+  const rows = (scope, tb, numbered) => { let i = 0, total = 0; const out = [];
+    for (const [rid, r] of Object.entries(ROBOTS)) { if (r.scope !== scope) continue; const ws = where[rid] || []; const n = scope === 'fleet' ? (FLEET_PLAN[rid] || 0) : ws.reduce((a, w) => a + w.n, 0); total += n; i++;
+      out.push(`<tr><td>${numbered ? i : rid}</td><td><b>${r.name}</b></td><td>${r.does}</td><td>${scope === 'fleet' ? '<a href="' + ENTITY_URL('fleet') + '">Fleet Hub</a> · dispatched to every object' : ws.map(link).join(' · ') || '—'}</td><td class="num">${fmt(n)}</td></tr>`); }
+    document.getElementById(tb).innerHTML = out.join(''); return { types: i, total }; };
+  const f = rows('fleet', 'paFleet', false), b = rows('object', 'paBound', true), a = rows('auto', 'paAuto', true);
+  document.getElementById('paKpis').innerHTML = [[f.types + b.types, 'robot types'], [f.total, 'fleet units, shared'], [b.total, 'robots bound to objects'], [a.total, 'fixed automation units (' + a.types + ' types)']]
+    .map(([v, l]) => `<div class="k"><b>${fmt(v)}</b><span>${l}</span></div>`).join('');
+  const unknown = Object.keys(where).filter(k => !ROBOTS[k]);
+  if (unknown.length) document.getElementById('paNote').innerHTML += ` <b style="color:var(--bad)">Unregistered ids in TEAM: ${unknown.join(', ')}</b>`;
+})();
+</script>
+</body>
+</html>

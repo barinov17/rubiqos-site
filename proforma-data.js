@@ -214,52 +214,110 @@ function productInner(c, link = true) {
   <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
   ${teamHtml(c.id)}`;
 }
+// Physical AI register (founder 2026-10-19): ONE list of robot types. Every robot row in TEAM is an id from here, so a card, the
+// Fleet Hub and the Physical AI page always say the same thing. Add a type here first; never type a robot name into TEAM.
+//   scope 'fleet'  = shared, moves between objects; owned by the Fleet Hub; count = FLEET_PLAN. Never listed on a product card.
+//   scope 'object' = bound to one object (a scrubber on the hotel floors, a pool robot in a villa); counted where it works.
+//   scope 'auto'   = fixed automation, not a robot (lockers, sensors, wash line); shown apart from the robot count.
+const ROBOTS = {
+  L1: { name: 'Guest pod', scope: 'fleet', does: 'Drives guests on call: terminal transfers, dinner and event waves.' },
+  L2: { name: 'Guest shuttle', scope: 'fleet', does: 'Runs the fixed loop terminal → hotels → Marina Village → Beach Club → spa.' },
+  L3: { name: 'Service cart', scope: 'fleet', does: 'Carries engineers, housekeeping and landscape crews to their jobs (driven).' },
+  L4: { name: 'Service truck', scope: 'fleet', does: 'Moves goods: warehouse ↔ kitchens, linen to the laundry, the night waste run, the supply vessel.' },
+  L5: { name: 'Delivery robot', scope: 'fleet', does: 'Brings room service, villa breakfasts, luggage and amenities to the guest.' },
+  W1: { name: 'Shuttle boat', scope: 'fleet', does: 'Carries guests mainland ↔ terminal and marina ↔ Beach Club ↔ villas; one remote operator.' },
+  W2: { name: 'Supply vessel', scope: 'fleet', does: 'Lands food and consumables at the Service dock, takes waste back; one remote operator.' },
+  W3: { name: 'Excursion boat', scope: 'fleet', does: 'Snorkelling and sunset trips with a skipper aboard.' },
+  scrubber: { name: 'Floor-scrubbing robot', scope: 'object', does: 'Washes hard floors in corridors, lobbies and the back of house, mostly at night.' },
+  pool: { name: 'Pool-cleaning robot', scope: 'object', does: 'Cleans the pool floor and walls of its villa, hotel or thermal area.' },
+  luggage: { name: 'Luggage robot', scope: 'object', does: 'Takes bags from the drop-off to the room and back, inside its building.' },
+  table: { name: 'Table-service robot', scope: 'object', does: 'Runs plates and drinks from the pass to the table in the Marina Village cafés.' },
+  cocktail: { name: 'Cocktail robot', scope: 'object', does: 'Mixes drinks at the bar; the bartender hosts.' },
+  raker: { name: 'Beach-raking robot', scope: 'object', does: 'Sifts and levels the sand of its beach before the guests arrive.' },
+  mower: { name: 'Robot mower', scope: 'object', does: 'Mows its lawns at night; docked and charging by day.' },
+  hedge: { name: 'Hedge-trimming robot', scope: 'object', does: 'Trims hedges and verges along the paths.' },
+  window: { name: 'Window and façade robot', scope: 'object', does: 'Cleans glass façades and high windows.' },
+  solar: { name: 'Solar-panel cleaning robot', scope: 'object', does: 'Washes the panel field of the power plant.' },
+  pipe: { name: 'Pipe-inspection robot', scope: 'object', does: 'Inspects sewer and water pipes from inside.' },
+  hull: { name: 'Hull-cleaning robot', scope: 'object', does: 'Cleans yacht hulls at the berth.' },
+  court: { name: 'Court robot', scope: 'object', does: 'Sweeps the courts and collects balls.' },
+  agv: { name: 'AGV (goods and linen)', scope: 'object', does: 'Moves pallets and linen carts inside the warehouse, laundry and spa.' },
+  picker: { name: 'Picking robot', scope: 'object', does: 'Picks guest orders from the dark-store shelves.' },
+  kitchen: { name: 'Kitchen robot', scope: 'object', does: 'Preps vegetables and portions in the prep kitchen; runs the hot line of the staff canteen.' },
+  folder: { name: 'Folding robot', scope: 'object', does: 'Folds and stacks linen after the wash line.' },
+  sorter: { name: 'Waste-sorting robot', scope: 'object', does: 'Sorts recyclables on the waste line.' },
+  dronePatrol: { name: 'Patrol drone', scope: 'object', does: 'Flies security rounds over the island and the marina.' },
+  droneRescue: { name: 'Rescue drone', scope: 'object', does: 'Drops a float or an AED at the water sports beach and on medical calls.' },
+  charger: { name: 'Charging robot', scope: 'object', does: 'Plugs the pods and trucks in at the Fleet Hub canopy.' },
+  lockers: { name: 'Parcel lockers', scope: 'auto', does: 'Automated pick-up points for deliveries.' },
+  dishline: { name: 'Dish-washing line', scope: 'auto', does: 'Automated wash line in the restaurant and the staff canteen.' },
+  washline: { name: 'Tunnel washer line', scope: 'auto', does: '5,000 kg of linen a day through the laundry.' },
+  racking: { name: 'Automated cold-store racking', scope: 'auto', does: 'Shuttle racking in the cold store.' },
+  compactor: { name: 'Waste compactor', scope: 'auto', does: 'Compacts and bales waste for the vessel.' },
+  crane: { name: 'Remote-operated crane', scope: 'auto', does: 'Unloads the supply vessel at the Service dock.' },
+  pedestal: { name: 'Smart shore-power pedestal', scope: 'auto', does: 'Metered power and water at every berth.' },
+  fuel: { name: 'Automated fuel dock', scope: 'auto', does: 'Self-service fuelling for yachts.' },
+  pumpout: { name: 'Pump-out cart', scope: 'auto', does: 'Mobile sewage pump-out at the berths.' },
+  kiosk: { name: 'Self-service kiosk or gate', scope: 'auto', does: 'Check-in gates, self-checkout, telemedicine and provisioning kiosks.' },
+  stage: { name: 'Stage automation', scope: 'auto', does: 'Rigging, light and sound presets in the events rotunda.' },
+  irrigation: { name: 'Smart irrigation', scope: 'auto', does: 'Sensors and valves running the reclaimed-water irrigation at night.' },
+  sensors: { name: 'Cameras and sensors', scope: 'auto', does: 'Security cameras and perimeter sensors feeding the control room.' },
+  buoy: { name: 'Safety buoy', scope: 'auto', does: 'Marks the swim zone, reports position and weather.' },
+};
+const robotOf = id => ROBOTS[id] || { name: id, scope: 'object', does: '' };
 // People and robots (founder 2026-10-19): every entity names who works there and which robots do a specific job. Numbers at the plan's scale;
-// the product rows sum to the card's staff positions. Shared robots (the L5 delivery fleet) are counted once, in the Fleet Hub.
+// the product rows sum to the card's staff positions. Robot rows are ROBOTS ids; fleet-scope robots live only in the Fleet Hub (founder 2026-10-19).
 const OUTLET_OF = { 'beach-hotel': 'Beach Hotel', 'hill-hotel': 'Hill Hotel', restaurant: 'Restaurant', village: 'Marina Village', 'beach-club': 'Beach Club', 'members-club': 'Members Club' };
 const TEAM = {
-  'beach-hotel': { people: { 'Front office and concierge': 24, 'Housekeeping': 70, 'F&B service': 60, 'Kitchen (chefs and cooks)': 44, 'Butlers': 12, 'Engineering': 14, 'Pool and beach attendants': 20, 'Management and admin': 26 }, robots: { 'Floor-scrubbing robots (corridors, lobby)': 6, 'Delivery robots assigned (L5)': 8, 'Luggage robots': 2, 'Pool-cleaning robots': 2 } },
-  'apart-hotel': { people: { 'Reception and concierge': 6, 'Housekeeping': 14, 'Maintenance': 4, 'Management': 6 }, robots: { 'Floor-scrubbing robots': 2, 'Delivery robots assigned (L5)': 2, 'Parcel lockers (automated)': 1 } },
-  'hill-hotel': { people: { 'Front office and concierge': 12, 'Housekeeping': 38, 'F&B service': 28, 'Kitchen (chefs and cooks)': 22, 'Butlers': 6, 'Engineering': 8, 'Attendants': 8, 'Management and admin': 13 }, robots: { 'Floor-scrubbing robots': 3, 'Delivery robots assigned (L5)': 4, 'Luggage robot': 1, 'Pool-cleaning robot': 1 } },
-  villas: { people: { 'Butlers': 18, 'Housekeeping': 12, 'Villa chefs': 6, 'Maintenance': 4 }, robots: { 'Pool-cleaning robots': 6, 'Delivery robots assigned (L5)': 4, 'Robot mowers (villa gardens)': 3 } },
-  residences: { people: { 'Concierge': 12, 'Housekeeping': 46, 'Maintenance': 14, 'Owner services': 8, 'Management and admin': 15 }, robots: { 'Floor-scrubbing robots': 4, 'Delivery robots assigned (L5)': 6, 'Parcel lockers (automated)': 2 } },
-  village: { people: { 'F&B service': 36, 'Kitchen (chefs and cooks)': 24, 'Retail': 16, 'Market': 5, 'Management': 4 }, robots: { 'Table-service robots (cafés)': 6, 'Floor-scrubbing robots': 3, 'Delivery robots assigned (L5)': 4 } },
-  restaurant: { people: { 'Head chef and brigade': 22, 'Service': 28, 'Sommeliers': 3, 'Stewards': 5, 'Management': 2 }, robots: { 'Dish-washing line (automated)': 1, 'Cocktail robot at the bar': 1 } },
-  'beach-club': { people: { 'Service': 18, 'Kitchen': 10, 'Beach attendants': 8, 'Management': 4 }, robots: { 'Beach-raking robot': 1, 'Delivery robots assigned (L5)': 3, 'Cocktail robot': 1 } },
-  'members-club': { people: { 'Service': 14, 'Kitchen': 8, 'Membership and events': 4, 'Management': 4 }, robots: { 'Floor-scrubbing robot': 1, 'Delivery robots assigned (L5)': 2 } },
-  'hotel-beach': { people: { 'Beach attendants': 8, 'Kiosk and bar': 6 }, robots: { 'Beach-raking robot': 1, 'Delivery robots assigned (L5)': 2, 'Sunbed-towel kiosk (automated)': 1 } },
-  'club-beach': { people: { 'Beach attendants': 6, 'Beach service': 4 }, robots: { 'Beach-raking robot': 1, 'Delivery robots assigned (L5)': 1 } },
-  'water-sports': { people: { 'Instructors': 6, 'Dive master and boat crew': 3, 'Desk and equipment': 3 }, robots: { 'Rescue drone': 1, 'Autonomous safety buoys (position, weather)': 2, 'Booking and weather automation': 1 } },
-  spa: { people: { 'Therapists': 18, 'Reception': 6, 'Attendants': 6, 'Longevity doctors': 2 }, robots: { 'Pool and thermal-area cleaning robots': 2, 'Linen AGV': 1 } },
-  sport: { people: { 'Trainers': 8, 'Reception': 3, 'Court staff': 4 }, robots: { 'Court-sweeping robot': 1, 'Ball-collecting robots': 2 } },
-  marina: { people: { 'Harbour master and office': 6, 'Dock hands': 14, 'Technical': 6, 'Fuel dock': 2 }, robots: { 'Smart shore-power and water pedestals': 90, 'Pump-out carts': 2, 'Hull-cleaning robot': 1, 'Patrol drone': 1 } },
-  events: { people: { 'Event managers': 4, 'Technicians (sound, light)': 4, 'Set-up crew': 2 }, robots: { 'Stage automation': 1, 'Floor-scrubbing robots': 2 } },
-  power: { people: { 'Plant engineers (3 shifts)': 8 }, robots: { 'Solar-panel cleaning robots': 2, 'Plant control (SCADA, unmanned at night)': 1 } },
-  desal: { people: { 'Operators': 4 }, robots: { 'RO plant control (automated)': 1, 'Membrane cleaning (CIP) automation': 1 } },
-  sewage: { people: { 'Operators': 3 }, robots: { 'Plant control (automated)': 1, 'Pipe-inspection robot': 1 } },
-  network: { people: { 'Network engineers (NOC)': 4 }, robots: { 'Self-healing network, mast monitoring': 1 } },
-  stores: { people: { 'Receiving and storekeepers': 12, 'Prep-kitchen cooks': 20 }, robots: { 'Warehouse AGVs': 4, 'Automated cold-store racking': 1, 'Prep-kitchen robots (vegetables, portioning)': 2 } },
-  darkstore: { people: { 'Pickers and packers': 10 }, robots: { 'Picking robots': 4, 'Delivery robots (the L5 fleet)': 24 } },
-  laundry: { people: { 'Loaders and finishers': 18 }, robots: { 'Tunnel washer and dryer line': 1, 'Folding robots': 2, 'Linen AGVs': 2 } },
-  staffacc: { people: { 'Reception': 4, 'Housekeeping': 8 }, robots: { 'Floor-scrubbing robots': 2 } },
-  canteen: { people: { 'Service and loading': 6 }, robots: { 'Robot kitchen (hot line)': 1, 'Dish-washing robot': 1, 'Self-checkout': 4 } },
-  cleaning: { people: { 'Housekeepers': 120, 'Public-area cleaners': 30, 'Supervisors': 10 }, robots: { 'Floor-scrubbing robots': 16, 'Beach-raking robots': 2, 'Window and façade robots': 2 } },
-  landscaping: { people: { 'Gardeners': 24, 'Irrigation technicians': 2, 'Arborist': 1 }, robots: { 'Robot mowers': 12, 'Hedge-trimming robots': 2, 'Smart irrigation (sensors, valves)': 1 } },
-  waste: { people: { 'Sorters': 8, 'Drivers': 2 }, robots: { 'Sorting robot': 1, 'Compactors (automated)': 4 } },
-  dock: { people: { 'Dock crew': 4, 'Vessel operator (remote, both vessels)': 1 }, robots: { 'Autonomous supply vessels (W2)': 2, 'Remote-operated crane': 1 } },
-  guestservices: { people: { 'Butlers': 24, 'Concierge': 9, 'Guest-app operators': 6 }, robots: { 'AI concierge in the app': 1, 'Delivery robots (the L5 fleet)': 24 } },
-  medical: { people: { 'Doctors': 3, 'Nurses': 6 }, robots: { 'Telemedicine kiosks': 2, 'AED drone': 1 } },
-  security: { people: { 'Control room': 6, 'Patrol': 12, 'Lifeguards': 8, 'Fire crew': 6 }, robots: { 'Patrol drones': 2, 'Marine drone': 1, 'Cameras and sensors': 400 } },
-  'marina-support': { people: { 'Harbour office': 6, 'Technicians': 4 }, robots: { 'Remote metering of power and water': 1 } },
-  'yacht-services': { people: { 'Dock hands': 8, 'Fuel attendants': 2 }, robots: { 'Automated fuel dock': 1, 'Pump-out carts': 2, 'Hull-cleaning robot': 1 } },
-  'guest-dock': { people: { 'Dock staff': 6, 'Shuttle operator (remote, all boats)': 1, 'Porters': 4 }, robots: { 'Autonomous shuttle boats (W1)': 4, 'Luggage robots': 4, 'Face check-in gates': 3 } },
-  'excursion-terminal': { people: { 'Guides': 4, 'Desk': 2, 'Skippers (guests aboard)': 3 }, robots: { 'Booking and weather automation': 1 } },
-  'crew-lounge': { people: { 'Attendants': 3 }, robots: { 'Self-service laundry machines': 6, 'Provisioning kiosk': 1 } },
-  fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: { 'Guest pods L1 (autonomous)': 40, 'Shuttles L2': 5, 'Service carts L3': 16, 'Trucks L4 (autonomous)': 6, 'Delivery robots L5': 24, 'Boats W1 · W2 (autonomous)': 6, 'Charging robots': 2 } },
+  'beach-hotel': { people: { 'Front office and concierge': 24, 'Housekeeping': 70, 'F&B service': 60, 'Kitchen (chefs and cooks)': 44, 'Butlers': 12, 'Engineering': 14, 'Pool and beach attendants': 20, 'Management and admin': 26 }, robots: { scrubber: 6, luggage: 2, pool: 2 } },
+  'apart-hotel': { people: { 'Reception and concierge': 6, 'Housekeeping': 14, 'Maintenance': 4, 'Management': 6 }, robots: { scrubber: 2, lockers: 1 } },
+  'hill-hotel': { people: { 'Front office and concierge': 12, 'Housekeeping': 38, 'F&B service': 28, 'Kitchen (chefs and cooks)': 22, 'Butlers': 6, 'Engineering': 8, 'Attendants': 8, 'Management and admin': 13 }, robots: { scrubber: 3, luggage: 1, pool: 1 } },
+  villas: { people: { 'Butlers': 18, 'Housekeeping': 12, 'Villa chefs': 6, 'Maintenance': 4 }, robots: { pool: 6, mower: 3 } },
+  residences: { people: { 'Concierge': 12, 'Housekeeping': 46, 'Maintenance': 14, 'Owner services': 8, 'Management and admin': 15 }, robots: { scrubber: 4, lockers: 2 } },
+  village: { people: { 'F&B service': 36, 'Kitchen (chefs and cooks)': 24, 'Retail': 16, 'Market': 5, 'Management': 4 }, robots: { table: 6, scrubber: 3 } },
+  restaurant: { people: { 'Head chef and brigade': 22, 'Service': 28, 'Sommeliers': 3, 'Stewards': 5, 'Management': 2 }, robots: { cocktail: 1, dishline: 1 } },
+  'beach-club': { people: { 'Service': 18, 'Kitchen': 10, 'Beach attendants': 8, 'Management': 4 }, robots: { raker: 1, cocktail: 1 } },
+  'members-club': { people: { 'Service': 14, 'Kitchen': 8, 'Membership and events': 4, 'Management': 4 }, robots: { scrubber: 1 } },
+  'hotel-beach': { people: { 'Beach attendants': 8, 'Kiosk and bar': 6 }, robots: { raker: 1, kiosk: 1 } },
+  'club-beach': { people: { 'Beach attendants': 6, 'Beach service': 4 }, robots: { raker: 1 } },
+  'water-sports': { people: { 'Instructors': 6, 'Dive master and boat crew': 3, 'Desk and equipment': 3 }, robots: { droneRescue: 1, buoy: 2 } },
+  spa: { people: { 'Therapists': 18, 'Reception': 6, 'Attendants': 6, 'Longevity doctors': 2 }, robots: { pool: 2, agv: 1 } },
+  sport: { people: { 'Trainers': 8, 'Reception': 3, 'Court staff': 4 }, robots: { court: 2 } },
+  marina: { people: { 'Harbour master and office': 6, 'Dock hands': 14, 'Technical': 6, 'Fuel dock': 2 }, robots: { dronePatrol: 1, pedestal: 90, pumpout: 2 } },
+  events: { people: { 'Event managers': 4, 'Technicians (sound, light)': 4, 'Set-up crew': 2 }, robots: { scrubber: 2, stage: 1 } },
+  power: { people: { 'Plant engineers (3 shifts)': 8 }, robots: { solar: 2 } },
+  desal: { people: { 'Operators': 4 }, robots: {} },
+  sewage: { people: { 'Operators': 3 }, robots: { pipe: 1 } },
+  network: { people: { 'Network engineers (NOC)': 4 }, robots: {} },
+  stores: { people: { 'Receiving and storekeepers': 12, 'Prep-kitchen cooks': 20 }, robots: { agv: 4, kitchen: 2, racking: 1 } },
+  darkstore: { people: { 'Pickers and packers': 10 }, robots: { picker: 4 } },
+  laundry: { people: { 'Loaders and finishers': 18 }, robots: { folder: 2, agv: 2, washline: 1 } },
+  staffacc: { people: { 'Reception': 4, 'Housekeeping': 8 }, robots: { scrubber: 2 } },
+  canteen: { people: { 'Service and loading': 6 }, robots: { kitchen: 1, dishline: 1, kiosk: 4 } },
+  cleaning: { people: { 'Housekeepers': 120, 'Public-area cleaners': 30, 'Supervisors': 10 }, robots: { window: 2 } },
+  landscaping: { people: { 'Gardeners': 24, 'Irrigation technicians': 2, 'Arborist': 1 }, robots: { mower: 12, hedge: 2, irrigation: 1 } },
+  waste: { people: { 'Sorters': 8, 'Drivers': 2 }, robots: { sorter: 1, compactor: 4 } },
+  dock: { people: { 'Dock crew': 4, 'Vessel operator (remote, both vessels)': 1 }, robots: { crane: 1 } },
+  guestservices: { people: { 'Butlers': 24, 'Concierge': 9, 'Guest-app operators': 6 }, robots: {} },
+  medical: { people: { 'Doctors': 3, 'Nurses': 6 }, robots: { droneRescue: 1, kiosk: 2 } },
+  security: { people: { 'Control room': 6, 'Patrol': 12, 'Lifeguards': 8, 'Fire crew': 6 }, robots: { dronePatrol: 2, sensors: 400 } },
+  'marina-support': { people: { 'Harbour office': 6, 'Technicians': 4 }, robots: {} },
+  'yacht-services': { people: { 'Dock hands': 8, 'Fuel attendants': 2 }, robots: { hull: 1, fuel: 1 } },
+  'guest-dock': { people: { 'Dock staff': 6, 'Shuttle operator (remote, all boats)': 1, 'Porters': 4 }, robots: { luggage: 4, kiosk: 3 } },
+  'excursion-terminal': { people: { 'Guides': 4, 'Desk': 2, 'Skippers (guests aboard)': 3 }, robots: {} },
+  'crew-lounge': { people: { 'Attendants': 3 }, robots: { kiosk: 1 } },
+  fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: Object.assign({ charger: 2 }, ...['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3'].map(k => ({ [k]: FLEET_PLAN[k] }))) },
 };
+
 const tsum = o => Object.values(o).reduce((a, b) => a + b, 0);
 const kvc = (o, cls) => Object.entries(o).map(([k, v]) => `<span class="${cls}">${k}</span><span class="${cls}">${v}</span>`).join('');
-const teamHtml = id => { const t = TEAM[id]; if (!t) return ''; return `<div class="sec team"><div class="cap">Labor force</div><div class="kv"><span class="sub pp">People · ${fmt(tsum(t.people))}</span><span class="sub pp"></span>${kvc(t.people, 'pp')}<span class="sub rb">Robots · ${fmt(tsum(t.robots))}</span><span class="sub rb"></span>${kvc(t.robots, 'rb')}</div></div>`; };
+// Labor force on a card: people, then robots (scope 'object'; the Fleet Hub also lists its 'fleet' types), then fixed automation apart.
+const robotRows = (o, scopes) => Object.entries(o).filter(([k]) => scopes.includes(robotOf(k).scope)).map(([k, v]) => `<span class="rb" title="${robotOf(k).does}">${robotOf(k).name}${k.length <= 2 ? ' · ' + k : ''}</span><span class="rb">${v}</span>`).join('');
+const robotSum = (o, scopes) => Object.entries(o).filter(([k]) => scopes.includes(robotOf(k).scope)).reduce((a, [, v]) => a + v, 0);
+const teamHtml = id => { const t = TEAM[id]; if (!t) return ''; const rb = robotSum(t.robots, ['object', 'fleet']), au = robotSum(t.robots, ['auto']);
+  return `<div class="sec team"><div class="cap">Labor force</div><div class="kv"><span class="sub pp">People · ${fmt(tsum(t.people))}</span><span class="sub pp"></span>${kvc(t.people, 'pp')}` +
+    (rb ? `<span class="sub rb">Robots · ${fmt(rb)}</span><span class="sub rb"></span>${robotRows(t.robots, ['object', 'fleet'])}` : '') +
+    (au ? `<span class="sub rb">Automation · ${fmt(au)}</span><span class="sub rb"></span>${robotRows(t.robots, ['auto'])}` : '') + `</div></div>`; };
 // 30-day occupancy (founder 2026-10-19): today is day 5; days 1–4 are actuals, today is live, days 6–30 are the forecast.
 // The month runs from low to high season (base 48 % → 78 %), Friday and Saturday nights +12, Sunday +4, product factor, deterministic noise.
 const TODAY_IDX = 4, DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
