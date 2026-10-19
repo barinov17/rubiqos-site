@@ -180,7 +180,7 @@
   <button id="bCam">Live camera</button>
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
-<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="standard" class="on">Standard</button><button data-style="schematic">Schematic</button><button data-style="arch">Architectural</button></div>
+<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button></div>
 </div>
 <div id="tip" class="panel"></div>
 <button id="bApp" class="panel"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M10.5 5.5h3M11 18.5h2"/></svg><span>Guest app</span></button>
@@ -922,15 +922,9 @@ function fleetModel(id) {                                                       
   const m = FM[id] || { length_m: 4, width_m: 2, height_m: 1.6, below_origin_m: 0 }, g = new THREE.Group();
   g.add(box(m.length_m, m.height_m, m.width_m, 0xdddddd, 0, m.height_m / 2 - (m.below_origin_m || 0))); return g;
 }
-// people as figures (founder 2026-10-19): torso and arms in the type colour, head, two legs that swing while walking; 1.75 m, origin at the feet, faces +X
-const FIG = { torso: new THREE.CylinderGeometry(0.17, 0.13, 0.62, 8).translate(0, 1.19, 0), head: new THREE.SphereGeometry(0.12, 10, 8).translate(0, 1.66, 0),
-  leg: new THREE.CylinderGeometry(0.075, 0.06, 0.86, 6).translate(0, -0.43, 0), arm: new THREE.CylinderGeometry(0.05, 0.045, 0.6, 6).translate(0, -0.3, 0),
-  hip: 0.88, shoulder: 1.47, legOff: 0.1, armOff: 0.23, skin: 0xe9c9a8, legs: 0x4a4f5a };
-function personModel(c = 0xe0795f) {
-  const g = new THREE.Group(), cloth = mat(c), add = (geo, m, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(0, y, z); g.add(o); };
-  add(FIG.torso, cloth, 0, 0); add(FIG.head, mat(FIG.skin), 0, 0); for (const s of [1, -1]) { add(FIG.leg, mat(FIG.legs), FIG.hip, FIG.legOff * s); add(FIG.arm, cloth, FIG.shoulder, FIG.armOff * s); }
-  return g;
-}
+// people as pawns (founder 2026-10-19: the simple model from the first version): a tapered body in the type colour and a head; origin at the feet
+const FIG = { torso: new THREE.CylinderGeometry(0.3, 0.38, 1.25, 7).translate(0, 0.65, 0), head: new THREE.SphereGeometry(0.25, 8, 6).translate(0, 1.5, 0), skin: 0xe9c9a8 };
+function personModel(c = 0xe0795f) { const g = new THREE.Group(); g.add(new THREE.Mesh(FIG.torso, mat(c)), new THREE.Mesh(FIG.head, mat(FIG.skin))); g.scale.setScalar(1.7); return g; }
 function beacon(color) {
   const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
   x.fillStyle = '#' + color.toString(16).padStart(6, '0'); x.beginPath(); x.arc(32, 32, 20, 0, 7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 6; x.stroke();
@@ -1689,19 +1683,22 @@ const RIDE_SHARE = 0.3;                                                        /
 const nearestPoi = (list, p) => list.reduce((a, q) => (q.p.distanceTo(p) < a.p.distanceTo(p) ? q : a));
 const N_FIG = N_PEOPLE + N_ARRIVAL, matCloth = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
 const crowdBody = new THREE.InstancedMesh(FIG.torso, matCloth, N_FIG), crowdHead = new THREE.InstancedMesh(FIG.head, new THREE.MeshStandardMaterial({ color: FIG.skin, roughness: 0.8 }), N_FIG);
-const crowdLegs = [0, 1].map(() => new THREE.InstancedMesh(FIG.leg, new THREE.MeshStandardMaterial({ color: FIG.legs, roughness: 0.9 }), N_FIG)), crowdArms = [0, 1].map(() => new THREE.InstancedMesh(FIG.arm, matCloth, N_FIG));
-const crowdAll = [crowdBody, crowdHead, ...crowdLegs, ...crowdArms]; for (const im of crowdAll) { im.frustumCulled = false; scene.add(im); }   // no cast: the shadow map is static
-const _pm = new THREE.Matrix4(), _m2 = new THREE.Matrix4();
+const crowdAll = [crowdBody, crowdHead]; for (const im of crowdAll) { im.frustumCulled = false; scene.add(im); }   // no cast: the shadow map is static
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
-const SCHEMATIC_PEOPLE = 0x2856e0;   // people dots of the schematic style: round, blue (founder 2026-10-18)
+const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44;   // people dots of the schematic style: guests blue, staff navy (founder 2026-10-19)
+const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * (N_PEOPLE + N_ARRIVAL)), 3)).setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * (N_PEOPLE + N_ARRIVAL)), 3)),
+  new THREE.PointsMaterial({ vertexColors: true, size: 6, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5,
+    map: (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.beginPath(); x.arc(16, 16, 14, 0, 7); x.fill(); return new THREE.CanvasTexture(c); })() }));   // round dots, one per person
+peopleDots.visible = false; peopleDots.frustumCulled = false; peopleDots.renderOrder = 8; scene.add(peopleDots);
 const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { const r = walk(a.p, b.p); routeCache.set(k, r && r.length > 1 ? r : null); } return routeCache.get(k); };   // null = no walkway: the trip does not happen
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _pp = new THREE.Vector3();
 function person(i, type, home) {
   const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 20, heading: 0, visible: true, goal: null, task: '', runs: false };
   f.baseSpeed = f.speed; setType(f, type); people.push(f); return f;
 }
-function setType(f, type) { f.type = type; f.profile = anyOf(PROFILES[type] || PROFILES.hotel); f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < (f.profile.runs ? 0.6 : 0.08); const c = new THREE.Color(COL[type]); for (const im of [crowdBody, ...crowdArms]) { im.setColorAt(f.i, c); im.instanceColor.needsUpdate = true; } }
+function setType(f, type) { f.type = type; f.profile = anyOf(PROFILES[type] || PROFILES.hotel); f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < (f.profile.runs ? 0.6 : 0.08); crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true;
+  const dc = new THREE.Color(type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE); peopleDots.geometry.attributes.color.setXYZ(f.i, dc.r, dc.g, dc.b); peopleDots.geometry.attributes.color.needsUpdate = true; }   // dot colour: guests blue, staff dark
 const HOME = { staff: () => poiAny('staff'), resident: () => (rand() < 0.22 ? poiAny('villa') : poiAny('residence')), hotel: () => poiAny('hotel'), day: () => POI.terminal[0], member: () => POI.terminal[0], yachtguest: () => poiAny('marina') };   // residents 80 villa : 285 residence (vault: Resort Population)
 for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   const type = i < 50 ? 'staff' : i < 120 ? 'resident' : i < 240 ? 'hotel' : i < 255 ? 'yachtguest' : i < 290 ? 'day' : 'member';
@@ -1768,24 +1765,16 @@ function stepPeople(dt) {
     if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300; }   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
 }
-const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * (N_PEOPLE + N_ARRIVAL)), 3)),
-  new THREE.PointsMaterial({ color: SCHEMATIC_PEOPLE, size: 6, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5,
-    map: (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.beginPath(); x.arc(16, 16, 14, 0, 7); x.fill(); return new THREE.CanvasTexture(c); })() }));   // round dots   // schematic style: every person one dot, no types
-peopleDots.visible = false; peopleDots.frustumCulled = false; peopleDots.renderOrder = 8; scene.add(peopleDots);
 function drawPeople() {
-  if (peopleDots.visible) { const a = peopleDots.geometry.attributes.position.array; let n = 0;
-    for (const f of people) { if (!(peopleOn && f.visible && f.pos)) continue; a[n * 3] = f.pos.x; a[n * 3 + 1] = f.pos.y + 1.2; a[n * 3 + 2] = f.pos.z; n++; }
-    peopleDots.geometry.setDrawRange(0, n); peopleDots.geometry.attributes.position.needsUpdate = true; }
+  if (peopleDots.visible) {                                                   // schematic: one dot per person, colour per vertex (guest / staff); the dot keeps the person's index
+    const a = peopleDots.geometry.attributes.position.array;
+    for (const f of people) { const on = peopleOn && f.visible && f.pos; a[f.i * 3] = on ? f.pos.x : 0; a[f.i * 3 + 1] = on ? f.pos.y + 1.2 : -1e4; a[f.i * 3 + 2] = on ? f.pos.z : 0; }
+    peopleDots.geometry.attributes.position.needsUpdate = true; }
   if (!crowdBody.visible) return;                                              // schematic style: the dots are enough
   for (const f of people) {
     const show = peopleOn && f.visible && f.pos;
-    if (!show) { for (const im of crowdAll) im.setMatrixAt(f.i, _zeroM); continue; }
-    _e.set(0, f.heading, 0); _q.setFromEuler(_e); _m.compose(f.pos, _q, _s);
+    if (!show) { _m.makeScale(0, 0, 0); } else { _e.set(0, f.heading, 0); _q.setFromEuler(_e); _m.compose(f.pos, _q, _s); }
     crowdBody.setMatrixAt(f.i, _m); crowdHead.setMatrixAt(f.i, _m);
-    const sw = 0;                                                              // static figures (founder 2026-10-19: models, no animation)
-    for (let k = 0; k < 2; k++) { const sgn = k ? -1 : 1;
-      _pm.makeRotationZ(sw * sgn); _pm.setPosition(0, FIG.hip, FIG.legOff * sgn); _m2.multiplyMatrices(_m, _pm); crowdLegs[k].setMatrixAt(f.i, _m2);
-      _pm.makeRotationZ(-sw * sgn * 0.8); _pm.setPosition(0, FIG.shoulder, FIG.armOff * sgn); _m2.multiplyMatrices(_m, _pm); crowdArms[k].setMatrixAt(f.i, _m2); }
   }
   for (const im of crowdAll) im.instanceMatrix.needsUpdate = true;
 }
@@ -2054,60 +2043,9 @@ function schematicMat(o) {
   if (/roof|slab|white|parapet|top band/i.test(mn + ' ' + n)) return flatMat(base.clone().lerp(new THREE.Color(0xffffff), 0.55).getHex());
   return flatMat(base.getHex());
 }
-// ===== architectural style (founder 2026-10-19, after the reference boards): a white model with fine dark edge lines on every
-// building, paper-pale ground, sage lawns with a grey stipple, light warm-grey roads, a desaturated blue-grey sea, dark figures,
-// soft shadows. Edges = EdgesGeometry (crease 24°) of every building / marina / helipad mesh, built once on the first switch.
-const ARCH = {
-  sea: 0x7d97a8, land: 0xf1efe8, beach: 0xebe5d6, rock: 0xe0ddd5,
-  green: 0xc3cfae, greenDot: 0x97a68a, dotStep: 3.0, dotR: 0.22,
-  roadMain: 0xd6d1c7, walk: 0xcfadaf, walkWide: 0xe9e3da, plaza: 0xe8c9a4, pier: 0xe9e5dc, breakwater: 0xe2ded5,   /* walkways: a dusty burgundy, so they read against the paper (founder 2026-10-19); wide grounds (village, promenade, yards) stay pale */
-  tree: 0xa3b78d, treeDark: 0x8ea47a, palm: 0xadc296, trunk: 0xbdb5a5,
-  wall: 0xf3f3f0, roof: 0xf8f8f6, timber: 0xc4a683, glass: 0xd3dae0, plinth: 0xe4e4e0, pool: 0xa9c6d2,   /* timber / thatch / shingle roofs stay brown */
-  guestPad: 0xc9d8ea, hatchBase: 0xeae6dd, hatchLine: 0x8a8f96,
-  yachtHull: 0xf5f5f2, yachtGlass: 0xb6c2cb, people: 0x3b3f45, edge: 0x4a4f57, edgeAlpha: 0.5,   /* lines: thinner-looking, grey rather than black */
-  sky: [0xdfe7ec, 0xf5f4f0], fog: 0xf1f0ec, fogRange: [5000, 20000], exposure: 1.0, toneMapping: THREE.NoToneMapping,
-  hemi: [0xffffff, 0xd9d5cc, 1.9], sun: [0xfff6e8, 1.9], shadow: 0.8, aoBlend: 0.5, grade: { sat: 0.92, con: 0.96, lift: 0.0, tint: 0xffffff },   /* softer contrast, real shadows */
-};
-const archFlat = (hex, rough = 1) => { const k = 'a' + hex + '/' + rough; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 })); return schemCache.get(k); };   // offset: the edge lines win the depth test
-const archPeople = () => archFlat(ARCH.people);
-function archMat(o) {
-  const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), S = ARCH, lawn = () => dotMat(S.green, S.greenDot, S.dotStep, S.dotR);
-  if (/drop-off$|^Drop-off \| DO-/.test(n)) return /\(BOH\)|service drop-off$/.test(n) ? hatchMat(S.hatchBase, S.hatchLine) : archFlat(S.guestPad);
-  if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
-  if (/Pool water/.test(mn)) return archFlat(S.pool, 0.4);
-  if (g === 'trees') return archFlat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);
-  if (g === 'terrain') return /BEACH/.test(mn) ? archFlat(S.beach) : /Rocky/.test(mn) ? archFlat(S.rock) : /GREEN/.test(mn) ? lawn() : archFlat(S.land);
-  if (g === 'landscape') return /GREEN|Planting/.test(mn) ? lawn() : archFlat(S.land);
-  if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? archFlat(S.roadMain) : /Plaza|Urban/.test(mn) ? archFlat(S.plaza) : /Marina Village|PROMENADE/.test(n) ? archFlat(S.walkWide) : archFlat(S.walk);
-  if (g === 'marina') return /ghost/i.test(mn) ? schemGhost() : /Boat|Yacht/.test(mn) ? archFlat(S.yachtHull, 0.5) : /glass/i.test(mn) ? archFlat(S.yachtGlass, 0.4) : /Pier deck/.test(mn) ? archFlat(S.pier) : archFlat(S.breakwater);
-  if (/GREEN|Planting|roof garden|planters|lawn|hedge/i.test(mn + ' ' + n)) return lawn();
-  if (/Road surface/.test(mn) || /access road$|service road/.test(n)) return archFlat(S.roadMain);
-  if (/Promenade|Plaza|Urban ground|yard$|courtyard$|forecourt$|ground$/i.test(mn + ' ' + n)) return archFlat(S.walkWide);
-  if (/Villa deck|deck$|path|walk [EW]$|stair/i.test(mn + ' ' + n)) return archFlat(S.walk);
-  if (/glass|water$|reflecting pool|cascade water/i.test(mn + ' ' + n)) return archFlat(S.glass, 0.4);
-  if (/timber|thatch|shingle|teak|wood|Village roof|DWG restaurant/i.test(mn)) return archFlat(S.timber);   // outlets, spa, reception, villas: brown roofs and frames
-  if (/(\| |)(plinth|podium|base)$/i.test(n)) return archFlat(S.plinth);
-  if (/^(DINING|Wellness Spa|Villa|Arrivals Reception|Rotunda Restaurant|Beach Club|Members Club|restaurant|event hall)/.test(meshTop(o).name) && /roof|pergola|posts|timber|columns/i.test(n)) return archFlat(S.timber);   // the asset materials carry no names: roofs and frames by part name
-  { const c = (o.userData.baseMat || o.material).color; if (c && c.getHSL) { const h = c.getHSL({}); if (h.s > 0.18 && h.h > 0.03 && h.h < 0.13 && h.l < 0.78) return archFlat(S.timber); } }   // anything brown in the model stays brown
-  if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return archFlat(S.roof);
-  return archFlat(S.wall);
-}
-let archEdges = null;
-function buildArchEdges() {
-  const grp = new THREE.Group(); grp.name = 'arch edges'; const mat = new THREE.LineBasicMaterial({ color: ARCH.edge, transparent: true, opacity: ARCH.edgeAlpha }); let n = 0;
-  model.updateMatrixWorld(true);
-  const add = o => { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 40), mat); ln.matrixAutoUpdate = false; ln.matrix.copy(o.matrixWorld); grp.add(ln); n++; };
-  model.traverse(o => {
-    if (!o.isMesh || o.isInstancedMesh || !isShown(o)) return; const g = meshGroup(o);
-    if (!(g === 'buildings' || g === 'marina') || /drop-off$|^Drop-off \| DO-|Pool water|^MARINA( \| apron slope)?$/.test(o.name) || /ghost|glass/i.test(o.userData.material || (o.material && o.material.name) || '')) return;
-    add(o);
-  });
-  if (window.__helipadRoot && window.__helipadRoot.parent !== model) window.__helipadRoot.traverse(o => { if (o.isMesh) add(o); });
-  grp.renderOrder = 9; scene.add(grp); console.info('architectural edges:', n, 'meshes'); return grp;
-}
 let mapStyle = 'standard';
 function applyMapStyle(name) {
-  const sch = name === 'schematic', arch = name === 'arch', st = sch ? SCHEMATIC : arch ? ARCH : STD, matFn = sch ? schematicMat : arch ? archMat : null; mapStyle = name;
+  const sch = name === 'schematic', st = sch ? SCHEMATIC : STD, matFn = sch ? schematicMat : null; mapStyle = name;
   model.traverse(o => {
     if (!o.isMesh) return;
     if (!o.userData.baseMat) o.userData.baseMat = o.material;
@@ -2117,23 +2055,19 @@ function applyMapStyle(name) {
   renderer.toneMapping = st.toneMapping; renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2]; sun.color.set(st.sun[0]); sun.intensity = st.sun[1]; sun.shadow.intensity = st.shadow ?? 1;
   gtao.blendIntensity = st.aoBlend; grade.uniforms.sat.value = st.grade.sat; grade.uniforms.con.value = st.grade.con; grade.uniforms.lift.value = st.grade.lift; grade.uniforms.tint.value.set(st.grade.tint);
   const W = waterMat.uniforms;
-  if (sch || arch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(st.sea); W.fresK.value = 0; W.specK.value = arch ? 0.1 : 0; }   // one flat sea
+  if (sch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(st.sea); W.fresK.value = 0; W.specK.value = 0; }   // one flat sea
   else for (const [k, v] of Object.entries(STD.water)) { if (W[k].value.copy) W[k].value.copy(v); else W[k].value = v; }
   setPinStyle(sch); setMarkerStyle(sch);
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
-    o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : arch ? (/lawn|grass|hedge/.test(k || '') ? archFlat(ARCH.green) : archFlat(ARCH.walk)) : o.userData.baseMat; });
+    o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : o.userData.baseMat; });
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
-    o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : arch ? (gl ? archFlat(ARCH.yachtGlass, 0.4) : archFlat(ARCH.yachtHull, 0.5)) : o.userData.baseMat; });   // moving yachts match the moored ones
-  for (const im of crowdAll) {                                                 // schematic / architectural: the same figures in one colour (founder 2026-10-19: models, not dots)
-    if (!im.userData.baseMat) { im.userData.baseMat = im.material; im.userData.baseColor = im.instanceColor; }
-    im.material = sch ? schemPeople() : arch ? archPeople() : im.userData.baseMat; im.instanceColor = sch || arch ? null : im.userData.baseColor; }
-  if (arch && !archEdges) archEdges = buildArchEdges(); if (archEdges) archEdges.visible = arch;
-  peopleDots.visible = false; shadowDirty();
+    o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
+  for (const im of crowdAll) im.visible = !sch; peopleDots.visible = sch; shadowDirty();   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
-  try { localStorage.setItem('mapStyle2', name); } catch (e) {}
+  try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
-{ let saved = 'standard'; try { saved = localStorage.getItem('mapStyle2') || 'standard'; } catch (e) {} if (saved === 'schematic' || saved === 'arch') applyMapStyle(saved); }
+{ let saved = 'schematic'; try { saved = localStorage.getItem('mapStyle3') || 'schematic'; } catch (e) {} applyMapStyle(saved === 'standard' ? 'standard' : 'schematic'); }   // schematic by default (founder 2026-10-19); the key changed so old choices do not stick
 
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
