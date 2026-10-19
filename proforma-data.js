@@ -141,7 +141,7 @@ const SERVICES = [
 // Categories (founder 2026-10-19): the cards are grouped, not listed by zone
 const PRODUCT_GROUPS = [
   { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'apart-hotel', 'villas', 'residences'] },
-  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'guest-dock', 'excursion-terminal', 'crew-lounge'] },
+  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'yacht-services', 'guest-dock', 'excursion-terminal', 'crew-lounge'] },
   { title: 'Food and beverage', ids: ['restaurant', 'village', 'beach-club', 'members-club'] },
   { title: 'Beaches and water', ids: ['hotel-beach', 'club-beach', 'water-sports'] },
   { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
@@ -381,20 +381,16 @@ const refreshCharts = (L, loads) => { const todayDow = Math.max(0, DOW.indexOf((
 const roomRows = c => `<div class="rooms" data-rooms="${c.id}">${Object.entries(c.objects).map(([k, n]) => `<div class="rr"><span>${k}</span><div class="bar"><i style="width:0"></i></div><b>${n}</b></div>`).join('')}</div>`;
 const productCard = (c, link = true) => `<div class="con" id="${c.id}">${productInner(c, link)}</div>`;
 // the marina as a full-width block (founder 2026-10-19), like the Fleet Hub: the card on the left, the berths by class on the right
-const marinaBlock = (link = true) => { const c = entityOf('marina'), y = entityOf('yacht-services'), d = needs(c, OCC); return `<div class="con wide cols" id="marina">
+const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c, OCC); return `<div class="con wide cols" id="marina">
   <div class="col">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
     <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="marina"><span>Berths occupied</span><span>—</span></div></div>
-    ${chartHtml(c)}
     <div class="sec"><div class="cap">By class · live</div><table class="t mini"><thead><tr><th>Class</th><th class="num">Berths</th><th class="num">Occupied</th><th style="width:38%"></th></tr></thead><tbody id="marinaRows"></tbody></table><p class="muted" style="font-size:11.5px;margin:4px 0 0">Plan 90 berths (50 S · 32 M · 8 L); the model holds 126.</p></div></div>
   <div class="col">
-    <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv"><span>Capacity</span><span>${c.capLabel}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel}</span></div></div>
+    ${chartHtml(c)}
     <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
     <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
-  <div class="col" id="yacht-services">${hdHtml(y, link)}${opTag(y.op)}<p>${y.what}</p>
-    <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="yacht-services"><span>Load</span><span>—</span></div></div>
-    <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(y.produces)}</div></div>
-    <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(y.consumes)}</div></div></div>
-  <div class="col">${teamHtml('marina').replace('Labor force', 'Labor force · marina')}${teamHtml('yacht-services').replace('Labor force', 'Labor force · yacht services')}</div>
+  <div class="col"><div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv"><span>Capacity</span><span>${c.capLabel}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel}</span></div></div></div>
+  <div class="col">${teamHtml('marina')}</div>
   <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div></div>`; };
 const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
