@@ -66,3 +66,7 @@ body.site .sev[data-state="now"] { background: #e3ebfd; border-color: var(--acce
 body.site .sev[data-state="done"] { opacity: 0.55; }
 body.site .snow { position: absolute; top: 10px; bottom: 12px; width: 2px; background: var(--accent); pointer-events: none; }
 @media (max-width: 720px) { body.site .sched { --svw: 90px; } body.site .svenue { font-size: 11px; } }
+/* label / value by span order, not by child order: a bar (div) between rows must not flip the parity */
+body.site .con .kv span:nth-child(2n), body.site .con .kv span:nth-child(2n+1) { text-align: left; font-weight: 400; color: var(--text); font-size: 12.5px; }
+body.site .con .kv span:nth-of-type(2n) { text-align: right; font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+body.site .con .live .kv span:nth-of-type(2n) { font-size: 14px; }

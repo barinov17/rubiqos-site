@@ -55,7 +55,7 @@ const PRODUCTS = [
     produces: 'Berth nights · shore power and water · the guest dock', units: [ { name: 'Berths for boats to 15 m', n: 50, pax: 4, per: { water: 200, energy: 60, food: 5, laundry: 2, waste: 8 } },
              { name: 'Berths for boats to 35 m', n: 32, pax: 8, per: { water: 1000, energy: 400, food: 15, laundry: 6, waste: 20 } },
              { name: 'Berths for boats to 80 m', n: 8, pax: 14, per: { water: 5000, energy: 2400, food: 40, laundry: 15, waste: 50 } } ],
-    objects: {}, staff: 28 },
+    objects: {}, staff: 28, capLabel: '90 berths · 50 S, 32 M, 8 L', avgLabel: '63 berths occupied · ≈ 360 people aboard' },
   { id: 'events', name: 'Events Rotunda', zone: 'Z07', op: 'events', unit: 'people at once', turns: 1.5, live: ['Events Rotunda'], what: 'Ring hall around a courtyard: exhibitions, talks, concerts, dinners.',
     produces: 'Events (3 a day) · tickets and buyouts · catering', capacity: 540, objects: { 'Hall places': 300, 'Courtyard places': 120, 'Pavilion places': 120 }, staff: 10, per: { water: 15, energy: 4, food: 0.4, laundry: 0.1, waste: 0.3 } },
 ];
@@ -182,7 +182,7 @@ function productCard(c, link = true) {
   const d = needs(c, OCC); const objs = c.units ? Object.fromEntries([...c.units.map(u => [u.name, u.n]), ...Object.entries(c.objects)]) : c.objects;
   return `<div class="con" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
-  <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${fmt(capacityOf(c))} ${c.unit}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}</span></div></div>
+  <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p><div class="kv">${kv(objs)}<span>Capacity</span><span>${c.capLabel || `${fmt(capacityOf(c))} ${c.unit}`}</span><span>Average day at ${Math.round(OCC * 100)} %</span><span>${c.avgLabel || `${fmt(people(c, OCC))} ${c.turns ? 'visits' : c.unit}`}</span></div></div>
   <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
   <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>`;
 }
@@ -225,8 +225,8 @@ const eventRow = e => `<tr><td>${e.time}</td><td>${e.venue ? `<a href="${ENTITY_
 const eventsTable = list => `<table class="t"><thead><tr><th>Time</th><th>Venue</th><th>Event</th><th class="num">Booked / capacity</th></tr></thead><tbody>${list.map(eventRow).join('')}</tbody></table>`;
 // --- live: the simulation runs headless in the hidden frame (#sim); its window.__live is read once a second. Every [data-live] on the page is filled.
 const bar = (p, over = 98) => `<div class="bar"><i class="${p >= over ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div>`;
-const setLive = (id, rows) => { const el = document.querySelector(`[data-live="${id}"]`); if (!el) return;   // bars go last: a bar in the middle flips the label / value parity of the kv grid
-  el.innerHTML = rows.filter(r => r[0] !== 'bar').map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('') + rows.filter(r => r[0] === 'bar').map(r => r[1]).join(''); };
+const setLive = (id, rows) => { const el = document.querySelector(`[data-live="${id}"]`); if (!el) return;   // a bar spans both columns, so it keeps the label / value parity; it is drawn right under its row
+  el.innerHTML = rows.map(([k, v]) => k === 'bar' ? v : `<span>${k}</span><span>${v}</span>`).join(''); };
 let L = null;
 function refreshLive() {
   const sim = document.getElementById('sim'); try { L = sim && sim.contentWindow && sim.contentWindow.__live || null; } catch (e) { L = null; }
@@ -239,7 +239,11 @@ function refreshLive() {
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
     const rows = [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', stf]];   // the bar = share of the product's own capacity (founder 2026-10-19)
-    if (c.id === 'marina') { const M = L.marina; rows.push(['Boats moored', `${M.moored} of ${M.berths} berths`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)], ['Under way', M.underway], ['Expected today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`], ['Next', M.next]); }
+    if (c.id === 'marina') {                                                 // the marina's capacity is berths, by boat class (founder 2026-10-19)
+      const M = L.marina, cls = { S: 'to 15 m', M: 'to 35 m', L: 'to 80 m' }; rows.length = 0;
+      rows.push(['Berths occupied', `${M.moored} <small style="color:var(--muted);font-weight:400">of ${M.berths} · ${Math.round(100 * M.moored / M.berths)} %</small>`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)]);
+      for (const k of ['S', 'M', 'L']) { const b = M.byCls[k] || { moored: 0, berths: 0 }; rows.push([`${k} · boats ${cls[k]}`, `${b.moored} <small style="color:var(--muted);font-weight:400">of ${b.berths}</small>`], ['bar', bar(Math.round(100 * b.moored / Math.max(1, b.berths)), 101)]); }
+      rows.push(['Under way', M.underway], ['Expected today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`], ['Next', M.next], ['Staff on shift', stf]); }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);
   }
