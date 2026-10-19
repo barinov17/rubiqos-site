@@ -249,23 +249,24 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 // changes (style, layers); vehicles and people do not cast, so a frame costs two scene passes instead of three
 renderer.shadowMap.autoUpdate = false; const shadowDirty = () => { renderer.shadowMap.needsUpdate = true; };
 let viewDirty = true;                                                        // pins and zone labels are re-placed only when the camera or the stage changes
-renderer.toneMapping = THREE.AgXToneMapping; renderer.toneMappingExposure = 1.3;   // presentation look (founder reference 2026-10-16); lighter per founder 2026-10-17
+renderer.toneMapping = THREE.AgXToneMapping; renderer.toneMappingExposure = 1.15;   // presentation look (founder reference 2026-10-16); sunny day per founder 2026-10-19 (stronger sun, bluer sky, less fog)
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0xdde8ee, 2400, 11500);                           // haze toward the horizon
-// sky dome: pale haze at the horizon, blue at the zenith
+scene.fog = new THREE.Fog(0xe4edf4, 3600, 16000);                           // light haze far out only
+// sky dome: pale warm haze at the horizon, saturated blue at the zenith
 const skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { top: { value: new THREE.Color(0x7fb3d6) }, horizon: { value: new THREE.Color(0xe3ecf1) } },
+  uniforms: { top: { value: new THREE.Color(0x4f9ae0) }, horizon: { value: new THREE.Color(0xeef3ef) } },
   vertexShader: 'varying vec3 vW; void main(){ vW = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
   fragmentShader: 'uniform vec3 top, horizon; varying vec3 vW; void main(){ float h = clamp(normalize(vW).y, 0.0, 1.0); gl_FragColor = vec4(mix(horizon, top, pow(h, 0.55)), 1.0); }' });
 const sky = new THREE.Mesh(new THREE.SphereGeometry(16000, 32, 16), skyMat); sky.renderOrder = -10; scene.add(sky);
 const camera = new THREE.PerspectiveCamera(40, 1, 4, 20000);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.screenSpacePanning = false; controls.panSpeed = 1.2; controls.zoomSpeed = 1.2; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 20; controls.maxDistance = 9000;
-const hemi = new THREE.HemisphereLight(0xd6e6f2, 0xa29d8c, 1.25); scene.add(hemi);                // soft, overcast-leaning light
-const sun = new THREE.DirectionalLight(0xfff3e0, 2.25);
+const hemi = new THREE.HemisphereLight(0xd8ecfc, 0xb3a78c, 0.9); scene.add(hemi);                 // blue sky above, warm ground bounce
+const sun = new THREE.DirectionalLight(0xfff0d2, 3.2);                                            // a clear-day sun: strong, warm, with real shadows
 sun.position.set(-900, 1500, 1100); sun.castShadow = true;
-sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 1.2; sun.shadow.radius = 6;
+sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 1.2; sun.shadow.radius = 4;
 Object.assign(sun.shadow.camera, { left: -1700, right: 1700, top: 1700, bottom: -1700, near: 200, far: 4500 });
+sun.shadow.camera.updateProjectionMatrix();                                                       // without this the shadow frustum stays at the default 10 x 10 m: no shadows anywhere (bug since day one)
 scene.add(sun, sun.target);
 
 const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: THREE.HalfFloatType }));
@@ -275,11 +276,11 @@ outline.edgeStrength = 5; outline.edgeThickness = 1.2; outline.edgeGlow = 0; out
 outline.visibleEdgeColor.set(0xe0795f); outline.hiddenEdgeColor.set(0xe0795f);
 const gtao = new GTAOPass(scene, camera, 1, 1);
 gtao.updateGtaoMaterial({ radius: 9, distanceExponent: 1.5, thickness: 1.2, scale: 1.2, samples: 12, distanceFallOff: 1 });
-gtao.blendIntensity = 0.45; gtao.output = GTAOPass.OUTPUT.Default;
+gtao.blendIntensity = 0.5; gtao.output = GTAOPass.OUTPUT.Default;
 composer.addPass(gtao); composer.addPass(outline); composer.addPass(new OutputPass());
 // grading: lower saturation and contrast, lifted blacks, a warm-grey cast (presentation render look)
 const grade = new ShaderPass({
-  uniforms: { tDiffuse: { value: null }, sat: { value: 0.95 }, con: { value: 0.97 }, lift: { value: 0.02 }, tint: { value: new THREE.Color(0xffffff) } },
+  uniforms: { tDiffuse: { value: null }, sat: { value: 1.12 }, con: { value: 1.05 }, lift: { value: 0.0 }, tint: { value: new THREE.Color(0xffffff) } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: `uniform sampler2D tDiffuse; uniform float sat, con, lift; uniform vec3 tint; varying vec2 vUv;
     void main(){ vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -342,7 +343,7 @@ const berths = [];                                                           // 
 const yachtInst = {};                                                        // Y1-3 -> { parts: [InstancedMesh], ghost: [InstancedMesh] }
 const _zeroM = new THREE.Matrix4().makeScale(0, 0, 0);
 // one boat look for moored and moving craft (founder 2026-10-19): a light blue-grey hull, a mid blue-grey glass
-const boatHullMat = new THREE.MeshStandardMaterial({ color: 0xe2eaf1, roughness: 0.5, name: 'Yacht hull' }), boatGlassMat = new THREE.MeshStandardMaterial({ color: 0x8aa2b6, roughness: 0.3, name: 'Fleet glass' });
+const boatHullMat = new THREE.MeshStandardMaterial({ color: 0xe2eaf1, roughness: 0.5, name: 'Yacht hull' }), boatGlassMat = new THREE.MeshStandardMaterial({ color: 0x3f6fa6, roughness: 0.3, name: 'Fleet glass' });   // glass: saturated, darker blue (founder 2026-10-19)
 const boatMat = m => (/glass/i.test(m.name || '') ? boatGlassMat : boatHullMat);
 // an empty berth = the hull outline as a light-blue dashed line (founder 2026-10-18); one LineSegments holds every empty berth
 const ghostLine = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ color: 0x5a9be8, dashSize: 1.4, gapSize: 1.0, transparent: true, opacity: 0.9 }));
@@ -1028,9 +1029,22 @@ const road = (from, to) => roadR.route(from, to);
 const noRoute = new Set();
 const walk = (from, to) => { const r = walkR.route(from, to); if (!r) { const k = `${from.x | 0},${from.z | 0}>${to.x | 0},${to.z | 0}`; if (!noRoute.has(k)) { noRoute.add(k); console.warn('no walkway between', [from.x | 0, from.z | 0], 'and', [to.x | 0, to.z | 0]); } } return r; };   // strict: walkways only, never across the lawn
 
+// material cache shared by the schematic style and the hatched pads (defined here because the pads are built at load, before the style section)
+const schemCache = new Map();
+const hatchMat = (base = SCHEMATIC.hatchBase, line = SCHEMATIC.hatchLine, step = 1.6) => {   // world-space 45° hatching (x + z), no UVs needed
+  const key = 'hatch' + base + '/' + line; if (schemCache.has(key)) return schemCache.get(key);
+  const m = new THREE.MeshStandardMaterial({ color: base, roughness: 1, metalness: 0 });
+  m.onBeforeCompile = sh => {
+    sh.uniforms.hatchCol = { value: new THREE.Color(line) }; sh.uniforms.hatchStep = { value: step };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform vec3 hatchCol; uniform float hatchStep;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n{ float g = (vWP.x + vWP.z) / hatchStep; float d = abs(fract(g) - 0.5); float w = fwidth(g);\n  diffuseColor.rgb = mix(hatchCol, diffuseColor.rgb, smoothstep(0.18 - w, 0.18 + w, d)); }');
+  };
+  schemCache.set(key, m); return m;
+};
 // ===== drop-off pads (founder 2026-10-17): every drop-off is red; each pad turned so its long side runs along the adjoining road
 {
-  const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x4e5d6e, roughness: 0.9 }), bohPadMat = new THREE.MeshStandardMaterial({ color: 0x6e5f55, roughness: 0.9 });   // founder 2026-10-17 evening: blue and brown kept, tones close to the road
+  const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x9dbdf0, roughness: 0.9 }), bohPadMat = hatchMat(0xe4e9f3, 0x4e5d6e);   // founder 2026-10-19: guest pads light blue, back-of-house pads hatched at 45° (both styles)
   const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
   for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$| service road \| surface$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
@@ -1498,10 +1512,11 @@ const MAR = (() => {
   if (dry.length) console.warn('marina fairway network crosses land:', dry); else console.info('marina fairway network:', fairways.length, 'lanes + trunk + exit, all on water');
   return { fairways, west, east, J, out: [west.clone(), ...out] };
 })();
-if (MAR) {                                                                  // the designed routes, dashed on the water
+if (MAR) {                                                                  // the designed routes, dashed on the water; the shuttle's way to the guest dock in a lighter blue
+  const dash = (pts, color, name) => { const g = new THREE.BufferGeometry().setFromPoints(pts.map(p => p.clone().setY(waterY + 0.35))); const ln = new THREE.LineSegments(g, new THREE.LineDashedMaterial({ color, dashSize: 7, gapSize: 5, transparent: true, opacity: 0.75 })); ln.computeLineDistances(); ln.name = name; ln.renderOrder = 7; scene.add(ln); return ln; };
   const pts = []; for (const f of MAR.fairways) pts.push(f.top, f.foot); pts.push(MAR.east, MAR.west); for (let i = 1; i < MAR.out.length; i++) pts.push(MAR.out[i - 1], MAR.out[i]);
-  const g = new THREE.BufferGeometry().setFromPoints(pts.map(p => p.clone().setY(waterY + 0.35)));
-  const ln = new THREE.LineSegments(g, new THREE.LineDashedMaterial({ color: 0x2457e6, dashSize: 7, gapSize: 5, transparent: true, opacity: 0.75 })); ln.computeLineDistances(); ln.name = 'fairways'; ln.renderOrder = 7; scene.add(ln);
+  dash(pts, 0x2457e6, 'fairways');
+  const sh = seaLegs([MAR.J, A.berth]); if (sh) { const q = []; for (let i = 1; i < sh.length; i++) q.push(sh[i - 1], sh[i]); dash(q, 0x6fa0e8, 'shuttle line'); }
 }
 const berthsOk = MAR ? berths : [];
 console.info('marina berths:', berths.length, Object.fromEntries(['S', 'M', 'L'].map(c => [c, berths.filter(b => b.cls === c).length])), '· fairways:', MAR ? MAR.fairways.map(f => `${f.members.length} berths`) : 'none');
@@ -1975,19 +1990,7 @@ const STD = { toneMapping: renderer.toneMapping, sky: [skyMat.uniforms.top.value
   exposure: renderer.toneMappingExposure, hemi: [hemi.color.getHex(), hemi.groundColor.getHex(), hemi.intensity], sun: [sun.color.getHex(), sun.intensity], aoBlend: gtao.blendIntensity,
   grade: { sat: grade.uniforms.sat.value, con: grade.uniforms.con.value, lift: grade.uniforms.lift.value, tint: grade.uniforms.tint.value.getHex() },
   water: Object.fromEntries(['deep', 'mid', 'shallow', 'sand', 'skyC', 'fresK', 'specK'].map(k => [k, waterMat.uniforms[k].value.clone ? waterMat.uniforms[k].value.clone() : waterMat.uniforms[k].value])) };
-const schemCache = new Map();
 const flatMat = (hex, rough = 0.95) => { const k = 'f' + hex; if (!schemCache.has(k)) schemCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: rough, metalness: 0 })); return schemCache.get(k); };
-const hatchMat = () => {                                                            // world-space 45° hatching (x + z), no UVs needed
-  if (schemCache.has('hatch')) return schemCache.get('hatch');
-  const m = new THREE.MeshStandardMaterial({ color: SCHEMATIC.hatchBase, roughness: 1, metalness: 0 });
-  m.onBeforeCompile = sh => {
-    sh.uniforms.hatchCol = { value: new THREE.Color(SCHEMATIC.hatchLine) }; sh.uniforms.hatchStep = { value: SCHEMATIC.hatchStep };
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform vec3 hatchCol; uniform float hatchStep;')
-      .replace('#include <color_fragment>', '#include <color_fragment>\n{ float g = (vWP.x + vWP.z) / hatchStep; float d = abs(fract(g) - 0.5); float w = fwidth(g);\n  diffuseColor.rgb = mix(hatchCol, diffuseColor.rgb, smoothstep(0.18 - w, 0.18 + w, d)); }');
-  };
-  schemCache.set('hatch', m); return m;
-};
 const schemGhost = () => { if (!schemCache.has('ghost')) schemCache.set('ghost', new THREE.MeshStandardMaterial({ color: 0xcfdcf0, roughness: 1, metalness: 0, transparent: true, opacity: 0.6, depthWrite: false })); return schemCache.get('ghost'); };   // empty-berth silhouette
 const dotMat = () => {                                                              // world-space dot pattern, so no UVs are needed
   if (schemCache.has('dots')) return schemCache.get('dots');
