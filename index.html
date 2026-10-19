@@ -760,6 +760,8 @@ try {
   for (const m of FLEET.models) { const n = fg.scene.getObjectByName(m.node); if (n) fleetTpl.set(m.id, n); else console.warn('fleet model missing in the GLB:', m.node); }
 } catch (e) { console.warn('fleet-models.glb not loaded, box fallback', e); }
 const FM = Object.fromEntries(FLEET.models.map(m => [m.id, m]));
+{ const boatWhite = new THREE.MeshStandardMaterial({ color: 0xf7f7f5, roughness: 0.45 });   // founder 2026-10-18: every boat white (glass kept)
+  for (const id of ['W1', 'W2', 'W3', 'Y1', 'Y2', 'Y3']) { const t = fleetTpl.get(id); if (t) t.traverse(o => { if (o.isMesh && !/glass/i.test(o.material.name || '')) o.material = boatWhite; }); } }
 // --- helipad asset (vault "Helipad Model": ICAO Annex 14 Vol II, FATO 21.2 m, TLOF 12 m; placement from assets/helipad.placement.json)
 const groupOfMesh = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
 const ASSET_DIR = 'assets/';   // Model Register assets (vault: Model Register); the site build rewrites this to its own folder

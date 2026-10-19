@@ -1,7 +1,7 @@
 {
- "version": "v063",
- "exported": "2026-10-18 19:35",
- "changes": "changes/v063.json",
+ "version": "v064",
+ "exported": "2026-10-18 20:35",
+ "changes": "changes/v064.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -151,8 +151,6 @@
   "DWG water activities": "#B9A27E",
   "DWG wellness-spa": "#7FB8A6",
   "Fleet glass.001": "#2C3A44",
-  "Fleet teak.001": "#A57B50",
-  "Fleet white.001": "#F4F4F2",
   "Footprint building": "#F08DB8",
   "Footprint link": "#B85C8A",
   "Guest drop-off": "#A8CBE0",
@@ -208,6 +206,7 @@
   "Village hub": "#C46A4A",
   "Village roof": "#DDEAF0",
   "Village stone": "#A8A196",
+  "Yacht white": "#F7F7F5",
   "Zone Z01": "#E8D9B0",
   "Zone Z02": "#C9B27C",
   "Zone Z03": "#D98C5F",
@@ -9092,7 +9091,7 @@
    "height_m": 0.3999999999999986,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 12
   },
   {
@@ -9182,7 +9181,7 @@
    "height_m": 0.3999999999999986,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 8
   },
   {
@@ -9272,7 +9271,7 @@
    "height_m": 0.3999999999999986,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 12
   },
   {
@@ -9362,7 +9361,7 @@
    "height_m": 0.3999999999999986,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 14
   },
   {
@@ -9452,7 +9451,7 @@
    "height_m": 0.40000000000000213,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 12
   },
   {
@@ -9542,7 +9541,7 @@
    "height_m": 0.40000000000000213,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 16
   },
   {
@@ -9632,7 +9631,7 @@
    "height_m": 0.3999999999999986,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 14
   },
   {
@@ -9722,7 +9721,7 @@
    "height_m": 0.40000000000000036,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 8
   },
   {
@@ -9812,7 +9811,7 @@
    "height_m": 0.40000000000000036,
    "derived": "detail model",
    "hand_made": false,
-   "material": "Roof grey",
+   "material": "Planting",
    "verts": 12
   },
   {
