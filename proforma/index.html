@@ -19,6 +19,10 @@
   body.site .con .sec .cap { margin-top: 0; }
   body.site .con .live { align-self: start; }
   @supports not (grid-template-rows: subgrid) { body.site .con { display: flex; flex-direction: column; gap: 8px; } }
+  body.site .con.wide { display: grid; grid-template-columns: minmax(280px, 1fr) 2fr; grid-template-rows: none; column-gap: 24px; align-items: start; }
+  body.site .con.wide .col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  body.site .con.wide table.t { font-size: 12.5px; }
+  @media (max-width: 800px) { body.site .con.wide { grid-template-columns: 1fr; } }
   body.site .con .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   body.site .con h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
   body.site .con .zone { font: 500 11px var(--body); color: var(--muted); white-space: nowrap; }
@@ -72,7 +76,13 @@
     <div class="cards" id="serviceCards"></div>
   </section>
 
-  <!-- the Fleet and Balance overview lives on the live-demo page under the actors bar (founder 2026-10-19); the balance rows are still computed here for the utility cards' load -->
+  <section id="fleethub">
+    <h2>Fleet Hub</h2>
+    <p class="lead">One block for every vehicle, boat and the helicopter: dispatch, charging, maintenance. The products and the other services use the fleet; they do not own it.</p>
+    <div class="con wide" id="fleetCard"></div>
+  </section>
+
+  <!-- the Balance table lives on the live-demo page under the actors bar (founder 2026-10-19); the rows are still computed here for the utility cards' load -->
   <table id="balanceT" style="display:none"><tbody></tbody></table>
 
   <section id="programme">
@@ -171,27 +181,27 @@ const SERVICES = [
     produces: { 'Treated a day': '700 m³', 'Reclaimed for irrigation': '450 m³' }, consumes: { 'Energy': '≈ 420 kWh a day (0.6 kWh/m³)' }, key: 'sewage', capacity: 700 },
   { id: 'stores', name: 'Warehouse and cold chain', zone: 'Z09', op: 'stores', what: 'Four-block warehouse bar: prep kitchen, cold storage, dry storage; receives the supply vessel; issues to every kitchen.',
     produces: { 'Food throughput a day': '4.5 t', 'Meals prepared a day': '4,100', 'Cold storage': '600 m²', 'Dry storage': '900 m²' }, consumes: { 'Supply calls a week': 2, 'Energy (cold rooms)': '≈ 1,800 kWh a day' }, key: 'food', capacity: 4.5,
-    liveFn: L => [['Deliveries today', L.ops.deliveries], ['Truck runs today', L.ops.truckRuns], ['Supply vessel', L.reception.vesselDocked ? 'at the dock, unloading' : (L.reception.vessel || '').replace(/^At the mainland port · /, '') || '—']] },
-  { id: 'laundry', name: 'Laundry', zone: 'Z09', op: 'stores', what: 'Central laundry in the warehouse bar; two linen trucks on the hotel runs.',
-    produces: { 'Linen a day': '5,000 kg', 'Turnaround': '6 h' }, consumes: { 'Water': '≈ 75 m³ a day (15 L/kg)', 'Energy': '≈ 5,000 kWh a day (1 kWh/kg)' }, key: 'laundry', capacity: 5000,
-    liveFn: L => [['Linen trucks moving', `${L.fleet.L4 ? L.fleet.L4.mv : 0} of ${L.fleet.L4 ? L.fleet.L4.n : 0}`]] },
-  { id: 'fleet', name: 'Fleet Hub', zone: 'Z08', op: 'fleet', what: 'Charging, parking and workshop for the land fleet; dispatch by RubiqOS. The shuttle boats and the excursion boat belong here too.',
-    produces: { 'Pod trips a day (plan)': '≈ 1,200', 'Charging posts': 30, 'Buggies': 28, 'Delivery robots': 24, 'Service vehicles': 22 }, consumes: { 'Energy (charging)': '≈ 2,400 kWh a day' },
-    liveFn: L => { const F = L.fleet; const land = ['L1', 'L2', 'L3', 'L4', 'L5'].map(k => F[k] || { n: 0, mv: 0, ch: 0 }); const n = land.reduce((a, r) => a + r.n, 0), mv = land.reduce((a, r) => a + r.mv, 0), ch = land.reduce((a, r) => a + r.ch, 0);
-      return [['Land fleet moving', `${mv} of ${n}`], ['Charging', ch], ['Pod trips today', L.ops.buggyTrips], ['Riders waiting · aboard', `${L.reception.podsWaiting} · ${L.reception.podsAboard}`], ['Load', Math.round(100 * mv / Math.max(1, n)) + ' %']]; } },
+    liveFn: L => [['Supply vessel', L.reception.vesselDocked ? 'at the dock, unloading' : (L.reception.vessel || '').replace(/^At the mainland port · /, '') || '—']] },
+  { id: 'laundry', name: 'Laundry', zone: 'Z09', op: 'stores', what: 'Central laundry in the warehouse bar; linen out to the hotels in the morning, back by the evening.',
+    produces: { 'Linen a day': '5,000 kg', 'Turnaround': '6 h' }, consumes: { 'Water': '≈ 75 m³ a day (15 L/kg)', 'Energy': '≈ 5,000 kWh a day (1 kWh/kg)' }, key: 'laundry', capacity: 5000 },
   { id: 'staffacc', name: 'Staff accommodation', zone: 'Z09', op: 'staffacc', what: 'Four-floor block with canteen; the rest of the staff commute by the staff shuttle.',
     produces: { 'Beds': 420, 'Canteen meals a day': '1,000' }, consumes: { 'Water': '≈ 60 m³ a day', 'Energy': '≈ 2,500 kWh a day', 'Food': '≈ 0.4 t a day' }, key: 'staff', capacity: 900,
     liveFn: L => [['Staff on shift', L.onShift], ['Shift', L.hour >= 7 && L.hour < 15 ? 'morning 07–15' : L.hour >= 15 && L.hour < 23 ? 'evening 15–23' : 'night 23–07'], ['Load', Math.round(100 * L.onShift / 330) + ' %']] },
   { id: 'waste', name: 'Waste management', zone: 'Z09', op: 'waste', what: 'Sorting, compactors and the night waste run to the transfer station at the dock.',
-    produces: { 'Waste handled a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, consumes: { 'Energy': '≈ 400 kWh a day', 'Truck': 'T5, nights' }, key: 'waste', capacity: 5,
+    produces: { 'Waste handled a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, consumes: { 'Energy': '≈ 400 kWh a day' }, key: 'waste', capacity: 5,
     liveFn: L => [['Night run', L.hour >= 23 || L.hour < 5 ? 'running' : 'from 23:00']] },
   { id: 'dock', name: 'Service dock', zone: 'Z04', op: 'stores', what: 'Supply vessel berth with crane; containers go straight onto service vehicles. Waste containers leave on the same vessel.',
     produces: { 'Vessel capacity': '9 t', 'Unloading': '2 h', 'Fuel bunkering': 'yes' }, consumes: { 'Calls a week': 'Monday and Thursday 08:00' },
     liveFn: L => [['Vessel', L.reception.vesselDocked ? 'docked, unloading' : 'at sea / mainland'], ['Next call', (L.reception.vessel.match(/next call (.+)$/) || [, '—'])[1]]] },
-  { id: 'reception', name: 'Arrivals Reception', zone: 'Z08', op: 'hotels', what: 'The arrivals pavilion at the guest dock: check-in off the shuttle and the helicopter, pods to the hotels, luggage by robot.',
-    produces: { 'Arrivals a day (plan)': '≈ 500', 'Helicopter calls a day': 5, 'Shuttle landings a day': 24 }, consumes: { 'Pods on transfers': 'from the Fleet Hub', 'Robots for luggage': 'from the warehouse dock' },
-    liveFn: L => [['Arrivals today', L.ops.arrivals], ['Departures today', L.ops.departures], ['Shuttles', L.reception.shuttles.length ? L.reception.shuttles[0].replace(/^Mainland line · /, '') : '—'], ['Helicopter', (L.reception.heli || '').split(' · ').slice(0, 2).join(' · ') || '—']] },
+  { id: 'reception', name: 'Arrivals Reception', zone: 'Z08', op: 'hotels', what: 'The arrivals pavilion at the guest dock: check-in off the shuttle and the helicopter, luggage to the room.',
+    produces: { 'Arrivals a day (plan)': '≈ 500', 'Check-in': 'face check-in, digital key' }, consumes: { 'Water': '≈ 5 m³ a day', 'Energy': '≈ 300 kWh a day' },
+    liveFn: L => [['Arrivals today', L.ops.arrivals], ['Departures today', L.ops.departures]] },
 ];
+// Fleet Hub: its own block (founder 2026-10-19): the vehicles belong to no other card
+const FLEET_HUB = { name: 'Fleet Hub', zone: 'Z08', op: 'fleet', what: 'Charging, parking and workshop for the whole fleet; dispatch by RubiqOS. Every vehicle, boat and the helicopter is counted here and nowhere else.',
+  produces: { 'Pod trips a day (plan)': '≈ 1,200', 'Charging posts': 30 }, consumes: { 'Energy (charging)': '≈ 2,400 kWh a day' } };
+const FLEET_TITLES = { L1: 'L1 · Guest pod', L2: 'L2 · Guest shuttle', L3: 'L3 · Service cart', L4: 'L4 · Service truck', L5: 'L5 · Delivery robot', W1: 'W1 · Shuttle boat', W2: 'W2 · Supply vessel', W3: 'W3 · Excursion boat', A1: 'A1 · Helicopter' };
+const FLEET_PLAN = { L1: 40, L2: 5, L3: 16, L4: 6, L5: 24, W1: 3, W2: 1, W3: 3, A1: 1 };
 const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { maximumFractionDigits: d });
 const capacityOf = c => c.units ? c.units.reduce((a, u) => a + u.n * u.pax, 0) : c.capacity;
 function needs(c, occ) {
@@ -218,6 +228,12 @@ document.getElementById('serviceCards').innerHTML = SERVICES.map(c => `<div clas
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
   <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
 </div>`).join('');
+document.getElementById('fleetCard').innerHTML = `<div class="col">
+  <div class="hd"><h3>${FLEET_HUB.name}</h3><span class="zone"><i style="background:${Z[FLEET_HUB.zone]}"></i>${FLEET_HUB.zone}</span></div>${opTag(FLEET_HUB.op)}<p>${FLEET_HUB.what}</p>
+  <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="fleet"><span>Load</span><span>—</span></div></div>
+  <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
+  <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div></div>
+  <div class="col"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div>`;
 // --- balance (plan): products' needs against the services' capacity
 const staffTotal = PRODUCTS.reduce((a, c) => a + c.staff, 0) + 120;   // + administration, utilities, security, landscape
 const capOf = k => SERVICES.find(s => s.key === k).capacity;
@@ -229,7 +245,8 @@ document.querySelector('#balanceT tbody').innerHTML = ROWS.map(([label, k, extra
   return `<tr><td>${label}</td><td>${fmt(avg, dec)}</td><td>${fmt(peak, dec)}</td><td>${fmt(cap, dec)}</td><td style="min-width:160px"><div class="bar"><i class="${p > 100 ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div></td><td class="muted"><span class="${p > 100 ? 'over-txt' : ''}">${p} %</span> average · <span class="${pp > 100 ? 'over-txt' : ''}">${pp} %</span> peak · ${note}</td></tr>`; }).join('');
 // --- live: the simulation runs headless in the hidden frame; its window.__live is read once a second
 const bar = (p, over = 98) => `<div class="bar"><i class="${p >= over ? 'over' : ''}" style="width:${Math.min(100, p)}%"></i></div>`;
-const setLive = (id, rows) => { const el = document.querySelector(`[data-live="${id}"]`); if (el) el.innerHTML = rows.map(([k, v]) => k === 'bar' ? v : `<span>${k}</span><span>${v}</span>`).join(''); };
+const setLive = (id, rows) => { const el = document.querySelector(`[data-live="${id}"]`); if (!el) return;   // bars go last: a bar in the middle flips the label / value parity of the kv grid
+  el.innerHTML = rows.filter(r => r[0] !== 'bar').map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('') + rows.filter(r => r[0] === 'bar').map(r => r[1]).join(''); };
 let L = null;
 function refresh() {
   const w = document.getElementById('sim').contentWindow; try { L = w && w.__live || null; } catch (e) { L = null; }
@@ -253,6 +270,10 @@ function refresh() {
     else if (rows.some(r => r[0] === 'Load')) { const p = parseInt(rows.find(r => r[0] === 'Load')[1]); rows.push(['bar', bar(p)]); }
     setLive(c.id, rows);
   }
+  // fleet hub
+  { const F = L.fleet; const land = ['L1', 'L2', 'L3', 'L4', 'L5'].map(k => F[k] || { n: 0, mv: 0, ch: 0 }); const n = land.reduce((a, r) => a + r.n, 0), mv = land.reduce((a, r) => a + r.mv, 0), ch = land.reduce((a, r) => a + r.ch, 0), p = Math.round(100 * mv / Math.max(1, n));
+    setLive('fleet', [['Load now', p + ' %'], ['bar', bar(p)], ['Land fleet moving', `${mv} of ${n}`], ['Charging', ch], ['Pod trips today', L.ops.buggyTrips], ['Deliveries today', L.ops.deliveries], ['Truck runs today', L.ops.truckRuns], ['Riders waiting · aboard', `${L.reception.podsWaiting} · ${L.reception.podsAboard}`]]);
+    document.getElementById('fleetRows').innerHTML = Object.keys(FLEET_PLAN).map(k => { const r = F[k] || { n: 0, mv: 0, ch: 0, bat: null }; return `<tr><td>${FLEET_TITLES[k]}</td><td class="num">${FLEET_PLAN[k]}</td><td class="num">${r.n}</td><td class="num">${r.mv}</td><td class="num">${r.ch}</td><td class="num">${r.bat === null ? '—' : r.bat + ' %'}</td></tr>`; }).join(''); }
 }
 setInterval(refresh, 1000);
 </script>
