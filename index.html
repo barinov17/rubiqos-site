@@ -2300,8 +2300,9 @@ function schematicMat(o) {
   if (/Road surface/.test(mn) || /access road$|service road/.test(n)) return flatMat(S.roadMain);
   if (/Promenade|Plaza|Urban ground|Villa deck|deck$|yard$|courtyard$|forecourt$|ground$|path/i.test(mn + ' ' + n)) return flatMat(S.walk);
   if (/(\| |)(plinth|podium|base)$/i.test(n)) return flatMat(S.plinth);   // building bases (on the hill they are tall) read as grey
-  const SPORT_LIKE = /^(Pavilion module\.|Pavilion\.|apart hotel Pavilion\.|Marina support$|Wellness Spa$|wellness-spa|Longevity Clinic$)/;   // founder 2026-10-20: village modules, Marina support, spa and clinic in the sport colour
-  const sportBase = SPORT_LIKE.test(meshTop(o).name) || SPORT_LIKE.test(n) ? new THREE.Color(S.fn['wellness & sport']) : null;   // the GYM & Sports buildings' colour
+  const VILLAGE_LIKE = /^(Pavilion module\.|Pavilion\.|apart hotel Pavilion\.|Marina support$)/;   // founder 2026-10-20 evening: the village modules, pavilions and Marina support in the Members Club colour
+  const SPORT_LIKE = /^(Wellness Spa$|wellness-spa|Longevity Clinic$)/;   // founder 2026-10-20: spa and clinic in the sport colour
+  const sportBase = VILLAGE_LIKE.test(meshTop(o).name) || VILLAGE_LIKE.test(n) ? new THREE.Color(S.fn['food & retail']) : SPORT_LIKE.test(meshTop(o).name) || SPORT_LIKE.test(n) ? new THREE.Color(S.fn['wellness & sport']) : null;
   if (sportBase) return /glass/i.test(mn) ? flatMat(sportBase.clone().multiplyScalar(S.glassDarken).getHex(), 0.5) : /roof|slab|white|parapet|top band/i.test(mn + ' ' + n) ? flatMat(sportBase.clone().lerp(new THREE.Color(0xffffff), 0.55).getHex()) : flatMat(sportBase.getHex());
   if (SIG.test(meshTop(o).name) || SIG.test(n)) return /glass/i.test(mn) ? flatMat(new THREE.Color(S.sig).multiplyScalar(S.glassDarken).getHex(), 0.5) : flatMat(S.sig);
   const base = new THREE.Color(S.fn[meshFn(o)] ?? S.fn.default);
