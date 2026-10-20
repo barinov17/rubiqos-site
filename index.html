@@ -103,7 +103,7 @@
   .gpin.small svg { width: 14px; height: 19px; }
   .gpin.svc svg { width: 18px; height: 24px; }
   .gpin:hover svg { transform: scale(1.25); }
-  .schem .gpin svg { width: 30px; height: 40px; } .schem .gpin.small svg { width: 22px; height: 29px; } .schem .gpin.svc svg { width: 26px; height: 35px; }   /* icon pins of the schematic style */
+  .schem .gpin svg { width: 30px; height: 40px; } .schem .gpin.small svg { width: 22px; height: 29px; } .schem .gpin.svc svg { width: 26px; height: 35px; } .schem .gpin.svc.small svg { width: 22px; height: 29px; }   /* icon pins of the schematic style */
   .gpin span { font: 600 10.5px var(--body); color: var(--navy); background: rgba(255, 255, 255, 0.9); border-radius: 6px; padding: 1px 6px; white-space: nowrap; display: none; }
   .gpin:hover span, .gpin.named span { display: block; }
   #tip .dash { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; margin-top: 6px; }
@@ -1164,7 +1164,8 @@ const SERVICES = [
   { name: 'WH-3 Cold storage', fp: ['Infrastructure zone | WH-3 warehouse cold storage'], p: topOfObj('Infrastructure zone | WH-3 warehouse cold storage', 5), kpi: { 'Cold rooms': '600 m²', 'Food throughput': '4.5 t a day', 'Load today': '4.47 t', 'Next supply call': 'Thursday 08:00' }, load: 99 },
   { name: 'WH-4 Dry storage', fp: ['Infrastructure zone | WH-4 warehouse storage'], p: topOfObj('Infrastructure zone | WH-4 warehouse storage', 5), kpi: { 'Dry store': '900 m²', 'Autonomy': '6 days' }, load: 80 },
   { name: 'FH Fleet Hub', fp: ['Infrastructure zone | FH fleet hub'], p: topOfPrefix('Infrastructure zone | FH fleet hub', 5), kpi: { 'Charging posts': 30, 'Guest pods': '40 planned', 'Shuttles': 5, 'Service vehicles': 22 }, load: 70 },
-  { name: 'Network masts', fp: ['Cell tower'], p: topOfObj('Cell tower.001', 8), kpi: { 'Masts': '2 × 36 m (back of house, gym block)', 'Backbone': '10 Gbit fibre ring', 'Devices served (plan)': '≈ 6,000' }, load: 55 },   // v073: e115 cell towers; the office is gone from the plan
+  { name: 'Network mast A', fp: ['Cell tower.001'], fpExact: true, small: true, p: topOfObj('Cell tower.001', 8), kpi: { 'Mast': '36 m, back of house', 'Backbone': '10 Gbit fibre ring', 'Devices served (plan)': '≈ 6,000 with mast B' }, load: 55 },
+  { name: 'Network mast B', fp: ['Cell tower.002'], fpExact: true, small: true, p: topOfObj('Cell tower.002', 8), kpi: { 'Mast': '36 m, by the gym block', 'Backbone': '10 Gbit fibre ring', 'Devices served (plan)': '≈ 6,000 with mast A' }, load: 55 },   // v073: e115 cell towers; the office is gone from the plan
   { name: 'SA Staff accommodation', fp: ['Infrastructure zone | SA'], p: topOfPrefix('Infrastructure zone | SA', 5), kpi: { 'Beds': 420, 'Canteen': '1,000 meals a day', 'Shifts': '07 · 15 · 23' }, load: 85 },
   { name: 'W Waste management', fp: ['Infrastructure zone | W waste management'], p: topOfPrefix('Infrastructure zone | W waste management', 5), kpi: { 'Waste a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, load: 84 },
   { name: 'IF Water, power, sewage', fp: ['Infrastructure zone | IF', 'Infrastructure zone | Power plant', 'Infrastructure zone | Gen set', 'Infrastructure zone | Diesel tank', 'Infrastructure zone | RO plant', 'Infrastructure zone | Sewage plant', 'Infrastructure zone | Potable water tank', 'Infrastructure zone | Grey-rain water tank'], p: topOfPrefix('Infrastructure zone | Power plant', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
@@ -1243,7 +1244,7 @@ function makePin(d, cls, colour) {
   gpins.push({ el, p: d.p, d, colour, svc: cls === 'svc' });
 }
 for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
-for (const d of SERVICES) if (d.p) makePin(d, 'svc', '#5a6672');
+for (const d of SERVICES) if (d.p) makePin(d, d.small ? 'svc small' : 'svc', '#5a6672');   // the masts get the small (villa-size) pin (founder 2026-10-19)
 conceptList = [...VILLAGE_CLUSTERS, ...PRODUCTS, ...SERVICES];   // clusters first, so a village module resolves to its cluster, not to the whole village
 // the self-check runs in idle time after the page shows, 8 objects a slot, and never over a live hover; it also warms the footprint cache
 { const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))]));
