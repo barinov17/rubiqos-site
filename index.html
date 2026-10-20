@@ -327,7 +327,7 @@ const GROUP_ORDER = ['water', 'terrain', 'landscape', 'trees', 'mobility', 'buil
 const GROUP_LABEL = { water: 'Water', terrain: 'Terrain', landscape: 'Landscape', trees: 'Trees', mobility: 'Mobility', buildings: 'Buildings', sport: 'Sport', marina: 'Marina', zoning: 'Zoning (overlay)' };
 model.traverse(o => {
   if (o === model) return;
-  byName.set(o.name, o);
+  if (!byName.has(o.name)) byName.set(o.name, o);                          // first wins: a multi-primitive node keeps its Group, not the last primitive (hover then outlines the whole volume, 2026-10-19)
   const u = o.userData;
   if (o.parent === model) { top.push(o); (groups[u.group] ||= []).push(o); }
   if (u.group === 'buildings' && o.parent === model) (functions[u.function] ||= []).push(o);
@@ -632,7 +632,7 @@ function card(o) {
 // (founder 2026-10-17). conceptList = the PRODUCTS pins plus the three Marina Village clusters; villas stay individual.
 let conceptList = [];
 const conceptOf = o => { const t = topOf(o); return conceptList.find(d => (d.hp || d.fp || []).some(pre => o.name.startsWith(pre) || t.name.startsWith(pre))) || null; };
-const conceptMeshes = d => { if (!d._meshes) { const out = []; byName.forEach((m, n) => { if (m.isMesh && !FLAT.test(n) && (d.hp || d.fp).some(pre => n.startsWith(pre))) out.push(m); }); d._meshes = out; } return d._meshes; };
+const conceptMeshes = d => { if (!d._meshes) { const out = []; byName.forEach((m, n) => { if (!FLAT.test(n) && (d.hp || d.fp).some(pre => d.fpExact ? n === pre : n.startsWith(pre))) for (const x of meshesUnder(m)) if (!out.includes(x)) out.push(x); }); d._meshes = out; } return d._meshes; };
 const hoverSel = o => { const d = conceptOf(o); return d ? conceptMeshes(d) : footprintMeshes(o); };
 const hoverHtml = (o, area) => { const d = conceptOf(o); return (d ? conceptHtml(d) : card(o)) + `<div class="k"${d ? ' style="margin-top:4px"' : ''}>footprint ≈ ${Math.round(area).toLocaleString()} m²</div>`; };
 function setHover(o) {
@@ -1132,7 +1132,7 @@ const hatchMat = (base = SCHEMATIC.hatchBase, line = SCHEMATIC.hatchLine, step =
 // ===== geo pins: product concepts and back-of-house services, each with a small dashboard on hover
 const ZC = Object.fromEntries(zones.map(z => [z.zone_id, z.colour]));
 const topOfObj = (n, up = 6) => { const o = byName.get(n); if (!o) return null; const b = bboxOf(o); const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
-const topOfPrefix = (pre, up = 6) => { const b = new THREE.Box3(); let any = false; byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh) { b.expandByObject(o); any = true; } }); if (!any) return null; const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
+const topOfPrefix = (pre, up = 6) => { const b = new THREE.Box3(); let any = false; byName.forEach((o, n) => { if (n.startsWith(pre) && (o.isMesh || o.children.some(c => c.isMesh))) { b.expandByObject(o); any = true; } }); if (!any) return null; const c = b.getCenter(new THREE.Vector3()); c.y = b.max.y + up; return c; };
 const BC_NAME = byName.has('Beach Club') ? 'Beach Club' : 'Beach club buildings.001';   // e066: the B04 asset replaces the DWG volume
 // products: kpis from the proforma (rubiqos.com/proforma); numbers per day at peak
 const PRODUCTS = [
@@ -1233,7 +1233,7 @@ const VILLAGE_CLUSTERS = [   // founder 2026-10-17: Marina Village hovers as thr
 const gpins = [];
 function makePin(d, cls, colour) {
   if (!d.p) return;
-  const fpMeshes = () => { const out = []; for (const pre of (d.fp || [])) byName.forEach((o, n) => { if ((d.fpExact ? n === pre : n.startsWith(pre)) && o.isMesh && !FLAT.test(n)) out.push(o); }); return out; };
+  const fpMeshes = () => { const out = []; for (const pre of (d.fp || [])) byName.forEach((o, n) => { if ((d.fpExact ? n === pre : n.startsWith(pre)) && !FLAT.test(n)) for (const x of meshesUnder(o)) if (!out.includes(x)) out.push(x); }); return out; };
   d.fpMeshes = fpMeshes;
   const el = document.createElement('div'); el.className = 'gpin ' + cls; el.innerHTML = PIN_SVG(colour) + `<span>${d.name}</span>`; stage.appendChild(el);
   const html = conceptHtml(d);
@@ -2072,18 +2072,31 @@ function schematicMat(o) {
   if (/roof|slab|white|parapet|top band/i.test(mn + ' ' + n)) return flatMat(base.clone().lerp(new THREE.Color(0xffffff), 0.55).getHex());
   return flatMat(base.getHex());
 }
-// ===== Functional style (founder 2026-10-19): the Standard look, buildings recoloured by what they are for.
-// accommodation pink (the hotel's own pink), F&B outlets terracotta, amenities turquoise; guest pads muted blue, BOH pads muted red; everything else as exported.
-const FUNC = { stay: 0xf08db8, fnb: 0xc9623f, amenity: 0x3fb8b0, attraction: 0xd4a73a, village: 0xb4b4b4, padGuest: 0x6f8fc9, padBoh: 0xb5574f };   // attractions ochre; Marina Village modules grey until the founder assigns their functions
-const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/, FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa|Arrivals Reception)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/, FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/;
+// ===== Functional style v3 (founder 2026-10-19): a planner's functional map on the Standard lighting. Flat colours by use, muted ground,
+// light trees, service roads dark, walkways cream, transport infrastructure slate blue, back of house grey, icons as in the schematic.
+const FUNC = { stay: 0xf08db8, fnb: 0xf2a65a, amenity: 0xa98fe0, transport: 0x6d8fb3, boh: 0x9aa0a8, bohYard: 0xc9cdd3, attraction: 0xd4a73a, village: 0xbfc3c8,
+  padGuest: 0x6f8fc9, padBoh: 0xb5574f, land: 0xeceddf, green: 0xd4e3c5, lawn: 0xdeeacf, rock: 0xd9d6cc, beach: 0xf3e9d2, tree: 0xa9c998, trunk: 0x9fb58f,
+  roadS: 0x5f656c, path: 0xfbf7ef, plaza: 0xf4f0e7, pier: 0x8aa0b8, breakwater: 0xbac6d3, yacht: 0xffffff, yachtGlass: 0x9ab7d6, pool: 0x8ecbe0, fence: 0x7d838b, mast: 0x7d838b };
+const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
+  FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
+  FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Arrivals Reception|arrivals dock|Terminal|Excursion pavilion|Helipad|PARKING|Service dock)/;
 function functionalMat(o) {
-  const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '';
-  if (/^Drop-off \| DO-/.test(n)) return flatMat(/DO-BOH/.test(n) ? FUNC.padBoh : FUNC.padGuest, 0.9);
-  if (/Pool water/.test(mn) || /planting|garden|paving|forecourt|courtyard/i.test(n)) return null;            // pools, gardens and paving keep the exported look
-  const hit = re => re.test(t) || re.test(n);
+  const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), F = FUNC, hit = re => re.test(t) || re.test(n);
+  if (/^Drop-off \| DO-/.test(n)) return flatMat(/DO-BOH/.test(n) ? F.padBoh : F.padGuest, 0.9);
+  if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
+  if (/Pool water/.test(mn)) return flatMat(F.pool, 0.4);
+  if (g === 'trees') return flatMat(/trunk/i.test(mn) ? F.trunk : F.tree, 0.95);
+  if (g === 'terrain') return flatMat(/BEACH/.test(mn) ? F.beach : /Rocky/.test(mn) ? F.rock : /GREEN/.test(mn) ? F.green : F.land, 0.95);
+  if (g === 'landscape') return flatMat(/Lawn/.test(mn) ? F.lawn : F.green, 0.95);
+  if (hit(FUNC_TRANSPORT)) return flatMat(/roof|slab/i.test(mn + ' ' + n) ? new THREE.Color(F.transport).lerp(new THREE.Color(0xffffff), 0.3).getHex() : F.transport, 0.85);
+  if (g === 'mobility') return /^Road surface|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road|Longevity Clinic road/.test(n) ? flatMat(F.roadS, 0.95) : /Plaza|Urban/.test(mn) ? flatMat(F.plaza, 0.95) : flatMat(F.path, 0.95);
+  if (g === 'marina') return /^MARINA/.test(n) ? flatMat(/apron$/.test(n) ? F.path : F.breakwater) : /Pier deck/.test(mn) ? flatMat(F.pier) : /ghost/i.test(mn) ? schemGhost() : /glass/i.test(mn) ? flatMat(F.yachtGlass, 0.5) : /Boat|Yacht/.test(mn) ? flatMat(F.yacht) : flatMat(F.transport);
+  if (g === 'sport') return flatMat(/Net|Fence/i.test(mn + ' ' + n) ? 0xffffff : F.amenity, 0.9);
+  if (n.startsWith('Infrastructure zone') || n.startsWith('Cell tower')) return /fence/i.test(n) ? flatMat(F.fence) : /ground|yard|apron|courtyard/i.test(n) ? flatMat(F.bohYard, 0.95) : /Steel mast/.test(mn) ? flatMat(F.mast) : flatMat(F.boh, 0.85);
+  if (/planting|garden|paving|forecourt|courtyard/i.test(n)) return /planting|garden/i.test(n) ? flatMat(F.green, 0.95) : flatMat(F.plaza, 0.95);
   const cat = hit(FUNC_STAY) ? 'stay' : hit(FUNC_FNB) ? 'fnb' : hit(FUNC_AMENITY) ? 'amenity' : hit(FUNC_ATTR) ? 'attraction' : hit(FUNC_VILLAGE) ? 'village' : null;
   if (!cat) return null;
-  const c = new THREE.Color(FUNC[cat]);
+  const c = new THREE.Color(F[cat]);
   if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return flatMat(c.lerp(new THREE.Color(0xffffff), 0.3).getHex(), 0.85);   // roofs a shade lighter so the massing reads
   return flatMat(c.getHex(), 0.8);
 }
@@ -2101,9 +2114,9 @@ function applyMapStyle(name) {
   const W = waterMat.uniforms;
   if (sch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(st.sea); W.fresK.value = 0; W.specK.value = 0; }   // one flat sea
   else for (const [k, v] of Object.entries(STD.water)) { if (W[k].value.copy) W[k].value.copy(v); else W[k].value = v; }
-  setPinStyle(sch); setMarkerStyle(sch);
+  setPinStyle(sch || name === 'functional'); setMarkerStyle(sch || name === 'functional');   // the functional map uses the schematic icons (founder 2026-10-19)
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
-    o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : o.userData.baseMat; });
+    o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : name === 'functional' ? flatMat(k === 'lawn' ? FUNC.lawn : k === 'hedge' ? FUNC.green : k === 'white' || k === 'yellow' ? 0xffffff : k === 'grass pavers' ? FUNC.lawn : new THREE.Color(FUNC.transport).lerp(new THREE.Color(0xffffff), 0.25).getHex()) : o.userData.baseMat; });   // functional: the helipad is transport infrastructure
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
   for (const im of crowdAll) im.visible = !sch; peopleDots.visible = sch; shadowDirty();   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
