@@ -871,7 +871,7 @@ A.stopMarina = nearestStop(A.terminal); A.stopVillage = nearestStop(A.village);
 A.stopHotel = nearestStop(A.hotel);                                        // v073: the nearest guest pad to the lobby (the old lobby road is retired)   // the vehicle drop-off on the lobby access road
 // open water (probed in the model): south-east of the Terminal, west / north-west of the Service dock
 const bearing = (p, deg, r) => p.clone().add(new THREE.Vector3(Math.cos(deg * Math.PI / 180) * r, 0, Math.sin(deg * Math.PI / 180) * r));
-A.berth = A.guestDock.clone().add(new THREE.Vector3(55, 0, 12));           // water just east of the guest dock
+A.berth = (() => { const o = byName.get('arrivals dock'); if (!o) return A.guestDock.clone().add(new THREE.Vector3(55, 0, 12)); const b = bboxOf(o); return new THREE.Vector3(b.max.x + 6, 0, b.min.z + (b.max.z - b.min.z) * 0.35); })();   // 6 m off the dock's east face, upper half: the shuttle comes alongside the dock (founder 2026-10-20)
 A.excBerth = A.excDock.clone().add(new THREE.Vector3(-20, 0, 22));           // water just inside the breakwater root at the excursion dock
 A.entrance = new THREE.Vector3(-995, 0, 455); A.basin = new THREE.Vector3(-760, 0, 405);   // marina entrance (gap west of the breakwater) and the basin middle
 A.sea = bearing(A.entrance, 105, 950);                                        // open sea beyond the entrance; re-probed below once the water test exists
@@ -1566,8 +1566,9 @@ const MAR = (() => {
   if (dry.length) console.warn('marina fairway network crosses land:', dry); else console.info('marina fairway network:', fairways.length, 'lanes + trunk + exit, all on water');
   return { fairways, west, east, J, out: [west.clone(), ...out] };
 })();
+const fairwayLines = [];
 if (MAR) {                                                                  // the designed routes, dashed on the water; the shuttle's way to the guest dock in a lighter blue
-  const dash = (pts, color, name) => { const g = new THREE.BufferGeometry().setFromPoints(pts.map(p => p.clone().setY(waterY + 0.35))); const ln = new THREE.LineSegments(g, new THREE.LineDashedMaterial({ color, dashSize: 7, gapSize: 5, transparent: true, opacity: 0.75 })); ln.computeLineDistances(); ln.name = name; ln.renderOrder = 7; scene.add(ln); return ln; };
+  const dash = (pts, color, name) => { const g = new THREE.BufferGeometry().setFromPoints(pts.map(p => p.clone().setY(waterY + 0.35))); const ln = new THREE.LineSegments(g, new THREE.LineDashedMaterial({ color, dashSize: 7, gapSize: 5, transparent: true, opacity: 0.75 })); ln.computeLineDistances(); ln.name = name; ln.userData.baseColor = color; fairwayLines.push(ln); ln.renderOrder = 7; scene.add(ln); return ln; };
   const pts = []; for (const f of MAR.fairways) pts.push(f.top, f.foot); pts.push(MAR.east, MAR.west); for (let i = 1; i < MAR.out.length; i++) pts.push(MAR.out[i - 1], MAR.out[i]);
   dash(pts, 0x2457e6, 'fairways');
   const sh = seaLegs([MAR.J, A.berth]); if (sh) { const q = []; for (let i = 1; i < sh.length; i++) q.push(sh[i - 1], sh[i]); dash(q, 0x6fa0e8, 'shuttle line'); }
@@ -2091,7 +2092,7 @@ function schematicMat(o) {
 const FUNC = { stay: 0xf0609a, fnb: 0xf07a1e, amenity: 0x1f9e6e, transport: 0x2f6fd0, boh: 0x6b727c, bohYard: 0xb4b9c0, attraction: 0xa8cc8a, village: 0x7c3aed,
   padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xdfe4d2, green: 0xc4dfa8, lawn: 0xcfe6b4, rock: 0xd6d6d0, beach: 0xeedfbf, tree: 0x9fcc82, trunk: 0x93b57f,   /* light greens again (founder 2026-10-20) */
   roadS: 0x565b63, path: 0xa8a49b, plaza: 0xbdb9b0,   /* walkways: grey a step darker with a touch of brown (founder 2026-10-20) */ pier: 0x1f4f9c, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x4fb8e0, fence: 0x5e646c, mast: 0x5e646c,
-  robot: 0x2f9e8f, marine: 0x1f4f9c, arrival: 0x19a7b8, utilities: 0xf2b705, waste: 0xd43d32, laundry: 0x5aa9e6, kitchen: 0xf07a1e, cold: 0x8fd0f0, dry: 0xc9a04a, heliRing: 0x1b3a66 };   // v5 (founder 2026-10-20): saturated, one flat colour per building, walkways light grey   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
+  sea: 0x9fcbe0, route: 0x12368f, robot: 0x2f9e8f, marine: 0x1f4f9c, arrival: 0x19a7b8, utilities: 0xf2b705, waste: 0xd43d32, laundry: 0x5aa9e6, kitchen: 0xf07a1e, cold: 0x8fd0f0, dry: 0xc9a04a, heliRing: 0x1b3a66 };   // v5 (founder 2026-10-20): saturated, one flat colour per building, walkways light grey   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
   FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa|Water activities)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
   FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Helipad|PARKING|Service dock)/, FUNC_ARRIVAL = /^Arrivals Reception/, FUNC_MARINA = /^(Marina support|arrivals dock|Terminal|Excursion pavilion|marina pier|MARINA)/;
@@ -2137,8 +2138,9 @@ function applyMapStyle(name) {
   renderer.toneMapping = st.toneMapping; renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2]; sun.color.set(st.sun[0]); sun.intensity = st.sun[1]; sun.shadow.intensity = st.shadow ?? 1;
   gtao.blendIntensity = st.aoBlend; grade.uniforms.sat.value = st.grade.sat; grade.uniforms.con.value = st.grade.con; grade.uniforms.lift.value = st.grade.lift; grade.uniforms.tint.value.set(st.grade.tint);
   const W = waterMat.uniforms;
-  if (sch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(st.sea); W.fresK.value = 0; W.specK.value = 0; }   // one flat sea
+  if (sch || name === 'functional') { const c = sch ? st.sea : FUNC.sea; for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(c); W.fresK.value = 0; W.specK.value = 0; }   // one flat sea (schematic, functional)
   else for (const [k, v] of Object.entries(STD.water)) { if (W[k].value.copy) W[k].value.copy(v); else W[k].value = v; }
+  for (const ln of fairwayLines) { ln.material.color.set(name === 'functional' ? FUNC.route : ln.userData.baseColor); ln.material.opacity = name === 'functional' ? 1 : 0.75; }   // functional: the boat routes dark and solid (founder 2026-10-20)
   setPinStyle(name); setMarkerStyle(name);   // the functional map uses the schematic icons (founder 2026-10-19)
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : name === 'functional' ? flatMat(k === 'lawn' ? FUNC.lawn : k === 'hedge' ? FUNC.green : k === 'white' || k === 'yellow' ? 0xffffff : k === 'grass pavers' ? FUNC.lawn : k === 'FATO' ? FUNC.heliRing : FUNC.transport) : o.userData.baseMat; });   // functional: the helipad is transport infrastructure
