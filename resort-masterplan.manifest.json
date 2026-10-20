@@ -1,7 +1,7 @@
 {
- "version": "v076",
- "exported": "2026-10-19 23:19",
- "changes": "changes/v076.json",
+ "version": "v077",
+ "exported": "2026-10-19 23:21",
+ "changes": "changes/v077.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -4200,24 +4200,6 @@
    "hand_made": false,
    "material": "Shingle roof.002",
    "verts": 112
-  },
-  {
-   "name": "Marina support | reception footprint",
-   "type": "MESH",
-   "collection": "05_Buildings/Arrival & Mobility/Arrivals Reception",
-   "parent": "Marina support",
-   "group": "buildings",
-   "function": "marina",
-   "zone_id": "Z04",
-   "zone_name": "Marina",
-   "dwg_layer": "Guest Arrivals Reception",
-   "dwg_handle": "8453",
-   "dwg_block": null,
-   "height_m": 0.5,
-   "derived": "design edit e107",
-   "hand_made": false,
-   "material": "DWG Guest Arrivals Reception.002",
-   "verts": 4
   },
   {
    "name": "Marina support | roofs",
