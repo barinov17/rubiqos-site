@@ -2086,10 +2086,10 @@ function schematicMat(o) {
 }
 // ===== Functional style v3 (founder 2026-10-19): a planner's functional map on the Standard lighting. Flat colours by use, muted ground,
 // light trees, service roads dark, walkways cream, transport infrastructure slate blue, back of house grey, icons as in the schematic.
-const FUNC = { stay: 0xf07ab0, fnb: 0xe8762e, amenity: 0x3a9d7a, transport: 0x4a74a8, boh: 0x7f868f, bohYard: 0xb9bec5, attraction: 0xa8cc8a, village: 0x3d8bd4,
-  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xe6e7e2, green: 0xeceee9, lawn: 0xf1f2ee, rock: 0xd6d6d0, beach: 0xeedfbf, tree: 0xe2e4df, trunk: 0xd3d5cf,   /* greens and trees light grey, almost white (founder 2026-10-20) */
-  roadS: 0x676d75, path: 0xd6b27c, plaza: 0xe6d4b0, pier: 0x4a74a8, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x62b9d8, fence: 0x6d737b, mast: 0x6d737b,
-  robot: 0x2f9e8f, marine: 0x2f5f8f, arrival: 0x2fa8b5, utilities: 0xe3b83a, waste: 0xc0564e, laundry: 0x7fb3d9, kitchen: 0xe8762e, cold: 0x9fd0e8, dry: 0xc9a66b, heliRing: 0x24456f };   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
+const FUNC = { stay: 0xf0609a, fnb: 0xf07a1e, amenity: 0x1f9e6e, transport: 0x2f6fd0, boh: 0x6b727c, bohYard: 0xb4b9c0, attraction: 0xa8cc8a, village: 0x2f7fd8,
+  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xe6e7e2, green: 0xeceee9, lawn: 0xf1f2ee, rock: 0xd6d6d0, beach: 0xeedfbf, tree: 0xe2e4df, trunk: 0xd3d5cf,
+  roadS: 0x676d75, path: 0xb9bdc3, plaza: 0xc9ccd0, pier: 0x1f4f9c, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x4fb8e0, fence: 0x5e646c, mast: 0x5e646c,
+  robot: 0x2f9e8f, marine: 0x1f4f9c, arrival: 0x19a7b8, utilities: 0xf2b705, waste: 0xd43d32, laundry: 0x5aa9e6, kitchen: 0xf07a1e, cold: 0x8fd0f0, dry: 0xc9a04a, heliRing: 0x1b3a66 };   // v5 (founder 2026-10-20): saturated, one flat colour per building, walkways light grey   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
   FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa|Water activities)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
   FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Helipad|PARKING|Service dock)/, FUNC_ARRIVAL = /^Arrivals Reception/, FUNC_MARINA = /^(Marina support|arrivals dock|Terminal|Excursion pavilion|marina pier|MARINA)/;
@@ -2101,9 +2101,9 @@ function functionalMat(o) {
   if (g === 'trees') return flatMat(/trunk/i.test(mn) ? F.trunk : F.tree, 0.95);
   if (g === 'terrain') return flatMat(/BEACH/.test(mn) ? F.beach : /Rocky/.test(mn) ? F.rock : /GREEN/.test(mn) || o.userData.function === 'planting' ? F.green : F.land, 0.95);   // the hills carry no material name in the GLB: planting by function
   if (g === 'landscape') return flatMat(/Lawn/.test(mn) ? F.lawn : F.green, 0.95);
-  if (hit(FUNC_MARINA)) return /^MARINA/.test(n) ? flatMat(/apron$/.test(n) ? F.path : F.breakwater) : flatMat(/roof|slab/i.test(mn + ' ' + n) ? new THREE.Color(F.marine).lerp(new THREE.Color(0xffffff), 0.3).getHex() : F.marine, 0.85);   // marina function: navy
-  if (hit(FUNC_ARRIVAL)) return flatMat(/roof|slab/i.test(mn + ' ' + n) ? new THREE.Color(F.arrival).lerp(new THREE.Color(0xffffff), 0.3).getHex() : F.arrival, 0.85);   // the reception: arrival function, its own colour
-  if (hit(FUNC_TRANSPORT)) return flatMat(/roof|slab/i.test(mn + ' ' + n) ? new THREE.Color(F.transport).lerp(new THREE.Color(0xffffff), 0.3).getHex() : F.transport, 0.85);
+  if (hit(FUNC_MARINA)) return /^MARINA/.test(n) ? flatMat(/apron$/.test(n) ? F.path : F.breakwater) : flatMat(F.marine, 0.85);   // marina function: navy
+  if (hit(FUNC_ARRIVAL)) return flatMat(F.arrival, 0.85);   // the reception: arrival function, its own colour
+  if (hit(FUNC_TRANSPORT)) return flatMat(F.transport, 0.85);
   if (g === 'mobility') return /^Road surface|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road|Longevity Clinic road/.test(n) ? flatMat(F.roadS, 0.95) : /Plaza|Urban/.test(mn) ? flatMat(F.plaza, 0.95) : flatMat(F.path, 0.95);
   if (g === 'marina') return /Pier deck/.test(mn) ? flatMat(F.marine) : /ghost/i.test(mn) ? schemGhost() : /glass/i.test(mn) ? flatMat(F.yachtGlass, 0.5) : /Boat|Yacht/.test(mn) ? flatMat(F.yacht) : flatMat(F.marine);
   if (g === 'sport') return flatMat(/Net|Fence/i.test(mn + ' ' + n) ? 0xffffff : F.amenity, 0.9);
@@ -2118,12 +2118,10 @@ function functionalMat(o) {
     if (/apron/i.test(n)) return flatMat(F.bohYard, 0.95);
     return flatMat(F.boh, 0.85); }
   if (/planting|garden|paving|forecourt|courtyard/i.test(n)) return /planting|garden/i.test(n) ? flatMat(F.green, 0.95) : flatMat(F.plaza, 0.95);
-  if (hit(FUNC_VILLAGE)) { const vf = villageFnOf(o); const c = new THREE.Color(vf ? vf.color : F.village); return flatMat(/roof|slab|parapet|top band/i.test(mn + ' ' + n) ? c.lerp(new THREE.Color(0xffffff), 0.25).getHex() : c.getHex(), 0.85); }   // one flat colour per module by its category (data file)
+  if (hit(FUNC_VILLAGE)) { const vf = villageFnOf(o); return flatMat(new THREE.Color(vf ? vf.color : F.village).getHex(), 0.85); }   // one flat colour per module by its category (data file)
   const cat = hit(FUNC_STAY) ? 'stay' : hit(FUNC_FNB) ? 'fnb' : hit(FUNC_AMENITY) ? 'amenity' : hit(FUNC_ATTR) ? 'attraction' : null;
   if (!cat) return null;
-  const c = new THREE.Color(F[cat]);
-  if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return flatMat(c.lerp(new THREE.Color(0xffffff), 0.3).getHex(), 0.85);   // roofs a shade lighter so the massing reads
-  return flatMat(c.getHex(), 0.8);
+  return flatMat(F[cat], 0.8);                                                // one flat colour per building, roofs included (founder 2026-10-20)
 }
 let mapStyle = 'standard';
 function applyMapStyle(name) {
