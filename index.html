@@ -155,7 +155,10 @@
   #dash .pair { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }   /* overview under the actors (founder 2026-10-19): fleet + balance */
   #dash .lb { display: flex; align-items: center; gap: 8px; } #dash .lb .bar { width: 70px; margin: 0; flex: none; }
   @media (max-width: 900px) { #dash .pair { grid-template-columns: 1fr; } }
-  #actorsBar { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; align-items: center; padding: 10px 16px; }
+  #actorsBar { display: grid; grid-template-columns: 1fr; gap: 8px 24px; align-items: center; padding: 10px 16px; }
+  #mapClock { padding: 6px 12px; border-radius: 10px; display: flex; align-items: baseline; gap: 8px; } #mapClock b { font: 600 22px var(--body); color: var(--navy); font-variant-numeric: tabular-nums; } #mapClock small { font-size: 11px; color: var(--muted); }
+  .actor .vic { width: 20px; height: 20px; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1.5px #fff, 0 0 0 2.5px rgba(0,0,0,0.12); } .actor .vic svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .actor .dot { width: 11px; height: 11px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0,0,0,0.15); } .actor .sq { width: 16px; height: 11px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,0.12); }
   #actorsBar .row { display: flex; gap: 8px 10px; flex-wrap: wrap; align-items: center; }
   #actorsBar .grp { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); width: 110px; flex: none; }
   #actorsBar .clock { grid-column: 2; grid-row: 1 / span 3; text-align: right; }
@@ -187,6 +190,7 @@
   </div>
 </div>
 <div id="bottomBar">
+<div id="mapClock" class="panel"><b id="time">06:40</b><small>1 s = 1 min</small></div>
 <div id="controls" class="panel">
   <button id="bPlay" class="on">Pause</button>
   <button id="bSpeed">Speed 1×</button>
@@ -202,7 +206,7 @@
 <div id="appPanel"><iframe id="appFrame" title="Guest app"></iframe></div>
 </div>
 <section id="dash">
-  <div class="card wide" id="actorsBar"><div class="clock"><div class="big" id="time">06:40</div><small>simulated time · 1 s = 1 min</small></div></div>
+  <div class="card wide" id="actorsBar"></div>
   <div style="display:none"><span id="step"></span><span id="fleetLine"></span><span id="stats"></span></div>
   <div class="pair">
     <div class="card"><h2>Fleet<small>plan vs demo · live</small></h2><table id="dFleet"><thead><tr><th>Type</th><th>Plan</th><th>Demo</th><th>Moving</th><th>Charging</th><th>Battery</th></tr></thead><tbody></tbody></table></div>
@@ -988,22 +992,31 @@ const COL = { hotel: 0x86aee0, resident: 0x9fcb7c, day: 0xf3c06b, yachtguest: 0x
 const ACTORS = [['People', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['crew', COL.crew], ['staff', COL.staff]]],
   ['On land', [['L1', 0xe0795f], ['L2', 0xf3c06b], ['L3', 0x9fcb7c], ['L4', 0x15304a], ['L5', 0x6f9fd8]]],
   ['On water', [['W1', 0xf5f5f2], ['W2', 0xc0504d], ['W3', 0xf2efe6], ['Y2', 0x86aee0]]], ['In the air', [['A1', 0xf2efe6]]]];
-for (const [g, items] of ACTORS) {
-  const row = document.createElement('div'); row.className = 'row';
-  const hd = document.createElement('span'); hd.className = 'grp'; hd.textContent = g; row.appendChild(hd);
-  for (const [t, c] of items) {
-    const d = document.createElement('div'); d.className = 'actor';
-    d.innerHTML = `<i style="background:#${c.toString(16).padStart(6, '0')}"></i>${TYPES[t].title}<b id="cnt-${t}"></b><span class="desc">${TYPES[t].role}</span>`;
-    row.appendChild(d);
-  }
-  $('actorsBar').insertBefore(row, $('actorsBar').querySelector('.clock'));
+// legend under the demo (founder 2026-10-20): the real markers of the current style — people dots, vehicle icons on their backing, place pins by function,
+// and in the functional style the ground colours. Re-rendered on every style switch; counts are filled by updateActorCounts().
+function renderLegend(mode) {
+  const bar = $('actorsBar'); if (!bar) return; bar.innerHTML = '';
+  const hx = c => '#' + (typeof c === 'number' ? c.toString(16).padStart(6, '0') : c.replace('#', ''));
+  const chip = (bg, icon) => `<span class="vic" style="background:${hx(bg)}"><svg viewBox="0 0 24 24"><path d="${ICON[icon] || ICON.star}"/></svg></span>`;
+  const row = (title, cells) => { const r = document.createElement('div'); r.className = 'row'; r.innerHTML = `<span class="grp">${title}</span>` + cells.join(''); bar.appendChild(r); };
+  const actor = (sw, label, id, desc) => `<div class="actor">${sw}${label}${id ? `<b id="cnt-${id}"></b>` : ''}${desc ? `<span class="desc">${desc}</span>` : ''}</div>`;
+  row('People', ['hotel', 'resident', 'day', 'yachtguest', 'member', 'crew', 'staff'].map(t => actor(`<span class="dot" style="background:${hx(dotColourOf(t, mode))}"></span>`, TYPES[t].title, t, TYPES[t].role)));
+  const vbg = t => mode === 'schematic' ? '#1d3a8f' : FUNC_VEH(t);
+  row('On land', ['L1', 'L2', 'L3', 'L4', 'L5'].map(t => actor(chip(vbg(t), VEH_ICON[t]), TYPES[t].title, t, TYPES[t].role)));
+  row('On water · air', ['W1', 'W2', 'W3', 'Y2', 'A1'].map(t => actor(chip(vbg(t), VEH_ICON[t]), TYPES[t].title, t, TYPES[t].role)));
+  const pc = (name, svc) => mode === 'schematic' ? (svc ? SCHEM_PIN.service : SCHEM_PIN.product) : mode === 'functional' ? FUNC_PIN(name) : pinColour(name, STDP);
+  const PLACES = [['Accommodation', 'Beach Hotel', 'hotel'], ['Food and beverage', 'Restaurant', 'utensils'], ['Amenities', 'Spa & Wellness', 'leaf'], ['Marina Village', 'Marina Village', 'store'], ['Marina', 'Marina', 'anchor'],
+    ['Arrivals', 'Arrivals Reception', 'bell'], ['Administration', 'Administration office', 'briefcase', 1], ['Fleet Hub', 'FH Fleet Hub', 'car', 1], ['Utilities', 'IF Water, power, sewage', 'zap', 1], ['Stores', 'WH-4 Dry storage', 'package', 1], ['Waste', 'W Waste management', 'trash', 1]];
+  row('Places', PLACES.map(([label, name, icon, svc]) => actor(chip(pc(name, svc), icon), label)));
+  if (mode === 'functional') row('Ground', [['Guest drop-off', FUNC.padGuest], ['Back-of-house drop-off', FUNC.padBoh], ['Service road', FUNC.roadS], ['Walkway', FUNC.path], ['Lawn', FUNC.lawn], ['Beach', FUNC.beach], ['Boat route', FUNC.route]].map(([l, c]) => actor(`<span class="sq" style="background:${hx(c)}"></span>`, l)));
+  updateActorCounts();
 }
 function updateActorCounts() {
   const n = {}; for (const f of people) if (!f.idle) n[f.type] = (n[f.type] || 0) + 1;
-  for (const t of ['hotel', 'resident', 'day', 'yachtguest', 'member', 'crew', 'staff']) $('cnt-' + t).textContent = n[t] || 0;
+  for (const t of ['hotel', 'resident', 'day', 'yachtguest', 'member', 'crew', 'staff']) if ($('cnt-' + t)) $('cnt-' + t).textContent = n[t] || 0;
   const v = {}; for (const f of ambient) { (v[f.type] ||= [0, 0])[1]++; if (f.path) v[f.type][0]++; }
   for (const t of ['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3', 'A1']) { const x = v[t] || [0, 0]; if ($('cnt-' + t)) $('cnt-' + t).textContent = `${x[0]}/${x[1]}`; }
-  $('cnt-Y2').textContent = `${yachtMovers.filter(y => y.busy).length}/${berths.filter(b => b.occupied).length}`;   // yachts under way / moored in the marina
+  if ($('cnt-Y2')) $('cnt-Y2').textContent = `${yachtMovers.filter(y => y.busy).length}/${berths.filter(b => b.occupied).length}`;   // yachts under way / moored in the marina
 }
 function vehicleCard(v) {
   const T = TYPES[v.type], left = v.path ? Math.max(0, v.len - v.s) : 0, kmh = v.path ? Math.round(v.speed * 3.6 / 4) : 0, eta = left / Math.max(1, v.speed * 2);
@@ -2197,7 +2210,7 @@ function applyMapStyle(name) {
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : name === 'functional' ? flatMat(k === 'lawn' || k === 'grass pavers' ? 0x4b5d73 : k === 'hedge' ? FUNC.green : k === 'white' || k === 'yellow' ? 0xffffff : k === 'FATO' ? FUNC.heliRing : FUNC.transport)   /* the round field around the pad dark grey-blue (founder 2026-10-20) */ : o.userData.baseMat; });   // functional: the helipad is transport infrastructure
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
-  { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; peopleHalo.visible = name !== 'schematic'; refreshDotColours(name); } shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
+  { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; peopleHalo.visible = name !== 'schematic'; refreshDotColours(name); } renderLegend(name); shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
   try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
