@@ -1788,7 +1788,8 @@ const crowdAll = [crowdBody, crowdHead]; for (const im of crowdAll) { im.frustum
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
 const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44, FUNC_GUEST = 0x6d1fd6, FUNC_STAFF = 0x0f6b5a, FUNC_CREW = 0xd9530f;   /* founder 2026-10-20: guests violet, staff deep teal-green, yacht crew burnt orange: dark, saturated, far apart */
-const dotColourOf = (type, mode) => mode === 'schematic' ? (type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE) : type === 'crew' ? FUNC_CREW : type === 'staff' ? FUNC_STAFF : FUNC_GUEST;   // schematic: guests blue / staff navy; standard + functional: guests red-pink, staff slate, yacht crew light blue (founder 2026-10-19)   // schematic: guests / staff; functional: guests / staff / yacht crew (founder 2026-10-19)
+const STD_GUEST = 0x8b2fd4, STD_STAFF = 0x1f4e9c, STD_CREW = 0xd9530f;   // standard look: purple guests, navy staff, orange crews (founder 2026-10-20)
+const dotColourOf = (type, mode) => mode === 'schematic' ? (type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE) : mode === 'standard' ? (type === 'crew' ? STD_CREW : type === 'staff' ? STD_STAFF : STD_GUEST) : type === 'crew' ? FUNC_CREW : type === 'staff' ? FUNC_STAFF : FUNC_GUEST;   // schematic: guests blue / staff navy; standard + functional: guests red-pink, staff slate, yacht crew light blue (founder 2026-10-19)   // schematic: guests / staff; functional: guests / staff / yacht crew (founder 2026-10-19)
 function refreshDotColours(mode) { const a = peopleDots.geometry.attributes.color, c = new THREE.Color(); for (const f of people) { c.set(dotColourOf(f.type, mode)); a.setXYZ(f.i, c.r, c.g, c.b); } a.needsUpdate = true; }   // people dots of the schematic style: guests blue, staff navy (founder 2026-10-19)
 const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)).setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)),
   new THREE.PointsMaterial({ vertexColors: true, size: 8, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5,
@@ -2036,14 +2037,16 @@ const dotMat = (base = SCHEMATIC.green, dot = SCHEMATIC.greenDot, step = SCHEMAT
 };
 const SCHEM_PIN = { product: '#2457e6', service: '#6b7a96' };
 const hex6 = c => '#' + c.toString(16).padStart(6, '0');
-const FUNC_PIN = name => /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name) ? FUNC.stay : /Restaurant|Members|Beach Club|WH-2/.test(name) ? FUNC.fnb : /Events|Spa|GYM|Longevity|Water activities/.test(name) ? FUNC.amenity
-  : name === 'Marina' ? FUNC.marine : /Arrivals Reception/.test(name) ? FUNC.arrival : /Fleet Hub/.test(name) ? FUNC.transport : /Marina Village/.test(name) ? FUNC.village : /WH-1/.test(name) ? FUNC.laundry : /WH-3/.test(name) ? FUNC.cold : /WH-4/.test(name) ? FUNC.dry : /Waste/.test(name) ? FUNC.waste : /Water, power|Network/.test(name) ? FUNC.utilities : FUNC.boh;   // every pin in its function's colour, the back of house included   // pin colour = the function colour of the map
+const STDP = { stay: 0x3f9a5c, fnb: 0xd9622b, amenity: 0x7c4dd0, marine: 0x2f5f8f, arrival: 0x2fa8b5, transport: 0x4a74a8, village: 0x3d8bd4, boh: 0x6b727c, laundry: 0x5aa9e6, cold: 0x8fd0f0, dry: 0xc9a04a, waste: 0xd43d32, utilities: 0xe3b83a, kitchen: 0xd9622b };   // standard style: the same functions, a palette for the natural look (founder 2026-10-20)
+const pinColour = (name, P) => /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name) ? P.stay : /Restaurant|Members|Beach Club/.test(name) ? P.fnb : /WH-2/.test(name) ? P.kitchen : /Events|Spa|GYM|Longevity|Water activities/.test(name) ? P.amenity
+  : name === 'Marina' ? P.marine : /Arrivals Reception/.test(name) ? P.arrival : /Fleet Hub/.test(name) ? P.transport : /Marina Village/.test(name) ? P.village : /WH-1/.test(name) ? P.laundry : /WH-3/.test(name) ? P.cold : /WH-4/.test(name) ? P.dry : /Waste/.test(name) ? P.waste : /Water, power|Network/.test(name) ? P.utilities : P.boh;   // every pin in its function's colour
+const FUNC_PIN = name => pinColour(name, FUNC);
 const FUNC_VEH = t => /^(L1|L2|W1|W3|A1)$/.test(t) ? FUNC.transport : /^Y/.test(t) ? FUNC.marine : FUNC.boh;   // guest vehicles blue, non-guest (carts, trucks, robots, supply vessel) grey, yachts navy
 const FUNC_LETTER = { L1: 'G', L2: 'S', L3: 'O', L4: 'O', L5: 'D', W1: 'S', W2: 'O', W3: 'G', A1: 'G' };   // founder 2026-10-19: letters instead of pictograms
 function setPinStyle(mode) {                                                 // 'schematic' | 'functional' | 'standard'
   stage.classList.toggle('schem', true);                                     // every style is iconic now (founder 2026-10-19): the standard pins carry the icon in the zone colour
   for (const g of gpins) { const svg = g.el.querySelector('svg'); if (!svg) continue;
-    const html = mode === 'schematic' ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : mode === 'functional' ? PIN_ICON_SVG(hex6(FUNC_PIN(g.d.name)), PIN_ICON_KEY(g.d.name)) : PIN_ICON_SVG(g.colour, PIN_ICON_KEY(g.d.name)); svg.outerHTML = html; }
+    const html = mode === 'schematic' ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : mode === 'functional' ? PIN_ICON_SVG(hex6(FUNC_PIN(g.d.name)), PIN_ICON_KEY(g.d.name)) : PIN_ICON_SVG(hex6(pinColour(g.d.name, STDP)), PIN_ICON_KEY(g.d.name)); svg.outerHTML = html; }   // standard: function colours of the STDP palette, not the zone colours
 }
 const VEH_ICON = { L1: 'car', L2: 'bus', L3: 'wrench', L4: 'truck', L5: 'bot', W1: 'ship', W2: 'ship', W3: 'sailboat', Y1: 'sailboat', Y2: 'sailboat', Y3: 'ship', A1: 'heli', yacht: 'sailboat', buggy: 'car', truck: 'truck', robot: 'bot' };   // Lucide
 const vehIconTex = new Map();
