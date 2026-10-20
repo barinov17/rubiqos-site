@@ -2087,8 +2087,8 @@ function schematicMat(o) {
 // ===== Functional style v3 (founder 2026-10-19): a planner's functional map on the Standard lighting. Flat colours by use, muted ground,
 // light trees, service roads dark, walkways cream, transport infrastructure slate blue, back of house grey, icons as in the schematic.
 const FUNC = { stay: 0xf0609a, fnb: 0xf07a1e, amenity: 0x1f9e6e, transport: 0x2f6fd0, boh: 0x6b727c, bohYard: 0xb4b9c0, attraction: 0xa8cc8a, village: 0x2f7fd8,
-  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xe6e7e2, green: 0xeceee9, lawn: 0xf1f2ee, rock: 0xd6d6d0, beach: 0xeedfbf, tree: 0xe2e4df, trunk: 0xd3d5cf,
-  roadS: 0x676d75, path: 0xb9bdc3, plaza: 0xc9ccd0, pier: 0x1f4f9c, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x4fb8e0, fence: 0x5e646c, mast: 0x5e646c,
+  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xe3e6da, green: 0xd3e4c0, lawn: 0xdcebc9, rock: 0xd6d6d0, beach: 0xeedfbf, tree: 0xb3d39a, trunk: 0xa9bf96,   /* light greens again (founder 2026-10-20) */
+  roadS: 0x676d75, path: 0xa8a49b, plaza: 0xbdb9b0,   /* walkways: grey a step darker with a touch of brown (founder 2026-10-20) */ pier: 0x1f4f9c, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x4fb8e0, fence: 0x5e646c, mast: 0x5e646c,
   robot: 0x2f9e8f, marine: 0x1f4f9c, arrival: 0x19a7b8, utilities: 0xf2b705, waste: 0xd43d32, laundry: 0x5aa9e6, kitchen: 0xf07a1e, cold: 0x8fd0f0, dry: 0xc9a04a, heliRing: 0x1b3a66 };   // v5 (founder 2026-10-20): saturated, one flat colour per building, walkways light grey   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
   FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa|Water activities)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
