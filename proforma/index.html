@@ -7,17 +7,21 @@
 <title>RubiqOS · Proforma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019zg">
-<link rel="stylesheet" href="/proforma.css?v=20261020a">
+<link rel="stylesheet" href="/site.css?v=20261020b">
+<link rel="stylesheet" href="/proforma.css?v=20261020b">
 </head>
 <body class="site off">
 <div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Live demo</a><a href="/proforma/" class="on">Proforma</a><a href="/simulation/">Simulation</a><a href="/physical-ai/">Physical AI</a><a href="/market/">Resort Market Overview</a></nav><span></span></div></div>
 <div class="wrap pf">
-  <div class="status" id="status"><span class="dot"></span><span class="big" id="clock">—:—</span><span class="k" id="stLine">Live numbers come from the simulation, which runs in the background on this page · loading…</span></div>
+  <div class="status" id="status"><span class="dot"></span><span class="big" id="clock">—:—</span><span class="k" id="stLine">Live numbers come from the simulation, which runs in the background on this page · loading…</span><span class="viewsw" role="group" aria-label="Card detail"><button type="button" data-view="std">Standard view</button><button type="button" data-view="detail">Detailed view</button></span></div>
+  <script>/* Standard / Detailed view (founder 2026-10-20): Standard is the default and hides Consumes a day and Returns a day; the choice is remembered */
+  (() => { let v = 'std'; try { v = localStorage.getItem('pfView') || 'std'; } catch (e) {}
+    const set = x => { v = x; document.body.classList.toggle('view-std', x === 'std'); document.querySelectorAll('.viewsw button').forEach(b => b.classList.toggle('on', b.dataset.view === x)); try { localStorage.setItem('pfView', x); } catch (e) {} };
+    document.querySelectorAll('.viewsw button').forEach(b => b.addEventListener('click', () => set(b.dataset.view))); set(v); })();</script>
 
   <section id="products">
     <h2>Products</h2>
-    <p class="lead">What earns, by category: accommodation, the marina with its own infrastructure, food and beverage, venues. Each card: what it produces for the guest, what it consumes a day (average occupancy), who runs it, who is there now. Every card opens its own page.</p>
+    <p class="lead">What earns, by category: accommodation, the marina with its own infrastructure, food and beverage, venues. Each card: what it produces for the guest, who works there, who is there now; the Detailed view adds what it consumes and returns a day (average occupancy). Every card opens its own page.</p>
     <div id="productCards"></div>
   </section>
 
@@ -42,7 +46,7 @@
   <p class="foot">RubiqOS · Proforma v2, 2026-10-19 · products and services as cards with operators and live load · the demo at <a href="/">rubiqos.com</a>.</p>
 </div>
 <iframe id="sim" src="/?headless=1" title="simulation"></iframe>
-<script src="/proforma-data.js?v=20261020a"></script>
+<script src="/proforma-data.js?v=20261020b"></script>
 <script>
 document.getElementById('productCards').innerHTML = groupsHtml(PRODUCT_GROUPS);
 document.getElementById('serviceCards').innerHTML = groupsHtml(SERVICE_GROUPS);

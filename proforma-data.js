@@ -216,8 +216,8 @@ function productInner(c, link = true) {
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
   ${chartHtml(c)}
   <div class="sec"><div class="cap">Produces</div>${c.rooms ? roomRows(c) : `<p>${c.produces}</p><div class="kv">${kv(objs)}</div>`}</div>
-  <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
-  <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
+  <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
+  <div class="sec detail"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
   ${teamHtml(c.id)}`;
 }
 // Physical AI register (founder 2026-10-19): ONE list of robot types. Every robot row in TEAM is an id from here, so a card, the
@@ -403,8 +403,8 @@ const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c
     <div class="sec"><div class="cap">By class · live</div><table class="t mini"><thead><tr><th>Class</th><th class="num">Berths</th><th class="num">Occupied</th><th style="width:38%"></th></tr></thead><tbody id="marinaRows"></tbody></table><p class="muted" style="font-size:11.5px;margin:4px 0 0">Plan 90 berths (50 S · 32 M · 8 L); the model holds 126.</p></div></div>
   <div class="col">
     <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p></div>
-    <div class="sec"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span><span>Staff positions</span><span>${c.staff}</span></div></div>
-    <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
+    <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
+    <div class="sec detail"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
   <div class="col">${teamHtml('marina')}</div>
   <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div>
   <div class="col"><div class="cap">Yacht services · this month</div><div class="kv" data-live="ys-month"><span>Fresh water</span><span>—</span></div>
