@@ -40,7 +40,7 @@ const PRODUCTS = [
     produces: 'Villa nights · butler service · villa breakfasts', capacity: 144, objects: { '4-BR villas': 18 }, staff: 40, per: { water: 600, energy: 50, food: 1.5, laundry: 4, waste: 2.5 } },
   { id: 'residences', rooms: true, name: 'Branded Residences', zone: 'Z10', op: 'residences', unit: 'residents', live: ['Residences BR1', 'Residences BR2'], what: 'Apartment towers by the village; most units in the hotel rental pool.',
     produces: 'Apartment nights (rental pool) · owner services · concierge', capacity: 812, objects: { '1-BR apartments': 62, '2-BR apartments': 94, '3-BR apartments': 42, 'Penthouses': 10 }, staff: 95, per: { water: 300, energy: 25, food: 1.0, laundry: 1.5, waste: 2.0 } },
-  { id: 'apart-hotel', rooms: true, noSim: true, name: 'Apart-hotel', zone: 'Z03', op: 'hotels', unit: 'guests', live: [], what: 'Serviced apartments by the village for longer stays; not on the master plan yet.',
+  { id: 'apart-hotel', rooms: true, name: 'Apart-hotel', zone: 'Z03', op: 'hotels', unit: 'guests', live: ['Apart-hotel'], what: 'Serviced apartments in two five-storey buildings of Marina Village, for longer stays.',
     produces: 'Apartment nights · kitchenettes · hotel services on call', capacity: 110, objects: { 'Studios': 24, '1-BR apartments': 16, '2-BR apartments': 6 }, staff: 30, per: { water: 350, energy: 30, food: 0.8, laundry: 2, waste: 2.0 } },
   { id: 'village', name: 'Marina Village', zone: 'Z03', op: 'village', unit: 'people at once', turns: 3, live: ['Marina Village'], what: 'Pedestrian heart: cafes, restaurants, shops, the market, an apart-hotel.',
     produces: 'Covers at four F&B outlets · retail · the island market', capacity: 600, objects: { 'Restaurant seats': 240, 'Shops': 17, 'Market stalls': 20 }, staff: 85, per: { water: 25, energy: 6, food: 0.7, laundry: 0.1, waste: 0.5 } },
@@ -91,6 +91,9 @@ const SERVICES = [
     liveFn: L => [['Orders fulfilled today', L.ops.deliveries]] },
   { id: 'laundry', name: 'Laundry', zone: 'Z09', op: 'stores', what: 'Central laundry in the warehouse bar; linen out and back daily.',
     produces: { 'Linen a day': '5,000 kg', 'Turnaround': '6 h' }, consumes: { 'Water': '≈ 75 m³ a day (15 L/kg)', 'Energy': '≈ 5,000 kWh a day (1 kWh/kg)' }, key: 'laundry', capacity: 5000 },
+  { id: 'office', name: 'Administration office', zone: 'Z03', op: 'infra', what: 'The westmost village building: resort administration and the operator console below, management apartments above.',
+    produces: { 'Desks': 60, 'Management apartments': 16, 'Operator console': 'RubiqOS, 24 h' }, consumes: { 'Energy': '≈ 900 kWh a day', 'Water': '≈ 8 m³ a day' }, loadBase: 70,
+    liveFn: L => { const h = L.hour, day = h >= 8 && h < 19; return [['Load', (day ? 85 : 30) + ' %'], ['In the office', day ? 'day shift' : 'console only'], ['Staff on shift', Math.round(60 * L.shiftShare)]]; } },
   { id: 'staffacc', name: 'Staff accommodation', zone: 'Z09', op: 'staffacc', what: 'Four-floor block with 420 beds; the rest commute by staff shuttle.',
     produces: { 'Beds': 420, 'Staff shuttle': 'mainland, 3 runs a shift' }, consumes: { 'Water': '≈ 48 m³ a day', 'Energy': '≈ 2,150 kWh a day' }, key: 'staff', capacity: 900,
     liveFn: L => [['Staff on shift', L.onShift], ['Shift', L.hour >= 7 && L.hour < 15 ? 'morning 07–15' : L.hour >= 15 && L.hour < 23 ? 'evening 15–23' : 'night 23–07'], ['Load', Math.round(100 * L.onShift / 330) + ' %']] },
@@ -148,7 +151,7 @@ const PRODUCT_GROUPS = [
 ];
 const SERVICE_GROUPS = [
   { title: 'Utilities', ids: ['power', 'desal', 'sewage', 'network'] },
-  { title: 'Back of house', ids: ['stores', 'darkstore', 'laundry', 'cleaning', 'landscaping', 'waste', 'dock', 'staffacc', 'canteen'] },
+  { title: 'Back of house', ids: ['office', 'stores', 'darkstore', 'laundry', 'cleaning', 'landscaping', 'waste', 'dock', 'staffacc', 'canteen'] },
   { title: 'Guest care', ids: ['guestservices', 'medical', 'security'] },
 ];
 // Fleet Hub: its own block (founder 2026-10-19): the vehicles belong to no other card
@@ -200,7 +203,7 @@ for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTota
 // --- card html
 const opTag = id => '';   // operators are not shown on the cards for now (founder 2026-10-19); the OP data stays for later
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-const NO_MODEL = new Set(['apart-hotel', 'network', 'darkstore', 'guestservices', 'medical', 'security', 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
+const NO_MODEL = new Set([ 'darkstore', 'guestservices', 'medical', 'security', 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
 const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3>${NO_MODEL.has(c.id) ? '<span class="nomodel" title="No physical object on the master plan yet"></span>' : ''}</div>`;   // no zone id and no colour dot (founder 2026-10-19)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
 const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
@@ -338,6 +341,7 @@ const TEAM = {
   darkstore: { people: { 'Pickers and packers': 10 }, robots: { picker: 4 } },
   laundry: { people: { 'Loaders and finishers': 18 }, robots: { folder: 2, agv: 2, washline: 1 } },
   staffacc: { people: { 'Reception': 4, 'Housekeeping': 8 }, robots: { scrubber: 2 } },
+  office: { people: { 'Management': 14, 'Finance and HR': 12, 'Operator console': 8, 'Sales and revenue': 10, 'IT': 6 }, robots: { kiosk: 2 } },
   canteen: { people: { 'Service and loading': 6 }, robots: { kitchen: 1, dishline: 1, kiosk: 4 } },
   cleaning: { people: { 'Housekeepers': 120, 'Public-area cleaners': 30, 'Supervisors': 10 }, robots: { window: 2 } },
   landscaping: { people: { 'Gardeners': 24, 'Irrigation technicians': 2, 'Arborist': 1 }, robots: { mower: 12, hedge: 2, irrigation: 1 } },
