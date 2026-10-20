@@ -315,7 +315,7 @@ model.traverse(o => {
   const a = assoc.get(o), exact = sanName.get(o.name);
   if (exact) o.name = exact;                                                   // v073: nodes that share one mesh (villas, courts) all carry the same association object, so the name comes from the sanitised name first
   else if (a && a.nodes !== undefined && nodeDefs[a.nodes].name) o.name = nodeDefs[a.nodes].name;
-  else if (o.isMesh && o.parent && o.parent !== model && !o.userData.group) { o.name = o.parent.name; o.userData = o.parent.userData; }   // multi-primitive node
+  else if (o.isMesh && o.parent && o.parent !== model && !o.userData.group) { o.name = o.parent.name; o.userData = { ...o.parent.userData }; }   // multi-primitive node: a COPY of the extras, so per-mesh state (baseMat) is not shared between the primitives (shared userData made every palm show the trunk material, 2026-10-19)
 });
 // parts of an instanced asset keep the template's stem ("Villa.018 | roof" under every villa, v069+): give each part its own parent's stem
 { let n = 0; for (const t of model.children) for (const c of t.children) { const k = c.name.indexOf(' | '); if (k > 0 && c.name.slice(0, k) !== t.name && !t.name.startsWith(c.name.slice(0, k))) { c.name = t.name + c.name.slice(k); n++; } } if (n) console.info('asset parts renamed to their parent stem:', n); }
@@ -2074,13 +2074,14 @@ function schematicMat(o) {
 }
 // ===== Functional style (founder 2026-10-19): the Standard look, buildings recoloured by what they are for.
 // accommodation pink (the hotel's own pink), F&B outlets terracotta, amenities turquoise; guest pads muted blue, BOH pads muted red; everything else as exported.
-const FUNC = { stay: 0xf08db8, fnb: 0xc9623f, amenity: 0x3fb8b0, padGuest: 0x6f8fc9, padBoh: 0xb5574f };
-const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel|Pavilion module|Pavilion\.)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/, FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa)/;
+const FUNC = { stay: 0xf08db8, fnb: 0xc9623f, amenity: 0x3fb8b0, attraction: 0xd4a73a, village: 0xb4b4b4, padGuest: 0x6f8fc9, padBoh: 0xb5574f };   // attractions ochre; Marina Village modules grey until the founder assigns their functions
+const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/, FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa|Arrivals Reception)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/, FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/;
 function functionalMat(o) {
   const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '';
   if (/^Drop-off \| DO-/.test(n)) return flatMat(/DO-BOH/.test(n) ? FUNC.padBoh : FUNC.padGuest, 0.9);
   if (/Pool water/.test(mn) || /planting|garden|paving|forecourt|courtyard/i.test(n)) return null;            // pools, gardens and paving keep the exported look
-  const cat = FUNC_STAY.test(t) || FUNC_STAY.test(n) ? 'stay' : FUNC_FNB.test(t) || FUNC_FNB.test(n) ? 'fnb' : FUNC_AMENITY.test(t) || FUNC_AMENITY.test(n) ? 'amenity' : null;
+  const hit = re => re.test(t) || re.test(n);
+  const cat = hit(FUNC_STAY) ? 'stay' : hit(FUNC_FNB) ? 'fnb' : hit(FUNC_AMENITY) ? 'amenity' : hit(FUNC_ATTR) ? 'attraction' : hit(FUNC_VILLAGE) ? 'village' : null;
   if (!cat) return null;
   const c = new THREE.Color(FUNC[cat]);
   if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return flatMat(c.lerp(new THREE.Color(0xffffff), 0.3).getHex(), 0.85);   // roofs a shade lighter so the massing reads
