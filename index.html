@@ -1781,8 +1781,8 @@ const crowdBody = new THREE.InstancedMesh(FIG.torso, matCloth, N_FIG), crowdHead
 const crowdAll = [crowdBody, crowdHead]; for (const im of crowdAll) { im.frustumCulled = false; scene.add(im); }   // no cast: the shadow map is static
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
-const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44, FUNC_CREW = 0x8c6d4f;
-const dotColourOf = (type, mode) => mode === 'functional' && type === 'crew' ? FUNC_CREW : type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE;   // schematic: guests / staff; functional: guests / staff / yacht crew (founder 2026-10-19)
+const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44, FUNC_GUEST = 0xe0457b, FUNC_STAFF = 0x5b6b85, FUNC_CREW = 0x3fa0e0;
+const dotColourOf = (type, mode) => mode === 'schematic' ? (type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE) : type === 'crew' ? FUNC_CREW : type === 'staff' ? FUNC_STAFF : FUNC_GUEST;   // schematic: guests blue / staff navy; standard + functional: guests red-pink, staff slate, yacht crew light blue (founder 2026-10-19)   // schematic: guests / staff; functional: guests / staff / yacht crew (founder 2026-10-19)
 function refreshDotColours(mode) { const a = peopleDots.geometry.attributes.color, c = new THREE.Color(); for (const f of people) { c.set(dotColourOf(f.type, mode)); a.setXYZ(f.i, c.r, c.g, c.b); } a.needsUpdate = true; }   // people dots of the schematic style: guests blue, staff navy (founder 2026-10-19)
 const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)).setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)),
   new THREE.PointsMaterial({ vertexColors: true, size: 6, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5,
@@ -2035,9 +2035,9 @@ const FUNC_PIN = name => /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name)
 const FUNC_VEH = t => /^(L1|L2|W1|W3|A1)$/.test(t) ? FUNC.transport : /^Y/.test(t) ? FUNC.marine : FUNC.boh;   // guest vehicles blue, non-guest (carts, trucks, robots, supply vessel) grey, yachts navy
 const FUNC_LETTER = { L1: 'G', L2: 'S', L3: 'O', L4: 'O', L5: 'D', W1: 'S', W2: 'O', W3: 'G', A1: 'G' };   // founder 2026-10-19: letters instead of pictograms
 function setPinStyle(mode) {                                                 // 'schematic' | 'functional' | 'standard'
-  const iconic = mode === 'schematic' || mode === 'functional'; stage.classList.toggle('schem', iconic);
+  stage.classList.toggle('schem', true);                                     // every style is iconic now (founder 2026-10-19): the standard pins carry the icon in the zone colour
   for (const g of gpins) { const svg = g.el.querySelector('svg'); if (!svg) continue;
-    const html = mode === 'schematic' ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : mode === 'functional' ? PIN_ICON_SVG(hex6(FUNC_PIN(g.d.name)), PIN_ICON_KEY(g.d.name)) : PIN_SVG(g.colour); svg.outerHTML = html; }
+    const html = mode === 'schematic' ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : mode === 'functional' ? PIN_ICON_SVG(hex6(FUNC_PIN(g.d.name)), PIN_ICON_KEY(g.d.name)) : PIN_ICON_SVG(g.colour, PIN_ICON_KEY(g.d.name)); svg.outerHTML = html; }
 }
 const VEH_ICON = { L1: 'car', L2: 'bus', L3: 'wrench', L4: 'truck', L5: 'bot', W1: 'ship', W2: 'ship', W3: 'sailboat', Y1: 'sailboat', Y2: 'sailboat', Y3: 'ship', A1: 'plane', yacht: 'sailboat', buggy: 'car', truck: 'truck', robot: 'bot' };   // Lucide
 const vehIconTex = new Map();
@@ -2050,9 +2050,8 @@ function vehIcon(key, bg = '#1d3a8f', letter = null) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; vehIconTex.set(ck, t); return t;
 }
 function setMarkerStyle(mode) {
-  const iconic = mode === 'schematic' || mode === 'functional';
   for (const f of [...ambient, ...yachtMovers]) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
-    mk.material.map = iconic ? vehIcon(VEH_ICON[f.type] || 'car', mode === 'functional' ? hex6(FUNC_VEH(f.type)) : '#1d3a8f') : mk.userData.stdMap;   /* pictograms, not letters (founder 2026-10-19) */ mk.material.needsUpdate = true; const k = iconic ? 0.024 : mk.userData.stdScale; mk.scale.set(k, k, 1); }
+    mk.material.map = vehIcon(VEH_ICON[f.type] || 'car', mode === 'schematic' ? '#1d3a8f' : hex6(FUNC_VEH(f.type)));   /* pictograms in every style; standard and functional colour the backing by guest / non-guest / yacht (founder 2026-10-19) */ mk.material.needsUpdate = true; mk.scale.set(0.024, 0.024, 1); }
 }
 const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception|Excursion pavilion)/;   // the signature buildings, one muted blue
 const meshTop = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q; };
@@ -2142,7 +2141,7 @@ function applyMapStyle(name) {
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : name === 'functional' ? flatMat(k === 'lawn' ? FUNC.lawn : k === 'hedge' ? FUNC.green : k === 'white' || k === 'yellow' ? 0xffffff : k === 'grass pavers' ? FUNC.lawn : k === 'FATO' ? FUNC.heliRing : FUNC.transport) : o.userData.baseMat; });   // functional: the helipad is transport infrastructure
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
-  { const dots = sch || name === 'functional'; for (const im of crowdAll) im.visible = true; peopleDots.visible = dots; if (dots) refreshDotColours(name); } shadowDirty();   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
+  { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; refreshDotColours(name); } shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
   try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
