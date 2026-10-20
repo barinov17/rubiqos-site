@@ -1145,7 +1145,7 @@ const PRODUCTS = [
   { fp: ['gym.001', 'gym.002', 'Tennis court', 'Pickleball court'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['Wellness Spa'], hp: ['Wellness Spa', 'wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfObj('Wellness Spa', 6) || topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['Arrivals Reception |'], hp: ['Arrivals Reception'], name: 'Arrivals Reception', zone: 'Z08', p: topOfPrefix('Arrivals Reception |', 8), kpi: { 'Function': 'Guest arrivals: face check-in, digital key, luggage to the room; marina support wing', 'Shuttle landings a day': 24, 'Staff': 11 } },
-  { fp: ['arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], hp: ['arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], name: 'Marina', zone: 'Z04', p: topOfObj('arrivals dock', 6) || A.terminal, /* the reception is its own concept (founder 2026-10-19: different function, different highlight) */ kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
+  { fp: ['Marina support |', 'arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], hp: ['Marina support', 'arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], name: 'Marina', zone: 'Z04', p: topOfPrefix('Marina support |', 8) || topOfObj('arrivals dock', 6) || A.terminal, /* the reception is its own concept (founder 2026-10-19: different function, different highlight) */ kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['Longevity Clinic | building'], hp: ['Longevity Clinic'], name: 'Longevity Clinic', zone: 'Z01', p: topOfPrefix('Longevity Clinic |', 6), kpi: { 'Function': 'Longevity clinic (e135, was the hotel lobby)', 'Programme': 'With the Spa & Wellness', 'Staff': 12 } },
   { fp: ['apart hotel Building'], hp: ['apart hotel Building'], name: 'Apart-hotel', zone: 'Z03', p: topOfPrefix('apart hotel Building.002', 7), kpi: { 'Buildings': 3, 'Floors': 5, 'Units': 40, 'Staff': 30 } },
   { fp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], hp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('Pavilion module.008', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
@@ -2033,8 +2033,8 @@ const dotMat = (base = SCHEMATIC.green, dot = SCHEMATIC.greenDot, step = SCHEMAT
 };
 const SCHEM_PIN = { product: '#2457e6', service: '#6b7a96' };
 const hex6 = c => '#' + c.toString(16).padStart(6, '0');
-const FUNC_PIN = name => /Hotel$|^Residences|^Villa|Apart-hotel/.test(name) ? FUNC.stay : /Restaurant|Members|Beach Club/.test(name) ? FUNC.fnb : /Events|Spa|GYM|Longevity/.test(name) ? FUNC.amenity
-  : name === 'Marina' || /Arrivals Reception/.test(name) ? FUNC.transport : /Marina Village/.test(name) ? FUNC.village : FUNC.boh;   // pin colour = the function colour of the map
+const FUNC_PIN = name => /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name) ? FUNC.stay : /Restaurant|Members|Beach Club|WH-2/.test(name) ? FUNC.fnb : /Events|Spa|GYM|Longevity/.test(name) ? FUNC.amenity
+  : name === 'Marina' ? FUNC.marine : /Arrivals Reception|Fleet Hub/.test(name) ? FUNC.transport : /Marina Village/.test(name) ? FUNC.village : /WH-1/.test(name) ? FUNC.laundry : /WH-3/.test(name) ? FUNC.cold : /WH-4/.test(name) ? FUNC.dry : /Waste/.test(name) ? FUNC.waste : /Water, power|Network/.test(name) ? FUNC.utilities : FUNC.boh;   // every pin in its function's colour, the back of house included   // pin colour = the function colour of the map
 const FUNC_VEH = t => /^(L1|L2|W1|A1)$/.test(t) ? FUNC.transport : t === 'L5' ? FUNC.robot : /^(W3|Y)/.test(t) ? FUNC.marine : FUNC.boh;   // guest mobility blue, robots teal, boats navy, service grey
 function setPinStyle(mode) {                                                 // 'schematic' | 'functional' | 'standard'
   const iconic = mode === 'schematic' || mode === 'functional'; stage.classList.toggle('schem', iconic);
@@ -2067,7 +2067,7 @@ function schematicMat(o) {
   if (g === 'sport') return flatMat(/Net|Fence/i.test(mn + ' ' + n) ? 0xffffff : S.fn.courts);   // v073: the courts are their own group   // back of house: greys
   if (/Pool water/.test(mn)) return flatMat(S.pool, 0.4);
   if (g === 'trees') return flatMat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);
-  if (g === 'terrain') return /BEACH/.test(mn) ? flatMat(S.beach) : /Rocky/.test(mn) ? flatMat(S.rock) : /GREEN/.test(mn) ? dotMat() : flatMat(S.land);
+  if (g === 'terrain') return /BEACH/.test(mn) ? flatMat(S.beach) : /Rocky/.test(mn) ? flatMat(S.rock) : /GREEN/.test(mn) || o.userData.function === 'planting' ? dotMat() : flatMat(S.land);
   if (g === 'landscape') return /GREEN|Planting|Lawn/.test(mn) ? dotMat() : flatMat(S.land);
   if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? flatMat(S.roadMain) : /Plaza|Urban/.test(mn) ? flatMat(S.plaza) : flatMat(S.walk);
   if (g === 'marina' && /^MARINA( \| apron slope)?$/.test(n)) return flatMat(S.sea);          // breakwater body and slope: the sea colour, white walkway on top (founder 2026-10-19)
@@ -2091,18 +2091,19 @@ const FUNC = { stay: 0xf07ab0, fnb: 0xe8762e, amenity: 0x6a4fc4, transport: 0x4a
   robot: 0x2f9e8f, marine: 0x2f5f8f, utilities: 0xe3b83a, waste: 0xc0564e, laundry: 0x7fb3d9, kitchen: 0xe8762e, cold: 0x9fd0e8, dry: 0xc9a66b, heliRing: 0x24456f };   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
   FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
-  FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Arrivals Reception|arrivals dock|Terminal|Excursion pavilion|Helipad|PARKING|Service dock)/;
+  FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Arrivals Reception|Helipad|PARKING|Service dock)/, FUNC_MARINA = /^(Marina support|arrivals dock|Terminal|Excursion pavilion|marina pier|MARINA)/;
 function functionalMat(o) {
   const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), F = FUNC, hit = re => re.test(t) || re.test(n);
   if (/^Drop-off \| DO-/.test(n)) return flatMat(/DO-BOH/.test(n) ? F.padBoh : F.padGuest, 0.9);
   if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
   if (/Pool water/.test(mn)) return flatMat(F.pool, 0.4);
   if (g === 'trees') return flatMat(/trunk/i.test(mn) ? F.trunk : F.tree, 0.95);
-  if (g === 'terrain') return flatMat(/BEACH/.test(mn) ? F.beach : /Rocky/.test(mn) ? F.rock : /GREEN/.test(mn) ? F.green : F.land, 0.95);
+  if (g === 'terrain') return flatMat(/BEACH/.test(mn) ? F.beach : /Rocky/.test(mn) ? F.rock : /GREEN/.test(mn) || o.userData.function === 'planting' ? F.green : F.land, 0.95);   // the hills carry no material name in the GLB: planting by function
   if (g === 'landscape') return flatMat(/Lawn/.test(mn) ? F.lawn : F.green, 0.95);
+  if (hit(FUNC_MARINA)) return /^MARINA/.test(n) ? flatMat(/apron$/.test(n) ? F.path : F.breakwater) : flatMat(/roof|slab/i.test(mn + ' ' + n) ? new THREE.Color(F.marine).lerp(new THREE.Color(0xffffff), 0.3).getHex() : F.marine, 0.85);   // marina function: navy
   if (hit(FUNC_TRANSPORT)) return flatMat(/roof|slab/i.test(mn + ' ' + n) ? new THREE.Color(F.transport).lerp(new THREE.Color(0xffffff), 0.3).getHex() : F.transport, 0.85);
   if (g === 'mobility') return /^Road surface|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road|Longevity Clinic road/.test(n) ? flatMat(F.roadS, 0.95) : /Plaza|Urban/.test(mn) ? flatMat(F.plaza, 0.95) : flatMat(F.path, 0.95);
-  if (g === 'marina') return /^MARINA/.test(n) ? flatMat(/apron$/.test(n) ? F.path : F.breakwater) : /Pier deck/.test(mn) ? flatMat(F.pier) : /ghost/i.test(mn) ? schemGhost() : /glass/i.test(mn) ? flatMat(F.yachtGlass, 0.5) : /Boat|Yacht/.test(mn) ? flatMat(F.yacht) : flatMat(F.transport);
+  if (g === 'marina') return /Pier deck/.test(mn) ? flatMat(F.marine) : /ghost/i.test(mn) ? schemGhost() : /glass/i.test(mn) ? flatMat(F.yachtGlass, 0.5) : /Boat|Yacht/.test(mn) ? flatMat(F.yacht) : flatMat(F.marine);
   if (g === 'sport') return flatMat(/Net|Fence/i.test(mn + ' ' + n) ? 0xffffff : F.amenity, 0.9);
   if (n.startsWith('Infrastructure zone') || n.startsWith('Cell tower')) {                                  // back of house by function: utilities yellow, fleet hub transport blue, waste red, stores by what they hold
     const bf = (o.userData.boh_function || '') + ' ' + n;
