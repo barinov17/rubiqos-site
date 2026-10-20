@@ -126,9 +126,12 @@ const SERVICES = [
     produces: { 'Control room': '24 h', 'Patrols': '2 land, 1 marine', 'Lifeguards': '4 by day', 'Fire crew': 6 }, consumes: { 'Energy': '≈ 400 kWh a day', 'Cameras and sensors': '≈ 400 devices' }, loadBase: 45,
     liveFn: L => [['Lifeguards', L.hour >= 8 && L.hour < 19 ? 'on both beaches' : 'off duty, beaches closed'], ['Events watched', L.events.length ? L.events.map(e => e.split(' · ')[0]).join(', ') : '—']] },
   // the marina's own infrastructure (founder 2026-10-19): shown in the Marina category with the berths
-  { id: 'marina-support', name: 'Marina support building', zone: 'Z04', op: 'marina', what: 'Harbour office, shore power and water distribution, fuel, pump-out, crew facilities, chandlery.',
-    produces: { 'Harbour office': '24 h', 'Berth services': 'see the card below', 'Chandlery and workshop': 'parts, small repairs', 'Crew facilities': 'in the crew lounge' }, consumes: { 'Energy (building)': '≈ 900 kWh a day', 'Water (building)': '≈ 12 m³ a day' }, loadBase: 60,
-    liveFn: L => { const M = L.marina; return [['Load', Math.round(100 * M.moored / M.berths) + ' %'], ['Boats in the harbour', M.moored]]; } },   // the berths and the movements are in the marina block, not here
+  // the crew lounge and a crew gym are functions of this building, not objects of their own (founder 2026-10-20)
+  { id: 'marina-support', name: 'Marina support building', zone: 'Z04', op: 'marina', what: 'Harbour office, chandlery and workshop; the crew lounge and a crew gym for the yacht crews.',
+    produces: { 'Harbour office': '24 h', 'Berth services': 'see Yacht services', 'Chandlery and workshop': 'parts, small repairs', 'Crew lounge': '40 seats, 16 showers and lockers, crew laundry 300 kg a day', 'Crew gym': 'for the yacht crews', 'Provisioning orders a day (plan)': 25 },
+    consumes: { 'Energy (building)': '≈ 1,150 kWh a day', 'Water (building)': '≈ 20 m³ a day', 'Food (crew canteen)': 'from the dark store' }, loadBase: 60,
+    liveFn: L => { const M = L.marina, per = { S: 1, M: 4, L: 12 }; const crew = ['S', 'M', 'L'].reduce((a, k) => a + ((M.byCls[k] || { moored: 0 }).moored) * per[k], 0);
+      return [['Load', Math.round(100 * M.moored / M.berths) + ' %'], ['Boats in the harbour', M.moored], ['Crew on the island', crew], ['In the crew lounge now', Math.round(crew * (L.hour >= 11 && L.hour < 23 ? 0.3 : 0.1))]]; } },   // the berths and the movements are in the marina block, not here
   // services for the boats at the berths (founder 2026-10-19): water, power, pump-out, fuel, plus what a marina operator would not leave out: waste, provisioning, laundry, Wi-Fi, line handling
   { id: 'yacht-services', name: 'Yacht services', zone: 'Z04', op: 'marina', what: 'At every berth: water, shore power, pump-out, fuel. On call: waste, provisioning, laundry.',
     produces: { 'Fresh water': '≈ 60 m³ a day', 'Shore power': '≈ 30,000 kWh a day', 'Pump-out': '≈ 40 m³ a day', 'Fuel': '≈ 20 m³ a day' }, consumes: { 'Water, power, sewage': 'the island utilities', 'Fuel': 'by the supply vessel' }, loadBase: 60,
@@ -140,14 +143,11 @@ const SERVICES = [
   { id: 'excursion-terminal', name: 'Excursion terminal', zone: 'Z04', op: 'excursions', what: 'Pier and booking desk for the snorkelling and sunset trips; departures by the event programme.',
     produces: { 'Trips a day': 2, 'Seats a trip': 12, 'Booking': 'in the guest app, weather cancels' }, consumes: { 'Energy': '≈ 60 kWh a day' }, loadBase: 40,
     liveFn: L => [['Now', (L.reception.excursion || '—').replace(/^Excursion boat · /, '')]] },
-  { id: 'crew-lounge', name: 'Crew lounge', zone: 'Z04', op: 'marina', what: 'Lounge, showers, laundry and a canteen for the crews of the moored yachts; provisioning desk for the boats.',
-    produces: { 'Lounge seats': 40, 'Showers and lockers': 16, 'Crew laundry a day': '300 kg', 'Provisioning orders a day (plan)': 25 }, consumes: { 'Water': '≈ 8 m³ a day', 'Energy': '≈ 250 kWh a day', 'Food': 'from the dark store' },
-    liveFn: L => { const M = L.marina, per = { S: 1, M: 4, L: 12 }; const crew = ['S', 'M', 'L'].reduce((a, k) => a + ((M.byCls[k] || { moored: 0 }).moored) * per[k], 0); return [['Load', Math.min(100, Math.round(100 * crew * 0.3 / 40)) + ' %'], ['Crew on the island', crew], ['In the lounge now', Math.round(crew * (L.hour >= 11 && L.hour < 23 ? 0.3 : 0.1))]]; } },
 ];
 // Categories (founder 2026-10-19): the cards are grouped, not listed by zone
 const PRODUCT_GROUPS = [
   { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'apart-hotel', 'villas', 'residences'] },
-  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'guest-dock', 'excursion-terminal', 'crew-lounge'] }   /* yacht services live in the Marina block (founder 2026-10-20) */,
+  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'guest-dock', 'excursion-terminal'] }   /* yacht services live in the Marina block (founder 2026-10-20) */,
   { title: 'Food and beverage', ids: ['restaurant', 'village', 'beach-club', 'members-club'] },
   { title: 'Beaches and water', ids: ['hotel-beach', 'club-beach', 'water-sports'] },
   { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
@@ -206,7 +206,7 @@ for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTota
 // --- card html
 const opTag = id => '';   // operators are not shown on the cards for now (founder 2026-10-19); the OP data stays for later
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-const NO_MODEL = new Set([   /* guest services, medical and security sit in the administration building (founder 2026-10-20) */ 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
+const NO_MODEL = new Set([   /* guest services, medical and security sit in the administration building (founder 2026-10-20) */ 'landscaping', 'cleaning', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
 const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3>${NO_MODEL.has(c.id) ? '<span class="nomodel" title="No physical object on the master plan yet"></span>' : ''}</div>`;   // no zone id and no colour dot (founder 2026-10-19)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
 const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
@@ -362,11 +362,10 @@ const TEAM = {
   guestservices: { people: { 'Butlers': 24, 'Concierge': 9, 'Guest-app operators': 6 }, robots: {} },
   medical: { people: { 'Doctors': 3, 'Nurses': 6 }, robots: { droneRescue: 1, kiosk: 2 } },
   security: { people: { 'Control room': 6, 'Patrol': 12, 'Lifeguards': 8, 'Fire crew': 6 }, robots: { dronePatrol: 2, sensors: 400 } },
-  'marina-support': { people: { 'Harbour office': 6, 'Technicians': 4 }, robots: {} },
+  'marina-support': { people: { 'Harbour office': 6, 'Technicians': 4, 'Crew lounge attendants': 3 }, robots: { kiosk: 1 } },   /* + the crew lounge (founder 2026-10-20) */
   'yacht-services': { people: { 'Dock hands': 8, 'Fuel attendants': 2 }, robots: { hull: 1, fuel: 1 } },
   'guest-dock': { people: { 'Dock staff': 6, 'Shuttle operator (remote, all boats)': 1, 'Porters': 4 }, robots: { luggage: 4, kiosk: 3 } },
   'excursion-terminal': { people: { 'Guides': 4, 'Desk': 2, 'Skippers (guests aboard)': 3 }, robots: {} },
-  'crew-lounge': { people: { 'Attendants': 3 }, robots: { kiosk: 1 } },
   fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: Object.assign({ charger: 2 }, ...['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2'].map(k => ({ [k]: FLEET_PLAN[k] }))) },
 };
 
