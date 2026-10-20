@@ -363,11 +363,11 @@ const TEAM = {
 
 const tsum = o => Object.values(o).reduce((a, b) => a + b, 0);
 const kvc = (o, cls) => Object.entries(o).map(([k, v]) => `<span class="${cls}">${k}</span><span class="${cls}">${v}</span>`).join('');
-// Labor force on a card: people, then robots (scope 'object'; the Fleet Hub also lists its 'fleet' types), then fixed automation apart.
+// Workforce on a card (founder 2026-10-20: "Workforce", not "Labor force"; the last block of the card): people, then robots (scope 'object'; the Fleet Hub also lists its 'fleet' types), then fixed automation apart.
 const robotRows = (o, scopes) => Object.entries(o).filter(([k]) => scopes.includes(robotOf(k).scope)).map(([k, v]) => `<span class="rb" title="${robotOf(k).does}">${robotOf(k).name}${k.length <= 2 ? ' · ' + k : ''}</span><span class="rb">${v}</span>`).join('');
 const robotSum = (o, scopes) => Object.entries(o).filter(([k]) => scopes.includes(robotOf(k).scope)).reduce((a, [, v]) => a + v, 0);
 const teamHtml = id => { const t = TEAM[id]; if (!t) return ''; const rb = robotSum(t.robots, ['object', 'fleet']), au = robotSum(t.robots, ['auto']);
-  return `<div class="sec team"><div class="cap">Labor force</div><div class="kv"><span class="sub pp">People · ${fmt(tsum(t.people))}</span><span class="sub pp"></span>${kvc(t.people, 'pp')}` +
+  return `<div class="sec team"><div class="cap">Workforce</div><div class="kv"><span class="sub pp">People · ${fmt(tsum(t.people))}</span><span class="sub pp"></span>${kvc(t.people, 'pp')}` +
     (rb ? `<span class="sub rb">Robots · ${fmt(rb)}</span><span class="sub rb"></span>${robotRows(t.robots, ['object', 'fleet'])}` : '') +
     (au ? `<span class="sub rb">Automation · ${fmt(au)}</span><span class="sub rb"></span>${robotRows(t.robots, ['auto'])}` : '') + `</div></div>`; };
 // 30-day occupancy (founder 2026-10-19): today is day 5; days 1–4 are actuals, today is live, days 6–30 are the forecast.

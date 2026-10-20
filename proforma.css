@@ -92,7 +92,7 @@ body.site .con .f30 i { display: block; background: rgba(36, 87, 230, 0.26); min
 body.site .con .f30 i.we { background: rgba(36, 87, 230, 0.4); }
 body.site .con .f30 i.past { background: var(--navy); } body.site .con .f30 i.past.we { background: var(--navy); }
 body.site .con .f30 i.today { background: var(--accent); }
-/* labor force: people navy, robots teal */
+/* workforce: people amber, robots teal */
 body.site .con .kv .sub.pp { color: #b2641a; } body.site .con .kv .pp { color: #b2641a; }   /* people amber, robots teal (founder 2026-10-19) */
 body.site .con .kv .sub.rb { color: #0f8a7a; } body.site .con .kv .rb { color: #0f8a7a; }
 
