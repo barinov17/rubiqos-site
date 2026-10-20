@@ -7,14 +7,20 @@
 <title>RubiqOS · Physical AI</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/site.css?v=20261019zg">
+<link rel="stylesheet" href="/site.css?v=20261020a">
 <link rel="stylesheet" href="/proforma.css?v=20261020a">
 <style>
-  body.site table.t.pa td:first-child { width: 1%; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
-  body.site table.t.pa td:nth-child(2) { min-width: 180px; } body.site table.t.pa td:nth-child(2) b { color: var(--navy); }
-  body.site table.t.pa td:nth-child(3) { min-width: 280px; }
-  body.site table.t.pa td:nth-child(4) { color: var(--muted); font-size: 12.5px; } body.site table.t.pa td:nth-child(4) a { color: var(--navy); text-decoration: none; } body.site table.t.pa td:nth-child(4) a:hover { text-decoration: underline; }
-  body.site table.t.pa td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* object first, then its robots (founder 2026-10-20) */
+  body.site table.t.pa td { vertical-align: middle; }
+  body.site table.t.pa tr.obj td { background: var(--panel); padding-top: 9px; padding-bottom: 9px; }
+  body.site table.t.pa tr.obj td:first-child { font: 600 14px var(--body); color: var(--navy); } body.site table.t.pa tr.obj a { color: var(--navy); text-decoration: none; } body.site table.t.pa tr.obj a:hover { text-decoration: underline; }
+  body.site table.t.pa tr.obj small { font: 600 10px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-left: 8px; }
+  body.site table.t.pa tr.rb td:first-child { padding-left: 26px; font-weight: 400; color: var(--text); white-space: normal; }
+  body.site table.t.pa tr.rb td:first-child b { font-weight: 500; color: var(--navy); cursor: help; }
+  body.site table.t.pa td.svc a { color: var(--accent); text-decoration: none; } body.site table.t.pa td.svc a:hover { text-decoration: underline; } body.site table.t.pa td.svc .own { color: var(--muted); }
+  body.site table.t.pa td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+  body.site .tag { display: inline-block; font: 600 9.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: 1px; }
+  body.site .none { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
   body.site .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 18px; }
   body.site .kpis .k { background: var(--panel); border-radius: 10px; padding: 12px 14px; } body.site .kpis .k b { display: block; font: 600 26px var(--body); color: var(--navy); } body.site .kpis .k span { font-size: 12.5px; color: var(--muted); }
   body.site .rule { font-size: 13.5px; color: var(--muted); max-width: 80ch; }
@@ -30,51 +36,50 @@
 <div class="wrap">
   <div class="hero">
     <h1>Physical AI</h1>
-    <p>Every robot type the island uses, in one list, and what each one does. The list is the register in <code>proforma-data.js</code> (<code>ROBOTS</code>): the product and service cards and this page read the same source, so a change in one place shows up everywhere.</p>
-    <div class="note" id="paNote">v2 · generated from the register · counts at the plan's scale.</div>
+    <p>Object by object: what robots each one holds, how many, and which service of the proforma they work for. Hover a robot for what it does. The data is the register in <code>proforma-data.js</code> (<code>ROBOTS</code>, <code>TEAM</code>, <code>ROBOT_SERVICE</code>): the cards and this page read the same source.</p>
+    <div class="note" id="paNote">v3 · object first · counts at the plan's scale.</div>
   </div>
   <div class="kpis" id="paKpis"></div>
-  <p class="legend"><span class="org founder"></span>asked for by the founder · <span class="org claude"></span>added by Claude — hover the dot: why, when, and whether it is a real product.</p>
+  <p class="legend"><span class="org founder"></span>asked for by the founder · <span class="org claude"></span>added by Claude — hover the dot: why, when, and whether it is a real product. <span class="tag">automation</span> fixed installation, not a robot; not in the robot count.</p>
 
-  <section id="fleet">
-    <h2>Shared fleet · moves between the objects</h2>
-    <p class="rule">Owned and dispatched by the Fleet Hub. A delivery robot is not part of any hotel or villa: it serves them all, so it is counted once, here. Counts = Fleet Register / <code>FLEET_PLAN</code>.</p>
-    <div class="scroll"><table class="t pa"><thead><tr><th>ID</th><th>Type</th><th>What it does</th><th>Where</th><th class="num">Units</th></tr></thead><tbody id="paFleet"></tbody></table></div>
+  <section id="objects">
+    <div class="scroll"><table class="t pa"><thead><tr><th>Object · robot</th><th>Proforma service</th><th class="num">Units</th></tr></thead><tbody id="paObjects"></tbody></table></div>
+    <p class="none" id="paNone"></p>
   </section>
 
-  <section id="bound">
-    <h2>Bound to one object · works inside it</h2>
-    <p class="rule">A floor scrubber lives on its hotel's floors, a pool robot in its villa's pool. These appear on the card of the object that holds them; the total here is the sum of those cards.</p>
-    <div class="scroll"><table class="t pa"><thead><tr><th>#</th><th>Type</th><th>What it does</th><th>Where (units)</th><th class="num">Units</th></tr></thead><tbody id="paBound"></tbody></table></div>
-  </section>
-
-  <section id="auto">
-    <h2>Fixed automation · not robots</h2>
-    <p class="rule">Machines and installations that run a step without a person: a wash line, a crane, lockers, sensors. Listed apart so they do not inflate the robot count.</p>
-    <div class="scroll"><table class="t pa"><thead><tr><th>#</th><th>Type</th><th>What it does</th><th>Where (units)</th><th class="num">Units</th></tr></thead><tbody id="paAuto"></tbody></table></div>
-  </section>
-
-  <div class="foot">RubiqOS · Physical AI register v2, 2026-10-19 · platforms on the market per type: research note <em>physical-ai-platforms-2026</em> (v1 market map, 2026-10-17).</div>
+  <div class="foot">RubiqOS · Physical AI register v3, 2026-10-20 · platforms on the market per type: research note <em>physical-ai-platforms-2026</em> (v1 market map, 2026-10-17).</div>
 </div>
 <script src="/proforma-data.js?v=20261020a"></script>
 <script>
 (() => {
+  // object first (founder 2026-10-20): every object in proforma order, its robots under it, each with the proforma service it works for
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const ALL = [...PRODUCTS, ...SERVICES, FLEET_HUB];
-  const nameOf = id => (entityOf(id) || { name: id }).name;
-  const where = {};                                                       // robot id → [{entity, n}]
-  for (const [eid, t] of Object.entries(TEAM)) for (const [rid, n] of Object.entries(t.robots)) (where[rid] = where[rid] || []).push({ eid, n });
-  const link = w => `<a href="${ENTITY_URL(w.eid)}">${nameOf(w.eid)}</a>${w.n > 1 ? ' ' + w.n : ''}`;
-  const rows = (scope, tb, numbered) => { let i = 0, total = 0; const out = [];
-    for (const [rid, r] of Object.entries(ROBOTS)) { if (r.scope !== scope) continue; const ws = where[rid] || []; const n = scope === 'fleet' ? (FLEET_PLAN[rid] || 0) : ws.reduce((a, w) => a + w.n, 0); total += n; i++;
+  const kindOf = e => (PRODUCTS.includes(e) ? 'product' : 'service');
+  const svcCell = (eid, rid) => { const s = serviceOfRobot(eid, rid); if (s === null || s === undefined) return '<span class="own">own operation of the object</span>';
+    const e = entityOf(s); return e ? `<a href="${ENTITY_URL(s)}">${e.name}</a>` : esc(s); };
+  const out = [], none = [], types = new Set(); let robots = 0, auto = 0, fleet = 0;
+  for (const e of ALL) {
+    const t = TEAM[e.id]; const list = t ? Object.entries(t.robots).filter(([, n]) => n > 0) : [];
+    if (!list.length) { none.push(`<a href="${ENTITY_URL(e.id)}">${e.name}</a>`); continue; }
+    const nRob = list.filter(([rid]) => robotOf(rid).scope !== 'auto').reduce((a, [, n]) => a + n, 0);
+    out.push(`<tr class="obj"><td colspan="2"><a href="${ENTITY_URL(e.id)}">${e.name}</a><small>${kindOf(e)}</small></td><td class="num">${fmt(nRob)}</td></tr>`);
+    for (const [rid, n] of list.sort((a, b) => (robotOf(a[0]).scope === 'auto') - (robotOf(b[0]).scope === 'auto') || b[1] - a[1])) {
+      const r = robotOf(rid), isAuto = r.scope === 'auto';
+      if (isAuto) auto += n; else { robots += n; types.add(rid); if (r.scope === 'fleet') fleet += n; }
       const o = (typeof ORIGIN !== 'undefined' && ORIGIN[rid]) || { by: 'claude', note: 'No origin recorded.' };
       const tip = (o.by === 'founder' ? 'Asked for by the founder. ' : 'Added by Claude. ') + o.note;
-      out.push(`<tr><td>${numbered ? i : rid}</td><td><span class="org ${o.by}" tabindex="0" data-tip="${tip.replace(/"/g, '&quot;')}"></span><b>${r.name}</b></td><td>${r.does}</td><td>${scope === 'fleet' ? '<a href="' + ENTITY_URL('fleet') + '">Fleet Hub</a> · dispatched to every object' : ws.map(link).join(' · ') || '—'}</td><td class="num">${fmt(n)}</td></tr>`); }
-    document.getElementById(tb).innerHTML = out.join(''); return { types: i, total }; };
-  const f = rows('fleet', 'paFleet', false), b = rows('object', 'paBound', true), a = rows('auto', 'paAuto', true);
-  document.getElementById('paKpis').innerHTML = [[f.types + b.types, 'robot types'], [f.total, 'fleet units, shared'], [b.total, 'robots bound to objects'], [a.total, 'fixed automation units (' + a.types + ' types)']]
+      out.push(`<tr class="rb"><td><span class="org ${o.by}" tabindex="0" data-tip="${esc(tip)}"></span><b title="${esc(r.does)}">${esc(r.name)}</b>${isAuto ? '<span class="tag">automation</span>' : ''}${r.scope === 'fleet' ? '<span class="tag">fleet · ' + rid + '</span>' : ''}</td><td class="svc">${svcCell(e.id, rid)}</td><td class="num">${fmt(n)}</td></tr>`);
+    }
+  }
+  document.getElementById('paObjects').innerHTML = out.join('');
+  document.getElementById('paNone').innerHTML = none.length ? `No robots yet: ${none.join(' · ')}.` : '';
+  document.getElementById('paKpis').innerHTML = [[ALL.length - none.length, 'objects with robots'], [robots, 'robots (' + types.size + ' types)'], [fleet, 'of them shared fleet, in the Fleet Hub'], [auto, 'fixed automation units']]
     .map(([v, l]) => `<div class="k"><b>${fmt(v)}</b><span>${l}</span></div>`).join('');
-  const unknown = Object.keys(where).filter(k => !ROBOTS[k]);
+  const unknown = [...new Set(Object.values(TEAM).flatMap(t => Object.keys(t.robots)))].filter(k => !ROBOTS[k]);
   if (unknown.length) document.getElementById('paNote').innerHTML += ` <b style="color:var(--bad)">Unregistered ids in TEAM: ${unknown.join(', ')}</b>`;
+  const noSvc = Object.keys(ROBOTS).filter(k => !(k in ROBOT_SERVICE) && ROBOTS[k].scope !== 'fleet');
+  if (noSvc.length) document.getElementById('paNote').innerHTML += ` <b style="color:var(--bad)">No service mapped for: ${noSvc.join(', ')}</b>`;
 })();
 </script>
 </body>

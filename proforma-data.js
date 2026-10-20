@@ -316,6 +316,15 @@ const ORIGIN = {
   buoy: { by: 'claude', note: 'Added 2026-10-19 for the swim zone and weather at the water-sports base. Real: smart buoys (Sofar Spotter); the safety role is a composite.' },
 };
 const robotOf = id => ROBOTS[id] || { name: id, scope: 'object', does: '' };
+// Which proforma service a robot works for (founder 2026-10-20: the Physical AI page goes object first, then its robots and their service).
+// Rule: a robot inside a service object works for that service (a picker in the Dark Store → Dark Store). Inside a product it works for
+// the service below; null = the product's own operation (table service, bar, courts, stage), no proforma service.
+const ROBOT_SERVICE = { scrubber: 'cleaning', window: 'cleaning', pool: 'cleaning', luggage: 'guestservices', kiosk: 'guestservices', lockers: 'darkstore',
+  mower: 'landscaping', hedge: 'landscaping', irrigation: 'landscaping', raker: 'landscaping', dronePatrol: 'security', droneRescue: 'security', sensors: 'security',
+  buoy: 'security', pedestal: 'yacht-services', pumpout: 'yacht-services', fuel: 'yacht-services', hull: 'yacht-services', agv: 'laundry', solar: 'power',
+  pipe: 'sewage', crane: 'dock', picker: 'darkstore', folder: 'laundry', washline: 'laundry', sorter: 'waste', compactor: 'waste', racking: 'stores',
+  kitchen: 'canteen', charger: 'fleet', table: null, cocktail: null, dishline: null, court: null, stage: null };
+const serviceOfRobot = (eid, rid) => (SERVICES.some(s => s.id === eid) || eid === 'fleet' ? eid : ROBOT_SERVICE[rid] ?? null);
 // People and robots (founder 2026-10-19): every entity names who works there and which robots do a specific job. Numbers at the plan's scale;
 // the product rows sum to the card's staff positions. Robot rows are ROBOTS ids; fleet-scope robots live only in the Fleet Hub (founder 2026-10-19).
 const OUTLET_OF = { 'beach-hotel': 'Beach Hotel', 'hill-hotel': 'Hill Hotel', restaurant: 'Restaurant', village: 'Marina Village', 'beach-club': 'Beach Club', 'members-club': 'Members Club' };
