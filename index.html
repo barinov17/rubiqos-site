@@ -1830,6 +1830,8 @@ for (const n of ['BEACH.001', 'BEACH.003']) { const ms = meshOf(n); if (!ms.leng
   cells.sort((a, b) => (a % bg.W) - (b % bg.W)); for (let i = 0; i < 5; i++) { const k = cells[Math.floor((i + 0.5) / 5 * cells.length)]; if (k !== undefined) addPoi('beach', `${n === 'BEACH.001' ? 'North' : 'South'} beach ${i + 1}`, bg.posOf(k % bg.W, (k / bg.W) | 0)); } }
 for (const o of villageClusters) if (!o.userData.use) addPoi('retail', VILLAGE_FN[o.name] ? fnTitle(VILLAGE_FN[o.name].function) : o.name.replace(/^(Pavilion module|Pavilion|apart hotel Pavilion)\./, 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
 addPoi('store', 'Dark Store', darkStore.p); addPoi('store', 'Chandlery', chandlery.p);   /* crews provision here (founder 2026-10-20) */
+if (has('Marina support')) { const ms = centreOf('Marina support'); addPoi('crewlounge', 'Crew lounge', ms); addPoi('crewgym', 'Crew gym', ms.clone().add(new THREE.Vector3(18, 0, 6))); }   /* functions of the Marina support building (founder 2026-10-20) */
+if (has('Members Club | pavilion')) { const q = addPoi('food', 'Members Club', centreOf('Members Club | pavilion')); if (q) q.prod = 'Members Club'; }   /* the club's own dining: members and residents only */
 addPoi('beach', 'Beach Club', beachClubP);
 if (has('Water activities pavilion')) addPoi('beach', 'Water activities', centreOf('Water activities pavilion'));   // e139: the water-sports base on the south sand
 addPoi('beach', 'Hotel pool', has('Beach Hotel | pool') ? centreOf('Beach Hotel | pool') : A.hotel);
@@ -1863,7 +1865,7 @@ window.__walkBridges = [];
     const to = walkR.nearestMain(q.p, 60) || walkR.nearestOther(q.p, 60); if (to && walkR.link(walkR.posOf(...c), to)) { walkR.relabel(); window.__walkBridges.push(`${cat} · ${q.name} · ${Math.round(walkR.posOf(...c).distanceTo(to))} m`); } else window.__walkBridges.push(`${cat} · ${q.name} · no other network within 60 m`); }   /* main network first, else the nearest neighbouring piece (the BOH yards join each other) */
   if (window.__walkBridges.length) console.warn('walk islands linked (missing footpaths in the model):', window.__walkBridges); }
 const poiAny = cat => (POI[cat] && POI[cat].length ? anyOf(POI[cat]) : POI.hotel[0]);
-const POI_LABEL = { club: 'the Members Club', restaurant: 'the hotel restaurant', food: 'a restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the guest dock', excursion: 'the excursion dock', store: 'the dark store and chandlery', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
+const POI_LABEL = { crewlounge: 'the crew lounge', crewgym: 'the crew gym', club: 'the Members Club', restaurant: 'the hotel restaurant', food: 'a restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the guest dock', excursion: 'the excursion dock', store: 'the dark store and chandlery', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
 
 // --- event programme (vault: Event Programme)
 const EVENTS = [
@@ -1897,9 +1899,47 @@ const PROFILES = {
   day: [{ name: 'Shopper', w: { retail: 4, village: 2 } }, { name: 'Beach day', w: { beach: 4, food: 1.2 } }, { name: 'Sightseer', w: { promenade: 3, marina: 2.5, event: 2 } }, { name: 'Day foodie', w: { food: 3.5, village: 2 } }, { name: 'Family', w: { beach: 3, retail: 1.5, village: 1.5, event: 1.2 } }],
   yachtguest: [{ name: 'On board', w: { marina: 4, food: 1.2 } }, { name: 'Village regular', w: { village: 3.5, retail: 1.5, food: 1.5 } }, { name: 'Beach crew', w: { beach: 4, club: 1 } }, { name: 'Spa day', w: { spa: 4, promenade: 1.2 } }, { name: 'Explorer', w: { event: 2.5, promenade: 2, retail: 2, marina: 1.2 } }],
   member: [{ name: 'Club regular', w: { club: 4, food: 1.2 } }, { name: 'Beach member', w: { beach: 4, club: 1.5 } }, { name: 'Spa member', w: { spa: 4, club: 1.2 } }, { name: 'Sport member', w: { sport: 4, promenade: 1.5 }, runs: true }, { name: 'Social member', w: { food: 3, village: 2, event: 2 } }],
-  crew: [{ name: 'Deckhand', w: { marina: 4, village: 1.5, beach: 1, store: 1.5 } }, { name: 'Chef', w: { marina: 3, village: 2, food: 1.5, store: 3 } }, { name: 'Captain', w: { marina: 4, food: 1.5, promenade: 1 } }, { name: 'Steward', w: { marina: 3, village: 2, retail: 1.5, store: 2 } }, { name: 'Engineer', w: { marina: 5, promenade: 1, store: 2 } }],
+  crew: [{ name: 'Deckhand', w: { marina: 3, crewgym: 3, crewlounge: 3, village: 1.5, store: 1.5 } }, { name: 'Chef', w: { marina: 3, crewlounge: 3, store: 3, village: 2, crewgym: 1.5 } }, { name: 'Captain', w: { marina: 3.5, crewlounge: 3, crewgym: 1.5, food: 1.5 } }, { name: 'Steward', w: { marina: 3, crewlounge: 3.5, crewgym: 2, village: 2, store: 2 } }, { name: 'Engineer', w: { marina: 4, crewgym: 2.5, crewlounge: 2.5, store: 2 } }],   /* the crew lounge and gym weigh as much as the boat off duty (founder 2026-10-20) */
   staff: [{ name: 'Housekeeping', w: {} }, { name: 'F&B', w: {} }, { name: 'Engineering', w: {} }, { name: 'Butler', w: {} }, { name: 'Landscape', w: {} }],
 };
+// --- meals (founder 2026-10-20): three meal windows; each guest eats once per window; the outlet is chosen by a logit (discrete-choice) model,
+// the usual way restaurant demand is split: utility = preference of this guest kind for this outlet kind at this meal (+ profile, + own hotel)
+// - 1.2 per km of walk from where the guest is - 3 x the share of seats above 80 % taken; p ~ exp(U / 0.6). Access: hotel breakfast = own guests
+// (breakfast is in the rate); the Members Club = members and residents; bars and the gelato café are not meal places.
+const MEALS = { breakfast: [7, 10.5], lunch: [12, 15], dinner: [18.5, 22] };
+const FB_KIND = name => /^Hotel restaurant$|^Hill Hotel restaurant$/.test(name) ? 'hotel' : /^Rotunda/.test(name) ? 'fine' : /^Beach Club/.test(name) ? 'beach' : name === 'Members Club' ? 'club'
+  : /bar$/i.test(name) ? 'bar' : /gelato/i.test(name) ? 'snack' : /caf[eé]|bakery|coffee|juice/i.test(name) ? 'cafe' : 'casual';
+const FB_SERVES = { hotel: ['breakfast', 'lunch', 'dinner'], fine: ['dinner'], beach: ['lunch', 'dinner'], club: ['lunch', 'dinner'], casual: ['lunch', 'dinner'], cafe: ['breakfast', 'lunch'], bar: [], snack: [] };
+const FB_SEATS = { hotel: 200, fine: 220, beach: 180, club: 160, casual: 70, cafe: 50 };   // plan scale; the Hill Hotel restaurant has half the Beach Hotel's
+const FB_PREF = {   // guest kind → meal → outlet kind → preference (utility units)
+  hotel: { breakfast: { hotel: 1.5, cafe: 0.4 }, lunch: { beach: 1.0, casual: 0.7, hotel: 0.4, cafe: 0.4 }, dinner: { fine: 1.0, casual: 0.7, hotel: 0.6, beach: 0.3 } },
+  resident: { breakfast: { cafe: 1.0 }, lunch: { casual: 0.9, beach: 0.7, club: 0.6, cafe: 0.5 }, dinner: { casual: 0.8, fine: 0.8, club: 0.7, hotel: 0.3 } },
+  day: { lunch: { casual: 1.0, beach: 0.9, cafe: 0.5 } },
+  yachtguest: { lunch: { casual: 1.0, beach: 0.6, cafe: 0.4 }, dinner: { fine: 1.0, casual: 0.8 } },
+  member: { lunch: { club: 1.5, beach: 0.5, casual: 0.4 }, dinner: { club: 1.2, fine: 0.7, casual: 0.4 } } };
+const PROFILE_FB = { Foodie: { fine: 0.6, casual: 0.3 }, 'Day foodie': { casual: 0.6 }, 'Social resident': { fine: 0.4, club: 0.3 }, 'Social member': { fine: 0.5 }, 'Beach lover': { beach: 0.6 }, 'Beach day': { beach: 0.6 }, 'Beach resident': { beach: 0.5 }, 'Village regular': { casual: 0.6 } };
+const homeHotelOf = f => (f.home && f.home.cat === 'hotel' ? (/^Hill/.test(f.home.name) ? 'Hill Hotel restaurant' : 'Hotel restaurant') : null);
+const fbLoad = q => { let n = 0; for (const g of people) if (!g.idle && g.type !== 'staff' && g.goal === q && (g.path || g.poi === q)) n++; return n * (PLAN.guests / N_PEOPLE) / (FB_SEATS[FB_KIND(q.name)] * (q.name === 'Hill Hotel restaurant' ? 0.5 : 1)); };
+function mealDue(f, h) {
+  if (f.type === 'staff' || f.type === 'crew') return null;
+  const meal = Object.keys(MEALS).find(m => h >= MEALS[m][0] && h < MEALS[m][1]); if (!meal) return null;
+  const d = dayIndex(); if (!f.ate || f.ate.day !== d) f.ate = { day: d };
+  if (f.ate[meal]) return null;
+  const home = (f.type === 'resident' && meal === 'breakfast' && rand() < 0.7) || (f.type === 'yachtguest' && meal === 'breakfast') || (f.home && f.home.cat === 'villa' && meal === 'breakfast');   // breakfast at home, aboard, or delivered to the villa
+  if (home || !FB_PREF[f.type] || !FB_PREF[f.type][meal]) { f.ate[meal] = 'home'; return null; }
+  f.ate[meal] = true; f.mealNow = meal; f.mealCut = false; return meal; }        // arrivals spread by the stay cut in the crowd step (3–48 min)
+function mealPending(f, h) {                                                     // a meal window is open and this guest has not eaten in it (no side effects)
+  if (f.type === 'staff' || f.type === 'crew' || !FB_PREF[f.type]) return false;
+  const meal = Object.keys(MEALS).find(m => h >= MEALS[m][0] && h < MEALS[m][1]); if (!meal) { f.mealCut = false; return false; }
+  return !(f.ate && f.ate.day === dayIndex() && f.ate[meal]); }
+function pickOutlet(f, meal) {
+  const pref = FB_PREF[f.type][meal], prof = PROFILE_FB[f.profile && f.profile.name] || {}, own = homeHotelOf(f), here = (f.poi && f.poi.p) || (f.pos);
+  const cand = (POI.food || []).filter(q => { const k = FB_KIND(q.name); if (!FB_SERVES[k] || !FB_SERVES[k].includes(meal) || pref[k] === undefined) return false;
+    if (k === 'club' && f.type !== 'member' && f.type !== 'resident') return false; if (k === 'hotel' && meal === 'breakfast' && q.name !== own) return false; return true; });
+  if (!cand.length) return poiAny('food');
+  const U = cand.map(q => { const k = FB_KIND(q.name); return pref[k] + (prof[k] || 0) + (q.name === own ? 0.6 : 0) - 1.2 * (here ? here.distanceTo(q.p) / 1000 : 0) - 3 * Math.max(0, fbLoad(q) - 0.8); });
+  const m = Math.max(...U), w = U.map(u => Math.exp((u - m) / 0.6)), tot = w.reduce((a, b) => a + b, 0); let r = rand() * tot;
+  for (let i = 0; i < cand.length; i++) { r -= w[i]; if (r <= 0) return cand[i]; } return cand[cand.length - 1]; }
 const pickW = (f, cats) => { const ws = cats.map(c => (f.profile && f.profile.w[c]) || 1), tot = ws.reduce((a, b) => a + b, 0); let r = rand() * tot; for (let i = 0; i < cats.length; i++) { r -= ws[i]; if (r <= 0) return cats[i]; } return cats[cats.length - 1]; };
 function wantCat(f) {
   const h = hourOf(), isRes = f.type === 'resident', P = (...c) => pickW(f, c);
@@ -1907,15 +1947,20 @@ function wantCat(f) {
   if (f.runs && (between(h, 6, 8.5) || between(h, 17.5, 19.5)) && rand() < 0.5) return 'promenade';       // running is an activity of a guest
   if (f.type === 'day' && (h < 10 || h >= 17.6)) return 'home';                                          // day visitors: on the island 10–18
   if (f.type === 'member' && h >= 21) return 'home';
-  if (f.type === 'crew') return between(h, 22, 7) ? 'home' : P('marina', 'village', 'promenade', 'beach', 'retail', 'food', 'store');   // crews: mostly aboard and around the marina, the village in the evening
+  if (f.type === 'crew') {                                                     // crews (founder 2026-10-20): work aboard, breaks and meals in the crew lounge, workouts in the crew gym
+    if (between(h, 22.5, 6.5)) return 'home';
+    if (between(h, 6.5, 8.5)) return P('crewgym', 'crewlounge', 'marina');                       // morning: workout, coffee in the lounge, then aboard
+    if (between(h, 12, 14)) return rand() < 0.7 ? 'crewlounge' : P('marina', 'food');           // lunch: mostly the lounge canteen
+    if (between(h, 17, 22.5)) return P('crewlounge', 'crewlounge', 'crewgym', 'village', 'food');   // off duty: the lounge first
+    return rand() < 0.35 ? P('crewlounge', 'crewgym') : P('marina', 'store', 'village'); }       // the working day: aboard and provisioning, breaks in the lounge or the gym
+  const meal = mealDue(f, h); if (meal) return 'food';                                           // meals first: one per window, outlet by the choice model below
   const ev = eventsNow(h).filter(e => !e.who || e.who === f.type || (e.who === 'guest' && f.type === 'hotel'));
   if (ev.length && rand() < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue; }
   if (between(h, 8, 21) && rand() < 0.12) return 'walk';                                                  // a walk for its own sake: promenade, marina, beach, village (founder 2026-10-19)
-  if ((between(h, 12.3, 14.2) || between(h, 19, 21.5)) && rand() < 0.45) return 'food';                 // meal times: any F&B outlet on the island
   if (f.type === 'day') return P('village', 'beach', 'retail', 'marina', 'promenade', 'food');
   if (f.type === 'yachtguest') return between(h, 19, 23) ? P('village', 'food', 'marina') : P('marina', 'village', 'beach', 'spa', 'retail');
   if (f.type === 'member') return between(h, 19, 21) ? P('club', 'food') : P('club', 'beach', 'spa', 'sport', 'village');
-  if (between(h, 7, 9)) return isRes ? P('sport', 'home', 'promenade') : P('food', 'sport', 'home', 'beach');
+  if (between(h, 7, 9)) return isRes ? P('sport', 'home', 'promenade') : P('sport', 'home', 'beach');   /* breakfast is a meal now (mealDue) */
   if (between(h, 9, 12.5)) return isRes ? P('marina', 'spa', 'beach', 'home') : P('beach', 'spa', 'marina', 'sport', 'home');
   if (between(h, 12.5, 14)) return isRes ? P('village', 'beach', 'home', 'food') : P('beach', 'village', 'food');
   if (between(h, 14, 17)) return isRes ? P('marina', 'beach', 'spa', 'home') : P('beach', 'spa', 'promenade', 'retail', 'home');
@@ -2003,7 +2048,7 @@ function person(i, type, home) {
   const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 20, heading: 0, visible: true, goal: null, task: '', runs: false };
   f.baseSpeed = f.speed; setType(f, type); people.push(f); return f;
 }
-function setType(f, type) { f.type = type; f.profile = anyOf(PROFILES[type] || PROFILES.hotel); f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < (f.profile.runs ? 0.6 : 0.08); crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true;
+function setType(f, type) { f.type = type; f.ate = null; f.mealNow = null; f.mealCut = false;   /* a reused slot starts its meals afresh */ f.profile = anyOf(PROFILES[type] || PROFILES.hotel); f.runs = (type === 'hotel' || type === 'resident' || type === 'member') && rand() < (f.profile.runs ? 0.6 : 0.08); crowdBody.setColorAt(f.i, new THREE.Color(COL[type])); crowdBody.instanceColor.needsUpdate = true;
   const dc = new THREE.Color(dotColourOf(type, dotMode)); peopleDots.geometry.attributes.color.setXYZ(f.i, dc.r, dc.g, dc.b); peopleDots.geometry.attributes.color.needsUpdate = true; }   // dot colour: guests blue, staff dark
 if (has('apart hotel Building.001 | building')) { addPoi('staff', 'Management housing', centreOf('apart hotel Building.001 | building')); addPoi('boh', 'Administration office', centreOf('apart hotel Building.001 | building')); }   /* management live and work in the office building */
 const hotelHomes = () => { const beach = POI.hotel.filter(q => /^Beach/.test(q.name)), hill = POI.hotel.filter(q => /^Hill/.test(q.name)), apart = POI.hotel.filter(q => /^Apart/.test(q.name)), r = rand(); return r < 0.58 || !hill.length ? beach[0] : r < 0.88 || !apart.length ? anyOf(hill) : anyOf(apart); };   /* by keys: Beach 240, Hill 120, apart-hotel 46 */
@@ -2045,7 +2090,7 @@ function podCall(f, Q = podJobs, noun = 'Pod', who = 'guest') {
 }
 function startWalk(f, to, text) { let pts = walkBetween(f.poi, to); if (!pts) return false; if (f.pos && pts.length && f.pos.distanceTo(pts[0]) > 1.5) pts = [f.pos.clone(), ...pts]; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; return true; }
 let WALK_POIS = [];                                                                       // filled after the POIs exist: promenade, marina, beaches, village, shops
-const MILL = { store: 15, village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, food: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
+const MILL = { crewlounge: 12, crewgym: 10, store: 15, village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, food: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
 function stepPeople(dt) {
   if (!WALK_POIS.length) WALK_POIS = ['promenade', 'marina', 'beach', 'village', 'retail'].flatMap(c => POI[c] || []);
   for (const f of people) {
@@ -2053,6 +2098,7 @@ function stepPeople(dt) {
     if (!f.path) {
       if (f.ride && f.ride.waiting) { if (f.visible && simT - f.ride.since > (f.ride.staff ? 75 : 40)) { f.ride = null; f.wait = 1; f.task = ''; } continue; }   // at the stop; 40 simulated minutes without a pod: walk instead
       f.wait -= dt;
+      if (f.wait > 50 && !f.leaving && !f.mealCut && mealPending(f, hourOf())) { f.wait = 3 + rand() * 45; f.mealCut = true; }   /* a meal window opens: a long stay ends some time in the next 3–48 min (founder 2026-10-20) */
       if (!f.indoor && f.wait > 6 && f.pos && f.type !== 'staff' || (f.type === 'staff' && f.wait > 6 && f.pos && f.at !== 'staff')) {   // stroll around the place
         f.stroll = (f.stroll ?? rand() * 12) - dt;
         if (f.stroll <= 0) {
@@ -2066,7 +2112,9 @@ function stepPeople(dt) {
       if (f.wait > 0) continue;
       if (f.leaving) { f.idle = true; f.visible = false; f.leaving = false; continue; }          // boarded a buggy / took the shuttle home
       if (f.type === 'staff' && f.role) { const t = staffNext(f); if (!t) { f.wait = 10 + rand() * 20; continue; } f.meal = !!t.meal; if (!staffGo(f, t.to, t.text)) f.wait = 10 + rand() * 20; continue; }
-      const cat = wantCat(f); const to = cat === 'home' ? f.home : cat === 'walk' ? anyOf(WALK_POIS.filter(q => q !== f.poi && q.p.distanceTo(f.poi.p) < 700)) : poiAny(cat); if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
+      const cat = wantCat(f); const to = cat === 'home' || (cat === 'marina' && f.type === 'crew') ? f.home : cat === 'walk' ? anyOf(WALK_POIS.filter(q => q !== f.poi && q.p.distanceTo(f.poi.p) < 700))
+        : cat === 'food' ? (f.mealNow ? pickOutlet(f, f.mealNow) : anyOf(POI.food.filter(q => q.name !== 'Members Club' || f.type === 'member' || f.type === 'resident')))   /* a meal: the choice model; otherwise a drink or a snack anywhere open to this guest */
+        : poiAny(cat);   /* a crew member's 'marina' is the own boat, not a random berth (founder 2026-10-20) */ if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
       f.walkOnly = cat === 'walk'; f.indoor = false;
       if ((f.type === 'day' || f.type === 'member') && cat === 'home') f.leaving = true;             // walks to the Terminal and leaves on the shuttle
       const ev = eventAt(cat); if (ev && cat !== 'home') ops.eventsAttended++;
@@ -2092,6 +2140,8 @@ function stepPeople(dt) {
     if (f.s >= f.len && !f.leaving && f.goal.cat === 'store') takeShop(f.goal.name, 3);
     if (f.s >= f.len && !f.leaving && (f.goal.cat === 'food' || f.goal.cat === 'club')) eatAt(f.goal.cat === 'club' ? 'Members Club' : f.goal.prod, PLAN.guests / N_PEOPLE);   /* one cover per visit, at the plan's scale */
     if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.type === 'staff' && f.role ? (f.goal === f.home ? 20 + rand() * 20 : f.meal ? 25 + rand() * 15 : 40 + rand() * 80) : f.walkOnly ? 6 + rand() * 12 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300;
+      if (f.mealNow && f.at === 'food') { f.wait = f.mealNow === 'breakfast' ? 30 + rand() * 25 : f.mealNow === 'lunch' ? 50 + rand() * 40 : 75 + rand() * 60; f.mealNow = null; }   /* a meal lasts a meal: breakfast 30–55, lunch 50–90, dinner 75–135 min */
+      else if (f.at === 'crewgym') f.wait = 60 + rand() * 45; else if (f.at === 'crewlounge') f.wait = 90 + rand() * 150;   /* crew: a workout 60–105 min, the lounge 1.5–4 h */
       if ((HOME_CATS.has(f.at) || f.type === 'staff' && f.goal === f.home) && !f.leaving) f.indoor = rand() < INDOOR_SHARE; f.meal = false; }                               /* at home most people are inside: not drawn, still counted */   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
 }
@@ -2156,6 +2206,8 @@ function updateDash() {
               arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), service: (() => { const day = { water: 0, pump: 0, kwh: 0 }; for (const b of berths) if (b.occupied) { day.water += YS_RATE.water[b.cls]; day.pump += YS_RATE.pump[b.cls]; day.kwh += YS_RATE.kwh[b.cls]; } const dDiesel = Object.entries(YACHT_PAIRS).reduce((a, [c, p]) => a + p.length * YS_RATE.diesel[c], 0), D0 = 4;   /* month to date = days 1-4 at today's mix + today as simulated */
                 return { month: { water: Math.round(D0 * day.water + ys.water), pump: Math.round(D0 * day.pump + ys.pump), diesel: Math.round(D0 * dDiesel + ys.diesel), kwh: Math.round(D0 * day.kwh + ys.kwh) }, log: ys.log.slice(0, 14) }; })(), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
     booked,
+    crewAt: (() => { const c = { lounge: 0, gym: 0, aboard: 0, ashore: 0, total: 0, scale: 4 }; for (const f of people) { if (f.type !== 'crew' || f.idle) continue; c.total++; if (f.path) c.ashore++; else if (f.at === 'crewlounge') c.lounge++; else if (f.at === 'crewgym') c.gym++; else if (f.poi === f.home) c.aboard++; else c.ashore++; } return c; })(),   /* crews by place, demo scale (× 4 = plan): the Marina support card reads it (founder 2026-10-20) */
+    meals: (() => { const m = {}; for (const f of people) if (!f.idle && f.type !== 'staff' && f.type !== 'crew' && f.goal && f.goal.cat === 'food' && f.poi === f.goal && !f.path) m[f.poi.name] = (m[f.poi.name] || 0) + 1; return m; })(),   /* guests at each F&B outlet now, demo scale */
     supply: { store: STORE, outlets, calls: supply.calls, inKg: supply.inKg, wasteOutKg: supply.wasteOutKg, truckKg: supply.truckKg, linenKg: supply.linenKg, wasteKg: Math.round(supply.wasteKg), wasteYard: Math.round(wasteYard), log: supply.log.slice(0, 12), staffShuttle: ambient.filter(f => /^ST-/.test(f.id)).map(f => f.task), meals: Math.round(supply.meals), vessels: ambient.filter(f => f.type === 'W2').map(f => f.task) },
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
     ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`),
