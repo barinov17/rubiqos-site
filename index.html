@@ -1440,20 +1440,23 @@ const goods = { breakfast: ['Villa breakfast, hot box 62 °C', 'Breakfast for 2,
   amenity: ['Grocery order', 'Wine and snacks', 'Sunscreen and beach kit', 'Guest parcel', 'First-aid kit', 'Toiletries'], office: ['Mail and parcels from the mainland', 'Printer paper and toner', 'Coffee and snacks for the office'],
   boat: [['Yacht provisioning, 3 crates', darkStore], ['Crew groceries', darkStore], ['Ice and drinks', darkStore], ['Fenders and mooring lines', chandlery], ['Spare parts and filters', chandlery], ['Charts and safety gear', chandlery]] };
 const nearestOf = (list, p) => list.reduce((a, q) => (q.p.distanceTo(p) < a.p.distanceTo(p) ? q : a));
+const apartHome = { name: 'Apart-hotel', p: APART_P };
+const orderTo = () => { const r = rand(); return r < 0.35 ? anyOf(hotels) : r < 0.42 ? apartHome : r < 0.75 && residences.length ? anyOf(residences) : anyOf(villas); };   // by guests in house: hotels 360 keys, apart-hotel 46, residences 208, villas 18
 for (let k = 0; k < 12; k++) follower('L5', `D${k + 8}`, 'road', 9, f => {
   const h = hourOf(), from = f.place || darkStore.p;
-  if (f.out) { f.out = false; if (f.done) { f.done(); f.done = null; } const base = f.base || darkStore; return trip(f, from, base.p, `Empty · back to ${base.name}`); }
+  if (f.out) { f.out = false; f.atBase = true; if (f.done) { f.done(); f.done = null; } const base = f.base || darkStore; return trip(f, from, base.p, `Empty · back to ${base.name}`); }
+  if (f.atBase) { f.atBase = false; f.task = `Waiting for the next order at ${(f.base || darkStore).name}`; f.wait = 2 + rand() * 18; return null; }   // orders come one by one, not as a wave: no convoys (founder 2026-10-20)
   f.out = true; const r = rand();
   const kind = between(h, 7, 9.5) ? 'breakfast' : between(h, 12, 14) || between(h, 19, 21) ? 'room' : between(h, 10, 12) || between(h, 15, 18) ? (r < 0.35 ? 'luggage' : r < 0.65 ? 'boat' : r < 0.75 ? 'office' : 'amenity') : r < 0.35 ? 'boat' : 'amenity';
   if (kind === 'luggage') { f.base = { name: 'the warehouse', p: A.boh }; const hm = anyOf(hotels); return trip(f, from, hm.p, `${anyOf(goods.luggage)} · ${hm.name}`); }
   if (kind === 'boat') { const bs = berths.filter(b => b.occupied); if (bs.length) { const b = anyOf(bs), [what, src] = anyOf(goods.boat); f.base = src; f.done = () => takeShop(src.outlet, 6);
     return trip(f, from, b.pos, `${what} · ${src.name} → berth ${b.berth_id}`); } }
   if (kind === 'office') { f.base = darkStore; f.done = () => takeShop('Dark Store', 3); return trip(f, from, ADMIN_P, `${anyOf(goods.office)} · Dark Store → Administration office`); }
-  if (kind === 'breakfast' || kind === 'room') { const to = kind === 'breakfast' ? anyOf(villas) : anyOf(homes), kt = nearestOf(kitchens, to.p); f.base = kt; f.done = () => eatAt(kt.outlet, 2);
+  if (kind === 'breakfast' || kind === 'room') { const to = kind === 'breakfast' ? anyOf(villas) : orderTo(), kt = nearestOf(kitchens, to.p); f.base = kt; f.done = () => eatAt(kt.outlet, 2);
     return trip(f, from, to.p, `${anyOf(goods[kind])} · ${kt.name} → ${to.name}`); }
-  const to = anyOf(homes); f.base = darkStore; f.done = () => takeShop('Dark Store', 4);
+  const to = orderTo(); f.base = darkStore; f.done = () => takeShop('Dark Store', 4);
   return trip(f, from, to.p, `${anyOf(goods.amenity)} · Dark Store → ${to.name}`);
-}, darkStore.p);
+}, darkStore.p).wait = rand() * 40;   // the first orders spread over the first 40 minutes
 
 // --- L3 service carts (register 16, demo 6): maintenance, housekeeping, landscape and beach
 const wo = ['AC filter and refrigerant', 'Pool pump bearing', 'Smart lock battery', 'Irrigation valve', 'Lighting fault, terrace', 'Water heater sensor'];
