@@ -1000,20 +1000,17 @@ function renderLegend(mode) {
   const chip = (bg, icon) => `<span class="vic" style="background:${hx(bg)}"><svg viewBox="0 0 24 24"><path d="${ICON[icon] || ICON.star}"/></svg></span>`;
   const row = (title, cells) => { const r = document.createElement('div'); r.className = 'row'; r.innerHTML = `<span class="grp">${title}</span>` + cells.join(''); bar.appendChild(r); };
   const actor = (sw, label, id, desc) => `<div class="actor">${sw}${label}${id ? `<b id="cnt-${id}"></b>` : ''}${desc ? `<span class="desc">${desc}</span>` : ''}</div>`;
-  row('People', ['hotel', 'resident', 'day', 'yachtguest', 'member', 'crew', 'staff'].map(t => actor(`<span class="dot" style="background:${hx(dotColourOf(t, mode))}"></span>`, TYPES[t].title, t, TYPES[t].role)));
+  row('People', [actor(`<span class="dot" style="background:${hx(dotColourOf('hotel', mode))}"></span>`, 'Guests', 'guests', 'Hotel guests, residents, day visitors, yacht guests and members: one colour on the map.'),
+    ...['crew', 'staff'].map(t => actor(`<span class="dot" style="background:${hx(dotColourOf(t, mode))}"></span>`, TYPES[t].title, t, TYPES[t].role))]);   // the guest kinds are one marker on the map, so one row (founder 2026-10-20)
   const vbg = t => mode === 'schematic' ? '#1d3a8f' : FUNC_VEH(t);
   row('On land', ['L1', 'L2', 'L3', 'L4', 'L5'].map(t => actor(chip(vbg(t), VEH_ICON[t]), TYPES[t].title, t, TYPES[t].role)));
   row('On water · air', ['W1', 'W2', 'W3', 'Y2', 'A1'].map(t => actor(chip(vbg(t), VEH_ICON[t]), TYPES[t].title, t, TYPES[t].role)));
-  const pc = (name, svc) => mode === 'schematic' ? (svc ? SCHEM_PIN.service : SCHEM_PIN.product) : mode === 'functional' ? FUNC_PIN(name) : pinColour(name, STDP);
-  const PLACES = [['Accommodation', 'Beach Hotel', 'hotel'], ['Food and beverage', 'Restaurant', 'utensils'], ['Amenities', 'Spa & Wellness', 'leaf'], ['Marina Village', 'Marina Village', 'store'], ['Marina', 'Marina', 'anchor'],
-    ['Arrivals', 'Arrivals Reception', 'bell'], ['Administration', 'Administration office', 'briefcase', 1], ['Fleet Hub', 'FH Fleet Hub', 'car', 1], ['Utilities', 'IF Water, power, sewage', 'zap', 1], ['Stores', 'WH-4 Dry storage', 'package', 1], ['Waste', 'W Waste management', 'trash', 1]];
-  row('Places', PLACES.map(([label, name, icon, svc]) => actor(chip(pc(name, svc), icon), label)));
-  if (mode === 'functional') row('Ground', [['Guest drop-off', FUNC.padGuest], ['Back-of-house drop-off', FUNC.padBoh], ['Service road', FUNC.roadS], ['Walkway', FUNC.path], ['Lawn', FUNC.lawn], ['Beach', FUNC.beach], ['Boat route', FUNC.route]].map(([l, c]) => actor(`<span class="sq" style="background:${hx(c)}"></span>`, l)));
   updateActorCounts();
 }
 function updateActorCounts() {
   const n = {}; for (const f of people) if (!f.idle) n[f.type] = (n[f.type] || 0) + 1;
   for (const t of ['hotel', 'resident', 'day', 'yachtguest', 'member', 'crew', 'staff']) if ($('cnt-' + t)) $('cnt-' + t).textContent = n[t] || 0;
+  if ($('cnt-guests')) $('cnt-guests').textContent = ['hotel', 'resident', 'day', 'yachtguest', 'member'].reduce((a, t) => a + (n[t] || 0), 0);
   const v = {}; for (const f of ambient) { (v[f.type] ||= [0, 0])[1]++; if (f.path) v[f.type][0]++; }
   for (const t of ['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2', 'W3', 'A1']) { const x = v[t] || [0, 0]; if ($('cnt-' + t)) $('cnt-' + t).textContent = `${x[0]}/${x[1]}`; }
   if ($('cnt-Y2')) $('cnt-Y2').textContent = `${yachtMovers.filter(y => y.busy).length}/${berths.filter(b => b.occupied).length}`;   // yachts under way / moored in the marina
