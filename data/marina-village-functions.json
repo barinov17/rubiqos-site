@@ -2,7 +2,7 @@
  "apart hotel Pavilion.005": {
   "category": "fnb",
   "function": "seafood grill restaurant",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 6.2
  },
  "apart hotel Pavilion.008": {
@@ -32,37 +32,37 @@
  "apart hotel Pavilion.012": {
   "category": "fnb",
   "function": "yacht-club bar",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 5.1
  },
  "apart hotel Pavilion.007": {
   "category": "fnb",
   "function": "sunset cocktail bar",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 6.2
  },
  "apart hotel Pavilion.002": {
   "category": "fnb",
   "function": "wine bar",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 6.2
  },
  "apart hotel Pavilion.001": {
   "category": "fnb",
   "function": "all-day café & bakery",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 3.9
  },
  "apart hotel Pavilion.006": {
   "category": "fnb",
   "function": "coffee & juice bar",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 5.1
  },
  "apart hotel Pavilion.003": {
   "category": "fnb",
   "function": "gelato café",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 3.9
  },
  "apart hotel Pavilion.004": {
@@ -74,31 +74,31 @@
  "Pavilion module.001": {
   "category": "workshops",
   "function": "crafts workshop",
-  "color": "#81B29A",
+  "color": "#5A7FA8",
   "height_m": 3.9
  },
  "Pavilion module.002": {
   "category": "services",
   "function": "adults-only lounge",
-  "color": "#F2CC8F",
+  "color": "#8FBCE6",
   "height_m": 6.2
  },
  "Pavilion.001": {
   "category": "workshops",
   "function": "culinary workshop",
-  "color": "#81B29A",
+  "color": "#5A7FA8",
   "height_m": 3.9
  },
  "Pavilion module.003": {
   "category": "services",
   "function": "convenience store",
-  "color": "#F2CC8F",
+  "color": "#8FBCE6",
   "height_m": 3.9
  },
  "Pavilion module.004": {
   "category": "fnb",
   "function": "italian casual restaurant",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 6.2
  },
  "Pavilion module.005": {
@@ -110,13 +110,13 @@
  "Pavilion module.006": {
   "category": "services",
   "function": "beauty salon",
-  "color": "#F2CC8F",
+  "color": "#8FBCE6",
   "height_m": 6.2
  },
  "Pavilion module.007": {
   "category": "services",
   "function": "barber",
-  "color": "#F2CC8F",
+  "color": "#8FBCE6",
   "height_m": 5.1
  },
  "Pavilion module.008": {
@@ -128,13 +128,13 @@
  "Pavilion.002": {
   "category": "services",
   "function": "manicure",
-  "color": "#F2CC8F",
+  "color": "#8FBCE6",
   "height_m": 5.1
  },
  "Pavilion module.009": {
   "category": "services",
   "function": "pedicure",
-  "color": "#F2CC8F",
+  "color": "#8FBCE6",
   "height_m": 5.1
  },
  "Pavilion module.010": {
@@ -146,7 +146,7 @@
  "Pavilion module.011": {
   "category": "services",
   "function": "tattoo studio",
-  "color": "#F2CC8F",
+  "color": "#8FBCE6",
   "height_m": 5.1
  },
  "Pavilion module.012": {
@@ -164,7 +164,7 @@
  "Pavilion module.014": {
   "category": "fnb",
   "function": "asian restaurant",
-  "color": "#E07A5F",
+  "color": "#1F4E9C",
   "height_m": 6.2
  },
  "Pavilion module.015": {

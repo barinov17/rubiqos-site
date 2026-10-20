@@ -1,7 +1,7 @@
 {
- "version": "v079",
- "exported": "2026-10-19 23:49",
- "changes": "changes/v079.json",
+ "version": "v080",
+ "exported": "2026-10-19 23:53",
+ "changes": "changes/v080.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -1970,7 +1970,7 @@
    "verts": 4
   },
   {
-   "name": "Marina pier path 1",
+   "name": "Marina pier walkway 1",
    "type": "MESH",
    "collection": "04_Mobility/ROADS_GUEST",
    "parent": null,
@@ -1982,13 +1982,13 @@
    "dwg_handle": null,
    "dwg_block": null,
    "height_m": null,
-   "derived": "design edit e138",
+   "derived": null,
    "hand_made": true,
    "material": "Guest road surface",
    "verts": 4
   },
   {
-   "name": "Marina pier path 2",
+   "name": "Marina pier walkway 2",
    "type": "MESH",
    "collection": "04_Mobility/ROADS_GUEST",
    "parent": null,
@@ -2000,13 +2000,13 @@
    "dwg_handle": null,
    "dwg_block": null,
    "height_m": null,
-   "derived": "design edit e138",
+   "derived": null,
    "hand_made": true,
    "material": "Guest road surface",
    "verts": 4
   },
   {
-   "name": "Marina pier path 3",
+   "name": "Marina pier walkway 3",
    "type": "MESH",
    "collection": "04_Mobility/ROADS_GUEST",
    "parent": null,
@@ -2018,7 +2018,7 @@
    "dwg_handle": null,
    "dwg_block": null,
    "height_m": null,
-   "derived": "design edit e138",
+   "derived": null,
    "hand_made": true,
    "material": "Guest road surface",
    "verts": 4
