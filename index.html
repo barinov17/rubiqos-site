@@ -1885,7 +1885,7 @@ function stepPeople(dt) {
 function drawPeople() {
   if (peopleDots.visible) {                                                   // schematic: one dot per person, colour per vertex (guest / staff); the dot keeps the person's index
     const a = peopleDots.geometry.attributes.position.array;
-    for (const f of people) { const on = peopleOn && f.visible && !f.indoor && f.pos; a[f.i * 3] = on ? f.pos.x : 0; a[f.i * 3 + 1] = on ? f.pos.y + 1.2 : -1e4; a[f.i * 3 + 2] = on ? f.pos.z : 0; }
+    for (const f of people) { const on = peopleOn && f.visible && !f.indoor && f.pos; a[f.i * 3] = on ? f.pos.x : 0; a[f.i * 3 + 1] = on ? f.pos.y + 2.8 : -1e4; a[f.i * 3 + 2] = on ? f.pos.z : 0; }
     peopleDots.geometry.attributes.position.needsUpdate = true; }
   if (!crowdBody.visible) return;                                              // schematic style: the dots are enough
   for (const f of people) {
@@ -2126,13 +2126,37 @@ function functionalMat(o) {
   if (!cat) return null;
   return flatMat(F[cat], 0.8);                                                // one flat colour per building, roofs included (founder 2026-10-20)
 }
+// standard style extras (founder 2026-10-20): a fine grain on lawns, roads and beaches so they do not read as plastic; brown roofs on the single-mesh
+// village modules (up-facing faces of the one material) via a shader override; the reception's shingle roofs and the beach recoloured once at load.
+const grainOf = new Map(), roofOf = new Map();
+function grained(mat, amt = 0.08) {
+  if (Array.isArray(mat)) return mat.map(x => grained(x, amt)); const k = mat.uuid; if (grainOf.has(k)) return grainOf.get(k);
+  const m = mat.clone(); m.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGrainP;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvGrainP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vGrainP;\nfloat grainHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n{ float g = grainHash(floor(vGrainP.xz * 1.5)) - 0.5; diffuseColor.rgb *= 1.0 + g * ' + (amt * 2).toFixed(3) + '; }'); };
+  m.customProgramCacheKey = () => 'grain' + amt; grainOf.set(k, m); return m; }
+function roofed(mat, hex) {
+  if (Array.isArray(mat)) return mat.map(x => roofed(x, hex)); const k = mat.uuid + hex; if (roofOf.has(k)) return roofOf.get(k);
+  const c = new THREE.Color(hex), m = mat.clone(); m.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRoofN;').replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvRoofN = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vRoofN;').replace('#include <color_fragment>', '#include <color_fragment>\nif (vRoofN.y > 0.85) diffuseColor.rgb = vec3(' + c.r.toFixed(4) + ', ' + c.g.toFixed(4) + ', ' + c.b.toFixed(4) + ');'); };
+  m.customProgramCacheKey = () => 'roof' + hex; roofOf.set(k, m); return m; }
+const ROOF_BROWN = 0x9c8269;                                                 // the 'Roof brown' of the spa, villas and the Beach Club
+model.traverse(o => { if (!o.isMesh) return; for (const m of (Array.isArray(o.material) ? o.material : [o.material])) { if (/^Shingle roof/.test(m.name || '') && !m.userData.recoloured) { m.color.set(ROOF_BROWN); m.userData.recoloured = true; } if (/^DWG BEACH$/.test(m.name || '') && !m.userData.recoloured) { m.color.set(0xebd48f); m.userData.recoloured = true; } } });   // reception + marina support roofs brown; the beach yellower (founder 2026-10-20)
+function standardMat(o) {
+  const base = o.userData.baseMat, g = meshGroup(o), t = meshTop(o).name;
+  if (o.name === 'Sea' || o.name === 'Shallow water' || g === 'zoning') return base;
+  if (g === 'terrain' || g === 'landscape' || g === 'mobility') return grained(base);
+  if (FUNC_VILLAGE.test(t)) return roofed(base, ROOF_BROWN);
+  return base; }
 let mapStyle = 'standard';
 function applyMapStyle(name) {
   const sch = name === 'schematic', st = sch ? SCHEMATIC : STD, matFn = sch ? schematicMat : name === 'functional' ? functionalMat : null; mapStyle = name;
   model.traverse(o => {
     if (!o.isMesh) return;
     if (!o.userData.baseMat) o.userData.baseMat = o.material;
-    const m = matFn ? matFn(o) : null; o.material = m || o.userData.baseMat;
+    const m = matFn ? matFn(o) : null; o.material = m || (name === 'standard' ? standardMat(o) : o.userData.baseMat);
   });
   skyMat.uniforms.top.value.set(st.sky[0]); skyMat.uniforms.horizon.value.set(st.sky[1]); scene.fog.color.set(st.fog); scene.fog.near = st.fogRange[0]; scene.fog.far = st.fogRange[1];
   renderer.toneMapping = st.toneMapping; renderer.toneMappingExposure = st.exposure; hemi.color.set(st.hemi[0]); hemi.groundColor.set(st.hemi[1]); hemi.intensity = st.hemi[2]; sun.color.set(st.sun[0]); sun.intensity = st.sun[1]; sun.shadow.intensity = st.shadow ?? 1;
