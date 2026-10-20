@@ -54,7 +54,7 @@ const PRODUCTS = [
     produces: 'Sunbed days · kiosk covers · beach service', capacity: 160, objects: { 'Sunbeds': 120, 'Cabanas': 8, 'Kiosk and bar seats': 32 }, staff: 14, per: { water: 20, energy: 2, food: 0.3, laundry: 1.2, waste: 0.3 } },
   { id: 'club-beach', name: 'Club Beach', zone: 'Z06', op: 'beachclub', unit: 'guests', live: ['South Beach'], what: 'The south beach by the Beach Club: sunbeds on the sand, beach service from the club, the water-sports base.',
     produces: 'Sunbed days · beach service from the club · launch point for water activities', capacity: 120, objects: { 'Sunbeds': 100, 'Beach service points': 2 }, staff: 10, per: { water: 15, energy: 1, food: 0.2, laundry: 1.0, waste: 0.2 } },
-  { id: 'water-sports', name: 'Water activities', noSim: true, zone: 'Z06', op: 'beachclub', unit: 'guests at once', turns: 4, live: [], what: 'Water-sports base on the Club Beach: boards, kayaks, dinghies, jet skis, the dive boat. Not on the master plan yet.',
+  { id: 'water-sports', name: 'Water activities', zone: 'Z11', op: 'beachclub', unit: 'guests at once', turns: 4, live: ['Water activities'], what: 'Water-sports pavilion on the south beach east of the Beach Club: boards, kayaks, dinghies, jet skis, the dive boat.',
     produces: 'Rentals and lessons · dive and snorkel trips · sunset paddles', capacity: 60, objects: { 'SUP boards and kayaks': 20, 'Sailing dinghies': 6, 'Jet skis': 6, 'Dive boat seats': 12, 'Lesson slots a day': 24 }, staff: 12, per: { water: 15, energy: 2, food: 0.05, laundry: 0.3, waste: 0.1 } },
   { id: 'spa', name: 'Spa & Wellness', zone: 'Z06', op: 'spa', unit: 'people at once', turns: 4, live: ['Spa & Wellness'], what: 'Spa on the second hill: treatment rooms, thermal area, longevity clinic.',
     produces: 'Treatments · thermal passes · the longevity programme', capacity: 90, objects: { 'Treatment rooms': 16, 'Couple suites': 6, 'Longevity clinic rooms': 2, 'Thermal area places': 40, 'Relaxation lounge places': 20 }, staff: 32, per: { water: 180, energy: 12, food: 0.2, laundry: 2.0, waste: 0.3 } },
@@ -200,7 +200,7 @@ for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTota
 // --- card html
 const opTag = id => '';   // operators are not shown on the cards for now (founder 2026-10-19); the OP data stays for later
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-const NO_MODEL = new Set(['apart-hotel', 'water-sports', 'network', 'darkstore', 'guestservices', 'medical', 'security', 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
+const NO_MODEL = new Set(['apart-hotel', 'network', 'darkstore', 'guestservices', 'medical', 'security', 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
 const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3>${NO_MODEL.has(c.id) ? '<span class="nomodel" title="No physical object on the master plan yet"></span>' : ''}</div>`;   // no zone id and no colour dot (founder 2026-10-19)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
 const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');

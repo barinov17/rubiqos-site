@@ -1154,6 +1154,7 @@ const PRODUCTS = [
   { fp: ['apart hotel Building'], hp: ['apart hotel Building'], name: 'Apart-hotel', zone: 'Z03', p: topOfPrefix('apart hotel Building.002', 7), kpi: { 'Buildings': 3, 'Floors': 5, 'Units': 40, 'Staff': 30 } },
   { fp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], hp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], name: 'Marina Village', zone: 'Z03', p: topOfObj('Point of attraction.004', 4) || topOfPrefix('Pavilion module.008', 7), /* the village's point of attraction (founder 2026-10-19) */ kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
   { fp: [BC_NAME], hp: ['Beach Club', 'Beach club buildings'], name: 'Beach Club', zone: 'Z11', p: topOfObj(BC_NAME, 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
+  { fp: ['Water activities pavilion'], hp: ['Water activities pavilion'], name: 'Water activities', zone: 'Z11', small: true, p: topOfPrefix('Water activities pavilion', 5), kpi: { 'Base': 'kayaks, SUP, dinghies, jet skis', 'Guests at once': 60, 'Lessons a day': 24, 'Staff': 12 } },
   { fp: ['Members Club | arc building', 'Members Club | pavilion'], hp: ['Members Club'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
 ];
 for (const n of [...byName.keys()].filter(n => /^[Vv]illa(\.\d+)?$/.test(n)).sort()) PRODUCTS.push({ fp: [n], fpExact: true, name: n.replace(/^[Vv]illa\.?/, 'Villa ').replace(/Villa $/, 'Villa 1'), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
@@ -1220,7 +1221,7 @@ const ICON = {   // Lucide icons (lucide.dev, ISC licence), 24 x 24 stroke paths
   sailboat: 'M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4ZM21 14 10 2 3 14h18ZM10 2v16',
   plane: 'M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z',
 };
-const PIN_ICON_KEY = name => /Apart-hotel/.test(name) ? 'building' : /Longevity/.test(name) ? 'heartpulse' : /Network/.test(name) ? 'radiotower' : /Hotel$/.test(name) ? 'hotel' : /^Residences/.test(name) ? 'building2' : /^Villa/.test(name) ? 'home' : /Restaurant/.test(name) ? 'utensils'
+const PIN_ICON_KEY = name => /Water activities/.test(name) ? 'sailboat' : /Apart-hotel/.test(name) ? 'building' : /Longevity/.test(name) ? 'heartpulse' : /Network/.test(name) ? 'radiotower' : /Hotel$/.test(name) ? 'hotel' : /^Residences/.test(name) ? 'building2' : /^Villa/.test(name) ? 'home' : /Restaurant/.test(name) ? 'utensils'
   : /Events/.test(name) ? 'music' : /Spa/.test(name) ? 'leaf' : name === 'Marina' ? 'anchor' : /Marina Village/.test(name) ? 'store' : /Beach Club/.test(name) ? 'martini'
   : /Members/.test(name) ? 'star' : /GYM/.test(name) ? 'dumbbell' : /^WH-/.test(name) ? 'package' : /Fleet Hub/.test(name) ? 'car' : /Staff/.test(name) ? 'users' : /Waste/.test(name) ? 'trash' : /Water, power/.test(name) ? 'zap' : /Reception|Arrival/.test(name) ? 'door' : 'star';
 const PIN_ICON_SVG = (c, key) => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.4"/><g transform="translate(5.6 5) scale(0.54)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON[key] || ICON.star}"/></g></svg>`;
@@ -1672,6 +1673,7 @@ for (const n of ['BEACH.001', 'BEACH.003']) { const ms = meshOf(n); if (!ms.leng
   cells.sort((a, b) => (a % bg.W) - (b % bg.W)); for (let i = 0; i < 5; i++) { const k = cells[Math.floor((i + 0.5) / 5 * cells.length)]; if (k !== undefined) addPoi('beach', `${n === 'BEACH.001' ? 'North' : 'South'} beach ${i + 1}`, bg.posOf(k % bg.W, (k / bg.W) | 0)); } }
 for (const o of villageClusters) if (!o.userData.use) addPoi('retail', o.name.replace(/^(Pavilion module|Pavilion|apart hotel Pavilion)\./, 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
 addPoi('beach', 'Beach Club', beachClubP);
+if (has('Water activities pavilion')) addPoi('beach', 'Water activities', centreOf('Water activities pavilion'));   // e139: the water-sports base on the south sand
 addPoi('beach', 'Hotel pool', has('Beach Hotel | pool') ? centreOf('Beach Hotel | pool') : A.hotel);
 addPoi('beach', 'Members Club beach', has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : A.hotel);
 addPoi('spa', 'Spa', A.spa);
@@ -1920,7 +1922,7 @@ function updateDash() {
   const prodOf = f => { const c = f.at, n = (f.poi && f.poi.name) || '';
     return c === 'food' ? (f.poi && f.poi.prod) || null : c === 'hotel' ? (n.startsWith('Hill') ? 'Hill Hotel' : 'Beach Hotel') : c === 'residence' ? (n.includes('BR2') ? 'Residences BR2' : 'Residences BR1') : c === 'villa' ? 'Villas'
       : c === 'restaurant' ? 'Restaurant' : c === 'event' ? 'Events Rotunda' : c === 'spa' ? 'Spa & Wellness' : c === 'sport' ? 'GYM & Sports' : c === 'marina' || c === 'terminal' || c === 'excursion' ? 'Marina'
-      : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? (n.startsWith('North') ? 'North Beach' : n.startsWith('South') ? 'South Beach' : 'Beach Club') : c === 'club' ? 'Members Club' : null; };
+      : c === 'village' || c === 'retail' ? 'Marina Village' : c === 'beach' ? (n.startsWith('North') ? 'North Beach' : n.startsWith('South') ? 'South Beach' : n === 'Water activities' ? 'Water activities' : 'Beach Club') : c === 'club' ? 'Members Club' : null; };
   const pg = {}; for (const f of guests) { if (f.path && !f.strolling) continue; const k = prodOf(f); if (k) pg[k] = (pg[k] || 0) + 1; }
   const products = {}; for (const [k, v] of Object.entries(pg)) products[k] = Math.round(v * scale);
   const byType = {}; for (const f of people) if (!f.idle) byType[f.type] = (byType[f.type] || 0) + 1;
@@ -2031,7 +2033,7 @@ const dotMat = (base = SCHEMATIC.green, dot = SCHEMATIC.greenDot, step = SCHEMAT
 };
 const SCHEM_PIN = { product: '#2457e6', service: '#6b7a96' };
 const hex6 = c => '#' + c.toString(16).padStart(6, '0');
-const FUNC_PIN = name => /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name) ? FUNC.stay : /Restaurant|Members|Beach Club|WH-2/.test(name) ? FUNC.fnb : /Events|Spa|GYM|Longevity/.test(name) ? FUNC.amenity
+const FUNC_PIN = name => /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name) ? FUNC.stay : /Restaurant|Members|Beach Club|WH-2/.test(name) ? FUNC.fnb : /Events|Spa|GYM|Longevity|Water activities/.test(name) ? FUNC.amenity
   : name === 'Marina' ? FUNC.marine : /Arrivals Reception/.test(name) ? FUNC.arrival : /Fleet Hub/.test(name) ? FUNC.transport : /Marina Village/.test(name) ? FUNC.village : /WH-1/.test(name) ? FUNC.laundry : /WH-3/.test(name) ? FUNC.cold : /WH-4/.test(name) ? FUNC.dry : /Waste/.test(name) ? FUNC.waste : /Water, power|Network/.test(name) ? FUNC.utilities : FUNC.boh;   // every pin in its function's colour, the back of house included   // pin colour = the function colour of the map
 const FUNC_VEH = t => /^(L1|L2|W1|W3|A1)$/.test(t) ? FUNC.transport : /^Y/.test(t) ? FUNC.marine : FUNC.boh;   // guest vehicles blue, non-guest (carts, trucks, robots, supply vessel) grey, yachts navy
 const FUNC_LETTER = { L1: 'G', L2: 'S', L3: 'O', L4: 'O', L5: 'D', W1: 'S', W2: 'O', W3: 'G', A1: 'G' };   // founder 2026-10-19: letters instead of pictograms
@@ -2089,7 +2091,7 @@ const FUNC = { stay: 0xf07ab0, fnb: 0xe8762e, amenity: 0x6a4fc4, transport: 0x4a
   roadS: 0x676d75, path: 0xd6b27c, plaza: 0xe6d4b0, pier: 0x4a74a8, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x62b9d8, fence: 0x6d737b, mast: 0x6d737b,
   robot: 0x2f9e8f, marine: 0x2f5f8f, arrival: 0x2fa8b5, utilities: 0xe3b83a, waste: 0xc0564e, laundry: 0x7fb3d9, kitchen: 0xe8762e, cold: 0x9fd0e8, dry: 0xc9a66b, heliRing: 0x24456f };   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
-  FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
+  FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa|Water activities)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
   FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Helipad|PARKING|Service dock)/, FUNC_ARRIVAL = /^Arrivals Reception/, FUNC_MARINA = /^(Marina support|arrivals dock|Terminal|Excursion pavilion|marina pier|MARINA)/;
 function functionalMat(o) {
   const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), F = FUNC, hit = re => re.test(t) || re.test(n);
