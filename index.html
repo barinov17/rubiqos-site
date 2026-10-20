@@ -2186,7 +2186,7 @@ const SCHEMATIC = {
   tree: 0xcfdcf5, treeDark: 0xb8cbf1, palm: 0xd6e2f7, trunk: 0xe3e9f5,   // light, so the trees do not compete with the buildings
   glassDarken: 0.82, pool: 0x8cc2f0, sig: 0x4f73d4, people: 0x1d3a8f, plinth: 0xb4b8c0, yachtGlass: 0xc9dcf6,
   guestPad: 0x9dbdf0, hatchBase: 0xe4e9f3, hatchLine: 0x5d7fd6, hatchStep: 1.6,   /* drop-offs (founder 2026-10-19): guest pads light blue, back-of-house pads hatched at 45 deg */
-  heli: { lawn: 0xffffff, 'grass pavers': 0xe8edf6, hedge: 0xd6e0f1, pavers: 0xc4c7cc, FATO: 0xc4c7cc, TLOF: 0x9aa3b3, white: 0xffffff, yellow: 0x4f73d4 },
+  heli: { lawn: 0x9dbdf0, 'grass pavers': 0xb3cbf3, hedge: 0xd6e0f1, pavers: 0xb3cbf3, FATO: 0x6f98e3, TLOF: 0x2457e6, white: 0xffffff, yellow: 0xffffff },   /* founder 2026-10-20: the helipad was white-grey on white land; the big round field light blue, the pad accent blue, markings white */
   fn: { hotel: 0x2856e0, 'apart hotel': 0x3a66e4, residences: 0x4f7ae9, villas: 0x7c9cf0, 'food & retail': 0x9db6f4, dining: 0x6f8fee,
         'events & culture': 0x1a3fb8, 'spa & wellness': 0x8aa9f2, wellness: 0x8aa9f2, 'wellness & sport': 0x8aa9f2, sport: 0xb4c8f6, courts: 0xb4c8f6,
         'arrival & mobility': 0x5d7fd6, operations: 0xc3d0ea, default: 0xa3b8e6 },
@@ -2272,12 +2272,19 @@ function schematicMat(o) {
 // ===== Functional style v3 (founder 2026-10-19): a planner's functional map on the Standard lighting. Flat colours by use, muted ground,
 // light trees, service roads dark, walkways cream, transport infrastructure slate blue, back of house grey, icons as in the schematic.
 const FUNC = { stay: 0xf0609a, fnb: 0xf07a1e, amenity: 0x1f9e6e, transport: 0x2f6fd0, boh: 0x6b727c, bohYard: 0xb4b9c0, attraction: 0xa8cc8a, village: 0x7c3aed,
-  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xdfe4d2, green: 0xc4dfa8, lawn: 0xcfe6b4, rock: 0xd6d6d0, beach: 0xeedfbf, tree: 0x9fcc82, trunk: 0x93b57f,   /* light greens again (founder 2026-10-20) */
+  padGuest: 0x5f84c9, padBoh: 0xb54c43,
+  /* ground v6 (founder 2026-10-20 evening: "the coloured buildings do not read"): a planner's base map — warm paper land, muted sage greens, pale grey-blue sea.
+     CIELAB check: every ground colour L* >= 86, C* <= 10; every building function at least dE 22.7 from every ground colour (was 7.8: the cold store vs the old sea) */
+  land: 0xf1efe9, green: 0xe1e6d6, lawn: 0xe7ebdf, rock: 0xe4e2dc, beach: 0xf4ecda, tree: 0xd6dccd, trunk: 0xc9d0be,
   roadS: 0x565b63, path: 0xa8a49b, plaza: 0xbdb9b0,   /* walkways: grey a step darker with a touch of brown (founder 2026-10-20) */ pier: 0x1f4f9c, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x4fb8e0, fence: 0x5e646c, mast: 0x5e646c,
-  sea: 0x9fcbe0, route: 0x12368f, admin: 0xb5452e, robot: 0x2f9e8f, marine: 0x1f4f9c, arrival: 0x19a7b8, utilities: 0xf2b705, waste: 0xd43d32, laundry: 0x5aa9e6, kitchen: 0xf07a1e, cold: 0x8fd0f0, dry: 0xc9a04a, heliRing: 0x1b3a66 };   // v5 (founder 2026-10-20): saturated, one flat colour per building, walkways light grey   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
+  sea: 0xdae5ec, route: 0x12368f, admin: 0xb5452e, robot: 0x2f9e8f, marine: 0x1f4f9c, arrival: 0x19a7b8, utilities: 0xf2b705, waste: 0xd43d32, laundry: 0x5aa9e6, kitchen: 0xf07a1e, cold: 0x8fd0f0, dry: 0xc9a04a, heliRing: 0x1b3a66 };   // v5 (founder 2026-10-20): saturated, one flat colour per building, walkways light grey   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building\.00[23])/, FUNC_ADMIN = /^apart hotel Building\.001/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
   FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa|Water activities)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
   FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Helipad|Service dock)/, FUNC_ARRIVAL = /^Arrivals Reception/, FUNC_MARINA = /^(Marina support|arrivals dock|Terminal|Excursion pavilion|marina pier|MARINA)/;
+// its own light (founder 2026-10-20 evening): the Standard light's tone curve turned the paper ground taupe; flat light shows the palette as drawn.
+// three r170 diffuse = albedo x light / pi: (2.0 + 1.4 x 0.74) / pi = 0.97, so the ground stays at its value; soft shadows keep the volumes.
+const FUNC_LIGHT = { sky: [0xf2f1ec, 0xf7f6f2], fog: 0xf3f2ee, fogRange: [6000, 20000], toneMapping: THREE.NoToneMapping, exposure: 1.0,
+  hemi: [0xffffff, 0xdcd8cf, 2.0], sun: [0xffffff, 1.4], shadow: 0.35, aoBlend: 0.35, grade: { sat: 1.0, con: 1.0, lift: 0.0, tint: 0xffffff } };
 function functionalMat(o) {
   const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), F = FUNC, hit = re => re.test(t) || re.test(n);
   if (/^Drop-off \| DO-/.test(n)) return flatMat(/DO-BOH/.test(n) ? F.padBoh : F.padGuest, 0.9);
@@ -2287,6 +2294,7 @@ function functionalMat(o) {
   if (g === 'terrain') return flatMat(/BEACH/.test(mn) ? F.beach : /Rocky/.test(mn) ? F.rock : /GREEN/.test(mn) || o.userData.function === 'planting' ? F.green : F.land, 0.95);   // the hills carry no material name in the GLB: planting by function
   if (g === 'landscape') return flatMat(/Lawn/.test(mn) ? F.lawn : F.green, 0.95);
   if (/^PARKING/.test(n)) return flatMat(F.roadS, 0.95);   // the parking in the road colour (founder 2026-10-20)
+  if (t === 'Marina support') return flatMat(F.village, 0.85);   // founder 2026-10-20: the Marina support building reads as a Marina Village module
   if (hit(FUNC_MARINA)) return /^MARINA/.test(n) ? flatMat(/apron$/.test(n) ? F.path : F.breakwater) : flatMat(F.marine, 0.85);   // marina function: navy
   if (hit(FUNC_ARRIVAL)) return flatMat(F.arrival, 0.85);   // the reception: arrival function, its own colour
   if (hit(FUNC_TRANSPORT)) return flatMat(F.transport, 0.85);
@@ -2335,7 +2343,7 @@ function standardMat(o) {
   return base; }
 let mapStyle = 'standard';
 function applyMapStyle(name) {
-  const sch = name === 'schematic', st = sch ? SCHEMATIC : STD, matFn = sch ? schematicMat : name === 'functional' ? functionalMat : null; mapStyle = name;
+  const sch = name === 'schematic', st = sch ? SCHEMATIC : name === 'functional' ? FUNC_LIGHT : STD, matFn = sch ? schematicMat : name === 'functional' ? functionalMat : null; mapStyle = name;
   model.traverse(o => {
     if (!o.isMesh) return;
     if (!o.userData.baseMat) o.userData.baseMat = o.material;
