@@ -852,6 +852,42 @@ const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x =
 const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-(guest|BOH)-\d+$/.test(n)).flatMap(meshOf);   // v073: pads are `Drop-off | DO-guest-NN` and `Drop-off | DO-BOH-NN` (blocks of the DWG)
 const roadR = surfaceGrid([...['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE roundabout east tip', 'ROADS_SERVICE link reception', 'loading zone surface', 'Longevity Clinic road', 'Infrastructure zone | WH service apron', 'Service dock.001'].flatMap(meshOf), ...padMeshes], 3);   // v073 live road surfaces only (founder brief 2026-10-19)
 const walkR = surfaceGrid([...['ROADS_SERVICE (block) surface', 'ROADS_GUEST surface', 'ROADS_GUEST straight path | surface', 'PROMENADE surface', 'Marina Village paths', 'Spa path', 'Marina pier walkway 1', 'Marina pier walkway 2', 'Marina pier walkway 3', 'Rotunda Restaurant | path NE', 'Rotunda park | path N', 'Rotunda Restaurant | Restaurant paving', 'Rotunda Restaurant | Restaurant court paving', 'Beach Hotel | forecourt', 'Beach Hotel | lobby', 'Arrivals Reception | reception footprint', 'Infrastructure zone | FH fleet hub yard', 'Infrastructure zone | SA staff accommodation courtyard', 'Infrastructure zone | W waste management ground', 'Infrastructure zone | IF infrastructure ground', 'Infrastructure zone | WH service apron', 'BEACH.001', 'BEACH.003'].flatMap(meshOf), ...[...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/DO-BOH/.test(m.name))], 2.5, 12);   // v073: guest paths, the promenade and the village paths, plazas, the beaches, the attractions; the BOH block's service roads and yards are the staff's walkways (no guests there)
+// --- roads only where no building stands over them (founder 2026-10-20: "vehicles drive through buildings; keep them on the roads, open a road
+// through only where a needed function has no other access"). Audit before the fix: 256 of 13,369 moving-vehicle samples (1.9 %) had a building
+// roof 3–16 m above them, all on road cells: the WH service apron under the warehouses, the drives under the residence towers and their entrance
+// links, the apart-hotel block, two villas. Step 1: every road cell with a building more than 2 m above it is removed. Step 2: any piece of the road
+// network that this cuts off from the main network gets the cheapest way back (Dijkstra, a blocked cell costs 25 free cells), and only those
+// cells are opened again. The opened passages are listed in R.reopened (window.__roadReopened) so the model can be fixed where they show.
+function clearRoadsUnderBuildings(R, clearance = 2.0, blockedCost = 25) {
+  const groupOf = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
+  const bld = []; model.traverse(o => { if (o.isMesh && groupOf(o) === 'buildings') bld.push(o); });
+  const { W, H, y, ox, oz, cell } = R, N = W * H, rc = new THREE.Raycaster(), down = new THREE.Vector3(0, -1, 0), o3 = new THREE.Vector3(); rc.firstHitOnly = true;
+  const saved = Float32Array.from(y), blocked = new Uint8Array(N), under = new Map(); let nb = 0;
+  for (let k = 0; k < N; k++) { if (isNaN(y[k])) continue; o3.set(ox + (k % W) * cell, y[k] + 300, oz + ((k / W) | 0) * cell); rc.set(o3, down);
+    const h = rc.intersectObjects(bld, false)[0]; if (h && h.point.y > y[k] + clearance) { blocked[k] = 1; nb++; under.set(k, h.object.name); } }
+  const mainBefore = R.mainComp(), was = Int32Array.from(R.comp);
+  for (let k = 0; k < N; k++) if (blocked[k]) y[k] = NaN;
+  R.relabel(); const reopened = [];
+  for (let pass = 0; pass < 40; pass++) {
+    const main = R.mainComp(); let src = -1;
+    for (let k = 0; k < N; k++) if (!isNaN(y[k]) && was[k] === mainBefore && R.comp[k] !== main) { src = R.comp[k]; break; }   // a piece that was in the network and is now cut off
+    if (src < 0) break;
+    const dist = new Float32Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1), hf = [], hk = [];
+    const push = (f, k) => { let i = hf.length; hf.push(f); hk.push(k); while (i > 0) { const p = (i - 1) >> 1; if (hf[p] <= hf[i]) break; [hf[p], hf[i]] = [hf[i], hf[p]]; [hk[p], hk[i]] = [hk[i], hk[p]]; i = p; } };
+    const pop = () => { const r = hk[0], lf = hf.pop(), lk = hk.pop(); if (hf.length) { hf[0] = lf; hk[0] = lk; let i = 0; for (;;) { let m = i; const a = 2 * i + 1, b = a + 1; if (a < hf.length && hf[a] < hf[m]) m = a; if (b < hf.length && hf[b] < hf[m]) m = b; if (m === i) break; [hf[m], hf[i]] = [hf[i], hf[m]]; [hk[m], hk[i]] = [hk[i], hk[m]]; i = m; } } return r; };
+    for (let k = 0; k < N; k++) if (R.comp[k] === src && !isNaN(y[k])) { dist[k] = 0; push(0, k); }
+    let hit = -1;
+    while (hk.length) { const k = pop(); if (!isNaN(y[k]) && R.comp[k] === main) { hit = k; break; } const kx = k % W, kz = (k / W) | 0;
+      for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dz) continue; const nx = kx + dx, nz = kz + dz; if (nx < 0 || nz < 0 || nx >= W || nz >= H) continue; const nk = nz * W + nx;
+        if (isNaN(saved[nk])) continue; const d = dist[k] + (dx && dz ? Math.SQRT2 : 1) * (blocked[nk] && isNaN(y[nk]) ? blockedCost : 1); if (d < dist[nk]) { dist[nk] = d; prev[nk] = k; push(d, nk); } } }
+    if (hit < 0) { for (let k = 0; k < N; k++) if (R.comp[k] === src) was[k] = -2; R.relabel(); continue; }   // no way back even through buildings: leave it
+    const opened = []; for (let k = hit; k >= 0; k = prev[k]) if (isNaN(y[k]) && blocked[k]) { y[k] = saved[k]; opened.push(k); }
+    if (opened.length) { const m = opened[(opened.length / 2) | 0]; reopened.push({ at: [Math.round(ox + (m % W) * cell), Math.round(oz + ((m / W) | 0) * cell)], cells: opened.length, metres: Math.round(opened.length * cell), under: under.get(m) }); }
+    R.relabel();
+  }
+  R.blockedCells = nb; R.reopened = reopened; window.__roadReopened = reopened;
+  console.info('roads under buildings:', nb, 'cells removed;', reopened.length ? 'reopened for access: ' + reopened.map(r => `${r.under} (${r.metres} m at ${r.at})`).join(', ') : 'nothing reopened');
+}
 $('stats').textContent = `model ${manifest.version} (${manifest.exported}) · ${top.length} objects · loaded in ${timeStat} s · road grid ${roadR.count} cells · walk grid ${walkR.count} cells`;
 
 // --- anchors: objects by name (centre of their bounds)
@@ -1020,6 +1056,7 @@ function vehicleCard(v) {
   return `<b>${T.title} · ${v.id}</b><div class="k">${T.role}</div><div style="margin-top:4px"><b style="font-size:12px">Now:</b> ${v.task || 'Waiting for the next job'}</div>`
     + (v.path ? `<div>${kmh} km/h · ETA ${eta < 1 ? '<1' : Math.round(eta)} min` : '<div>Parked') + (DRAIN[v.type] ? ` · battery ${Math.round(v.battery)}%` : '') + '</div>';
 }
+clearRoadsUnderBuildings(roadR);   // all buildings and register assets are in the scene now, no vehicle exists yet (founder 2026-10-20)
 // --- vehicle panel (founder 2026-10-19): the followed vehicle's job — from, to, what is on board, speed, ETA, battery; × or Escape releases it
 const NAMED = [];                                                               // [name, point] pairs for naming a route end; filled once the anchors exist (namedPlaces)
 function namedPlaces() {
