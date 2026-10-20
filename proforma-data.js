@@ -86,7 +86,7 @@ const SERVICES = [
     produces: { 'Food throughput a day': '4.5 t', 'Meals prepared a day': '4,100', 'Dry store': '30 t · 14 days of cover', 'Cold store': '12 t · 3–4 days of cover', 'Beverage store': '15 t · 10 days of cover' }, consumes: { 'Supply calls a week': '4 (two vessels)', 'Energy (cold rooms)': '≈ 1,800 kWh a day' }, key: 'food', capacity: 4.5,
     liveFn: L => { const S = L.supply ? L.supply.store : null; if (!S) return []; const t = k => (S[k].stock / 1000).toFixed(1) + ' t'; const pc = k => Math.round(100 * S[k].stock / S[k].cap);
       return [['Dry store', `${t('dry')} <small style="color:var(--muted)">of 30 t</small>`], ['bar', bar(pc('dry'))], ['Cold store', `${t('cold')} <small style="color:var(--muted)">of 12 t</small>`], ['bar', bar(pc('cold'))], ['Beverages', `${t('bev')} <small style="color:var(--muted)">of 15 t</small>`], ['bar', bar(pc('bev'))], ['Sent to outlets today', (L.supply.truckKg / 1000).toFixed(1) + ' t'], ['Covers served today', fmt(L.supply.meals)]]; } },
-  { id: 'darkstore', name: 'Dark Store', zone: 'Z09', op: 'stores', what: 'Guest-app orders picked and packed for delivery; in the warehouse for now.',
+  { id: 'darkstore', name: 'Dark Store', zone: 'Z03', op: 'stores', what: 'The convenience store in Marina Village is the dark store: guest-app orders are picked here and delivery robots leave from it.',
     produces: { 'Orders a day (plan)': '≈ 600', 'SKUs': '1,200', 'Pick to door': '≤ 30 min' }, consumes: { 'Stock': 'from the warehouse, daily', 'Energy': '≈ 600 kWh a day' }, loadBase: 70,
     liveFn: L => [['Orders fulfilled today', L.ops.deliveries]] },
   { id: 'laundry', name: 'Laundry', zone: 'Z09', op: 'stores', what: 'Central laundry in the warehouse bar; linen out and back daily.',
@@ -113,13 +113,13 @@ const SERVICES = [
   { id: 'dock', name: 'Service dock', zone: 'Z04', op: 'stores', what: 'Supply vessel berth with crane; containers go straight onto trucks.',
     produces: { 'Supply vessels': '2, autonomous, 9 t each', 'Calls a week': '4 · Mon, Tue, Thu, Fri 08:00', 'Unloading': '2 h, crane to trucks', 'Waste out': 'containers on the return leg' }, consumes: { 'Goods a week': '≈ 36 t (dry 16 · cold 14 · beverages 6)', 'Fuel bunkering': 'yes' },
     liveFn: L => { const V = L.supply ? L.supply.vessels : []; return [['Vessel', L.reception.vesselDocked ? 'docked, unloading' : 'at sea / mainland'], ...V.map((t, i) => [`SV-${i + 1}`, t.replace(/^At the mainland port · /, '').replace(/^Supply call · /, '')]), ['Goods landed', (L.supply ? L.supply.inKg / 1000 : 0).toFixed(0) + ' t'], ['Waste shipped', (L.supply ? L.supply.wasteOutKg / 1000 : 0).toFixed(1) + ' t']]; } },
-  { id: 'guestservices', name: 'Guest services', zone: 'Z08', op: 'guestservices', what: 'Concierge, butlers and the guest-app desk: the human layer on call.',
+  { id: 'guestservices', name: 'Guest services', zone: 'Z08', op: 'guestservices', what: 'Concierge, butlers and the guest-app desk, in the administration building: the human layer on call.',
     produces: { 'Requests a day (plan)': '≈ 1,500', 'Butlers': 24, 'Concierge desks': 3, 'Answer time': '≤ 2 min' }, consumes: { 'Energy': '≈ 150 kWh a day' }, loadBase: 65,
     liveFn: L => [['Pod calls today', L.ops.buggyRides], ['Guests on the island', fmt(Object.values(L.products).reduce((a, b) => a + b, 0))]] },
-  { id: 'medical', name: 'Medical service', zone: 'Z08', op: 'medical', what: 'Island clinic 24 h, ambulance pod, helicopter evacuation agreement.',
+  { id: 'medical', name: 'Medical service', zone: 'Z08', op: 'medical', what: 'The island clinic, 24 h, in the administration building; ambulance pod, helicopter evacuation.',
     produces: { 'Clinic': '24 h, doctor + 2 nurses', 'Consultations a day (plan)': '≈ 25', 'Evacuation': 'helicopter, 20 min to the mainland' }, consumes: { 'Energy': '≈ 200 kWh a day', 'Water': '≈ 3 m³ a day' }, loadBase: 35,
     liveFn: L => [['On duty', L.hour >= 8 && L.hour < 20 ? 'doctor, 2 nurses' : 'doctor on call, nurse'], ['Cases today (plan rate)', Math.round(25 * Math.min(1, Math.max(0, (L.hour - 6) / 18)))]] },
-  { id: 'security', name: 'Safety and security', zone: 'Z08', op: 'security', what: 'Control room, patrols, lifeguards and fire crew; face and key access.',
+  { id: 'security', name: 'Safety and security', zone: 'Z08', op: 'security', what: 'Control room in the administration building; patrols, lifeguards, fire crew; face and key access.',
     produces: { 'Control room': '24 h', 'Patrols': '2 land, 1 marine', 'Lifeguards': '4 by day', 'Fire crew': 6 }, consumes: { 'Energy': '≈ 400 kWh a day', 'Cameras and sensors': '≈ 400 devices' }, loadBase: 45,
     liveFn: L => [['Lifeguards', L.hour >= 8 && L.hour < 19 ? 'on both beaches' : 'off duty, beaches closed'], ['Events watched', L.events.length ? L.events.map(e => e.split(' · ')[0]).join(', ') : '—']] },
   // the marina's own infrastructure (founder 2026-10-19): shown in the Marina category with the berths
@@ -144,7 +144,7 @@ const SERVICES = [
 // Categories (founder 2026-10-19): the cards are grouped, not listed by zone
 const PRODUCT_GROUPS = [
   { title: 'Accommodation', ids: ['beach-hotel', 'hill-hotel', 'apart-hotel', 'villas', 'residences'] },
-  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'yacht-services', 'guest-dock', 'excursion-terminal', 'crew-lounge'] },
+  { title: 'Marina', wide: 'marina', ids: ['marina-support', 'guest-dock', 'excursion-terminal', 'crew-lounge'] }   /* yacht services live in the Marina block (founder 2026-10-20) */,
   { title: 'Food and beverage', ids: ['restaurant', 'village', 'beach-club', 'members-club'] },
   { title: 'Beaches and water', ids: ['hotel-beach', 'club-beach', 'water-sports'] },
   { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
@@ -203,7 +203,7 @@ for (const [, k, extra] of BALANCE_ROWS) { const avg = k === 'staff' ? staffTota
 // --- card html
 const opTag = id => '';   // operators are not shown on the cards for now (founder 2026-10-19); the OP data stays for later
 const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</span>`).join('');
-const NO_MODEL = new Set([ 'darkstore', 'guestservices', 'medical', 'security', 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
+const NO_MODEL = new Set([   /* guest services, medical and security sit in the administration building (founder 2026-10-20) */ 'landscaping', 'cleaning', 'crew-lounge', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
 const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3>${NO_MODEL.has(c.id) ? '<span class="nomodel" title="No physical object on the master plan yet"></span>' : ''}</div>`;   // no zone id and no colour dot (founder 2026-10-19)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
 const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
@@ -395,7 +395,8 @@ const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c
     <div class="sec"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
   <div class="col">${teamHtml('marina')}</div>
   <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div>
-  <div class="col"></div></div>`; };   // the fifth column is kept empty for now (founder 2026-10-19)
+  <div class="col"><div class="cap">Yacht services · this month</div><div class="kv" data-live="ys-month"><span>Fresh water</span><span>—</span></div>
+    <div class="cap" style="margin-top:10px">Log</div><table class="t mini ys"><tbody id="ysLog"><tr><td class="muted">—</td></tr></tbody></table></div></div>`; };   // yacht services as the fifth column (founder 2026-10-20)
 const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
@@ -463,6 +464,11 @@ function refreshLive() {
       const NAME = { S: 'S · to 15 m', M: 'M · to 35 m', L: 'L · to 80 m' };
       const mr = document.getElementById('marinaRows'); if (mr) mr.innerHTML = ['S', 'M', 'L'].map(k => { const b = M.byCls[k] || { moored: 0, berths: 0 }; return `<tr><td>${NAME[k]}</td><td class="num">${b.berths}</td><td class="num">${b.moored}</td><td class="bar-td">${bar(Math.round(100 * b.moored / Math.max(1, b.berths)), 101)}</td></tr>`; }).join('');
       setLive('marina-moves', [['Under way now', M.underway], ['Left today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`]]);
+      { const S = M.service; if (S) { const f = n => Math.round(n).toLocaleString('en-US');
+          setLive('ys-month', [['Fresh water', f(S.month.water) + ' m³'], ['Pump-out', f(S.month.pump) + ' m³'], ['Diesel sold', f(S.month.diesel) + ' L'], ['Shore power', f(S.month.kwh / 1000) + ' MWh']]);
+          const ARROW = { arrive: '<b class="ys-in">↓</b>', depart: '<b class="ys-out">↑</b>' }, WHAT = { arrive: 'Arrived', depart: 'Departed', fuel: 'Refuelled', pumpout: 'Pumped out', water: 'Fresh water', power: 'Shore power on' };
+          const UNIT = { fuel: ' L', pumpout: ' m³', water: ' m³' }, yl = document.getElementById('ysLog');
+          if (yl) yl.innerHTML = S.log.length ? S.log.map(e => `<tr><td>${e.t}</td><td>${ARROW[e.kind] || '<b class="ys-svc">·</b>'} ${WHAT[e.kind] || e.kind}</td><td>${e.berth}</td><td class="num">${e.qty ? f(e.qty) + (UNIT[e.kind] || '') : ''}</td></tr>`).join('') : '<tr><td class="muted">nothing yet today</td></tr>'; } }
       const mn = document.getElementById('marinaNext'); if (mn) mn.innerHTML = (M.upcoming || []).length ? M.upcoming.map(u => `<tr><td>${u.at}</td><td>${u.kind === 'arrive' ? '↓ Arrival' : '↑ Departure'}</td><td>${u.cls}</td></tr>`).join('') : '<tr><td colspan="3" class="muted">no more today</td></tr>'; }
     if (c.id === 'events') rows.push(['Running', L.events.filter(e => /Rotunda/.test(e)).map(e => e.split(' · ')[0]).join(', ') || '—']);
     setLive(c.id, rows);

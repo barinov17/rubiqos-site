@@ -1165,7 +1165,8 @@ const SERVICES = [
   { name: 'WH-3 Cold storage', fp: ['Infrastructure zone | WH-3 warehouse cold storage'], p: topOfObj('Infrastructure zone | WH-3 warehouse cold storage', 5), kpi: { 'Cold rooms': '600 m²', 'Food throughput': '4.5 t a day', 'Load today': '4.47 t', 'Next supply call': 'Thursday 08:00' }, load: 99 },
   { name: 'WH-4 Dry storage', fp: ['Infrastructure zone | WH-4 warehouse storage'], p: topOfObj('Infrastructure zone | WH-4 warehouse storage', 5), kpi: { 'Dry store': '900 m²', 'Autonomy': '6 days' }, load: 80 },
   { name: 'FH Fleet Hub', fp: ['Infrastructure zone | FH fleet hub'], p: topOfPrefix('Infrastructure zone | FH fleet hub', 5), kpi: { 'Charging posts': 30, 'Guest pods': '40 planned', 'Shuttles': 5, 'Service vehicles': 22 }, load: 70 },
-  { name: 'Administration office', fp: ['apart hotel Building.001'], hp: ['apart hotel Building.001'], p: topOfPrefix('apart hotel Building.001', 7), kpi: { 'Use': 'Resort administration, the operator console; management housing on the upper floors', 'Desks': 60, 'Management apartments': 16 }, load: 70 },   /* founder 2026-10-20: the westmost village building */
+  { name: 'Administration office', fp: ['apart hotel Building.001'], hp: ['apart hotel Building.001'], p: topOfPrefix('apart hotel Building.001', 7), kpi: { 'Use': 'Administration, the operator console, guest services, the clinic, safety and security; management housing above', 'Desks': 60, 'Management apartments': 16 }, load: 70 },   /* founder 2026-10-20: the westmost village building */
+  { name: 'Dark Store', fp: ['Pavilion module.003'], fpExact: true, small: true, p: topOfObj('Pavilion module.003', 5), kpi: { 'Use': 'Convenience store and delivery hub: guest-app orders picked here, robots deliver', 'Orders a day (plan)': '≈ 600', 'Pick to door': '≤ 30 min' }, load: 70 },
   { name: 'Network mast A', fp: ['Cell tower.001'], fpExact: true, small: true, p: topOfObj('Cell tower.001', 8), kpi: { 'Mast': '36 m, back of house', 'Backbone': '10 Gbit fibre ring', 'Devices served (plan)': '≈ 6,000 with mast B' }, load: 55 },
   { name: 'Network mast B', fp: ['Cell tower.002'], fpExact: true, small: true, p: topOfObj('Cell tower.002', 8), kpi: { 'Mast': '36 m, by the gym block', 'Backbone': '10 Gbit fibre ring', 'Devices served (plan)': '≈ 6,000 with mast A' }, load: 55 },   // v073: e115 cell towers; the office is gone from the plan
   { name: 'SA Staff accommodation', fp: ['Infrastructure zone | SA'], p: topOfPrefix('Infrastructure zone | SA', 5), kpi: { 'Beds': 420, 'Canteen': '1,000 meals a day', 'Shifts': '07 · 15 · 23' }, load: 85 },
@@ -1225,7 +1226,7 @@ const ICON = {   // Lucide icons (lucide.dev, ISC licence), 24 x 24 stroke paths
   briefcase: 'M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16M4 6h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z',   // Lucide briefcase
   plane: 'M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z',
 };
-const PIN_ICON_KEY = name => /Administration/.test(name) ? 'briefcase' : /Water activities/.test(name) ? 'sailboat' : /Apart-hotel/.test(name) ? 'building' : /Longevity/.test(name) ? 'heartpulse' : /Network/.test(name) ? 'radiotower' : /Hotel$/.test(name) ? 'hotel' : /^Residences/.test(name) ? 'building2' : /^Villa/.test(name) ? 'home' : /Restaurant/.test(name) ? 'utensils'
+const PIN_ICON_KEY = name => /Dark Store/.test(name) ? 'package' : /Administration/.test(name) ? 'briefcase' : /Water activities/.test(name) ? 'sailboat' : /Apart-hotel/.test(name) ? 'building' : /Longevity/.test(name) ? 'heartpulse' : /Network/.test(name) ? 'radiotower' : /Hotel$/.test(name) ? 'hotel' : /^Residences/.test(name) ? 'building2' : /^Villa/.test(name) ? 'home' : /Restaurant/.test(name) ? 'utensils'
   : /Events/.test(name) ? 'music' : /Spa/.test(name) ? 'leaf' : name === 'Marina' ? 'anchor' : /Marina Village/.test(name) ? 'store' : /Beach Club/.test(name) ? 'martini'
   : /Members/.test(name) ? 'star' : /GYM/.test(name) ? 'dumbbell' : /^WH-/.test(name) ? 'package' : /Fleet Hub/.test(name) ? 'car' : /Staff/.test(name) ? 'users' : /Waste/.test(name) ? 'trash' : /Water, power/.test(name) ? 'zap' : /Reception|Arrival/.test(name) ? 'bell' : 'star';
 const PIN_ICON_SVG = (c, key) => `<svg viewBox="0 0 24 32"><path d="M12 1C6 1 1.5 5.6 1.5 11.4c0 7.6 10.5 19.1 10.5 19.1S22.5 19 22.5 11.4C22.5 5.6 18 1 12 1z" fill="${c}" stroke="#fff" stroke-width="1.4"/><g transform="translate(5.6 5) scale(0.54)" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${ICON[key] || ICON.star}"/></g></svg>`;
@@ -1278,6 +1279,7 @@ const villas = [...byName.keys()].filter(n => /^[Vv]illa(\.\d+)?$/.test(n)).map(
 const residences = ['branded residence BR1', 'branded residence BR2'].filter(n => byName.has(n)).map(n => ({ name: n.replace('branded residence ', 'Residences '), p: centreOf(n) }));
 const hotels = [{ name: 'Beach hotel', p: A.stopHotel }, { name: 'Hill hotel', p: A.hillHotel }];
 const kitchens = [{ name: 'Marina Village kitchen', p: A.village }, { name: 'Beach hotel kitchen', p: A.stopHotel }];
+const darkStore = { name: 'Dark Store', p: byName.has('Pavilion module.003') ? centreOf('Pavilion module.003') : A.village };   /* the convenience store in Marina Village is the dark store: guest-app orders leave from here (founder 2026-10-20) */
 const venues = [{ name: 'Marina Village', p: A.village }, { name: 'Beach hotel', p: A.stopHotel }, { name: 'Hill hotel', p: A.hillHotel }, { name: 'Events Rotunda', p: A.rotunda }];
 const homes = [...villas, ...residences, ...hotels];
 const stopNear = p => nearestStop(p);
@@ -1365,14 +1367,14 @@ follower('L4', 'T5', 'road', 18, f => {
 follower('L4', 'T6', 'road', 18, f => { f.task = 'Reserve truck · at the warehouse'; f.wait = 30; return null; }, A.boh);
 
 // --- L5 delivery robots (register 24, demo 12): breakfast, room service, luggage, amenities by the hour
-const goods = { breakfast: ['Villa breakfast, hot box 62 °C', 'Breakfast for 2, hot box'], room: ['Lunch order, hot box', 'Dinner for 4, hot box', 'Wine and ice'], luggage: ['6 bags, arrival', '3 bags, departure → stop'], amenity: ['Fresh towels', 'Guest parcel', 'First-aid kit', 'Beach kit'] };
+const goods = { breakfast: ['Villa breakfast, hot box 62 °C', 'Breakfast for 2, hot box'], room: ['Lunch order, hot box', 'Dinner for 4, hot box', 'Wine and ice'], luggage: ['6 bags, arrival', '3 bags, departure → stop'], amenity: ['Grocery order', 'Wine and snacks', 'Sunscreen and beach kit', 'Guest parcel', 'First-aid kit', 'Yacht provisioning → guest dock'] };   /* amenity orders come from the Dark Store */
 for (let k = 0; k < 12; k++) follower('L5', `D${k + 8}`, 'road', 9, f => {
   const h = hourOf(), from = f.place || A.boh;
   if (f.out) { f.out = false; const base = f.base || anyOf(kitchens); return trip(f, from, base.p, `Empty · back to ${base.name}`); }
   f.out = true;
   let kind = between(h, 7, 9.5) ? 'breakfast' : between(h, 12, 14) || between(h, 19, 21) ? 'room' : between(h, 10, 12) || between(h, 15, 18) ? 'luggage' : 'amenity';
   if (kind === 'luggage') { f.base = { name: 'warehouse', p: A.boh }; const hm = anyOf(hotels); return trip(f, from, hm.p, `${anyOf(goods.luggage)} · ${hm.name}`); }
-  f.base = anyOf(kitchens); const to = kind === 'breakfast' ? anyOf(villas) : anyOf(homes);
+  f.base = kind === 'amenity' ? darkStore : anyOf(kitchens); const to = kind === 'breakfast' ? anyOf(villas) : anyOf(homes);
   return trip(f, from, to.p, `${anyOf(goods[kind])} · ${f.base.name} → ${to.name}`);
 }, A.boh);
 
@@ -1605,6 +1607,7 @@ function yachtDepart(cls) {
   const y = yachtMover(b.id); b.busy = true; y.busy = true; berthShow(b, false);
   y.mesh.visible = true; y.mesh.position.copy(b.pos); y.mesh.rotation.y = b.heading; y.heading = b.heading; y.path = null;
   y.task = `${TYPES[b.id].title} · leaving berth ${b.berth_id} → open sea`;
+  { const q = YS_RATE.diesel[b.cls]; ys.diesel += q; ysLog('fuel', b, q); ysLog('depart', b, 0); }   // refuelled before leaving
   notify({ icon: '⛵', tag: 'Marina', title: `${TYPES[b.id].title} departing · berth ${b.berth_id}`, body: `Lines off, pilot out through the entrance. ${occupancyText()}.` });
   dockLeg(y, b.pos, b.approach, b.heading, b.heading, () => { setPath(y, route); y.speed = YACHT_SPEED[cls]; y.onDone = () => { y.mesh.visible = false; y.busy = false; b.busy = false; }; });
   return true;
@@ -1614,20 +1617,32 @@ function yachtArrive(cls) {
   const b = anyOf(cands), route = [...MAR.out.map(p => p.clone()).reverse(), b.fairway.foot.clone(), b.approach.clone()];   // open sea → entrance → trunk → spur
   const y = yachtMover(b.id); b.busy = true; y.busy = true; y.task = `${TYPES[b.id].title} · inbound → berth ${b.berth_id}`;
   placeAt(y, SEA.out, Math.atan2(-(A.entrance.z - SEA.out.z), A.entrance.x - SEA.out.x)); setPath(y, route); y.speed = YACHT_SPEED[cls];
-  y.onDone = () => { y.task = `${TYPES[b.id].title} · docking stern-to at berth ${b.berth_id}`; dockLeg(y, b.approach, b.pos, y.heading, b.heading, () => { y.mesh.visible = false; y.busy = false; b.busy = false; berthShow(b, true);
+  y.onDone = () => { y.task = `${TYPES[b.id].title} · docking stern-to at berth ${b.berth_id}`; dockLeg(y, b.approach, b.pos, y.heading, b.heading, () => { y.mesh.visible = false; y.busy = false; b.busy = false; berthShow(b, true); ysLog('arrive', b, 0); ysLog('power', b, 0);
     notify({ icon: '🛥️', tag: 'Marina', title: `${TYPES[b.id].title} moored · berth ${b.berth_id}`, body: `Shore power and water connected. ${occupancyText()}.` }); }); };
   notify({ icon: '📡', tag: 'Marina AI', title: `${TYPES[b.id].title} inbound`, body: `AIS track matched to the booking · berth ${b.berth_id} assigned. ${occupancyText()}.` });
   return true;
 }
 const YACHT_PAIRS = { L: [[10.5, 11.4]], M: [[8.3, 9.0], [11.2, 11.9], [14.6, 15.3], [18.2, 18.9]], S: [[7.3, 7.8], [8.8, 9.3], [10.1, 10.6], [12.0, 12.5], [13.6, 14.1], [15.4, 15.9], [17.0, 17.5], [19.3, 19.8]] };   // [departure, arrival] hours
 let yachtEvents = [], yachtDay = -1;
+// yacht services (founder 2026-10-20): what the marina sells to the moored boats. Rates per boat by class, sized so that ~76 moored boats give the
+// plan's day (water ≈ 70 m³, pump-out ≈ 47 m³, shore power ≈ 34 MWh, diesel ≈ 15 m³ at the 13 departures). The log feeds the proforma's Marina block.
+const YS_RATE = { water: { S: 0.4, M: 1.2, L: 4 }, pump: { S: 0.3, M: 0.8, L: 2.5 }, kwh: { S: 120, M: 600, L: 2500 }, diesel: { S: 150, M: 1500, L: 8000 } };
+const ys = { water: 0, pump: 0, kwh: 0, diesel: 0, log: [], t: 0 };
+const ysLog = (kind, b, qty) => { ys.log.unshift({ t: clockText(), kind, berth: b.berth_id, cls: b.cls, qty: Math.round(qty * 10) / 10 }); if (ys.log.length > 40) ys.log.length = 40; };
+function stepYachtServices() {
+  const dt = simT - ys.t; ys.t = simT; if (dt <= 0 || dt > 60) return;
+  for (const b of berths) { if (!b.occupied || b.busy) continue;
+    ys.kwh += YS_RATE.kwh[b.cls] * dt / 1440;
+    if (rand() < dt / 1440) { const q = YS_RATE.water[b.cls]; ys.water += q; ysLog('water', b, q); }          // a top-up a day per boat
+    if (rand() < dt / 2880) { const q = YS_RATE.pump[b.cls] * 2; ys.pump += q; ysLog('pumpout', b, q); } }   // a pump-out every two days
+}
 function stepYachts(dt) {
   const h = hourOf(), day = dayIndex();
   if (day !== yachtDay) { yachtDay = day; yachtEvents = []; for (const [cls, pairs] of Object.entries(YACHT_PAIRS)) for (const [d, a] of pairs) yachtEvents.push({ h: d, cls, kind: 'depart' }, { h: a, cls, kind: 'arrive' }); yachtEvents = yachtEvents.filter(e => e.h >= h - 0.02).sort((p, q) => p.h - q.h); }
   while (yachtEvents.length && yachtEvents[0].h <= h) { const e = yachtEvents.shift(); if (!(e.kind === 'depart' ? yachtDepart(e.cls) : yachtArrive(e.cls))) console.info('marina: no', e.kind, 'possible for class', e.cls, 'at', clockAt(h)); }
   for (const y of yachtMovers) { if (y.dock) stepDock(y, dt); else if (y.path) stepMover(y, dt); y.marker.visible = y.busy; }
   if (ghostDirty) rebuildGhostLines();
-  if (!stepYachts.t || simT - stepYachts.t > 2) { stepYachts.t = simT; syncCrew(); }
+  if (!stepYachts.t || simT - stepYachts.t > 2) { stepYachts.t = simT; syncCrew(); stepYachtServices(); }
   { const d = dayIndex(); if (supply.day !== d) { supply.day = d; supply.meals = 0; for (const k in outlets) outlets[k].meals = 0; supply.canteenT = simT; }
     const h = hourOf(), open = (h >= 6 && h < 8) || (h >= 14 && h < 16) || h >= 22; if (open && simT - (supply.canteenT || 0) > 6) { supply.canteenT = simT; eatAt('Staff canteen', 1000 / 60); } }   /* 1,000 staff meals a day over three 2-hour windows */
 }
@@ -1946,7 +1961,8 @@ function updateDash() {
     clock: clockText(), hour: +h.toFixed(2), indoors: people.filter(f => !f.idle && f.indoor).length, walking: people.filter(f => !f.idle && f.walkOnly && f.path).length, day: DAYN[dayIndex() % 7], guestsSim: guests.length, scale: +scale.toFixed(2), onShift, shiftShare: +shiftShare.toFixed(3),
     people: byType, products, fleet,
     marina: { berths: berths.length, moored: berths.filter(b => b.occupied).length, underway: yachtMovers.filter(y => y.busy).length, byCls,
-              arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
+              arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), service: (() => { const day = { water: 0, pump: 0, kwh: 0 }; for (const b of berths) if (b.occupied) { day.water += YS_RATE.water[b.cls]; day.pump += YS_RATE.pump[b.cls]; day.kwh += YS_RATE.kwh[b.cls]; } const dDiesel = Object.entries(YACHT_PAIRS).reduce((a, [c, p]) => a + p.length * YS_RATE.diesel[c], 0), D0 = 4;   /* month to date = days 1-4 at today's mix + today as simulated */
+                return { month: { water: Math.round(D0 * day.water + ys.water), pump: Math.round(D0 * day.pump + ys.pump), diesel: Math.round(D0 * dDiesel + ys.diesel), kwh: Math.round(D0 * day.kwh + ys.kwh) }, log: ys.log.slice(0, 14) }; })(), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
     booked,
     supply: { store: STORE, outlets, calls: supply.calls, inKg: supply.inKg, wasteOutKg: supply.wasteOutKg, truckKg: supply.truckKg, meals: Math.round(supply.meals), vessels: ambient.filter(f => f.type === 'W2').map(f => f.task) },
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
@@ -2043,7 +2059,7 @@ const dotMat = (base = SCHEMATIC.green, dot = SCHEMATIC.greenDot, step = SCHEMAT
 const SCHEM_PIN = { product: '#2457e6', service: '#6b7a96' };
 const hex6 = c => '#' + c.toString(16).padStart(6, '0');
 const STDP = { admin: 0x8a6a3c, stay: 0x3f9a5c, fnb: 0xd9622b, amenity: 0x7c4dd0, marine: 0x2f5f8f, arrival: 0x2fa8b5, transport: 0x4a74a8, village: 0x3d8bd4, boh: 0x6b727c, laundry: 0x5aa9e6, cold: 0x8fd0f0, dry: 0xc9a04a, waste: 0xd43d32, utilities: 0xe3b83a, kitchen: 0xd9622b };   // standard style: the same functions, a palette for the natural look (founder 2026-10-20)
-const pinColour = (name, P) => /Administration/.test(name) ? P.admin : /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name) ? P.stay : /Restaurant|Members|Beach Club/.test(name) ? P.fnb : /WH-2/.test(name) ? P.kitchen : /Events|Spa|GYM|Longevity|Water activities/.test(name) ? P.amenity
+const pinColour = (name, P) => /Dark Store/.test(name) ? P.village : /Administration/.test(name) ? P.admin : /Hotel$|^Residences|^Villa|Apart-hotel|^SA /.test(name) ? P.stay : /Restaurant|Members|Beach Club/.test(name) ? P.fnb : /WH-2/.test(name) ? P.kitchen : /Events|Spa|GYM|Longevity|Water activities/.test(name) ? P.amenity
   : name === 'Marina' ? P.marine : /Arrivals Reception/.test(name) ? P.arrival : /Fleet Hub/.test(name) ? P.transport : /Marina Village/.test(name) ? P.village : /WH-1/.test(name) ? P.laundry : /WH-3/.test(name) ? P.cold : /WH-4/.test(name) ? P.dry : /Waste/.test(name) ? P.waste : /Water, power|Network/.test(name) ? P.utilities : P.boh;   // every pin in its function's colour
 const FUNC_PIN = name => pinColour(name, FUNC);
 const FUNC_VEH = t => /^(L1|L2|W1|W3|A1)$/.test(t) ? FUNC.transport : /^Y/.test(t) ? FUNC.marine : FUNC.boh;   // guest vehicles blue, non-guest (carts, trucks, robots, supply vessel) grey, yachts navy

@@ -84,14 +84,14 @@
   "height_m": 6.2
  },
  "Pavilion.001": {
-  "category": "workshops",
-  "function": "culinary workshop",
-  "color": "#6D4BB5",
+  "category": "retail",
+  "function": "marine chandlery (ropes, fenders, safety gear, charts)",
+  "color": "#7C3AED",
   "height_m": 3.9
  },
  "Pavilion module.003": {
   "category": "services",
-  "function": "convenience store",
+  "function": "convenience store · Dark Store (delivery hub)",
   "color": "#A78BFA",
   "height_m": 3.9
  },

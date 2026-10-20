@@ -95,3 +95,6 @@ body.site .con .f30 i.today { background: var(--accent); }
 /* labor force: people navy, robots teal */
 body.site .con .kv .sub.pp { color: #b2641a; } body.site .con .kv .pp { color: #b2641a; }   /* people amber, robots teal (founder 2026-10-19) */
 body.site .con .kv .sub.rb { color: #0f8a7a; } body.site .con .kv .rb { color: #0f8a7a; }
+
+/* yacht services log: arrivals green down-arrow, departures red up-arrow (founder 2026-10-20) */
+body.site table.t.ys td { padding: 4px 8px; } body.site .ys-in { color: #1f9e4a; } body.site .ys-out { color: #d43d32; } body.site .ys-svc { color: var(--muted); }
