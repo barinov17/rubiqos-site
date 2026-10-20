@@ -310,9 +310,11 @@ const gltf = await new Promise((res, rej) => loader.load(`${GLB}?v=${manifest.ve
 const model = gltf.scene; scene.add(model);
 // GLTFLoader sanitises node names (drops dots and spaces); restore the exact names from the glTF JSON
 const assoc = gltf.parser.associations, nodeDefs = gltf.parser.json.nodes;
+const sanName = new Map(); for (const nd of nodeDefs) { if (!nd.name) continue; const k = THREE.PropertyBinding.sanitizeNodeName(nd.name); sanName.set(k, sanName.has(k) ? null : nd.name); }   // sanitised -> exact, null when ambiguous
 model.traverse(o => {
-  const a = assoc.get(o);
-  if (a && a.nodes !== undefined && nodeDefs[a.nodes].name) o.name = nodeDefs[a.nodes].name;
+  const a = assoc.get(o), exact = sanName.get(o.name);
+  if (exact) o.name = exact;                                                   // v073: nodes that share one mesh (villas, courts) all carry the same association object, so the name comes from the sanitised name first
+  else if (a && a.nodes !== undefined && nodeDefs[a.nodes].name) o.name = nodeDefs[a.nodes].name;
   else if (o.isMesh && o.parent && o.parent !== model && !o.userData.group) { o.name = o.parent.name; o.userData = o.parent.userData; }   // multi-primitive node
 });
 // parts of an instanced asset keep the template's stem ("Villa.018 | roof" under every villa, v069+): give each part its own parent's stem
@@ -321,8 +323,8 @@ model.traverse(o => {
 // ---------- structure from userData / manifest (never from names, colours or positions)
 const byName = new Map(), top = [];                                        // top = direct children of the GLB root (toggle units)
 const groups = {}, functions = {}, zoneNodes = {};
-const GROUP_ORDER = ['water', 'terrain', 'landscape', 'trees', 'mobility', 'buildings', 'marina', 'zoning'];
-const GROUP_LABEL = { water: 'Water', terrain: 'Terrain', landscape: 'Landscape', trees: 'Trees', mobility: 'Mobility', buildings: 'Buildings', marina: 'Marina', zoning: 'Zoning (overlay)' };
+const GROUP_ORDER = ['water', 'terrain', 'landscape', 'trees', 'mobility', 'buildings', 'sport', 'marina', 'zoning'];
+const GROUP_LABEL = { water: 'Water', terrain: 'Terrain', landscape: 'Landscape', trees: 'Trees', mobility: 'Mobility', buildings: 'Buildings', sport: 'Sport', marina: 'Marina', zoning: 'Zoning (overlay)' };
 model.traverse(o => {
   if (o === model) return;
   byName.set(o.name, o);
@@ -331,7 +333,7 @@ model.traverse(o => {
   if (u.group === 'buildings' && o.parent === model) (functions[u.function] ||= []).push(o);
   if (o.isMesh) {
     if (u.group === 'buildings' || u.group === 'terrain') o.geometry.computeBoundsTree();   // BVH only where rays go: hover picking (buildings), ground probes (terrain)
-    const casts = ['buildings', 'marina', 'trees'].includes(u.group);
+    const casts = ['buildings', 'marina', 'trees', 'sport'].includes(u.group);
     o.castShadow = casts; o.receiveShadow = true;
     if (u.group === 'zoning') {
       o.castShadow = false; o.receiveShadow = false;
@@ -789,9 +791,10 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
   // components after bridging: a route between two components does not exist, so route() says so at once instead of
   // flooding the whole network first (strolls and no-walkway trips used to cost a full search each)
   const N = W * H, comp = new Int32Array(N).fill(-1); let ncomp = 0;
-  { const stack = []; for (let k = 0; k < N; k++) { if (isNaN(y[k]) || comp[k] >= 0) continue; stack.push(k); comp[k] = ncomp;
+  const relabel = () => { comp.fill(-1); ncomp = 0; const stack = []; for (let k = 0; k < N; k++) { if (isNaN(y[k]) || comp[k] >= 0) continue; stack.push(k); comp[k] = ncomp;
       while (stack.length) { const q = stack.pop(), qx = q % W, qz = (q / W) | 0; for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) { const nx = qx + dx, nz = qz + dz; if (!ok(nx, nz)) continue; const nk = nz * W + nx; if (comp[nk] < 0) { comp[nk] = ncomp; stack.push(nk); } } }
-      ncomp++; } }
+      ncomp++; } api.ncomp = ncomp; };
+  const api = {};
   // A* state on typed arrays, stamped with a generation number: nothing is allocated or cleared between calls
   const gS = new Float32Array(N), came = new Int32Array(N), seen = new Int32Array(N), done = new Int32Array(N); let gen = 0;
   const hf = [], hk = [];                                                     // binary heap: f values and cell keys
@@ -830,33 +833,42 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
     for (let i = 1; i < pts.length - 1; i++) pts[i].y = (pts[i - 1].y + pts[i].y + pts[i + 1].y) / 3;
     return pts;
   }
-  return { route, nearest, posOf, cellOf, ok, cell, y, W, H, ox, oz, comp, ncomp, count: y.filter(v => !isNaN(v)).length };
+  const link = (a, b) => {                                                    // a 4-connected line of cells between two world points (y interpolated)
+    const ca = nearest(a), cb = nearest(b); if (!ca || !cb) return false; const ak = ca[1] * W + ca[0], bk = cb[1] * W + cb[0];
+    const n = Math.max(Math.abs(cb[0] - ca[0]), Math.abs(cb[1] - ca[1])); let pz = ca[1];
+    for (let i = 1; i <= n; i++) { const t = i / n, gx = Math.round(ca[0] + (cb[0] - ca[0]) * t), gz = Math.round(ca[1] + (cb[1] - ca[1]) * t), yy = y[ak] + (y[bk] - y[ak]) * t; for (const k of [gz * W + gx, pz * W + gx]) if (isNaN(y[k])) y[k] = yy; pz = gz; }
+    return true; };
+  const mainComp = () => { const sz = new Map(); for (let k = 0; k < N; k++) if (comp[k] >= 0) sz.set(comp[k], (sz.get(comp[k]) || 0) + 1); let best = -1, bn = 0; for (const [c, n] of sz) if (n > bn) { bn = n; best = c; } return best; };
+  const nearestMain = (p, maxR) => { const [cx, cz] = cellOf(p), m = mainComp(), R = Math.ceil(maxR / cell); for (let r = 0; r <= R; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) if (Math.max(Math.abs(dx), Math.abs(dz)) === r && ok(cx + dx, cz + dz) && comp[(cz + dz) * W + cx + dx] === m) return posOf(cx + dx, cz + dz); return null; };
+  const nearestOther = (p, maxR) => { const [cx, cz] = cellOf(p), c0 = nearest(p); if (!c0) return null; const mine = comp[c0[1] * W + c0[0]], R = Math.ceil(maxR / cell); for (let r = 1; r <= R; r++) for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) if (Math.max(Math.abs(dx), Math.abs(dz)) === r && ok(cx + dx, cz + dz) && comp[(cz + dz) * W + cx + dx] !== mine) return posOf(cx + dx, cz + dz); return null; };
+  Object.assign(api, { route, nearest, posOf, cellOf, ok, cell, y, W, H, ox, oz, comp, ncomp, count: y.filter(v => !isNaN(v)).length, relabel, link, mainComp, nearestMain, nearestOther });
+  relabel(); return api;
 }
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
-const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-|guest drop-off$|service drop-off$| \| access road$/.test(n)).flatMap(meshOf);   // pads and every parcel access road are drivable
-const roadR = surfaceGrid([...meshOf('ROADS_SERVICE surface'), ...meshOf('ROADS_SERVICE (block) surface'), ...meshOf('loading zone surface'), ...[...byName.keys()].filter(n => / service road \| surface$/.test(n)).flatMap(meshOf), ...padMeshes], 3);   // + service roads added by edits
-const walkR = surfaceGrid([...meshOf('ROADS_GUEST surface'), ...meshOf('ROADS_GUEST straight path | surface'), ...meshOf('PROMENADE surface'), ...meshOf('Marina Village streets'), ...meshOf('Marina Village ground'), ...meshOf('Hotel Lobby road | walk to the beach'), ...meshOf('Hotel Lobby road | walk south'), ...meshOf('Infrastructure zone | path FH'), ...meshOf('Infrastructure zone | path SA'), ...meshOf('GYM & Sports | deck'), ...[...byName.keys()].filter(n => n.startsWith('Footpath links') || / \| path .*\| surface$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/\(BOH\)|service drop-off$/.test(m.name)), ...meshOf('BEACH.001'), ...meshOf('BEACH.003'), ...meshOf('Beach Club | footprint deck'), ...meshOf('Beach Club | cantilever deck')], 2.5, 12);   // + the two sand beaches: people walk and stay on the sand (founder 2026-10-19)   // + paths added by edits; service pads are not walkways   // strict (founder 2026-10-17): walkways only; 12 m bridging covers kerbs, missing paths are added to the model (e021)
+const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-(guest|BOH)-\d+$/.test(n)).flatMap(meshOf);   // v073: pads are `Drop-off | DO-guest-NN` and `Drop-off | DO-BOH-NN` (blocks of the DWG)
+const roadR = surfaceGrid([...['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE roundabout east tip', 'ROADS_SERVICE link reception', 'loading zone surface', 'Longevity Clinic road', 'Infrastructure zone | WH service apron', 'Service dock.001'].flatMap(meshOf), ...padMeshes], 3);   // v073 live road surfaces only (founder brief 2026-10-19)
+const walkR = surfaceGrid([...['ROADS_SERVICE (block) surface', 'ROADS_GUEST surface', 'ROADS_GUEST straight path | surface', 'PROMENADE surface', 'Marina Village paths', 'Rotunda Restaurant | path NE', 'Rotunda park | path N', 'Rotunda Restaurant | Restaurant paving', 'Rotunda Restaurant | Restaurant court paving', 'Beach Hotel | forecourt', 'Beach Hotel | lobby', 'Arrivals Reception | reception footprint', 'Infrastructure zone | FH fleet hub yard', 'Infrastructure zone | SA staff accommodation courtyard', 'Infrastructure zone | W waste management ground', 'Infrastructure zone | IF infrastructure ground', 'Infrastructure zone | WH service apron', 'BEACH.001', 'BEACH.003'].flatMap(meshOf), ...[...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/DO-BOH/.test(m.name))], 2.5, 12);   // v073: guest paths, the promenade and the village paths, plazas, the beaches, the attractions; the BOH block's service roads and yards are the staff's walkways (no guests there)
 $('stats').textContent = `model ${manifest.version} (${manifest.exported}) · ${top.length} objects · loaded in ${timeStat} s · road grid ${roadR.count} cells · walk grid ${walkR.count} cells`;
 
 // --- anchors: objects by name (centre of their bounds)
 const centreOf = n => { const o = byName.get(n); if (!o) { console.warn('anchor missing', n); return islandC.clone(); } return bboxOf(o).getCenter(new THREE.Vector3()); };
 const prefixCentre = pre => { const ms = []; byName.forEach((o, n) => { if (n.startsWith(pre)) ms.push(o); }); const b = new THREE.Box3(); for (const m of ms) b.expandByObject(m); return b.getCenter(new THREE.Vector3()); };
 // guest stops: 'Drop-off | DO-NN (guest)' pads + the drop-offs modelled with the buildings; BOH pads are for trucks
-const stopNames = [...byName.keys()].filter(n => /^Drop-off \| DO-\d+ \(guest\)$/.test(n) || /\| guest drop-off$/.test(n))
+const stopNames = [...byName.keys()].filter(n => /^Drop-off \| DO-guest-\d+$/.test(n))
   .filter(n => { const p = centreOf(n), c = roadR.nearest(p); return c && roadR.posOf(...c).distanceTo(p) < 8; });   // only pads that sit on the road grid
 const stops = stopNames.map(centreOf);
-const bohPads = [...byName.keys()].filter(n => /^Drop-off \| DO-\d+ \(BOH\)$/.test(n));
+const bohPads = [...byName.keys()].filter(n => /^Drop-off \| DO-BOH-\d+$/.test(n));
 const nearestStop = p => stops.length ? stops.reduce((a, s) => (s.distanceTo(p) < a.distanceTo(p) ? s : a)) : p.clone();
 const A = {
-  terminal: centreOf('Terminal'), dock: prefixCentre('Service dock.001'), fleet: prefixCentre('Infrastructure zone | FH fleet hub'), reception: centreOf('Guest Arrivals Reception'),
-  hotel: prefixCentre('Beach Hotel | lobby'), hillHotel: prefixCentre('Hotel 2.0'), village: prefixCentre('DINING.0'), spa: prefixCentre('wellness-spa'),
+  terminal: centreOf('Terminal'), dock: prefixCentre('Service dock.001'), fleet: prefixCentre('Infrastructure zone | FH fleet hub'), reception: prefixCentre('Arrivals Reception |'), clinic: prefixCentre('Longevity Clinic |'),
+  hotel: prefixCentre('Beach Hotel | lobby'), hillHotel: prefixCentre('Hotel 2.0'), village: prefixCentre('Pavilion module.0'), spa: prefixCentre(byName.has('Wellness Spa') ? 'Wellness Spa' : 'wellness-spa'),
   rotunda: prefixCentre('event hall museum.001 |'), villa: centreOf(byName.has('villa.012') ? 'villa.012' : 'Villa.012'), boh: prefixCentre('Infrastructure zone | WH'), power: prefixCentre('Infrastructure zone | IF'),
 };
 // docks (founder 2026-10-17): the west pier (`marina support.002`) is the guest dock where the shuttle and the yacht land;
 // the `Terminal` object at the east root is the excursion dock. Boats enter and leave through the gap west of the breakwater.
-A.excDock = A.terminal; A.guestDock = byName.has('marina support.002') ? centreOf('marina support.002') : A.terminal; A.terminal = A.guestDock;
+A.excDock = A.terminal; A.guestDock = byName.has('arrivals dock') ? centreOf('arrivals dock') : byName.has('marina support.002') ? centreOf('marina support.002') : A.terminal; A.terminal = A.guestDock;   // v073: the guest dock is `arrivals dock`
 A.stopMarina = nearestStop(A.terminal); A.stopVillage = nearestStop(A.village);
-A.stopHotel = byName.has('Hotel Lobby road | guest drop-off') ? centreOf('Hotel Lobby road | guest drop-off') : nearestStop(A.hotel);   // the vehicle drop-off on the lobby access road
+A.stopHotel = nearestStop(A.hotel);                                        // v073: the nearest guest pad to the lobby (the old lobby road is retired)   // the vehicle drop-off on the lobby access road
 // open water (probed in the model): south-east of the Terminal, west / north-west of the Service dock
 const bearing = (p, deg, r) => p.clone().add(new THREE.Vector3(Math.cos(deg * Math.PI / 180) * r, 0, Math.sin(deg * Math.PI / 180) * r));
 A.berth = A.guestDock.clone().add(new THREE.Vector3(55, 0, 12));           // water just east of the guest dock
@@ -903,13 +915,14 @@ else try {
     inst.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.userData.group = 'buildings'; if (o !== inst) { o.name = `${name} | ${o.name.replace(/^.*\| /, '')}`; byName.set(o.name, o); } } }); model.add(inst); byName.set(name, inst); return inst;   // parts join byName, so the whole asset hovers as one concept
   };
   try {
+    if (byName.has('Tennis court') || byName.has('Pickleball court')) throw new Error('in master');   // v073: the courts are in the master (founder's own geometry)
     const pl = await fetch(ASSET_DIR + 'courts.placement.json', { cache: 'no-store' }).then(r => r.json());
     for (const [id, cad] of [['S01', /^tennis court\.\d+$/], ['S02', /^pickleball\.\d+$/]]) {
       const tpl = await loadAsset(pl.models[id].asset);
       for (const ins of pl.models[id].instances) place(tpl, ins.name, ins.threejs.position, ins.threejs.rotation_y_rad, 0.3);   // 0.3 m above the sports deck (z-fighting otherwise)
       byName.forEach((o, n) => { if (cad.test(n)) o.visible = false; });                 // the flat CAD rectangles under the templates
     }
-  } catch (e) { console.warn('court assets not loaded', e); }
+  } catch (e) { if (String(e.message) !== 'in master') console.warn('court assets not loaded', e); }
   try {
     if (inMaster('Arrivals Reception') && !byName.has('Arrivals Reception (asset)')) throw new Error('in master'); const pr = await fetch(ASSET_DIR + 'arrivals-reception.placement.json', { cache: 'no-store' }).then(r => r.json());
     const tpl = await loadAsset(pr.asset); const inst = place(tpl, 'Arrivals Reception (asset)', pr.placement_threejs.position, pr.placement_threejs.rotation_y_rad, 0.0);
@@ -917,13 +930,13 @@ else try {
     const mp = byName.get('Arrivals Reception'); if (mp) mp.visible = false;             // the same pavilion built into the master plan by edit e015
   } catch (e) { if (String(e.message) !== 'in master') console.warn('arrivals reception asset not loaded', e); }
   try {                                                                           // B02 Rotunda Restaurant replaces the flat CAD disc; the disc's drop-off children stay in the scene
-    if (inMaster('Rotunda Restaurant') && !byName.has('Rotunda Restaurant')) throw new Error('in master'); const pr = await fetch(ASSET_DIR + 'rotunda-restaurant.placement.json', { cache: 'no-store' }).then(r => r.json());
+    if (inMaster('Rotunda Restaurant')) throw new Error('in master'); const pr = await fetch(ASSET_DIR + 'rotunda-restaurant.placement.json', { cache: 'no-store' }).then(r => r.json());
     const tpl = await loadAsset(pr.asset); const inst = place(tpl, 'Rotunda Restaurant', pr.placement_threejs.position, pr.placement_threejs.rotation_y_rad, 0.0);
     inst.userData.function = 'dining'; inst.userData.zone_id = 'Z02'; inst.userData.zone_name = zoneInfo.Z02 ? zoneInfo.Z02.zone_name : '';
     const cad = byName.get('restaurant'); if (cad) { for (const c of [...cad.children]) model.attach(c); cad.visible = false; }
   } catch (e) { if (String(e.message) !== 'in master') console.warn('rotunda restaurant asset not loaded', e); }
   try {                                                                           // B03 Wellness Spa replaces the flat CAD blocks wellness-spa.001-005
-    if (inMaster('Wellness Spa') && !byName.has('Wellness Spa')) throw new Error('in master'); const ps = await fetch(ASSET_DIR + 'wellness-spa.placement.json', { cache: 'no-store' }).then(r => r.json());
+    if (inMaster('Wellness Spa')) throw new Error('in master'); const ps = await fetch(ASSET_DIR + 'wellness-spa.placement.json', { cache: 'no-store' }).then(r => r.json());
     const tpl = await loadAsset(ps.asset); const inst = place(tpl, 'Wellness Spa', ps.placement_threejs.position, ps.placement_threejs.rotation_y_rad || 0, 0.0);
     inst.userData.function = 'wellness'; inst.userData.zone_id = 'Z06'; inst.userData.zone_name = zoneInfo.Z06 ? zoneInfo.Z06.zone_name : '';
     byName.forEach((o, n) => { if (/^wellness-spa\.\d+$/.test(n)) { for (const c of [...o.children]) model.attach(c); o.visible = false; } });
@@ -1088,7 +1101,7 @@ const hatchMat = (base = SCHEMATIC.hatchBase, line = SCHEMATIC.hatchLine, step =
   }
   const pca = pts => { const n = pts.length, mx = pts.reduce((s, q) => s + q[0], 0) / n, mz = pts.reduce((s, q) => s + q[1], 0) / n; let sxx = 0, szz = 0, sxz = 0; for (const [x, z] of pts) { sxx += (x - mx) ** 2; szz += (z - mz) ** 2; sxz += (x - mx) * (z - mz); } return 0.5 * Math.atan2(2 * sxz, sxx - szz); };
   const ALONG_PADS = new Set(['event hall museum.001 | service drop-off']);
-  const pads = []; model.traverse(o => { if (o.isMesh && /guest drop-off$|service drop-off$|^Drop-off \| DO-\d+/.test(o.name)) pads.push(o); });
+  const pads = []; model.traverse(o => { if (o.isMesh && /^Drop-off \| DO-(guest|BOH)-\d+/.test(o.name)) pads.push(o); });
   const fixed = [];
   for (const m of pads) {
     m.userData.origMat = m.userData.origMat || m.material; m.material = /\(BOH\)|service drop-off$/.test(m.name) ? bohPadMat : guestPadMat;   // e015: access-road pads of the club, hotel and residences are service drop-offs
@@ -1127,27 +1140,29 @@ const PRODUCTS = [
   { fp: ['Hotel 2.0'], hp: ['Hotel 2.'], name: 'Hill Hotel', zone: 'Z02', p: topOfPrefix('Hotel 2.0', 8), kpi: { 'Keys': 120, 'Guests at 70 %': 168, 'Staff': 135, 'Water': '101 m³', 'Energy': '7,200 kWh', 'Sewage': '86 m³' } },
   { fp: ['branded residence BR1 | tower'], hp: ['branded residence BR1'], name: 'Residences BR1', zone: 'Z10', p: topOfPrefix('branded residence BR1', 8), kpi: { 'Apartments': 104, 'In rental pool': 62, 'Residents at peak': 142, 'Staff': 48, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
   { fp: ['branded residence BR2 | tower'], hp: ['branded residence BR2'], name: 'Residences BR2', zone: 'Z10', p: topOfPrefix('branded residence BR2', 8), kpi: { 'Apartments': 104, 'In rental pool': 63, 'Residents at peak': 143, 'Staff': 47, 'Water': '55 m³', 'Energy': '3,650 kWh', 'Sewage': '47 m³' } },
-  { fp: ['Rotunda Restaurant'], hp: ['Rotunda Restaurant', 'restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('Rotunda Restaurant', 6) || topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
-  { fp: ['event hall museum.001 | ring hall', 'event hall museum.001 | roof'], hp: ['event hall museum.001'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
+  { fp: ['Rotunda Restaurant | building'], hp: ['Rotunda Restaurant', 'restaurant'], name: 'Restaurant', zone: 'Z02', p: topOfObj('Rotunda Restaurant', 6) || topOfObj('restaurant', 6), kpi: { 'Seats': 220, 'Covers a day': 900, 'Staff': 60, 'Water': '27 m³', 'Energy': '7,200 kWh', 'Sewage': '23 m³' } },
+  { fp: ['event hall museum.001 | building', 'event hall museum.002 | pavilion', 'event hall museum.003 | pavilion', 'event hall museum.004 | pavilion'], hp: ['event hall museum'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
   { fp: ['gym.001', 'gym.002', 'Tennis court', 'Pickleball court'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['Wellness Spa'], hp: ['Wellness Spa', 'wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfObj('Wellness Spa', 6) || topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
-  { fp: ['marina support.001', 'Terminal'], name: 'Marina', zone: 'Z04', p: topOfObj('marina support.001', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
-  { fp: ['DINING.0'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('DINING.011', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
+  { fp: ['arrivals dock', 'Terminal', 'Excursion pavilion'], name: 'Marina', zone: 'Z04', p: topOfObj('arrivals dock', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
+  { fp: ['Longevity Clinic | building'], hp: ['Longevity Clinic'], name: 'Longevity Clinic', zone: 'Z01', p: topOfPrefix('Longevity Clinic |', 6), kpi: { 'Function': 'Longevity clinic (e135, was the hotel lobby)', 'Programme': 'With the Spa & Wellness', 'Staff': 12 } },
+  { fp: ['apart hotel Building'], hp: ['apart hotel Building'], name: 'Apart-hotel', zone: 'Z03', p: topOfPrefix('apart hotel Building.002', 7), kpi: { 'Buildings': 3, 'Floors': 5, 'Units': 40, 'Staff': 30 } },
+  { fp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], hp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('Pavilion module.008', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
   { fp: [BC_NAME], hp: ['Beach Club', 'Beach club buildings'], name: 'Beach Club', zone: 'Z11', p: topOfObj(BC_NAME, 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
   { fp: ['Members Club | arc building', 'Members Club | pavilion'], hp: ['Members Club'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
 ];
-for (const n of [...byName.keys()].filter(n => /^[Vv]illa\.\d+$/.test(n)).sort()) PRODUCTS.push({ fp: [n + ' |'], name: n.replace(/^[Vv]illa\./, 'Villa '), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
+for (const n of [...byName.keys()].filter(n => /^[Vv]illa(\.\d+)?$/.test(n)).sort()) PRODUCTS.push({ fp: [n], fpExact: true, name: n.replace(/^[Vv]illa\.?/, 'Villa ').replace(/Villa $/, 'Villa 1'), zone: 'Z05', small: true, p: topOfObj(n, 4), kpi: { 'Bedrooms': 4, 'Guests': '5–8', 'Pool': 'yes', 'Water': '2 m³', 'Energy': '150 kWh', 'Sewage': '1.7 m³' } });
 // services: capacity and today's load (balance from the proforma)
 const SERVICES = [
-  { name: 'WH-1 Laundry', fp: ['Infrastructure zone | WH-1 warehouse laundry'], p: topOfObj('Infrastructure zone | WH-1 warehouse laundry roof', 5), kpi: { 'Linen a day': '5,000 kg', 'Load today': '4,900 kg', 'Turnaround': '6 h' }, load: 98 },
-  { name: 'WH-2 Prep kitchen', fp: ['Infrastructure zone | WH-2 warehouse prep kitchen'], p: topOfObj('Infrastructure zone | WH-2 warehouse prep kitchen roof', 5), kpi: { 'Meals prepared': '4,100 a day', 'Staff canteen': '1,000 meals' }, load: 90 },
-  { name: 'WH-3 Cold storage', fp: ['Infrastructure zone | WH-3 warehouse cold storage'], p: topOfObj('Infrastructure zone | WH-3 warehouse cold storage roof', 5), kpi: { 'Cold rooms': '600 m²', 'Food throughput': '4.5 t a day', 'Load today': '4.47 t', 'Next supply call': 'Thursday 08:00' }, load: 99 },
-  { name: 'WH-4 Dry storage', fp: ['Infrastructure zone | WH-4 warehouse storage'], p: topOfObj('Infrastructure zone | WH-4 warehouse storage roof', 5), kpi: { 'Dry store': '900 m²', 'Autonomy': '6 days' }, load: 80 },
+  { name: 'WH-1 Laundry', fp: ['Infrastructure zone | WH-1 warehouse laundry'], p: topOfObj('Infrastructure zone | WH-1 warehouse laundry', 5), kpi: { 'Linen a day': '5,000 kg', 'Load today': '4,900 kg', 'Turnaround': '6 h' }, load: 98 },
+  { name: 'WH-2 Prep kitchen', fp: ['Infrastructure zone | WH-2 warehouse prep kitchen'], p: topOfObj('Infrastructure zone | WH-2 warehouse prep kitchen', 5), kpi: { 'Meals prepared': '4,100 a day', 'Staff canteen': '1,000 meals' }, load: 90 },
+  { name: 'WH-3 Cold storage', fp: ['Infrastructure zone | WH-3 warehouse cold storage'], p: topOfObj('Infrastructure zone | WH-3 warehouse cold storage', 5), kpi: { 'Cold rooms': '600 m²', 'Food throughput': '4.5 t a day', 'Load today': '4.47 t', 'Next supply call': 'Thursday 08:00' }, load: 99 },
+  { name: 'WH-4 Dry storage', fp: ['Infrastructure zone | WH-4 warehouse storage'], p: topOfObj('Infrastructure zone | WH-4 warehouse storage', 5), kpi: { 'Dry store': '900 m²', 'Autonomy': '6 days' }, load: 80 },
   { name: 'FH Fleet Hub', fp: ['Infrastructure zone | FH fleet hub'], p: topOfPrefix('Infrastructure zone | FH fleet hub', 5), kpi: { 'Charging posts': 30, 'Guest pods': '40 planned', 'Shuttles': 5, 'Service vehicles': 22 }, load: 70 },
-  { name: 'OFF Office', fp: ['Infrastructure zone | OFF office'], p: topOfObj('Infrastructure zone | OFF office roof', 5), kpi: { 'Dispatch and admin': '27 on the morning shift', 'Operator console': 'RubiqOS' }, load: 60 },
+  { name: 'Network masts', fp: ['Cell tower'], p: topOfObj('Cell tower.001', 8), kpi: { 'Masts': '2 × 36 m (back of house, gym block)', 'Backbone': '10 Gbit fibre ring', 'Devices served (plan)': '≈ 6,000' }, load: 55 },   // v073: e115 cell towers; the office is gone from the plan
   { name: 'SA Staff accommodation', fp: ['Infrastructure zone | SA'], p: topOfPrefix('Infrastructure zone | SA', 5), kpi: { 'Beds': 420, 'Canteen': '1,000 meals a day', 'Shifts': '07 · 15 · 23' }, load: 85 },
   { name: 'W Waste management', fp: ['Infrastructure zone | W waste management'], p: topOfPrefix('Infrastructure zone | W waste management', 5), kpi: { 'Waste a day': '5 t', 'Recycled': '40 %', 'Night run': '23:00–05:00' }, load: 84 },
-  { name: 'IF Water, power, sewage', fp: ['Infrastructure zone | IF'], p: topOfPrefix('Infrastructure zone | IF', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
+  { name: 'IF Water, power, sewage', fp: ['Infrastructure zone | IF', 'Infrastructure zone | Power plant', 'Infrastructure zone | Gen set', 'Infrastructure zone | Diesel tank', 'Infrastructure zone | RO plant', 'Infrastructure zone | Sewage plant', 'Infrastructure zone | Potable water tank', 'Infrastructure zone | Grey-rain water tank'], p: topOfPrefix('Infrastructure zone | Power plant', 5), kpi: { 'Power': '9 MW peak · 71,000 of 95,000 kWh a day', 'Desalination': '841 of 900 m³ a day', 'Sewage': '698 of 700 m³ a day', 'Potable storage': '1,200 m³' }, load: 100 },
 ];
 // ===== operators (founder 2026-10-19): one manager per object; they are the parties of the transactions that come next
 const OPERATORS = [
@@ -1218,7 +1233,7 @@ const VILLAGE_CLUSTERS = [   // founder 2026-10-17: Marina Village hovers as thr
 const gpins = [];
 function makePin(d, cls, colour) {
   if (!d.p) return;
-  const fpMeshes = () => { const out = []; for (const pre of (d.fp || [])) byName.forEach((o, n) => { if (n.startsWith(pre) && o.isMesh && !FLAT.test(n)) out.push(o); }); return out; };
+  const fpMeshes = () => { const out = []; for (const pre of (d.fp || [])) byName.forEach((o, n) => { if ((d.fpExact ? n === pre : n.startsWith(pre)) && o.isMesh && !FLAT.test(n)) out.push(o); }); return out; };
   d.fpMeshes = fpMeshes;
   const el = document.createElement('div'); el.className = 'gpin ' + cls; el.innerHTML = PIN_SVG(colour) + `<span>${d.name}</span>`; stage.appendChild(el);
   const html = conceptHtml(d);
@@ -1228,7 +1243,7 @@ function makePin(d, cls, colour) {
   gpins.push({ el, p: d.p, d, colour, svc: cls === 'svc' });
 }
 for (const d of PRODUCTS) makePin(d, d.small ? 'small' : 'named', ZC[d.zone] || '#e0795f');
-for (const d of SERVICES) makePin(d, 'svc', '#5a6672');
+for (const d of SERVICES) if (d.p) makePin(d, 'svc', '#5a6672');
 conceptList = [...VILLAGE_CLUSTERS, ...PRODUCTS, ...SERVICES];   // clusters first, so a village module resolves to its cluster, not to the whole village
 // the self-check runs in idle time after the page shows, 8 objects a slot, and never over a live hover; it also warms the footprint cache
 { const list = [...PRODUCTS, ...SERVICES].filter(d => d.fpMeshes).map(d => [d.name, d.fpMeshes()]); model.children.filter(o => o.userData.group === 'buildings').forEach(o => list.push([o.name, meshesUnder(o).filter(m => !FLAT.test(m.name))]));
@@ -1239,7 +1254,7 @@ conceptList = [...VILLAGE_CLUSTERS, ...PRODUCTS, ...SERVICES];   // clusters fir
 function updatePins() { for (const g of gpins) { const sc = toScreen(g.p); if (!sc) { g.el.style.display = 'none'; continue; } g.el.style.display = ''; g.el.style.left = sc[0] + 'px'; g.el.style.top = sc[1] + 'px'; } }
 
 // ===== Marina Village: four clusters are the F&B outlets of the retail zone (vault: Resort Population and Guest Day)
-const villageClusters = [...byName.keys()].filter(n => /^DINING\.\d+$/.test(n)).map(n => byName.get(n)).filter(o => o.parent === model);
+const villageClusters = [...byName.keys()].filter(n => /^(Pavilion module|Pavilion|apart hotel Pavilion)\.\d+$/.test(n)).map(n => byName.get(n)).filter(o => o.parent === model);   // v073: the 30 village modules (e102)
 const FB_NAMES = ['Harbour Café', 'Island Bistro', 'Sunset Bar', 'Fire Grill'];
 const fbMat = new THREE.MeshStandardMaterial({ color: 0xc97a52, roughness: 0.85 });
 const villageFB = villageClusters.filter((o, i) => i % Math.max(1, Math.floor(villageClusters.length / 4)) === 0).slice(0, 4).map((o, i) => {
@@ -1252,8 +1267,8 @@ const villageFB = villageClusters.filter((o, i) => i % Math.max(1, Math.floor(vi
 const ambient = [];
 const hourOf = () => ((START_MIN + (window.SIM_T || 0)) / 60) % 24;
 const between = (h, a, b) => (a <= b ? h >= a && h < b : h >= a || h < b);
-const stopName = p => { const n = stopNames[stops.indexOf(p)] || ''; const m = n.match(/DO-(\d+)/); return m ? `Drop-off ${+m[1]}` : n.split(' | ')[0] + ' drop-off'; };
-const villas = [...byName.keys()].filter(n => /^[Vv]illa\.\d+$/.test(n)).map(n => ({ name: n.replace(/^[Vv]illa\./, 'Villa '), p: centreOf(n) }));   // v069+: the B05 asset "Villa.NNN"
+const stopName = p => { const n = stopNames[stops.indexOf(p)] || ''; const m = n.match(/DO-(guest|BOH)-(\d+)/); return m ? `Drop-off ${m[1]} ${+m[2]}` : n.split(' | ')[0] + ' drop-off'; };
+const villas = [...byName.keys()].filter(n => /^[Vv]illa(\.\d+)?$/.test(n)).map(n => ({ name: n.replace(/^[Vv]illa\.?/, 'Villa ').replace(/Villa $/, 'Villa 1'), p: centreOf(n) }));   // v073: `Villa`, `Villa.002` … one mesh each   // v069+: the B05 asset "Villa.NNN"
 const residences = ['branded residence BR1', 'branded residence BR2'].filter(n => byName.has(n)).map(n => ({ name: n.replace('branded residence ', 'Residences '), p: centreOf(n) }));
 const hotels = [{ name: 'Beach hotel', p: A.stopHotel }, { name: 'Hill hotel', p: A.hillHotel }];
 const kitchens = [{ name: 'Marina Village kitchen', p: A.village }, { name: 'Beach hotel kitchen', p: A.stopHotel }];
@@ -1654,13 +1669,15 @@ for (const f of villageFB) addPoi('village', f.name, f.p);
 // beach spots: five along each sand beach, taken from the beach's own raster, so they lie on the sand, not on the promenade
 for (const n of ['BEACH.001', 'BEACH.003']) { const ms = meshOf(n); if (!ms.length) continue; const bg = surfaceGrid(ms, 6, 0); const cells = []; for (let k = 0; k < bg.W * bg.H; k++) if (!isNaN(bg.y[k])) cells.push(k);
   cells.sort((a, b) => (a % bg.W) - (b % bg.W)); for (let i = 0; i < 5; i++) { const k = cells[Math.floor((i + 0.5) / 5 * cells.length)]; if (k !== undefined) addPoi('beach', `${n === 'BEACH.001' ? 'North' : 'South'} beach ${i + 1}`, bg.posOf(k % bg.W, (k / bg.W) | 0)); } }
-for (const o of villageClusters) if (!o.userData.use) addPoi('retail', o.name.replace('DINING.', 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
+for (const o of villageClusters) if (!o.userData.use) addPoi('retail', o.name.replace(/^(Pavilion module|Pavilion|apart hotel Pavilion)\./, 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
 addPoi('beach', 'Beach Club', beachClubP);
 addPoi('beach', 'Hotel pool', has('Beach Hotel | pool') ? centreOf('Beach Hotel | pool') : A.hotel);
 addPoi('beach', 'Members Club beach', has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : A.hotel);
 addPoi('spa', 'Spa', A.spa);
 for (const n of ['gym.001', 'gym.002']) if (has(n)) addPoi('sport', n === 'gym.001' ? 'Gym' : 'Sports hall', centreOf(n));
-for (const n of ['tennis court.001', 'tennis court.002', 'pickleball.001', 'pickleball.004']) if (has(n)) addPoi('sport', n.replace(/\.\d+$/, '').replace(/^\w/, c => c.toUpperCase()), centreOf(n));
+for (const n of ['Tennis court', 'Tennis court.002', 'Pickleball court', 'Pickleball court.004']) if (has(n)) addPoi('sport', n.replace(/\.\d+$/, ''), centreOf(n));
+for (const n of [...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).sort()) addPoi('promenade', n.replace('Point of attraction.', 'Attraction ').replace('Viewpoint.', 'Viewpoint '), centreOf(n));   // v073: points of interest for walks (e125)
+if (has('Longevity Clinic | building')) addPoi('spa', 'Longevity Clinic', A.clinic);
 addPoi('event', 'Events Rotunda', A.rotunda);
 addPoi('marina', 'Marina pontoons', A.basin.clone().setZ(A.basin.z - 150)); addPoi('terminal', 'Guest dock', A.guestDock); addPoi('excursion', 'Excursion dock', A.excDock);
 { const pm = meshOf('PROMENADE surface')[0]; if (pm) { const b = bboxOf(pm); addPoi('promenade', 'Promenade west', new THREE.Vector3(b.min.x + 30, 0, b.getCenter(new THREE.Vector3()).z)); addPoi('promenade', 'Promenade centre', b.getCenter(new THREE.Vector3())); addPoi('promenade', 'Promenade east', new THREE.Vector3(b.max.x - 30, 0, b.getCenter(new THREE.Vector3()).z)); } }
@@ -1668,15 +1685,21 @@ for (const v of villas) addPoi('villa', v.name, v.p);
 for (const r of residences) { const k = 'branded residence ' + r.name.split(' ')[1];   // ground-level spots per building: entrance link and drop-off, not the tower centre
   let n = 0; for (const part of ['entrance link', 'service drop-off']) if (has(`${k} | ${part}`)) { addPoi('residence', `${r.name} ${part}`, centreOf(`${k} | ${part}`)); n++; }
   if (!n) addPoi('residence', r.name, r.p); }
-addPoi('hotel', 'Beach Hotel lobby', A.hotel); for (const n of [...byName.keys()].filter(n => /^Hotel 2\.\d+ \| plinth$/.test(n))) addPoi('hotel', 'Hill Hotel ' + n.split(' | ')[0].replace('Hotel 2.', 'block '), centreOf(n));
+addPoi('hotel', 'Beach Hotel lobby', A.hotel); for (const n of [...byName.keys()].filter(n => /^Hotel 2\.\d+ \| building$/.test(n))) addPoi('hotel', 'Hill Hotel ' + n.split(' | ')[0].replace('Hotel 2.', 'block '), centreOf(n));
 addPoi('staff', 'Staff accommodation', has('Infrastructure zone | SA staff accommodation courtyard') ? centreOf('Infrastructure zone | SA staff accommodation courtyard') : A.boh);
 // staff walk only inside the back-of-house zone (founder 2026-10-18): accommodation, warehouse, fleet hub, utilities, office, waste
 addPoi('boh', 'Warehouse', A.boh); addPoi('boh', 'Fleet Hub', A.fleet); addPoi('boh', 'Utilities', A.power);
-if (has('Infrastructure zone | OFF office roof')) addPoi('boh', 'Office', centreOf('Infrastructure zone | OFF office roof'));
+/* the masts are not a staff destination (no path to them) */
 { const w = prefixCentre('Infrastructure zone | W waste'); if (w.lengthSq() > 1) addPoi('boh', 'Waste management', w); }
 addPoi('stop', 'Marina stop', A.stopMarina); POI.stop[0].road = A.stopMarina;
 for (const s of stops) if (s !== A.stopMarina) { const q = addPoi('stop', stopName(s), s); if (q) q.road = s; }   // every guest drop-off is a pod stop: people call a pod from the nearest one
 addPoi('club', 'Members Club', has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : POI.beach[0].p);
+// walk islands (v073): a POI whose cell is not on the main walk network gets a straight link to the nearest main cell within 60 m.
+// These links are reported, not drawn: each one is a missing footpath in the master-plan model (founder rule: fix the model, not the code).
+window.__walkBridges = [];
+{ const m = walkR.mainComp(); for (const [cat, list] of Object.entries(POI)) for (const q of list) { const c = walkR.nearest(q.p); if (!c || walkR.comp[c[1] * walkR.W + c[0]] === m) continue;
+    const to = walkR.nearestMain(q.p, 60) || walkR.nearestOther(q.p, 60); if (to && walkR.link(walkR.posOf(...c), to)) { walkR.relabel(); window.__walkBridges.push(`${cat} · ${q.name} · ${Math.round(walkR.posOf(...c).distanceTo(to))} m`); } else window.__walkBridges.push(`${cat} · ${q.name} · no other network within 60 m`); }   /* main network first, else the nearest neighbouring piece (the BOH yards join each other) */
+  if (window.__walkBridges.length) console.warn('walk islands linked (missing footpaths in the model):', window.__walkBridges); }
 const poiAny = cat => (POI[cat] && POI[cat].length ? anyOf(POI[cat]) : POI.hotel[0]);
 const POI_LABEL = { club: 'the Members Club', restaurant: 'the hotel restaurant', food: 'a restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the guest dock', excursion: 'the excursion dock', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
 
@@ -1904,7 +1927,7 @@ function updateDash() {
   const byCls = {}; for (const b of berths) { const c = byCls[b.cls] ||= { moored: 0, berths: 0 }; c.berths++; if (b.occupied) c.moored++; }
   const w1 = ambient.filter(f => f.type === 'W1' && /^Mainland/.test(f.task)).map(f => f.task), sv = ambient.find(f => f.type === 'W2'), ex = ambient.find(f => f.type === 'W3');
   const riders = people.filter(f => f.ride && f.ride.waiting && f.visible).length, aboard = people.filter(f => f.ride && !f.visible).length;
-  window.__dbg = window.__dbg || { POI, A, beachClubP };                      /* positions for debugging from the console; not used by the pages */
+  window.__dbg = window.__dbg || { POI, A, beachClubP, byName, walkR, roadR, villas, stops };                      /* positions for debugging from the console; not used by the pages */
   window.__live = {
     clock: clockText(), hour: +h.toFixed(2), indoors: people.filter(f => !f.idle && f.indoor).length, walking: people.filter(f => !f.idle && f.walkOnly && f.path).length, day: DAYN[dayIndex() % 7], guestsSim: guests.length, scale: +scale.toFixed(2), onShift, shiftShare: +shiftShare.toFixed(3),
     people: byType, products, fleet,
@@ -2021,19 +2044,20 @@ function setMarkerStyle(sch) {
   for (const f of [...ambient, ...yachtMovers]) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
     mk.material.map = sch ? vehIcon(VEH_ICON[f.type] || 'car') : mk.userData.stdMap; mk.material.needsUpdate = true; const k = sch ? 0.024 : mk.userData.stdScale; mk.scale.set(k, k, 1); }
 }
-const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception)/;   // the signature buildings, one muted blue
+const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception|Excursion pavilion)/;   // the signature buildings, one muted blue
 const meshTop = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q; };
 const meshGroup = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
 const meshFn = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q.userData.function || o.userData.function || ''; };
 function schematicMat(o) {
   const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), S = SCHEMATIC;
-  if (/drop-off$|^Drop-off \| DO-/.test(n)) return /\(BOH\)|service drop-off$/.test(n) ? hatchMat() : flatMat(S.guestPad, 0.9);   // back-of-house pads hatched, guest pads light blue
+  if (/^Drop-off \| DO-/.test(n)) return /DO-BOH/.test(n) ? hatchMat() : flatMat(S.guestPad, 0.9);   // back-of-house pads hatched, guest pads light blue
   if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
-  if (n.startsWith('Infrastructure zone')) return /GREEN/.test(mn) ? dotMat() : /Road surface/.test(mn) ? flatMat(S.roadMain) : /Village stone|Hotel glass|Hotel white|Village roof/.test(mn) ? flatMat(S.infraBld) : flatMat(S.infra);   // back of house: greys
+  if (n.startsWith('Infrastructure zone')) return /GREEN|Lawn/.test(mn) ? dotMat() : /Road surface/.test(mn) ? flatMat(S.roadMain) : /Plaza paving/.test(mn) ? flatMat(S.walk) : /Village stone|Hotel glass|Hotel white|Village roof|Utility concrete/.test(mn) ? flatMat(S.infraBld) : flatMat(S.infra);   // v073: plants and tanks in concrete grey, yards as paving
+  if (g === 'sport') return flatMat(/Net|Fence/i.test(mn + ' ' + n) ? 0xffffff : S.fn.courts);   // v073: the courts are their own group   // back of house: greys
   if (/Pool water/.test(mn)) return flatMat(S.pool, 0.4);
   if (g === 'trees') return flatMat(/dark/i.test(mn) ? S.treeDark : /Palm/.test(mn) ? S.palm : /trunk/i.test(mn) ? S.trunk : /Hotel white|parasol/i.test(mn) ? 0xffffff : S.tree);
   if (g === 'terrain') return /BEACH/.test(mn) ? flatMat(S.beach) : /Rocky/.test(mn) ? flatMat(S.rock) : /GREEN/.test(mn) ? dotMat() : flatMat(S.land);
-  if (g === 'landscape') return /GREEN|Planting/.test(mn) ? dotMat() : flatMat(S.land);
+  if (g === 'landscape') return /GREEN|Planting|Lawn/.test(mn) ? dotMat() : flatMat(S.land);
   if (g === 'mobility') return /^Road surface|PARKING|loading/.test(mn) || /ROADS_SERVICE|loading zone|service road/.test(n) ? flatMat(S.roadMain) : /Plaza|Urban/.test(mn) ? flatMat(S.plaza) : flatMat(S.walk);
   if (g === 'marina' && /^MARINA( \| apron slope)?$/.test(n)) return flatMat(S.sea);          // breakwater body and slope: the sea colour, white walkway on top (founder 2026-10-19)
   if (g === 'marina' && /^MARINA \| apron/.test(n)) return flatMat(0xffffff);
