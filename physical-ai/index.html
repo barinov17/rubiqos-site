@@ -10,25 +10,30 @@
 <link rel="stylesheet" href="/site.css?v=20261020a">
 <link rel="stylesheet" href="/proforma.css?v=20261020a">
 <style>
-  /* object first, then its robots (founder 2026-10-20) */
-  body.site table.t.pa td { vertical-align: middle; }
-  body.site table.t.pa tr.obj td { background: var(--panel); padding-top: 9px; padding-bottom: 9px; }
-  body.site table.t.pa tr.obj td:first-child { font: 600 14px var(--body); color: var(--navy); } body.site table.t.pa tr.obj a { color: var(--navy); text-decoration: none; } body.site table.t.pa tr.obj a:hover { text-decoration: underline; }
-  body.site table.t.pa tr.obj small { font: 600 10px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-left: 8px; }
-  body.site table.t.pa tr.rb td:first-child { padding-left: 26px; font-weight: 400; color: var(--text); white-space: normal; }
-  body.site table.t.pa tr.rb td:first-child b { font-weight: 500; color: var(--navy); cursor: help; }
-  body.site table.t.pa td.svc a { color: var(--accent); text-decoration: none; } body.site table.t.pa td.svc a:hover { text-decoration: underline; } body.site table.t.pa td.svc .own { color: var(--muted); }
-  body.site table.t.pa td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; width: 1%; }
+  /* v4 (founder 2026-10-20): one card per object; products and services apart, then by category; in a card: robots, then fixed automation, each with what it does */
+  body.site .pa-sec { margin-top: 26px; }
+  body.site .pa-sec > h2 { margin: 0 0 4px; }
+  body.site h3.grp { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 18px 0 8px; }
+  body.site .pa-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
+  body.site .pa-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  body.site .pa-card.empty { background: transparent; border-style: dashed; padding: 10px 16px; gap: 2px; }
+  body.site .pa-card .hd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  body.site .pa-card h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; } body.site .pa-card h3 a { color: inherit; text-decoration: none; } body.site .pa-card h3 a:hover { text-decoration: underline; }
+  body.site .pa-card .tot { font: 500 12px var(--body); color: var(--muted); white-space: nowrap; }
+  body.site .pa-card .cap { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 4px; }
+  body.site .pa-card .cap.rb { color: #0f8a7a; } body.site .pa-card .cap.au { color: var(--muted); }
+  body.site .pa-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+  body.site .pa-card li { display: grid; grid-template-columns: 1fr auto; gap: 0 10px; font-size: 13px; }
+  body.site .pa-card li b { font-weight: 600; color: var(--navy); }
+  body.site .pa-card li .n { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; text-align: right; }
+  body.site .pa-card li .d { grid-column: 1 / -1; font-size: 12px; color: var(--muted); line-height: 1.35; margin-left: 17px; }
+  body.site .pa-card .nil { font-size: 12.5px; color: var(--muted); }
   body.site .tag { display: inline-block; font: 600 9.5px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; vertical-align: 1px; }
-  body.site .none { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
   body.site .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 18px; }
   body.site .kpis .k { background: var(--panel); border-radius: 10px; padding: 12px 14px; } body.site .kpis .k b { display: block; font: 600 26px var(--body); color: var(--navy); } body.site .kpis .k span { font-size: 12.5px; color: var(--muted); }
-  body.site .rule { font-size: 13.5px; color: var(--muted); max-width: 80ch; }
   body.site .org { position: relative; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; cursor: help; outline: none; } body.site .org.founder { background: var(--ok); } body.site .org.claude { background: var(--bad); }
-  body.site .org[data-tip]:hover::after, body.site .org[data-tip]:focus::after { content: attr(data-tip); position: absolute; left: -4px; top: 16px; z-index: 20; width: 340px; max-width: 70vw; background: var(--navy); color: #fff; font: 400 12.5px/1.45 var(--body); padding: 9px 11px; border-radius: 8px; box-shadow: 0 6px 20px rgba(10, 18, 32, 0.25); white-space: normal; }
-  body.site table.t.pa td:nth-child(2) { overflow: visible; }
-  body.site .legend { font-size: 12.5px; color: var(--muted); margin: -8px 0 14px; } body.site .legend .org { margin: 0 4px 0 0; }
-  @media (max-width: 720px) { body.site .scroll { overflow-x: auto; } body.site .scroll table.t { min-width: 760px; } }
+  body.site .org[data-tip]:hover::after, body.site .org[data-tip]:focus::after { content: attr(data-tip); position: absolute; left: -4px; top: 16px; z-index: 20; width: 320px; max-width: 70vw; background: var(--navy); color: #fff; font: 400 12.5px/1.45 var(--body); padding: 9px 11px; border-radius: 8px; box-shadow: 0 6px 20px rgba(10, 18, 32, 0.25); white-space: normal; }
+  body.site .legend { font-size: 12.5px; color: var(--muted); margin: -8px 0 6px; } body.site .legend .org { margin: 0 4px 0 0; }
 </style>
 </head>
 <body class="site">
@@ -36,50 +41,48 @@
 <div class="wrap">
   <div class="hero">
     <h1>Physical AI</h1>
-    <p>Object by object: what robots each one holds, how many, and which service of the proforma they work for. Hover a robot for what it does. The data is the register in <code>proforma-data.js</code> (<code>ROBOTS</code>, <code>TEAM</code>, <code>ROBOT_SERVICE</code>): the cards and this page read the same source.</p>
-    <div class="note" id="paNote">v3 · object first · counts at the plan's scale.</div>
+    <p>One card per object of the proforma: the robots it holds and its fixed automation, how many, and what each one does. Products and services apart, by the same categories as the proforma. The data is the register in <code>proforma-data.js</code> (<code>ROBOTS</code>, <code>TEAM</code>): the proforma cards and this page read the same source.</p>
+    <div class="note" id="paNote">v4 · cards by category · counts at the plan's scale.</div>
   </div>
   <div class="kpis" id="paKpis"></div>
-  <p class="legend"><span class="org founder"></span>asked for by the founder · <span class="org claude"></span>added by Claude — hover the dot: why, when, and whether it is a real product. <span class="tag">automation</span> fixed installation, not a robot; not in the robot count.</p>
+  <p class="legend"><span class="org founder"></span>asked for by the founder · <span class="org claude"></span>added by Claude — hover the dot: why, when, and whether it is a real product.</p>
 
-  <section id="objects">
-    <div class="scroll"><table class="t pa"><thead><tr><th>Object · robot</th><th>Proforma service</th><th class="num">Units</th></tr></thead><tbody id="paObjects"></tbody></table></div>
-    <p class="none" id="paNone"></p>
-  </section>
+  <section class="pa-sec"><h2>Products</h2><div id="paProducts"></div></section>
+  <section class="pa-sec"><h2>Services</h2><div id="paServices"></div></section>
 
-  <div class="foot">RubiqOS · Physical AI register v3, 2026-10-20 · platforms on the market per type: research note <em>physical-ai-platforms-2026</em> (v1 market map, 2026-10-17).</div>
+  <div class="foot">RubiqOS · Physical AI register v4, 2026-10-20 · platforms on the market per type: research note <em>physical-ai-platforms-2026</em> (v1 market map, 2026-10-17).</div>
 </div>
 <script src="/proforma-data.js?v=20261020a"></script>
 <script>
 (() => {
-  // object first (founder 2026-10-20): every object in proforma order, its robots under it, each with the proforma service it works for
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const ALL = [...PRODUCTS, ...SERVICES, FLEET_HUB];
-  const kindOf = e => (PRODUCTS.includes(e) ? 'product' : 'service');
-  const svcCell = (eid, rid) => { const s = serviceOfRobot(eid, rid); if (s === null || s === undefined) return '<span class="own">own operation of the object</span>';
-    const e = entityOf(s); return e ? `<a href="${ENTITY_URL(s)}">${e.name}</a>` : esc(s); };
-  const out = [], none = [], types = new Set(); let robots = 0, auto = 0, fleet = 0;
-  for (const e of ALL) {
-    const t = TEAM[e.id]; const list = t ? Object.entries(t.robots).filter(([, n]) => n > 0) : [];
-    if (!list.length) { none.push(`<a href="${ENTITY_URL(e.id)}">${e.name}</a>`); continue; }
-    const nRob = list.filter(([rid]) => robotOf(rid).scope !== 'auto').reduce((a, [, n]) => a + n, 0);
-    out.push(`<tr class="obj"><td colspan="2"><a href="${ENTITY_URL(e.id)}">${e.name}</a><small>${kindOf(e)}</small></td><td class="num">${fmt(nRob)}</td></tr>`);
-    for (const [rid, n] of list.sort((a, b) => (robotOf(a[0]).scope === 'auto') - (robotOf(b[0]).scope === 'auto') || b[1] - a[1])) {
-      const r = robotOf(rid), isAuto = r.scope === 'auto';
-      if (isAuto) auto += n; else { robots += n; types.add(rid); if (r.scope === 'fleet') fleet += n; }
-      const o = (typeof ORIGIN !== 'undefined' && ORIGIN[rid]) || { by: 'claude', note: 'No origin recorded.' };
-      const tip = (o.by === 'founder' ? 'Asked for by the founder. ' : 'Added by Claude. ') + o.note;
-      out.push(`<tr class="rb"><td><span class="org ${o.by}" tabindex="0" data-tip="${esc(tip)}"></span><b title="${esc(r.does)}">${esc(r.name)}</b>${isAuto ? '<span class="tag">automation</span>' : ''}${r.scope === 'fleet' ? '<span class="tag">fleet · ' + rid + '</span>' : ''}</td><td class="svc">${svcCell(e.id, rid)}</td><td class="num">${fmt(n)}</td></tr>`);
-    }
-  }
-  document.getElementById('paObjects').innerHTML = out.join('');
-  document.getElementById('paNone').innerHTML = none.length ? `No robots yet: ${none.join(' · ')}.` : '';
-  document.getElementById('paKpis').innerHTML = [[ALL.length - none.length, 'objects with robots'], [robots, 'robots (' + types.size + ' types)'], [fleet, 'of them shared fleet, in the Fleet Hub'], [auto, 'fixed automation units']]
+  // categories = the proforma's groups; the Marina group also holds the marina itself and yacht services (the proforma shows them in its wide block)
+  const PG = PRODUCT_GROUPS.map(g => ({ title: g.title, ids: g.wide === 'marina' ? ['marina', 'yacht-services', ...g.ids.filter(i => i !== 'yacht-services')] : g.ids }));
+  const SG = [...SERVICE_GROUPS, { title: 'Fleet', ids: ['fleet'] }];
+  let robots = 0, auto = 0, fleet = 0, withAny = 0; const types = new Set();
+  const item = (rid, n) => { const r = robotOf(rid), o = (typeof ORIGIN !== 'undefined' && ORIGIN[rid]) || { by: 'claude', note: 'No origin recorded.' };
+    const tip = (o.by === 'founder' ? 'Asked for by the founder. ' : 'Added by Claude. ') + o.note;
+    return `<li><span><span class="org ${o.by}" tabindex="0" data-tip="${esc(tip)}"></span><b>${esc(r.name)}</b>${r.scope === 'fleet' ? '<span class="tag">' + rid + '</span>' : ''}</span><span class="n">${fmt(n)}</span><span class="d">${esc(r.does)}</span></li>`; };
+  const card = id => { const e = entityOf(id); if (!e) return '';
+    const list = Object.entries((TEAM[id] || { robots: {} }).robots).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    const rb = list.filter(([k]) => robotOf(k).scope !== 'auto'), au = list.filter(([k]) => robotOf(k).scope === 'auto');
+    const nR = rb.reduce((a, [, n]) => a + n, 0), nA = au.reduce((a, [, n]) => a + n, 0);
+    robots += nR; auto += nA; rb.forEach(([k, n]) => { types.add(k); if (robotOf(k).scope === 'fleet') fleet += n; }); if (list.length) withAny++;
+    const head = `<div class="hd"><h3><a href="${ENTITY_URL(id)}">${esc(e.name)}</a></h3>${list.length ? `<span class="tot">${fmt(nR)} robots${nA ? ' · ' + fmt(nA) + ' automation' : ''}</span>` : ''}</div>`;
+    if (!list.length) return `<div class="pa-card empty">${head}<span class="nil">No robots or automation yet.</span></div>`;
+    return `<div class="pa-card">${head}` +
+      (rb.length ? `<div><div class="cap rb">Robots</div><ul>${rb.map(([k, n]) => item(k, n)).join('')}</ul></div>` : '') +
+      (au.length ? `<div><div class="cap au">Fixed automation</div><ul>${au.map(([k, n]) => item(k, n)).join('')}</ul></div>` : '') + `</div>`; };
+  const groups = gs => gs.map(g => `<h3 class="grp">${esc(g.title)}</h3><div class="pa-cards">${g.ids.map(card).join('')}</div>`).join('');
+  document.getElementById('paProducts').innerHTML = groups(PG);
+  document.getElementById('paServices').innerHTML = groups(SG);
+  document.getElementById('paKpis').innerHTML = [[withAny, 'objects with robots or automation'], [robots, 'robots (' + types.size + ' types)'], [fleet, 'of them shared fleet, in the Fleet Hub'], [auto, 'fixed automation units']]
     .map(([v, l]) => `<div class="k"><b>${fmt(v)}</b><span>${l}</span></div>`).join('');
-  const unknown = [...new Set(Object.values(TEAM).flatMap(t => Object.keys(t.robots)))].filter(k => !ROBOTS[k]);
+  // checks: robot ids missing from the register; objects of TEAM that no category shows
+  const shown = new Set([...PG, ...SG].flatMap(g => g.ids)), unknown = [...new Set(Object.values(TEAM).flatMap(t => Object.keys(t.robots)))].filter(k => !ROBOTS[k]);
+  const orphan = Object.keys(TEAM).filter(k => !shown.has(k) && Object.keys(TEAM[k].robots).length);
   if (unknown.length) document.getElementById('paNote').innerHTML += ` <b style="color:var(--bad)">Unregistered ids in TEAM: ${unknown.join(', ')}</b>`;
-  const noSvc = Object.keys(ROBOTS).filter(k => !(k in ROBOT_SERVICE) && ROBOTS[k].scope !== 'fleet');
-  if (noSvc.length) document.getElementById('paNote').innerHTML += ` <b style="color:var(--bad)">No service mapped for: ${noSvc.join(', ')}</b>`;
+  if (orphan.length) document.getElementById('paNote').innerHTML += ` <b style="color:var(--bad)">Objects with robots but no category: ${orphan.join(', ')}</b>`;
 })();
 </script>
 </body>
