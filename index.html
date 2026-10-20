@@ -987,7 +987,7 @@ TYPES.A1 = { title: 'Helicopter', role: 'VIP charter helicopter, Airbus H145 cla
 TYPES.yachtguest = { title: 'Yacht guest', role: 'Arrived on an own or chartered yacht in the marina: Marina Village, Beach Club, excursions and the regatta.' };
 TYPES.crew = { title: 'Yacht crew', role: 'Crews of the moored yachts: 1 on a small boat, 4 on a medium one, 12 on a superyacht. Live aboard; the crew lounge, the village, provisioning at the dark store; the count follows the berths.' };
 TYPES.member = { title: 'Member', role: 'Members Club member from the mainland: club house, beach, spa and sport by membership; comes by shuttle or own boat.' };
-TYPES.staff = { title: 'Staff', role: 'Housekeeping, F&B, engineers and butlers. Walk from the staff accommodation to the back of house at 07:00, 15:00 and 23:00.' };
+TYPES.staff = { title: 'Staff', role: 'Nine trades (housekeeping, F&B, butlers, spa, marina, landscape, engineering, logistics, administration) on three shifts (07, 15, 23). Staff shuttle from the staff village to the back-of-house drop-off by the workplace; most eat at the staff canteen in the administration building before the shift.' };
 const COL = { hotel: 0x86aee0, resident: 0x9fcb7c, day: 0xf3c06b, yachtguest: 0xf4f1ea, member: 0xc9a3e6, crew: 0x8c6d4f, staff: 0x15304a };
 const ACTORS = [['People', [['hotel', COL.hotel], ['resident', COL.resident], ['day', COL.day], ['yachtguest', COL.yachtguest], ['member', COL.member], ['crew', COL.crew], ['staff', COL.staff]]],
   ['On land', [['L1', 0xe0795f], ['L2', 0xf3c06b], ['L3', 0x9fcb7c], ['L4', 0x15304a], ['L5', 0x6f9fd8]]],
@@ -1272,13 +1272,10 @@ function updatePins() { for (const g of gpins) { const sc = toScreen(g.p); if (!
 
 // ===== Marina Village: four clusters are the F&B outlets of the retail zone (vault: Resort Population and Guest Day)
 const villageClusters = [...byName.keys()].filter(n => /^(Pavilion module|Pavilion|apart hotel Pavilion)\.\d+$/.test(n)).map(n => byName.get(n)).filter(o => o.parent === model);   // v073: the 30 village modules (e102)
-const FB_NAMES = ['Harbour Café', 'Island Bistro', 'Sunset Bar', 'Fire Grill'];
-const fbMat = new THREE.MeshStandardMaterial({ color: 0xc97a52, roughness: 0.85 });
-const villageFB = villageClusters.filter((o, i) => i % Math.max(1, Math.floor(villageClusters.length / 4)) === 0).slice(0, 4).map((o, i) => {
-  o.userData.use = `F&B outlet · ${FB_NAMES[i]}`;
-  o.traverse(m => { if (m.isMesh && m.userData.material && /stone|Village stone/i.test(m.userData.material)) { m.userData.origMat = m.material; m.material = fbMat; } });
-  return { name: FB_NAMES[i], p: bboxOf(o).getCenter(new THREE.Vector3()) };
-});
+// F&B outlets of the village = the modules whose function in data/marina-village-functions.json is food or drink (2026-10-20; was four modules picked by index)
+const fnTitle = t => (t.charAt(0).toUpperCase() + t.slice(1)).replace(/\s*[·(].*$/, '');
+const villageFB = villageClusters.filter(o => (VILLAGE_FN[o.name] || {}).category === 'fnb').map(o => { o.userData.use = 'F&B · ' + VILLAGE_FN[o.name].function; return { name: fnTitle(VILLAGE_FN[o.name].function), p: bboxOf(o).getCenter(new THREE.Vector3()) }; });
+if (!villageFB.length) for (const o of villageClusters.slice(0, 4)) { o.userData.use = 'F&B'; villageFB.push({ name: 'Village café ' + o.name.slice(-3), p: bboxOf(o).getCenter(new THREE.Vector3()) }); }   // no functions file: four modules stand in
 
 // ===== fleet (plan: vault "Fleet Plan and Vehicle Scenarios"; the demo shows the peak shift at reduced scale)
 const ambient = [];
@@ -1288,12 +1285,15 @@ const stopName = p => { const n = stopNames[stops.indexOf(p)] || ''; const m = n
 const villas = [...byName.keys()].filter(n => /^[Vv]illa(\.\d+)?$/.test(n)).map(n => ({ name: n.replace(/^[Vv]illa\.?/, 'Villa ').replace(/Villa $/, 'Villa 1'), p: centreOf(n) }));   // v073: `Villa`, `Villa.002` … one mesh each   // v069+: the B05 asset "Villa.NNN"
 const residences = ['branded residence BR1', 'branded residence BR2'].filter(n => byName.has(n)).map(n => ({ name: n.replace('branded residence ', 'Residences '), p: centreOf(n) }));
 const hotels = [{ name: 'Beach hotel', p: A.stopHotel }, { name: 'Hill hotel', p: A.hillHotel }];
-const kitchens = [{ name: 'Marina Village kitchen', p: A.village }, { name: 'Beach hotel kitchen', p: A.stopHotel }];
-const darkStore = { name: 'Dark Store', p: byName.has('Pavilion module.003') ? centreOf('Pavilion module.003') : A.village };   /* the convenience store in Marina Village is the dark store: guest-app orders leave from here (founder 2026-10-20) */
+const kitchens = [{ name: 'Marina Village kitchen', p: A.village, outlet: 'Marina Village' }, { name: 'Beach Hotel kitchen', p: A.stopHotel, outlet: 'Beach Hotel' }, { name: 'Hill Hotel kitchen', p: A.hillHotel, outlet: 'Hill Hotel' }];   /* room service leaves from the kitchen nearest the guest */
+const darkStore = { name: 'Dark Store', outlet: 'Dark Store', p: byName.has('Pavilion module.003') ? centreOf('Pavilion module.003') : A.village };
+const chandlery = { name: 'Chandlery', outlet: 'Chandlery', p: byName.has('Pavilion.001') ? centreOf('Pavilion.001') : A.village };   /* the marine chandlery next to the dark store (founder 2026-10-20) */
+const ADMIN_P = byName.has('apart hotel Building.001 | building') ? centreOf('apart hotel Building.001 | building') : A.village, APART_P = byName.has('apart hotel Building.002 | building') ? centreOf('apart hotel Building.002 | building') : A.village;
+const SA_P = byName.has('Infrastructure zone | SA staff accommodation courtyard') ? centreOf('Infrastructure zone | SA staff accommodation courtyard') : A.boh;   /* the convenience store in Marina Village is the dark store: guest-app orders leave from here (founder 2026-10-20) */
 const venues = [{ name: 'Marina Village', p: A.village }, { name: 'Beach hotel', p: A.stopHotel }, { name: 'Hill hotel', p: A.hillHotel }, { name: 'Events Rotunda', p: A.rotunda }];
 const homes = [...villas, ...residences, ...hotels];
 const stopNear = p => nearestStop(p);
-const CHARGE = { L1: { name: 'Fleet Hub', p: A.fleet }, L2: { name: 'Fleet Hub', p: A.fleet }, L3: { name: 'Fleet Hub', p: A.fleet }, L5: { name: 'robot dock at the warehouse', p: A.boh }, L4: { name: 'truck chargers at the warehouse', p: A.boh } };
+const CHARGE = { L1: { name: 'Fleet Hub', p: A.fleet }, L2: { name: 'Fleet Hub', p: A.fleet }, L3: { name: 'Fleet Hub', p: A.fleet }, L5: { name: 'robot dock at the Dark Store', p: darkStore.p }, L4: { name: 'truck chargers at the warehouse', p: A.boh } };
 const DRAIN = { L1: 0.22, L2: 0.16, L3: 0.18, L4: 0.14, L5: 0.24 };          // % per motion-minute: ~2.5 simulated hours of driving from 100 to 30 %
 const CHARGE_MIN = 40, CHARGE_RATE = 2.0;                                      // 40 simulated minutes, 20 → 100 %: about a fifth of the fleet charges at any time
 // bays in the fenced Fleet Hub yard: two rows under the charging canopies; robots and trucks use the warehouse chargers
@@ -1338,55 +1338,122 @@ for (let k = 0; k < 3; k++) follower('L2', `S${k + 1}`, 'road', 18, f => {
   f.wait = 3; return trip(f, from, to[1], `Loop · ${n} guests on board · ${LOOP[f.i][0]} → ${to[0]}`);
 }, LOOP[0][1]);
 
-// --- supply chain (founder 2026-10-19): vessel → Service dock → warehouse stores → F&B outlets → meals. Plan scale, kg.
+// --- staff shuttle (2026-10-20): the back-of-house yard (staff village, warehouse, Fleet Hub, utilities, waste) is its own walk network in the model,
+// with no footpath to the guest side; staff ride between the staff village and the back-of-house drop-off next to their workplace.
+// Riders for the same hop share a run and are hidden while aboard (same mechanics as the guest pods). Non-guest vehicle: grey backing.
+const staffJobs = [], staffBusHome = roadR.posOf(...roadR.nearest(SA_P));
+for (let k = 0; k < 4; k++) follower('L2', `ST-${k + 1}`, 'road', 24, f => {
+  const from = f.place || staffBusHome;
+  if (f.run) { const R = f.run, st = R.steps[R.i];                                       // arrived at a step: board, then drop off
+    for (const j of st.pick) { j.done = 1; j.onLeg(1); R.n += j.riders.filter(r => r.ride && r.ride.job === j).length; }
+    for (const j of st.drop) { R.n -= j.riders.filter(r => r.ride && r.ride.job === j).length; j.onDone(); }
+    const nx = R.steps[++R.i]; if (nx) return trip(f, from, nx.road, `Staff shuttle · ${Math.max(0, R.n)} staff aboard · → ${nx.name}`); f.run = null; }
+  if (staffJobs.length) { const head = staffJobs[0], homeward = head.b.name === 'staff village', grp = staffJobs.filter(j => homeward ? j.b === head.b : j.a === head.a), n = grp.reduce((t, j) => t + j.riders.length, 0);
+    if (simT - head.t < 4 && n < 8) { f.task = `Staff shuttle · boarding · ${n} staff waiting`; f.wait = 1; return null; }   // a few minutes for the shift wave to gather
+    for (const j of grp) { staffJobs.splice(staffJobs.indexOf(j), 1); j.pod = f; }
+    const order = (stops, p) => { const out = [], left = [...new Set(stops)]; while (left.length) { const q = left.reduce((a, b) => (b.p.distanceTo(p) < a.p.distanceTo(p) ? b : a)); out.push(q); left.splice(left.indexOf(q), 1); p = q.p; } return out; };
+    const steps = homeward ? [...order(grp.map(j => j.a), from).map(a => ({ road: a.road, name: a.name, pick: grp.filter(j => j.a === a), drop: [] })), { road: head.b.road, name: head.b.name, pick: [], drop: grp }]   // collect along the way, then home
+      : [{ road: head.a.road, name: head.a.name, pick: grp, drop: [] }, ...order(grp.map(j => j.b), head.a.p).map(b => ({ road: b.road, name: b.name, pick: [], drop: grp.filter(j => j.b === b) }))];   // one pick-up, drop-offs in order
+    f.run = { steps, i: 0, n: 0 }; return trip(f, from, steps[0].road, `Staff shuttle · ${n} staff · → ${steps[0].name}`); }
+  if (from !== staffBusHome) return trip(f, from, staffBusHome, 'Staff shuttle · empty → staff village');
+  f.task = 'Staff shuttle · at the staff village, waiting for riders'; f.wait = 2; return null;
+}, staffBusHome).nonGuest = true;   // four shuttles: an outbound run takes everyone at one stop and drops them in order; a homebound run collects along the way
+
+// --- supply chain (founder 2026-10-19; routes re-planned 2026-10-20): mainland → supply vessel → Service dock → trucks → WH-3 cold store / WH-4 dry and beverage store
+// → trucks → the back-of-house drop-off of every outlet; WH-2 prep kitchen → staff canteen and mise en place; WH-1 laundry ↔ hotels, spa, Beach Club, villas;
+// the Dark Store and the chandlery → robots → homes, the office and the boats; waste → W yard → Service dock → mainland. Plan scale, kg.
 const STORE = { dry: { cap: 30000, stock: 17000 }, cold: { cap: 12000, stock: 6500 }, bev: { cap: 15000, stock: 8500 } };   // days of cover: dry 14, cold 3–4, beverages 10
 const CARGO = { dry: 4000, cold: 3600, bev: 1400 };                                   // 9 t a call, 4 calls a week ≈ 36 t = 4.5 t a day + beverages
 const MIX = { dry: 0.45, cold: 0.40, bev: 0.15 }, MEAL_KG = 0.65;                      // kg of food and drink per cover (hotel F&B norm 0.5–0.8 kg)
-const OUTLET_PAR = { 'Beach Hotel': 2000, 'Hill Hotel': 1200, 'Restaurant': 900, 'Marina Village': 1000, 'Beach Club': 700, 'Members Club': 500, 'Staff canteen': 600 };
-const outlets = {}; for (const k in OUTLET_PAR) outlets[k] = { par: OUTLET_PAR[k], stock: Math.round(OUTLET_PAR[k] * (0.55 + 0.3 * rand())), pending: 0, meals: 0 };
-const supply = { calls: 0, inKg: 0, wasteOutKg: 0, truckKg: 0, meals: 0, day: -1 };
-const VENUE_OUTLET = { 'Marina Village': 'Marina Village', 'Beach hotel': 'Beach Hotel', 'Hill hotel': 'Hill Hotel', 'Events Rotunda': 'Restaurant' };
+const WH = { laundry: prefixCentre('Infrastructure zone | WH-1'), prep: prefixCentre('Infrastructure zone | WH-2'), cold: prefixCentre('Infrastructure zone | WH-3'), dry: prefixCentre('Infrastructure zone | WH-4'), waste: prefixCentre('Infrastructure zone | W waste') };
+const WH_NAME = { cold: 'WH-3 Cold storage', dry: 'WH-4 Dry storage', bev: 'WH-4 Dry storage', prep: 'WH-2 Prep kitchen', laundry: 'WH-1 Laundry' }, STORE_AT = { cold: WH.cold, dry: WH.dry, bev: WH.dry };
+const padPts = bohPads.map(centreOf);
+const servicePoint = p => { let best = null, d = 230; for (const q of padPts) { const e = Math.hypot(q.x - p.x, q.z - p.z); if (e < d) { d = e; best = q; } } return best || p; };   // deliveries use the back-of-house drop-off of a venue, never a guest pad
+// every place that receives goods: kind food = kitchen stock fed by cold / dry / beverage runs; the rest get their own goods from the dry store
+const OUTLET_DEF = [['Beach Hotel', A.hotel, 'food', 2000], ['Hill Hotel', A.hillHotel, 'food', 1200], ['Restaurant', byName.has('Rotunda Restaurant') ? centreOf('Rotunda Restaurant') : A.rotunda, 'food', 900],
+  ['Marina Village', A.village, 'food', 1000], ['Beach Club', beachClubP, 'food', 700], ['Members Club', byName.has('Members Club | pavilion') ? centreOf('Members Club | pavilion') : A.hotel, 'food', 500], ['Staff canteen', ADMIN_P, 'food', 600],
+  ['Dark Store', darkStore.p, 'shop', 800], ['Chandlery', chandlery.p, 'marine', 300], ['Spa & Wellness', A.spa, 'spa', 250], ['Longevity Clinic', A.clinic, 'medical', 120], ['Administration office', ADMIN_P, 'office', 100]];
+const outlets = {}, outletAt = {}; for (const [k, p, kind, par] of OUTLET_DEF) { outlets[k] = { par, kind, stock: Math.round(par * (0.55 + 0.3 * rand())), pending: 0, meals: 0, orders: 0 }; outletAt[k] = servicePoint(p); }
+const supply = { calls: 0, inKg: 0, wasteOutKg: 0, truckKg: 0, meals: 0, day: -1, linenKg: 0, wasteKg: 0, log: [] };
+let wasteYard = 3000;                                                                  // kg sorted and compacted at the W yard, waiting for a vessel
+const logDelivery = (what, from, to, kg) => { supply.log.unshift({ t: clockText(), what, from, to, kg: Math.round(kg) }); if (supply.log.length > 30) supply.log.length = 30; };
 const takeFromStore = kg => { let got = 0; for (const k in MIX) { const want = kg * MIX[k], g = Math.min(want, STORE[k].stock); STORE[k].stock -= g; got += g; } return got; };
-const fill = o => (o.stock + o.pending) / o.par;                                       /* stock on hand plus what is already on a truck */
-const restockTrip = (f, from) => {                                                   /* the truck takes the emptiest outlet below par: up to 1 t, split by the store mix */
-  const v = venues.slice().sort((a, b) => fill(outlets[VENUE_OUTLET[a.name]]) - fill(outlets[VENUE_OUTLET[b.name]]))[0], o = outlets[VENUE_OUTLET[v.name]];
-  const kg = Math.round(takeFromStore(Math.min(1000, Math.max(0, o.par - o.stock - o.pending)))); if (kg < 50) { f.task = 'Standby at the warehouse · outlets stocked'; f.wait = 15; return null; }
-  f.cargo = { to: VENUE_OUTLET[v.name], kg }; o.pending += kg; return trip(f, from, v.p, `F&B restock · ${kg} kg (${anyOf(loads)}) → ${v.name}`); };
-const unloadCargo = f => { if (f.cargo) { const o = outlets[f.cargo.to]; o.stock += f.cargo.kg; o.pending -= f.cargo.kg; supply.truckKg += f.cargo.kg; f.cargo = null; } };
+const LOAD_TEXT = { cold: 'Cold chain 2 °C · fish, meat, dairy', dry: 'Dry goods', bev: 'Beverages' }, GOODS_TEXT = { marine: 'Marine parts, lines and safety gear', spa: 'Spa amenities, oils and robes', medical: 'Medical supplies', office: 'Office supplies and printed matter' };
+const deliver = (k, kg, what, from) => { const o = outlets[k]; o.stock += kg; o.pending = Math.max(0, o.pending - kg); supply.truckKg += kg; logDelivery(what, from, k, kg); };
+const takeShop = (k, kg) => { const o = outlets[k]; if (o) { o.stock = Math.max(0, o.stock - kg); o.orders++; } };
+const restockJob = () => {                                                             // the emptiest place below 75 % of par, 06:00–20:00 only (no trucks in guest areas at night)
+  if (!between(hourOf(), 6, 20)) return null;
+  const c = Object.entries(outlets).filter(([k]) => k !== 'Staff canteen').map(([k, o]) => [k, o, (o.stock + o.pending) / o.par]).filter(x => x[2] < 0.75).sort((a, b) => a[2] - b[2])[0]; if (!c) return null;
+  const [k, o] = c, r = rand(), cat = o.kind === 'food' || o.kind === 'shop' ? (r < 0.42 ? 'cold' : r < 0.85 ? 'dry' : 'bev') : 'dry';
+  const kg = Math.round(Math.min(1000, o.par - o.stock - o.pending, STORE[cat].stock)); if (kg < 40) return null;
+  STORE[cat].stock -= kg; o.pending += kg; const what = GOODS_TEXT[o.kind] || LOAD_TEXT[cat], wh = WH_NAME[cat];
+  return [[STORE_AT[cat], `Loading at ${wh} · ${what} for ${k}`], [outletAt[k], `${what} · ${kg} kg · ${wh.split(' ')[0]} → ${k}`, () => deliver(k, kg, what, wh)]]; };
+// a truck works through a job of legs: [point, text, on arrival]; the arrival action runs when the next leg starts
+const nextLeg = f => { if (f.onArrive) { const a = f.onArrive; f.onArrive = null; a(); } const L = f.legs && f.legs.shift(); if (!L) return null; f.onArrive = L[2] || null; return trip(f, f.place || A.boh, L[0], L[1]); };
+const runJob = (f, legs) => { if (!legs) return null; f.legs = legs; return nextLeg(f); };
+const busyLegs = f => !!(f.onArrive || (f.legs && f.legs.length));
 const eatAt = (prod, n) => { const o = outlets[prod]; if (!o) return; const kg = Math.min(o.stock, MEAL_KG * n); o.stock -= kg; o.meals += n; supply.meals += n; };
-// --- L4 service trucks (6): 2 logistics (meet the supply vessel), 2 linen + F&B, 1 waste (night), 1 reserve
-const loads = ['Seafood, cold chain 2 °C', 'Beverages, 24 cases', 'Dry stores, 18 pallets', 'Fresh produce, 40 crates'];
+const vessel = { cargo: [], wasteTaken: false };   // containers on the quay while a supply vessel is alongside
+const toBase = (f, p, text, idle) => { if (f.place && f.place !== p) return trip(f, f.place, p, text); f.task = idle; f.wait = 8; return null; };
+// --- L4 service trucks (6): T1–T2 logistics (vessel containers, restocking), T3–T4 linen and restocking, T5 waste, T6 prep-kitchen van
 let vesselDocked = false;
 for (let k = 0; k < 2; k++) follower('L4', `T${k + 1}`, 'road', 18, f => {
-  const from = f.place || A.boh;
-  if (vesselDocked) return f.place === A.dock ? trip(f, from, A.boh, 'Containers from the supply vessel → warehouse') : trip(f, from, A.dock, 'Empty · to the Service dock, vessel unloading');
-  if (f.place === A.dock) return trip(f, from, A.boh, 'Last containers → warehouse');
-  if (f.place === A.boh) return restockTrip(f, from); unloadCargo(f); return trip(f, from, A.boh, 'Empty · back to the warehouse');
+  if (busyLegs(f)) { const r = nextLeg(f); if (r) return r; }
+  if (vesselDocked && vessel.cargo.length) { const c = vessel.cargo.shift();
+    return runJob(f, [[A.dock, 'Empty · to the Service dock, the vessel is unloading'], [STORE_AT[c.cat], `Container · ${c.label} · ${(c.kg / 1000).toFixed(1)} t · Service dock → ${WH_NAME[c.cat]}`, () => { STORE[c.cat].stock = Math.min(STORE[c.cat].cap, STORE[c.cat].stock + c.kg); supply.inKg += c.kg; logDelivery(c.label, 'Service dock', WH_NAME[c.cat], c.kg); }]]); }
+  const j = restockJob(); if (j) return runJob(f, j);
+  return toBase(f, A.boh, 'Empty · back to the warehouse', 'Standby at the warehouse · every outlet above 75 % of par');
 }, A.boh);
+const LINEN = [['Beach Hotel', A.hotel], ['Hill Hotel', A.hillHotel], ['Apart-hotel', APART_P], ['Spa & Wellness', A.spa], ['Beach Club', beachClubP], ['Villas, housekeeping', A.villa], ['Residences', residences.length ? residences[0].p : A.hotel]].map(([name, p]) => ({ name, p: servicePoint(p) }));
 for (let k = 0; k < 2; k++) follower('L4', `T${k + 3}`, 'road', 18, f => {
-  const h = hourOf(), from = f.place || A.boh, hotel = anyOf(hotels);
-  if (between(h, 9, 11.5)) return f.place === A.boh ? trip(f, from, hotel.p, `Linen run · empty → ${hotel.name}`) : trip(f, from, A.boh, 'Used linen, 640 kg → laundry');
-  if (between(h, 15, 17)) return f.place === A.boh ? trip(f, from, hotel.p, `Clean linen → ${hotel.name}`) : trip(f, from, A.boh, 'Empty · back to the laundry');
-  if (f.place === A.boh) return restockTrip(f, from); unloadCargo(f); return trip(f, from, A.boh, 'Empty · back to the warehouse');
+  if (busyLegs(f)) { const r = nextLeg(f); if (r) return r; }
+  const h = hourOf(), used = between(h, 8.5, 11.5), clean = between(h, 14.5, 17.5);
+  if (used || clean) { const t = anyOf(LINEN), kg = 250 + Math.round(rand() * 450);
+    return runJob(f, used ? [[t.p, `Linen run · empty cages → ${t.name}`], [WH.laundry, `Used linen · ${kg} kg · ${t.name} → WH-1 Laundry`, () => { supply.linenKg += kg; logDelivery('Used linen', t.name, 'WH-1 Laundry', kg); }]]
+      : [[WH.laundry, `Loading clean linen at WH-1 Laundry for ${t.name}`], [t.p, `Clean linen · ${kg} kg · WH-1 Laundry → ${t.name}`, () => { supply.linenKg += kg; logDelivery('Clean linen', 'WH-1 Laundry', t.name, kg); }]]); }
+  const j = restockJob(); if (j) return runJob(f, j);
+  return toBase(f, WH.laundry, 'Empty · back to the laundry', 'Standby at the laundry · linen runs 08:30 and 14:30');
 }, A.boh);
-follower('L4', 'T5', 'road', 18, f => {
-  const h = hourOf(), from = f.place || A.boh;
-  if (!between(h, 23, 5)) { f.task = 'Waste truck · standby until 23:00'; f.wait = 20; return null; }
-  const v = anyOf(venues); return f.place === A.dock ? trip(f, from, v.p, `Waste run · empty → ${v.name}`) : trip(f, from, A.dock, 'Waste, 1.1 t → transfer station at the dock');
+follower('L4', 'T5', 'road', 18, f => {                                                  // waste: rounds 14:00–15:30 and 23:00–05:00 to the W yard; compacted containers out on the vessel
+  if (busyLegs(f)) { const r = nextLeg(f); if (r) return r; }
+  const h = hourOf();
+  if (vesselDocked && !vessel.wasteTaken && wasteYard > 500) { vessel.wasteTaken = true; const kg = Math.min(wasteYard, 8750);
+    return runJob(f, [[WH.waste, 'To the waste yard · loading compacted containers'], [A.dock, `Compacted waste · ${(kg / 1000).toFixed(1)} t · Waste management → Service dock`, () => { wasteYard -= kg; supply.wasteOutKg += kg; logDelivery('Compacted waste', 'Waste management', 'Service dock', kg); }]]); }
+  if (between(h, 23, 5) || between(h, 14, 15.5)) { const k = anyOf(Object.keys(outlets)), kg = 250 + Math.round(rand() * 500);
+    return runJob(f, [[outletAt[k], `Waste round · empty bins → ${k}`], [WH.waste, `Waste · ${kg} kg in sorted bins · ${k} → Waste management`, () => { wasteYard += kg; supply.wasteKg += kg; }]]); }
+  return toBase(f, WH.waste, 'Empty · back to the waste yard', 'Waste truck · at the yard · rounds 14:00 and 23:00');
 }, A.boh);
-follower('L4', 'T6', 'road', 18, f => { f.task = 'Reserve truck · at the warehouse'; f.wait = 30; return null; }, A.boh);
+follower('L4', 'T6', 'road', 18, f => {                                                  // prep-kitchen van: staff meals before each canteen window, mise en place to the kitchens
+  if (busyLegs(f)) { const r = nextLeg(f); if (r) return r; }
+  const h = hourOf(), d = dayIndex() * 24, meal = [5.3, 13.3, 21.3].find(t => h >= t && h < t + 0.6), mep = [10.3, 16.3].find(t => h >= t && h < t + 0.6);
+  if (meal !== undefined && f.meal !== d + meal) { f.meal = d + meal; const kg = Math.round(takeFromStore(260));
+    return runJob(f, [[WH.prep, 'Loading staff meals at WH-2 Prep kitchen'], [outletAt['Staff canteen'], `Prepared staff meals · ${kg} kg in hot boxes · WH-2 → Staff canteen, administration building`, () => deliver('Staff canteen', kg, 'Prepared staff meals', 'WH-2 Prep kitchen')]]); }
+  if (mep !== undefined && f.mepAt !== d + mep) { f.mepAt = d + mep; f.mep = 0; }
+  if (mep !== undefined && f.mep < 3) { f.mep++;
+    const k = ['Beach Hotel', 'Marina Village', 'Beach Club'][f.mep - 1], kg = Math.round(takeFromStore(120 + rand() * 120)); outlets[k].pending += kg;
+    return runJob(f, [[WH.prep, `Loading mise en place at WH-2 Prep kitchen for ${k}`], [outletAt[k], `Mise en place · ${kg} kg · WH-2 Prep kitchen → ${k}`, () => deliver(k, kg, 'Mise en place', 'WH-2 Prep kitchen')]]); }
+  return toBase(f, WH.prep, 'Empty · back to the prep kitchen', 'Prep-kitchen van · next run 05:20, 10:20, 13:20, 16:20, 21:20');
+}, A.boh);
 
-// --- L5 delivery robots (register 24, demo 12): breakfast, room service, luggage, amenities by the hour
-const goods = { breakfast: ['Villa breakfast, hot box 62 °C', 'Breakfast for 2, hot box'], room: ['Lunch order, hot box', 'Dinner for 4, hot box', 'Wine and ice'], luggage: ['6 bags, arrival', '3 bags, departure → stop'], amenity: ['Grocery order', 'Wine and snacks', 'Sunscreen and beach kit', 'Guest parcel', 'First-aid kit', 'Yacht provisioning → guest dock'] };   /* amenity orders come from the Dark Store */
+// --- L5 delivery robots (register 24, demo 12): breakfast and room service from the nearest kitchen, luggage, Dark Store orders to homes, the office and the boats
+const goods = { breakfast: ['Villa breakfast, hot box 62 °C', 'Breakfast for 2, hot box'], room: ['Lunch order, hot box', 'Dinner for 4, hot box', 'Wine and ice'], luggage: ['6 bags, arrival', '3 bags, departure → stop'],
+  amenity: ['Grocery order', 'Wine and snacks', 'Sunscreen and beach kit', 'Guest parcel', 'First-aid kit', 'Toiletries'], office: ['Mail and parcels from the mainland', 'Printer paper and toner', 'Coffee and snacks for the office'],
+  boat: [['Yacht provisioning, 3 crates', darkStore], ['Crew groceries', darkStore], ['Ice and drinks', darkStore], ['Fenders and mooring lines', chandlery], ['Spare parts and filters', chandlery], ['Charts and safety gear', chandlery]] };
+const nearestOf = (list, p) => list.reduce((a, q) => (q.p.distanceTo(p) < a.p.distanceTo(p) ? q : a));
 for (let k = 0; k < 12; k++) follower('L5', `D${k + 8}`, 'road', 9, f => {
-  const h = hourOf(), from = f.place || A.boh;
-  if (f.out) { f.out = false; const base = f.base || anyOf(kitchens); return trip(f, from, base.p, `Empty · back to ${base.name}`); }
-  f.out = true;
-  let kind = between(h, 7, 9.5) ? 'breakfast' : between(h, 12, 14) || between(h, 19, 21) ? 'room' : between(h, 10, 12) || between(h, 15, 18) ? 'luggage' : 'amenity';
-  if (kind === 'luggage') { f.base = { name: 'warehouse', p: A.boh }; const hm = anyOf(hotels); return trip(f, from, hm.p, `${anyOf(goods.luggage)} · ${hm.name}`); }
-  f.base = kind === 'amenity' ? darkStore : anyOf(kitchens); const to = kind === 'breakfast' ? anyOf(villas) : anyOf(homes);
-  return trip(f, from, to.p, `${anyOf(goods[kind])} · ${f.base.name} → ${to.name}`);
-}, A.boh);
+  const h = hourOf(), from = f.place || darkStore.p;
+  if (f.out) { f.out = false; if (f.done) { f.done(); f.done = null; } const base = f.base || darkStore; return trip(f, from, base.p, `Empty · back to ${base.name}`); }
+  f.out = true; const r = rand();
+  const kind = between(h, 7, 9.5) ? 'breakfast' : between(h, 12, 14) || between(h, 19, 21) ? 'room' : between(h, 10, 12) || between(h, 15, 18) ? (r < 0.35 ? 'luggage' : r < 0.65 ? 'boat' : r < 0.75 ? 'office' : 'amenity') : r < 0.35 ? 'boat' : 'amenity';
+  if (kind === 'luggage') { f.base = { name: 'the warehouse', p: A.boh }; const hm = anyOf(hotels); return trip(f, from, hm.p, `${anyOf(goods.luggage)} · ${hm.name}`); }
+  if (kind === 'boat') { const bs = berths.filter(b => b.occupied); if (bs.length) { const b = anyOf(bs), [what, src] = anyOf(goods.boat); f.base = src; f.done = () => takeShop(src.outlet, 6);
+    return trip(f, from, b.pos, `${what} · ${src.name} → berth ${b.berth_id}`); } }
+  if (kind === 'office') { f.base = darkStore; f.done = () => takeShop('Dark Store', 3); return trip(f, from, ADMIN_P, `${anyOf(goods.office)} · Dark Store → Administration office`); }
+  if (kind === 'breakfast' || kind === 'room') { const to = kind === 'breakfast' ? anyOf(villas) : anyOf(homes), kt = nearestOf(kitchens, to.p); f.base = kt; f.done = () => eatAt(kt.outlet, 2);
+    return trip(f, from, to.p, `${anyOf(goods[kind])} · ${kt.name} → ${to.name}`); }
+  const to = anyOf(homes); f.base = darkStore; f.done = () => takeShop('Dark Store', 4);
+  return trip(f, from, to.p, `${anyOf(goods.amenity)} · Dark Store → ${to.name}`);
+}, darkStore.p);
 
 // --- L3 service carts (register 16, demo 6): maintenance, housekeeping, landscape and beach
 const wo = ['AC filter and refrigerant', 'Pool pump bearing', 'Smart lock battery', 'Irrigation valve', 'Lighting fault, terrace', 'Water heater sensor'];
@@ -1494,10 +1561,10 @@ for (const [k, days, next] of [[1, [0, 3], d => d < 3 ? 'Thursday' : 'Monday'], 
     if (!(callDay && between(h, 7.6, 8.1))) { f.task = `At the mainland port · next call ${next(d)} 08:00`; f.wait = 5; return null; }
     return trip(f, A.cargoSea, A.cargoBerth, `Supply call · ${DAYN[d]} · 9 t of goods, 4 containers · mainland → Service dock`);
   }
-  if (f.dockedAt === undefined) { f.dockedAt = h; vesselDocked = true; }
+  if (f.dockedAt === undefined) { f.dockedAt = h; vesselDocked = true; vessel.wasteTaken = false; vessel.cargo = [{ cat: 'cold', kg: 3600, label: 'reefer, cold chain' }, { cat: 'dry', kg: 2000, label: 'dry goods 1' }, { cat: 'dry', kg: 2000, label: 'dry goods 2' }, { cat: 'bev', kg: 1400, label: 'beverages' }]; }
   if (h < f.dockedAt + 2) { f.task = `Unloading at the Service dock · trucks T1 and T2 shuttle to the warehouse · done ${String(Math.floor(f.dockedAt + 2)).padStart(2, '0')}:${String(Math.round(((f.dockedAt + 2) % 1) * 60)).padStart(2, '0')}`; f.wait = 3; return null; }
   f.dockedAt = undefined; vesselDocked = false;
-  for (const c in CARGO) STORE[c].stock = Math.min(STORE[c].cap, STORE[c].stock + CARGO[c]); supply.calls++; supply.inKg += 9000; supply.wasteOutKg += 8750;   /* 5 t of waste a day ÷ 4 calls */
+  for (const c of vessel.cargo) { STORE[c.cat].stock = Math.min(STORE[c.cat].cap, STORE[c.cat].stock + c.kg); supply.inKg += c.kg; } vessel.cargo = []; supply.calls++;   /* containers no truck took are landed by the crane */
   return trip(f, A.cargoBerth, A.cargoSea, 'Empty, waste containers aboard · Service dock → mainland');
 }, A.cargoSea);
 
@@ -1646,6 +1713,7 @@ function stepYachtServices() {
     if (rand() < dt / 1440) { const q = YS_RATE.water[b.cls]; ys.water += q; ysLog('water', b, q); }          // a top-up a day per boat
     if (rand() < dt / 2880) { const q = YS_RATE.pump[b.cls] * 2; ys.pump += q; ysLog('pumpout', b, q); } }   // a pump-out every two days
 }
+const GOODS_USE = [['Dark Store', 8, 22, 14], ['Chandlery', 8, 19, 4], ['Spa & Wellness', 8, 21, 9], ['Longevity Clinic', 7, 20, 2.5], ['Administration office', 8, 18, 2]];   // kg an hour over the opening hours
 function stepYachts(dt) {
   const h = hourOf(), day = dayIndex();
   if (day !== yachtDay) { yachtDay = day; yachtEvents = []; for (const [cls, pairs] of Object.entries(YACHT_PAIRS)) for (const [d, a] of pairs) yachtEvents.push({ h: d, cls, kind: 'depart' }, { h: a, cls, kind: 'arrive' }); yachtEvents = yachtEvents.filter(e => e.h >= h - 0.02).sort((p, q) => p.h - q.h); }
@@ -1653,7 +1721,8 @@ function stepYachts(dt) {
   for (const y of yachtMovers) { if (y.dock) stepDock(y, dt); else if (y.path) stepMover(y, dt); y.marker.visible = y.busy; }
   if (ghostDirty) rebuildGhostLines();
   if (!stepYachts.t || simT - stepYachts.t > 2) { stepYachts.t = simT; syncCrew(); stepYachtServices(); }
-  { const d = dayIndex(); if (supply.day !== d) { supply.day = d; supply.meals = 0; for (const k in outlets) outlets[k].meals = 0; supply.canteenT = simT; }
+  { const d = dayIndex(); if (supply.day !== d) { supply.day = d; supply.meals = 0; supply.linenKg = 0; supply.wasteKg = 0; for (const k in outlets) { outlets[k].meals = 0; outlets[k].orders = 0; } supply.canteenT = simT; }
+    { const hh = hourOf(); for (const [k, a, b, kgH] of GOODS_USE) if (between(hh, a, b)) outlets[k].stock = Math.max(0, outlets[k].stock - kgH * dt / 60); wasteYard += 5000 / 1440 * dt * 0.15; }   /* walk-in sales and use; a share of the waste comes in by the carts */
     const h = hourOf(), open = (h >= 6 && h < 8) || (h >= 14 && h < 16) || h >= 22; if (open && simT - (supply.canteenT || 0) > 6) { supply.canteenT = simT; eatAt('Staff canteen', 1000 / 60); } }   /* 1,000 staff meals a day over three 2-hour windows */
 }
 
@@ -1680,7 +1749,7 @@ function stepAmbient(dt) {
     if (f.toCharge) { f.toCharge = false; f.charging = CHARGE_MIN; f.bay = CHARGE[f.type] && CHARGE[f.type].name === 'Fleet Hub' ? takeBay() : -1; if (f.bay >= 0) placeAt(f, BAYS[f.bay], Math.PI / 2); continue; }
     f.wait -= dt; if (f.wait > 0) continue;
     let pts = null;
-    if (DRAIN[f.type] && f.battery < 30) { const c = CHARGE[f.type]; pts = trip(f, f.place || c.p, c.p, `Battery ${Math.round(f.battery)} % · to the ${c.name} to charge`); f.toCharge = true; if (!pts) { f.charging = CHARGE_MIN; f.toCharge = false; continue; } }
+    if (DRAIN[f.type] && f.battery < 30 && !busyLegs(f) && !f.job && !f.run && !f.out) { const c = CHARGE[f.type]; pts = trip(f, f.place || c.p, c.p, `Battery ${Math.round(f.battery)} % · to the ${c.name} to charge`); f.toCharge = true; if (!pts) { f.charging = CHARGE_MIN; f.toCharge = false; continue; } }
     else pts = f.next(f);
     if (pts && pts.length > 1) { setPath(f, pts); f.mesh.visible = fleetOn; } else if (f.wait <= 0) f.wait = 6;
     f.marker.visible = !!f.path;
@@ -1690,18 +1759,20 @@ function stepAmbient(dt) {
 
 // ===== people on the walkways: hotel guests, residents, day visitors, yacht guests, members, staff (vault: Resort Population and Guest Day)
 const POI = {};
-const addPoi = (cat, name, p) => { if (!p) return null; const c = walkR.nearest(p); if (!c) return null; const q = { cat, name, p: walkR.posOf(...c) }; (POI[cat] ||= []).push(q); return q; };
+let poiSeq = 0;
+const addPoi = (cat, name, p) => { if (!p) return null; const c = walkR.nearest(p); if (!c) return null; const q = { id: ++poiSeq, cat, name, p: walkR.posOf(...c) };   /* id: names repeat (two tennis courts), the route cache keys on it */ (POI[cat] ||= []).push(q); return q; };
 const has = n => byName.has(n);
 addPoi('restaurant', 'Hotel restaurant', A.hotel);
 for (const f of villageFB) addPoi('village', f.name, f.p);
 // 'food' = every F&B outlet on the island; a meal is a random pick among them (founder 2026-10-19). prod = the product it counts for
 { const foodPoi = (name, p, prod) => { const q = addPoi('food', name, p); if (q) q.prod = prod; };
-  foodPoi('Hotel restaurant', A.hotel, 'Beach Hotel'); if (has('Rotunda Restaurant')) foodPoi('Rotunda Restaurant', centreOf('Rotunda Restaurant'), 'Restaurant');
+  foodPoi('Hotel restaurant', A.hotel, 'Beach Hotel'); foodPoi('Hill Hotel restaurant', A.hillHotel, 'Hill Hotel'); if (has('Rotunda Restaurant')) foodPoi('Rotunda Restaurant', centreOf('Rotunda Restaurant'), 'Restaurant');
   for (const f of villageFB) foodPoi(f.name, f.p, 'Marina Village'); foodPoi('Beach Club restaurant', beachClubP, 'Beach Club'); }
 // beach spots: five along each sand beach, taken from the beach's own raster, so they lie on the sand, not on the promenade
 for (const n of ['BEACH.001', 'BEACH.003']) { const ms = meshOf(n); if (!ms.length) continue; const bg = surfaceGrid(ms, 6, 0); const cells = []; for (let k = 0; k < bg.W * bg.H; k++) if (!isNaN(bg.y[k])) cells.push(k);
   cells.sort((a, b) => (a % bg.W) - (b % bg.W)); for (let i = 0; i < 5; i++) { const k = cells[Math.floor((i + 0.5) / 5 * cells.length)]; if (k !== undefined) addPoi('beach', `${n === 'BEACH.001' ? 'North' : 'South'} beach ${i + 1}`, bg.posOf(k % bg.W, (k / bg.W) | 0)); } }
-for (const o of villageClusters) if (!o.userData.use) addPoi('retail', o.name.replace(/^(Pavilion module|Pavilion|apart hotel Pavilion)\./, 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
+for (const o of villageClusters) if (!o.userData.use) addPoi('retail', VILLAGE_FN[o.name] ? fnTitle(VILLAGE_FN[o.name].function) : o.name.replace(/^(Pavilion module|Pavilion|apart hotel Pavilion)\./, 'Shop '), bboxOf(o).getCenter(new THREE.Vector3()));
+addPoi('store', 'Dark Store', darkStore.p); addPoi('store', 'Chandlery', chandlery.p);   /* crews provision here (founder 2026-10-20) */
 addPoi('beach', 'Beach Club', beachClubP);
 if (has('Water activities pavilion')) addPoi('beach', 'Water activities', centreOf('Water activities pavilion'));   // e139: the water-sports base on the south sand
 addPoi('beach', 'Hotel pool', has('Beach Hotel | pool') ? centreOf('Beach Hotel | pool') : A.hotel);
@@ -1735,7 +1806,7 @@ window.__walkBridges = [];
     const to = walkR.nearestMain(q.p, 60) || walkR.nearestOther(q.p, 60); if (to && walkR.link(walkR.posOf(...c), to)) { walkR.relabel(); window.__walkBridges.push(`${cat} · ${q.name} · ${Math.round(walkR.posOf(...c).distanceTo(to))} m`); } else window.__walkBridges.push(`${cat} · ${q.name} · no other network within 60 m`); }   /* main network first, else the nearest neighbouring piece (the BOH yards join each other) */
   if (window.__walkBridges.length) console.warn('walk islands linked (missing footpaths in the model):', window.__walkBridges); }
 const poiAny = cat => (POI[cat] && POI[cat].length ? anyOf(POI[cat]) : POI.hotel[0]);
-const POI_LABEL = { club: 'the Members Club', restaurant: 'the hotel restaurant', food: 'a restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the guest dock', excursion: 'the excursion dock', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
+const POI_LABEL = { club: 'the Members Club', restaurant: 'the hotel restaurant', food: 'a restaurant', village: 'Marina Village', retail: 'the shops', beach: 'the beach', spa: 'the spa', sport: 'sport', event: 'the Events Rotunda', marina: 'the marina', terminal: 'the guest dock', excursion: 'the excursion dock', store: 'the dark store and chandlery', promenade: 'the promenade', villa: 'home (villa)', residence: 'home (residence)', hotel: 'the hotel', staff: 'the staff village', boh: 'back of house', stop: 'the buggy stop' };
 
 // --- event programme (vault: Event Programme)
 const EVENTS = [
@@ -1769,7 +1840,7 @@ const PROFILES = {
   day: [{ name: 'Shopper', w: { retail: 4, village: 2 } }, { name: 'Beach day', w: { beach: 4, food: 1.2 } }, { name: 'Sightseer', w: { promenade: 3, marina: 2.5, event: 2 } }, { name: 'Day foodie', w: { food: 3.5, village: 2 } }, { name: 'Family', w: { beach: 3, retail: 1.5, village: 1.5, event: 1.2 } }],
   yachtguest: [{ name: 'On board', w: { marina: 4, food: 1.2 } }, { name: 'Village regular', w: { village: 3.5, retail: 1.5, food: 1.5 } }, { name: 'Beach crew', w: { beach: 4, club: 1 } }, { name: 'Spa day', w: { spa: 4, promenade: 1.2 } }, { name: 'Explorer', w: { event: 2.5, promenade: 2, retail: 2, marina: 1.2 } }],
   member: [{ name: 'Club regular', w: { club: 4, food: 1.2 } }, { name: 'Beach member', w: { beach: 4, club: 1.5 } }, { name: 'Spa member', w: { spa: 4, club: 1.2 } }, { name: 'Sport member', w: { sport: 4, promenade: 1.5 }, runs: true }, { name: 'Social member', w: { food: 3, village: 2, event: 2 } }],
-  crew: [{ name: 'Deckhand', w: { marina: 4, village: 1.5, beach: 1 } }, { name: 'Chef', w: { marina: 3, village: 2, food: 1.5 } }, { name: 'Captain', w: { marina: 4, food: 1.5, promenade: 1 } }, { name: 'Steward', w: { marina: 3, village: 2, retail: 1.5 } }, { name: 'Engineer', w: { marina: 5, promenade: 1 } }],
+  crew: [{ name: 'Deckhand', w: { marina: 4, village: 1.5, beach: 1, store: 1.5 } }, { name: 'Chef', w: { marina: 3, village: 2, food: 1.5, store: 3 } }, { name: 'Captain', w: { marina: 4, food: 1.5, promenade: 1 } }, { name: 'Steward', w: { marina: 3, village: 2, retail: 1.5, store: 2 } }, { name: 'Engineer', w: { marina: 5, promenade: 1, store: 2 } }],
   staff: [{ name: 'Housekeeping', w: {} }, { name: 'F&B', w: {} }, { name: 'Engineering', w: {} }, { name: 'Butler', w: {} }, { name: 'Landscape', w: {} }],
 };
 const pickW = (f, cats) => { const ws = cats.map(c => (f.profile && f.profile.w[c]) || 1), tot = ws.reduce((a, b) => a + b, 0); let r = rand() * tot; for (let i = 0; i < cats.length; i++) { r -= ws[i]; if (r <= 0) return cats[i]; } return cats[cats.length - 1]; };
@@ -1779,7 +1850,7 @@ function wantCat(f) {
   if (f.runs && (between(h, 6, 8.5) || between(h, 17.5, 19.5)) && rand() < 0.5) return 'promenade';       // running is an activity of a guest
   if (f.type === 'day' && (h < 10 || h >= 17.6)) return 'home';                                          // day visitors: on the island 10–18
   if (f.type === 'member' && h >= 21) return 'home';
-  if (f.type === 'crew') return between(h, 22, 7) ? 'home' : P('marina', 'village', 'promenade', 'beach', 'retail', 'food');   // crews: mostly aboard and around the marina, the village in the evening
+  if (f.type === 'crew') return between(h, 22, 7) ? 'home' : P('marina', 'village', 'promenade', 'beach', 'retail', 'food', 'store');   // crews: mostly aboard and around the marina, the village in the evening
   const ev = eventsNow(h).filter(e => !e.who || e.who === f.type || (e.who === 'guest' && f.type === 'hotel'));
   if (ev.length && rand() < 0.3) { const e = anyOf(ev); if (e.cap > 15) return e.venue; }
   if (between(h, 8, 21) && rand() < 0.12) return 'walk';                                                  // a walk for its own sake: promenade, marina, beach, village (founder 2026-10-19)
@@ -1796,6 +1867,48 @@ function wantCat(f) {
   return 'home';
 }
 const SHIFTS = [7, 15, 23];
+// staff trades (2026-10-20): each staff member has a trade, a shift and the places of that trade. Before the shift most eat at the staff canteen in the
+// administration building (windows 06–08, 14–16, 22–24), then work at their places, moving between them; after the shift they go home.
+const STAFF_ROLES = [
+  { name: 'Housekeeping', shifts: [8, 3, 0], n: 11, at: () => [...POI.hotel, ...POI.villa, ...POI.residence] },
+  { name: 'F&B', shifts: [5, 4, 1], n: 10, at: () => [...POI.food, ...(POI.club || [])] },
+  { name: 'Butler', shifts: [2, 1, 1], n: 4, at: () => [...POI.villa, ...POI.residence] },
+  { name: 'Spa and clinic', shifts: [3, 1, 0], n: 4, at: () => POI.spa },
+  { name: 'Marina', shifts: [2, 1, 1], n: 4, at: () => [...POI.terminal, ...POI.excursion, ...POI.store, ...POI.marina.filter((q, i) => i % 15 === 0)] },
+  { name: 'Landscape and beach', shifts: [3, 0, 1], n: 4, at: () => [...POI.promenade, ...POI.beach.filter(q => /beach \d/.test(q.name))] },
+  { name: 'Engineering', shifts: [3, 1, 1], n: 5, at: () => POI.boh.filter(q => /Utilities|Waste|Fleet/.test(q.name)) },
+  { name: 'Logistics', shifts: [2, 1, 1], n: 4, at: () => POI.boh.filter(q => /Warehouse|Fleet Hub/.test(q.name)) },
+  { name: 'Administration', shifts: [4, 0, 0], n: 4, at: () => POI.boh.filter(q => /Administration/.test(q.name)), home: 'Management housing', canteen: false },
+];
+const onShiftF = (f, h) => { const s = SHIFTS[f.shift]; return between(h, s - 0.6, (s + 7.7) % 24); };   // on the way 35 min before the shift
+function staffNext(f) {
+  const h = hourOf(), atHome = f.poi === f.home, canteen = POI.boh.find(q => /Administration/.test(q.name)), sid = dayIndex() * 3 + f.shift;
+  if (!onShiftF(f, h)) return atHome ? null : { to: f.home, text: `${f.role.name} · shift over → ${f.home.name}` };
+  if (canteen && f.role.canteen !== false && f.ate !== sid && atHome && (SHIFTS[f.shift] - h + 24) % 24 < 1 && rand() < 0.7) { f.ate = sid; return { to: canteen, text: `${f.role.name} · meal before the shift → staff canteen, administration building`, meal: true }; }
+  f.ate = sid; const list = f.role.at(); if (!list.length) return null;
+  if (!atHome && f.post && !list.includes(f.poi) && f.poi !== canteen) return { to: f.post, text: `${f.role.name} · back to work → ${f.post.name}` };   // left at a stop (missed shuttle): walk or ride on
+  if (atHome || f.poi === canteen && f.role.name !== 'Administration') { f.post = anyOf(list); return { to: f.post, text: `${f.role.name} · to work → ${f.post.name}` }; }   // the post for this shift
+  if (rand() < 0.45) { const c = f.post || f.poi, near = list.filter(q => q !== f.poi && q.p.distanceTo(c.p) < 420 && walkLen(f.poi, q) < 600), q = near.length ? anyOf(near) : null;   // next tasks stay around the post, within a short walk
+    if (q) return { to: q, text: `${f.role.name} · next task → ${q.name}` }; }
+  return null;
+}
+// the staff shuttle stops: the staff village and every back-of-house drop-off, each on its own walk network piece
+const walkLen = (a, b) => { if (compAt(a.p) !== compAt(b.p)) return Infinity; const pts = walkBetween(a, b);   /* different walk-network pieces: no route, and no console warning */ return pts ? pts.reduce((t, q, i) => t + (i ? q.distanceTo(pts[i - 1]) : 0), 0) : Infinity; };
+const STAFF_STOPS = [], compAt = p => { const c = walkR.nearest(p); return c ? walkR.comp[c[1] * walkR.W + c[0]] : -1; };
+function staffGo(f, to, text) {
+  f.walkOnly = false; f.indoor = false; f.speed = f.baseSpeed;
+  if (f.poi.p.distanceTo(to.p) < 4) { f.poi = to; f.at = to.cat; f.task = text; f.wait = 40 + rand() * 80; return true; }   // same building (management housing above the office)
+  const len = walkLen(f.poi, to);
+  const near = (c, p) => { const l = STAFF_STOPS.filter(s => s.comp === c); return l.length ? nearestPoi(l, p) : null; };
+  const sA = near(compAt(f.poi.p), f.poi.p), sB = near(compAt(to.p), to.p), hop = sA && sB && sA !== sB && sA.p.distanceTo(f.poi.p) < 350 && sB.p.distanceTo(to.p) < 350;
+  if (len <= 700 || !hop) return startWalk(f, to, text);   // a walk up to 700 m; longer trips by the staff shuttle
+  f.ride = { a: sA, b: sB, dest: to, text, staff: true };
+  if (f.poi === sA || !startWalk(f, sA, `${text} · walks to the staff shuttle at ${sA.name}`)) { if (f.poi.p.distanceTo(sA.p) > 40) { f.ride = null; return false; } f.goal = sA; f.path = null; atStop(f); }
+  return true;
+}
+function atStop(f) { f.poi = f.goal; f.at = 'stop'; f.ride.waiting = true; f.ride.since = simT; f.wait = 1e9; f.task = `${f.ride.text} · waiting for the ${f.ride.staff ? 'staff shuttle' : 'pod'} at ${f.ride.a.name}`; if (f.ride.staff) podCall(f, staffJobs, 'Staff shuttle', 'staff'); else podCall(f); }
+{ const mk = (name, p, road) => { const c = walkR.nearest(p); if (!c) return; const q = { id: ++poiSeq, cat: 'stop', name, p: walkR.posOf(...c), road }; q.comp = compAt(q.p); STAFF_STOPS.push(q); };
+  mk('staff village', SA_P, staffBusHome); for (const n of bohPads) { const q = centreOf(n); mk(n.replace('Drop-off | ', ''), q, q); } }
 function staffCat(f, h) {
   const near = SHIFTS.some(t => h >= t - 0.4 && h < t + 0.3);
   if (near) return f.at === 'staff' ? 'boh' : rand() < 0.5 ? 'staff' : 'boh';      // shift change: in and out of the staff accommodation
@@ -1827,7 +1940,7 @@ const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('pos
 peopleDots.visible = false; peopleDots.frustumCulled = false; peopleDots.renderOrder = 8; scene.add(peopleDots);
 const peopleHalo = new THREE.Points(peopleDots.geometry, new THREE.PointsMaterial({ color: 0xffffff, size: 11, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5, map: peopleDots.material.map }));   // white ring under every dot (shares the positions)
 peopleHalo.visible = false; peopleHalo.frustumCulled = false; peopleHalo.renderOrder = 7; scene.add(peopleHalo);
-const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { const r = walk(a.p, b.p); routeCache.set(k, r && r.length > 1 ? r : null); } return routeCache.get(k); };   // null = no walkway: the trip does not happen
+const walkBetween = (a, b) => { const k = (a.id ?? a.name) + '>' + (b.id ?? b.name); if (!routeCache.has(k)) { const r = walk(a.p, b.p); routeCache.set(k, r && r.length > 1 ? r : null); } return routeCache.get(k); };   // null = no walkway: the trip does not happen
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _pp = new THREE.Vector3();
 function person(i, type, home) {
   const f = { i, type, home, at: home.cat, poi: home, path: null, s: 0, len: 0, speed: 3.2 + rand() * 1.6, off: (rand() - 0.5) * 2.2, wait: rand() * 20, heading: 0, visible: true, goal: null, task: '', runs: false };
@@ -1844,6 +1957,12 @@ for (let i = 0; i < N_PEOPLE + N_ARRIVAL; i++) {
   if (type === 'day' || type === 'member') { f.idle = true; f.visible = false; }                   // they come by the shuttle
 }
 for (let i = N_PEOPLE + N_ARRIVAL; i < N_FIG; i++) { const f = person(i, 'crew', HOME.crew()); f.idle = true; f.visible = false; }
+{ let i = 0; const sa = POI.staff[0], mg = POI.staff.find(q => /Management/.test(q.name)) || sa;
+  for (const r of STAFF_ROLES) for (let j = 0; j < r.n; j++, i++) { const f = people[i]; if (!f || f.type !== 'staff') continue;
+    f.role = r; f.profile = { name: r.name, w: {} }; f.shift = j < r.shifts[0] ? 0 : j < r.shifts[0] + r.shifts[1] ? 1 : 2;   // per trade: morning 32, evening 12, night 6 of 50
+    f.home = f.poi = r.home ? mg : sa; f.at = 'staff'; f.indoor = rand() < INDOOR_SHARE; f.wait = rand() * 10;
+    if (onShiftF(f, hourOf()) && (SHIFTS[f.shift] - hourOf() + 24) % 24 > 1) { const w = r.at(); if (w.length) { f.poi = anyOf(w); f.at = f.poi.cat; f.indoor = false; f.ate = dayIndex() * 3 + f.shift; f.wait = 20 + rand() * 60; } }   /* the night shift is already at work when the demo starts */
+    f.pos = f.poi.p.clone(); } }
 for (const f of people) if (!f.idle && HOME_CATS.has(f.at)) f.indoor = rand() < INDOOR_SHARE;   /* at the start most people are still inside */
 // the crew count follows the berths: boats moored × crew per class; crews board or leave as the yachts come and go
 function syncCrew() {
@@ -1854,28 +1973,28 @@ function syncCrew() {
 }
 const ops = { buggyTrips: 0, buggyRides: 0, deliveries: 0, truckRuns: 0, workOrders: 0, arrivals: 0, departures: 0, eventsAttended: 0 };
 // a guest pod called from a stop: riders waiting at the same stop for the same hop share one pod; hidden while aboard
-function podCall(f) {
+function podCall(f, Q = podJobs, noun = 'Pod', who = 'guest') {
   const { a, b } = f.ride;
-  let job = podJobs.find(j => j.ride && j.a === a && j.b === b);
+  let job = Q.find(j => j.ride && j.a === a && j.b === b && !j.done);
   if (!job) {
-    const n = () => `${job.riders.length} guest${job.riders.length > 1 ? 's' : ''}`, mine = r => r.ride && r.ride.job === job;
-    job = { ride: true, a, b, riders: [], legs: [[a.road, () => `Pod call · to ${a.name} for ${n()}`], [b.road, () => `${n()} · ${a.name} → ${b.name}`]],
+    const n = () => `${job.riders.length} ${who}${who === 'guest' && job.riders.length > 1 ? 's' : ''}`, mine = r => r.ride && r.ride.job === job;
+    job = { ride: true, a, b, riders: [], t: simT, legs: [[a.road, () => `${noun} call · to ${a.name} for ${n()}`], [b.road, () => `${noun} · ${n()} · ${a.name} → ${b.name}`]],
       onLeg: k => { if (k === 1) for (const r of job.riders) if (mine(r)) r.visible = false; },
-      onDone: () => { for (const r of job.riders) { if (!mine(r)) continue; ops.buggyRides++; const d = r.ride; r.ride = null; r.visible = true; r.poi = b; r.at = 'stop'; r.pos.copy(b.p); r.wait = 0;
+      onDone: () => { for (const r of job.riders) { if (!mine(r)) continue; if (who === 'guest') ops.buggyRides++; const d = r.ride; r.ride = null; r.visible = true; r.poi = b; r.at = 'stop'; r.pos.copy(b.p); r.wait = 0;
         if (!startWalk(r, d.dest, `${d.text} · off the pod`)) r.wait = 5 + rand() * 10; } } };
-    podJobs.push(job);
+    Q.push(job);
   }
   job.riders.push(f); f.ride.job = job;
 }
 function startWalk(f, to, text) { let pts = walkBetween(f.poi, to); if (!pts) return false; if (f.pos && pts.length && f.pos.distanceTo(pts[0]) > 1.5) pts = [f.pos.clone(), ...pts]; f.path = pts; f.cum = [0]; for (let i = 1; i < pts.length; i++) f.cum.push(f.cum[i - 1] + pts[i].distanceTo(pts[i - 1])); f.len = f.cum[f.cum.length - 1]; f.s = 0; f.goal = to; f.task = text; f.visible = true; return true; }
 let WALK_POIS = [];                                                                       // filled after the POIs exist: promenade, marina, beaches, village, shops
-const MILL = { village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, food: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
+const MILL = { store: 15, village: 60, retail: 45, beach: 55, club: 40, restaurant: 25, food: 25, spa: 30, sport: 35, event: 40, marina: 50, promenade: 70, villa: 22, residence: 55, hotel: 40, terminal: 30, excursion: 25, stop: 15, boh: 25, staff: 30 };   // stroll radius at a place, m
 function stepPeople(dt) {
   if (!WALK_POIS.length) WALK_POIS = ['promenade', 'marina', 'beach', 'village', 'retail'].flatMap(c => POI[c] || []);
   for (const f of people) {
     if (f.idle) continue;
     if (!f.path) {
-      if (f.ride && f.ride.waiting) { if (f.visible && simT - f.ride.since > 40) { f.ride = null; f.wait = 1; f.task = ''; } continue; }   // at the stop; 40 simulated minutes without a pod: walk instead
+      if (f.ride && f.ride.waiting) { if (f.visible && simT - f.ride.since > (f.ride.staff ? 75 : 40)) { f.ride = null; f.wait = 1; f.task = ''; } continue; }   // at the stop; 40 simulated minutes without a pod: walk instead
       f.wait -= dt;
       if (!f.indoor && f.wait > 6 && f.pos && f.type !== 'staff' || (f.type === 'staff' && f.wait > 6 && f.pos && f.at !== 'staff')) {   // stroll around the place
         f.stroll = (f.stroll ?? rand() * 12) - dt;
@@ -1889,6 +2008,7 @@ function stepPeople(dt) {
       }
       if (f.wait > 0) continue;
       if (f.leaving) { f.idle = true; f.visible = false; f.leaving = false; continue; }          // boarded a buggy / took the shuttle home
+      if (f.type === 'staff' && f.role) { const t = staffNext(f); if (!t) { f.wait = 10 + rand() * 20; continue; } f.meal = !!t.meal; if (!staffGo(f, t.to, t.text)) f.wait = 10 + rand() * 20; continue; }
       const cat = wantCat(f); const to = cat === 'home' ? f.home : cat === 'walk' ? anyOf(WALK_POIS.filter(q => q !== f.poi && q.p.distanceTo(f.poi.p) < 700)) : poiAny(cat); if (!to || to === f.poi) { f.wait = 20 + rand() * 40; continue; }
       f.walkOnly = cat === 'walk'; f.indoor = false;
       if ((f.type === 'day' || f.type === 'member') && cat === 'home') f.leaving = true;             // walks to the Terminal and leaves on the shuttle
@@ -1911,10 +2031,11 @@ function stepPeople(dt) {
     _pp.set(a.x + (b.x - a.x) * t - uz * f.off, a.y + (b.y - a.y) * t + 0.1, a.z + (b.z - a.z) * t + ux * f.off);
     f.heading = Math.atan2(-uz, ux); (f.pos || (f.pos = new THREE.Vector3())).copy(_pp);
     if (f.s >= f.len && f.strolling) { f.path = null; f.strolling = false; f.speed = f.baseSpeed; continue; }
-    if (f.s >= f.len && f.ride && f.goal === f.ride.a) { f.path = null; f.poi = f.goal; f.at = 'stop'; f.ride.waiting = true; f.ride.since = simT; f.wait = 1e9; f.task = `${f.ride.text} · waiting for the pod at ${f.ride.a.name}`; podCall(f); continue; }
+    if (f.s >= f.len && f.ride && f.goal === f.ride.a) { f.path = null; atStop(f); continue; }
+    if (f.s >= f.len && !f.leaving && f.goal.cat === 'store') takeShop(f.goal.name, 3);
     if (f.s >= f.len && !f.leaving && (f.goal.cat === 'food' || f.goal.cat === 'club')) eatAt(f.goal.cat === 'club' ? 'Members Club' : f.goal.prod, PLAN.guests / N_PEOPLE);   /* one cover per visit, at the plan's scale */
-    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.walkOnly ? 6 + rand() * 12 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300;
-      if (HOME_CATS.has(f.at) && !f.leaving) f.indoor = rand() < INDOOR_SHARE; }                               /* at home most people are inside: not drawn, still counted */   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
+    if (f.s >= f.len) { f.path = null; f.poi = f.goal; f.at = f.goal.cat; f.stroll = 1 + rand() * 4; f.wait = f.leaving ? 2 : f.type === 'staff' && f.role ? (f.goal === f.home ? 20 + rand() * 20 : f.meal ? 25 + rand() * 15 : 40 + rand() * 80) : f.walkOnly ? 6 + rand() * 12 : f.speed > 6 ? 10 + rand() * 20 : 120 + rand() * 300;
+      if ((HOME_CATS.has(f.at) || f.type === 'staff' && f.goal === f.home) && !f.leaving) f.indoor = rand() < INDOOR_SHARE; f.meal = false; }                               /* at home most people are inside: not drawn, still counted */   // 2–7 simulated hours at a place   // stay a while: meals, beach, spa
   }
 }
 function drawPeople() {
@@ -1978,7 +2099,7 @@ function updateDash() {
               arrivalsLeft: yachtEvents.filter(e => e.kind === 'arrive').length, departuresLeft: yachtEvents.filter(e => e.kind === 'depart').length, upcoming: yachtEvents.slice(0, 10).map(e => ({ kind: e.kind, cls: e.cls, at: clockAt(e.h) })), service: (() => { const day = { water: 0, pump: 0, kwh: 0 }; for (const b of berths) if (b.occupied) { day.water += YS_RATE.water[b.cls]; day.pump += YS_RATE.pump[b.cls]; day.kwh += YS_RATE.kwh[b.cls]; } const dDiesel = Object.entries(YACHT_PAIRS).reduce((a, [c, p]) => a + p.length * YS_RATE.diesel[c], 0), D0 = 4;   /* month to date = days 1-4 at today's mix + today as simulated */
                 return { month: { water: Math.round(D0 * day.water + ys.water), pump: Math.round(D0 * day.pump + ys.pump), diesel: Math.round(D0 * dDiesel + ys.diesel), kwh: Math.round(D0 * day.kwh + ys.kwh) }, log: ys.log.slice(0, 14) }; })(), next: yachtEvents[0] ? `${yachtEvents[0].kind === 'arrive' ? 'Arrival' : 'Departure'} · ${yachtEvents[0].cls} class · ${clockAt(yachtEvents[0].h)}` : 'no more today' },
     booked,
-    supply: { store: STORE, outlets, calls: supply.calls, inKg: supply.inKg, wasteOutKg: supply.wasteOutKg, truckKg: supply.truckKg, meals: Math.round(supply.meals), vessels: ambient.filter(f => f.type === 'W2').map(f => f.task) },
+    supply: { store: STORE, outlets, calls: supply.calls, inKg: supply.inKg, wasteOutKg: supply.wasteOutKg, truckKg: supply.truckKg, linenKg: supply.linenKg, wasteKg: Math.round(supply.wasteKg), wasteYard: Math.round(wasteYard), log: supply.log.slice(0, 12), staffShuttle: ambient.filter(f => /^ST-/.test(f.id)).map(f => f.task), meals: Math.round(supply.meals), vessels: ambient.filter(f => f.type === 'W2').map(f => f.task) },
     reception: { shuttles: w1, vessel: sv ? sv.task : '', vesselDocked, excursion: ex ? ex.task : '', heli: heli.task, podsWaiting: riders, podsAboard: aboard, podJobs: podJobs.length },
     ops: { ...ops }, events: eventsNow(h).map(e => `${e.name} · ${e.venue}`),
   };
@@ -2095,7 +2216,7 @@ function vehIcon(key, bg = '#1d3a8f', letter = null) {
 }
 function setMarkerStyle(mode) {
   for (const f of [...ambient, ...yachtMovers]) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
-    mk.material.map = vehIcon(VEH_ICON[f.type] || 'car', mode === 'schematic' ? '#1d3a8f' : hex6(FUNC_VEH(f.type)));   /* pictograms in every style; standard and functional colour the backing by guest / non-guest / yacht (founder 2026-10-19) */ mk.material.needsUpdate = true; mk.scale.set(0.024, 0.024, 1); }
+    mk.material.map = vehIcon(VEH_ICON[f.type] || 'car', mode === 'schematic' ? '#1d3a8f' : hex6(FUNC_VEH(f.nonGuest ? 'L4' : f.type)));   /* pictograms in every style; standard and functional colour the backing by guest / non-guest / yacht (founder 2026-10-19) */ mk.material.needsUpdate = true; mk.scale.set(0.024, 0.024, 1); }
 }
 const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception|Excursion pavilion)/;   // the signature buildings, one muted blue
 const meshTop = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q; };
