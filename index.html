@@ -1144,7 +1144,7 @@ const PRODUCTS = [
   { fp: ['event hall museum.001 | building', 'event hall museum.002 | pavilion', 'event hall museum.003 | pavilion', 'event hall museum.004 | pavilion'], hp: ['event hall museum'], name: 'Events Rotunda', zone: 'Z07', p: topOfPrefix('event hall museum.001 |', 6), kpi: { 'Hall': 300, 'Courtyard': 120, 'Events a day': 3, 'Staff': 10, 'Water': '9 m³', 'Energy': '1,800 kWh' } },
   { fp: ['gym.001', 'gym.002', 'Tennis court', 'Pickleball court'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['Wellness Spa'], hp: ['Wellness Spa', 'wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfObj('Wellness Spa', 6) || topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
-  { fp: ['arrivals dock', 'Terminal', 'Excursion pavilion'], name: 'Marina', zone: 'Z04', p: topOfObj('arrivals dock', 6) || A.terminal, kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
+  { fp: ['Arrivals Reception |', 'arrivals dock', 'Terminal', 'Excursion pavilion'], name: 'Marina', zone: 'Z04', p: topOfPrefix('Arrivals Reception |', 8) || topOfObj('arrivals dock', 6) || A.terminal, /* the reception + marina support wing is the marina's building (founder 2026-10-19) */ kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['Longevity Clinic | building'], hp: ['Longevity Clinic'], name: 'Longevity Clinic', zone: 'Z01', p: topOfPrefix('Longevity Clinic |', 6), kpi: { 'Function': 'Longevity clinic (e135, was the hotel lobby)', 'Programme': 'With the Spa & Wellness', 'Staff': 12 } },
   { fp: ['apart hotel Building'], hp: ['apart hotel Building'], name: 'Apart-hotel', zone: 'Z03', p: topOfPrefix('apart hotel Building.002', 7), kpi: { 'Buildings': 3, 'Floors': 5, 'Units': 40, 'Staff': 30 } },
   { fp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], hp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('Pavilion module.008', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
@@ -2027,22 +2027,28 @@ const dotMat = (base = SCHEMATIC.green, dot = SCHEMATIC.greenDot, step = SCHEMAT
   schemCache.set(key, m); return m;
 };
 const SCHEM_PIN = { product: '#2457e6', service: '#6b7a96' };
-function setPinStyle(sch) {
-  stage.classList.toggle('schem', sch);
-  for (const g of gpins) { const svg = g.el.querySelector('svg'); if (!svg) continue; const html = sch ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : PIN_SVG(g.colour); svg.outerHTML = html; }
+const hex6 = c => '#' + c.toString(16).padStart(6, '0');
+const FUNC_PIN = name => /Hotel$|^Residences|^Villa|Apart-hotel/.test(name) ? FUNC.stay : /Restaurant|Members|Beach Club/.test(name) ? FUNC.fnb : /Events|Spa|GYM|Longevity/.test(name) ? FUNC.amenity
+  : name === 'Marina' ? FUNC.transport : /Marina Village/.test(name) ? FUNC.village : FUNC.boh;   // pin colour = the function colour of the map
+const FUNC_VEH = t => /^(L1|L2|W1|A1)$/.test(t) ? FUNC.transport : t === 'L5' ? FUNC.robot : /^(W3|Y)/.test(t) ? FUNC.marine : FUNC.boh;   // guest mobility blue, robots teal, boats navy, service grey
+function setPinStyle(mode) {                                                 // 'schematic' | 'functional' | 'standard'
+  const iconic = mode === 'schematic' || mode === 'functional'; stage.classList.toggle('schem', iconic);
+  for (const g of gpins) { const svg = g.el.querySelector('svg'); if (!svg) continue;
+    const html = mode === 'schematic' ? PIN_ICON_SVG(g.svc ? SCHEM_PIN.service : SCHEM_PIN.product, PIN_ICON_KEY(g.d.name)) : mode === 'functional' ? PIN_ICON_SVG(hex6(FUNC_PIN(g.d.name)), PIN_ICON_KEY(g.d.name)) : PIN_SVG(g.colour); svg.outerHTML = html; }
 }
 const VEH_ICON = { L1: 'pod', L2: 'bus', L3: 'cart', L4: 'truck', L5: 'bot', W1: 'ship', W2: 'ship', W3: 'boat', Y1: 'boat', Y2: 'boat', Y3: 'ship', A1: 'heli', yacht: 'boat', buggy: 'pod', truck: 'truck', robot: 'bot' };
 const vehIconTex = new Map();
-function vehIcon(key) {
-  if (vehIconTex.has(key)) return vehIconTex.get(key);
+function vehIcon(key, bg = '#1d3a8f') {
+  const ck = key + bg; if (vehIconTex.has(ck)) return vehIconTex.get(ck);
   const c = document.createElement('canvas'); c.width = c.height = 96; const x = c.getContext('2d');
-  x.fillStyle = '#1d3a8f'; x.beginPath(); x.arc(48, 48, 40, 0, 7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 6; x.stroke();
+  x.fillStyle = bg; x.beginPath(); x.arc(48, 48, 40, 0, 7); x.fill(); x.strokeStyle = '#fff'; x.lineWidth = 6; x.stroke();
   x.save(); x.translate(48 - 12 * 2.3, 48 - 12 * 2.3); x.scale(2.3, 2.3); x.strokeStyle = '#fff'; x.lineWidth = 2.1; x.lineCap = 'round'; x.lineJoin = 'round'; x.stroke(new Path2D(ICON[key] || ICON.car)); x.restore();
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; vehIconTex.set(key, t); return t;
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; vehIconTex.set(ck, t); return t;
 }
-function setMarkerStyle(sch) {
+function setMarkerStyle(mode) {
+  const iconic = mode === 'schematic' || mode === 'functional';
   for (const f of [...ambient, ...yachtMovers]) { const mk = f.marker; if (!mk) continue; if (!mk.userData.stdMap) { mk.userData.stdMap = mk.material.map; mk.userData.stdScale = mk.scale.x; }
-    mk.material.map = sch ? vehIcon(VEH_ICON[f.type] || 'car') : mk.userData.stdMap; mk.material.needsUpdate = true; const k = sch ? 0.024 : mk.userData.stdScale; mk.scale.set(k, k, 1); }
+    mk.material.map = iconic ? vehIcon(VEH_ICON[f.type] || 'car', mode === 'functional' ? hex6(FUNC_VEH(f.type)) : '#1d3a8f') : mk.userData.stdMap; mk.material.needsUpdate = true; const k = iconic ? 0.024 : mk.userData.stdScale; mk.scale.set(k, k, 1); }
 }
 const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception|Excursion pavilion)/;   // the signature buildings, one muted blue
 const meshTop = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q; };
@@ -2074,9 +2080,10 @@ function schematicMat(o) {
 }
 // ===== Functional style v3 (founder 2026-10-19): a planner's functional map on the Standard lighting. Flat colours by use, muted ground,
 // light trees, service roads dark, walkways cream, transport infrastructure slate blue, back of house grey, icons as in the schematic.
-const FUNC = { stay: 0xf08db8, fnb: 0xf2a65a, amenity: 0xa98fe0, transport: 0x6d8fb3, boh: 0x9aa0a8, bohYard: 0xc9cdd3, attraction: 0xd4a73a, village: 0xbfc3c8,
-  padGuest: 0x6f8fc9, padBoh: 0xb5574f, land: 0xeceddf, green: 0xd4e3c5, lawn: 0xdeeacf, rock: 0xd9d6cc, beach: 0xf3e9d2, tree: 0xa9c998, trunk: 0x9fb58f,
-  roadS: 0x5f656c, path: 0xfbf7ef, plaza: 0xf4f0e7, pier: 0x8aa0b8, breakwater: 0xbac6d3, yacht: 0xffffff, yachtGlass: 0x9ab7d6, pool: 0x8ecbe0, fence: 0x7d838b, mast: 0x7d838b };
+const FUNC = { stay: 0xf07ab0, fnb: 0xe8762e, amenity: 0x6a4fc4, transport: 0x4a74a8, boh: 0x7f868f, bohYard: 0xb9bec5, attraction: 0xf2c81c, village: 0xa9adb3,
+  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xe3e4d2, green: 0xbcd6a4, lawn: 0xc9e0b0, rock: 0xcfccc0, beach: 0xeedfbf, tree: 0x8fb97c, trunk: 0x86a476,
+  roadS: 0x4f555c, path: 0xfaf4e6, plaza: 0xf0ebe0, pier: 0x6f88a3, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x62b9d8, fence: 0x6d737b, mast: 0x6d737b,
+  robot: 0x2f9e8f, marine: 0x2f5f8f };   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
   FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa)/, FUNC_ATTR = /^(Point of attraction|Viewpoint)/,
   FUNC_VILLAGE = /^(Pavilion module|Pavilion\.|apart hotel Pavilion)/, FUNC_TRANSPORT = /^(Arrivals Reception|arrivals dock|Terminal|Excursion pavilion|Helipad|PARKING|Service dock)/;
@@ -2114,7 +2121,7 @@ function applyMapStyle(name) {
   const W = waterMat.uniforms;
   if (sch) { for (const k of ['deep', 'mid', 'shallow', 'sand', 'skyC']) W[k].value.set(st.sea); W.fresK.value = 0; W.specK.value = 0; }   // one flat sea
   else for (const [k, v] of Object.entries(STD.water)) { if (W[k].value.copy) W[k].value.copy(v); else W[k].value = v; }
-  setPinStyle(sch || name === 'functional'); setMarkerStyle(sch || name === 'functional');   // the functional map uses the schematic icons (founder 2026-10-19)
+  setPinStyle(name); setMarkerStyle(name);   // the functional map uses the schematic icons (founder 2026-10-19)
   if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : name === 'functional' ? flatMat(k === 'lawn' ? FUNC.lawn : k === 'hedge' ? FUNC.green : k === 'white' || k === 'yellow' ? 0xffffff : k === 'grass pavers' ? FUNC.lawn : new THREE.Color(FUNC.transport).lerp(new THREE.Color(0xffffff), 0.25).getHex()) : o.userData.baseMat; });   // functional: the helipad is transport infrastructure
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
