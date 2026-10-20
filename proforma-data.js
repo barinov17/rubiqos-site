@@ -95,7 +95,7 @@ const SERVICES = [
     liveFn: L => { const h = L.hour; return [['Linen moved by truck today', fmt(L.supply ? L.supply.linenKg : 0) + ' kg'], ['Runs', h >= 8.5 && h < 11.5 ? 'collecting used linen' : h >= 14.5 && h < 17.5 ? 'delivering clean linen' : 'next 08:30 / 14:30']]; } },
   { id: 'office', name: 'Administration office', zone: 'Z03', op: 'infra', what: 'The westmost village building: resort administration and the operator console below, management apartments above.',
     produces: { 'Desks': 60, 'Management apartments': 16, 'Operator console': 'RubiqOS, 24 h' }, consumes: { 'Energy': '≈ 900 kWh a day', 'Water': '≈ 8 m³ a day' }, loadBase: 70,
-    liveFn: L => { const h = L.hour, day = h >= 8 && h < 19; return [['Load', (day ? 85 : 30) + ' %'], ['In the office', day ? 'day shift' : 'console only'], ['Staff on shift', Math.round(60 * L.shiftShare)]]; } },
+    liveFn: L => { const h = L.hour, day = h >= 8 && h < 19; return [['Load', (day ? 85 : 30) + ' %'], ['In the office', day ? 'day shift' : 'console only']]; } },
   { id: 'staffacc', name: 'Staff accommodation', zone: 'Z09', op: 'staffacc', what: 'Four-floor block with 420 beds; the rest commute by staff shuttle.',
     produces: { 'Beds': 420, 'Staff shuttle': 'mainland, 3 runs a shift; on the island 4 shuttles to the back-of-house drop-offs' }, consumes: { 'Water': '≈ 48 m³ a day', 'Energy': '≈ 2,150 kWh a day' }, key: 'staff', capacity: 900,
     liveFn: L => [['Staff on shift', L.onShift], ['Shift', L.hour >= 7 && L.hour < 15 ? 'morning 07–15' : L.hour >= 15 && L.hour < 23 ? 'evening 15–23' : 'night 23–07'], ['Load', Math.round(100 * L.onShift / 330) + ' %'],
@@ -213,7 +213,7 @@ const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g
 function productInner(c, link = true) {
   const d = needs(c, OCC); const objs = c.units ? c.objects : c.objects;   // the marina's berths by class live in its table, not in the list
   return `${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
-  <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span><span>Staff on shift</span><span>—</span></div></div>
+  <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Guests</span><span>—</span></div></div>
   ${chartHtml(c)}
   <div class="sec"><div class="cap">Produces</div>${c.rooms ? roomRows(c) : `<p>${c.produces}</p><div class="kv">${kv(objs)}</div>`}</div>
   <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
@@ -388,7 +388,7 @@ const forecast = (c, todayDow = 0) => { const f = FC_FACTOR[c.id] || 0.85, h0 = 
   for (let d = 0; d < 30; d++) { const dow = (todayDow + d - TODAY_IDX + 70) % 7, we = dow === 4 || dow === 5 ? 12 : dow === 6 ? 4 : 0, wePeak = c.id === 'villas' || c.id === 'beach-club' || c.id === 'club-beach' ? we * 1.6 : we;
     const noise = ((hash(c.id + d) % 900) / 100) - 4.5; out.push(Math.max(10, Math.min(100, Math.round((48 + 30 * d / 29) * f + wePeak + noise)))); }
   return out; };
-const chartHtml = c => { const v = forecast(c); return `<div class="sec"><div class="cap">30 days · occupancy</div><div class="f30" data-f30="${c.id}">${v.map((p, d) => `<i class="${d < TODAY_IDX ? 'past' : d === TODAY_IDX ? 'today' : 'fc'}" style="height:${p}%" title="Day ${d + 1} · ${p} %"></i>`).join('')}</div></div>`; };
+const chartHtml = c => { const v = forecast(c); return `<div class="sec detail"><div class="cap">30 days · occupancy</div><div class="f30" data-f30="${c.id}">${v.map((p, d) => `<i class="${d < TODAY_IDX ? 'past' : d === TODAY_IDX ? 'today' : 'fc'}" style="height:${p}%" title="Day ${d + 1} · ${p} %"></i>`).join('')}</div></div>`; };
 const refreshCharts = (L, loads) => { const todayDow = Math.max(0, DOW.indexOf((L.day || 'Mon').slice(0, 3)));
   for (const c of PRODUCTS) { const el = document.querySelector(`[data-f30="${c.id}"]`); if (!el) continue; const v = forecast(c, todayDow), bars = el.children;
     for (let d = 0; d < 30; d++) { const dow = DOW[(todayDow + d - TODAY_IDX + 70) % 7], p = d === TODAY_IDX && loads[c.id] !== undefined ? loads[c.id] : v[d]; bars[d].style.height = p + '%'; bars[d].title = `Day ${d + 1} · ${dow} · ${p} %${d === TODAY_IDX ? ' · live' : d < TODAY_IDX ? ' · actual' : ' · forecast'}`; bars[d].classList.toggle('we', dow === 'Fri' || dow === 'Sat'); } } };
@@ -467,12 +467,12 @@ function refreshLive() {
   for (const c of PRODUCTS) {
     const g = c.live.reduce((a, n) => a + (L.products[n] || 0), 0), stf = Math.round(c.staff * L.shiftShare), cap = capacityOf(c);
     const keys = c.rooms ? Object.values(c.objects).reduce((x, y) => x + y, 0) : 0, inHouse = c.rooms && L.booked ? c.live.reduce((x, n) => x + (L.booked[n] || 0), 0) : 0, booked = c.rooms ? Math.min(keys, Math.round(inHouse / (cap / keys))) : 0, pb = keys ? Math.round(100 * booked / keys) : 0;
-    const rows = c.noSim ? [['Booked tonight', '<small style="color:var(--muted);font-weight:400">not in the model yet</small>'], ['Staff on shift', stf]]
-      : c.rooms ? [['Booked tonight', `${booked} <small style="color:var(--muted);font-weight:400">of ${keys} keys · ${pb} %</small>`], ['bar', bar(pb, 101)], ['Guests in house', `${fmt(inHouse)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)}</small>`], ['bar', bar(Math.round(100 * inHouse / cap), 101)], ['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)}</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', `${stf} <small style="color:var(--muted);font-weight:400">of ${c.staff}</small>`], ['bar', bar(Math.round(100 * stf / c.staff), 101)]]   // every row a bar (founder 2026-10-19); bookings = guests whose home is here
-      : [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)], ['Staff on shift', `${stf} <small style="color:var(--muted);font-weight:400">of ${c.staff}</small>`], ['bar', bar(Math.round(100 * stf / c.staff), 101)]];   // the bar = share of the product's own capacity (founder 2026-10-19)
+    const rows = c.noSim ? [['Booked tonight', '<small style="color:var(--muted);font-weight:400">not in the model yet</small>']]   /* no Staff on shift on product cards: Workforce shows the staff (founder 2026-10-20) */
+      : c.rooms ? [['Booked tonight', `${booked} <small style="color:var(--muted);font-weight:400">of ${keys} keys · ${pb} %</small>`], ['bar', bar(pb, 101)], ['Guests in house', `${fmt(inHouse)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)}</small>`], ['bar', bar(Math.round(100 * inHouse / cap), 101)], ['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)}</small>`], ['bar', bar(Math.round(100 * g / cap), 101)]]   // every row a bar (founder 2026-10-19); bookings = guests whose home is here
+      : [['Guests now', `${fmt(g)} <small style="color:var(--muted);font-weight:400">of ${fmt(cap)} · ${Math.round(100 * g / cap)} %</small>`], ['bar', bar(Math.round(100 * g / cap), 101)]];   // the bar = share of the product's own capacity (founder 2026-10-19)
     if (c.id === 'marina') {                                                 // the marina's capacity is berths (founder 2026-10-19); the classes live in the table on the right, not twice
       const M = L.marina; rows.length = 0;
-      rows.push(['Berths occupied', `${M.moored} / ${M.berths}`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)], ['Staff on shift', `${stf} <small style="color:var(--muted);font-weight:400">of ${c.staff}</small>`], ['bar', bar(Math.round(100 * stf / c.staff), 101)]);
+      rows.push(['Berths occupied', `${M.moored} / ${M.berths}`], ['bar', bar(Math.round(100 * M.moored / M.berths), 101)]);
       const NAME = { S: 'S · to 15 m', M: 'M · to 35 m', L: 'L · to 80 m' };
       const mr = document.getElementById('marinaRows'); if (mr) mr.innerHTML = ['S', 'M', 'L'].map(k => { const b = M.byCls[k] || { moored: 0, berths: 0 }; return `<tr><td>${NAME[k]}</td><td class="num">${b.berths}</td><td class="num">${b.moored}</td><td class="bar-td">${bar(Math.round(100 * b.moored / Math.max(1, b.berths)), 101)}</td></tr>`; }).join('');
       setLive('marina-moves', [['Under way now', M.underway], ['Left today', `${M.arrivalsLeft} in · ${M.departuresLeft} out`]]);
