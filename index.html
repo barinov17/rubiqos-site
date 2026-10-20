@@ -1805,14 +1805,16 @@ const crowdBody = new THREE.InstancedMesh(FIG.torso, matCloth, N_FIG), crowdHead
 const crowdAll = [crowdBody, crowdHead]; for (const im of crowdAll) { im.frustumCulled = false; scene.add(im); }   // no cast: the shadow map is static
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
-const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44, FUNC_GUEST = 0x6d1fd6, FUNC_STAFF = 0x0f6b5a, FUNC_CREW = 0xd9530f;   /* founder 2026-10-20: guests violet, staff deep teal-green, yacht crew burnt orange: dark, saturated, far apart */
-const STD_GUEST = 0x8b2fd4, STD_STAFF = 0x1f4e9c, STD_CREW = 0xd9530f;   // standard look: purple guests, navy staff, orange crews (founder 2026-10-20)
+const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44, FUNC_GUEST = 0x111827, FUNC_STAFF = 0x9aa0a8, FUNC_CREW = 0x38bdf8;   /* founder 2026-10-20: guests violet, staff deep teal-green, yacht crew burnt orange: dark, saturated, far apart */
+const STD_GUEST = 0x111827, STD_STAFF = 0x9aa0a8, STD_CREW = 0x38bdf8;   // founder 2026-10-20: guests black, staff grey, crews light blue; a white halo under every dot   // standard look: purple guests, navy staff, orange crews (founder 2026-10-20)
 const dotColourOf = (type, mode) => mode === 'schematic' ? (type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE) : mode === 'standard' ? (type === 'crew' ? STD_CREW : type === 'staff' ? STD_STAFF : STD_GUEST) : type === 'crew' ? FUNC_CREW : type === 'staff' ? FUNC_STAFF : FUNC_GUEST;   // schematic: guests blue / staff navy; standard + functional: guests red-pink, staff slate, yacht crew light blue (founder 2026-10-19)   // schematic: guests / staff; functional: guests / staff / yacht crew (founder 2026-10-19)
 function refreshDotColours(mode) { const a = peopleDots.geometry.attributes.color, c = new THREE.Color(); for (const f of people) { c.set(dotColourOf(f.type, mode)); a.setXYZ(f.i, c.r, c.g, c.b); } a.needsUpdate = true; }   // people dots of the schematic style: guests blue, staff navy (founder 2026-10-19)
 const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)).setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)),
   new THREE.PointsMaterial({ vertexColors: true, size: 8, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5,
     map: (() => { const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.beginPath(); x.arc(16, 16, 14, 0, 7); x.fill(); return new THREE.CanvasTexture(c); })() }));   // round dots, one per person
 peopleDots.visible = false; peopleDots.frustumCulled = false; peopleDots.renderOrder = 8; scene.add(peopleDots);
+const peopleHalo = new THREE.Points(peopleDots.geometry, new THREE.PointsMaterial({ color: 0xffffff, size: 11, sizeAttenuation: false, depthTest: true, transparent: true, alphaTest: 0.5, map: peopleDots.material.map }));   // white ring under every dot (shares the positions)
+peopleHalo.visible = false; peopleHalo.frustumCulled = false; peopleHalo.renderOrder = 7; scene.add(peopleHalo);
 const walkBetween = (a, b) => { const k = a.name + '>' + b.name; if (!routeCache.has(k)) { const r = walk(a.p, b.p); routeCache.set(k, r && r.length > 1 ? r : null); } return routeCache.get(k); };   // null = no walkway: the trip does not happen
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(1, 1, 1), _e = new THREE.Euler(), _pp = new THREE.Vector3();
 function person(i, type, home) {
@@ -2194,7 +2196,7 @@ function applyMapStyle(name) {
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : name === 'functional' ? flatMat(k === 'lawn' ? FUNC.lawn : k === 'hedge' ? FUNC.green : k === 'white' || k === 'yellow' ? 0xffffff : k === 'grass pavers' ? FUNC.lawn : k === 'FATO' ? FUNC.heliRing : FUNC.transport) : o.userData.baseMat; });   // functional: the helipad is transport infrastructure
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
-  { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; refreshDotColours(name); } shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
+  { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; peopleHalo.visible = name !== 'schematic'; refreshDotColours(name); } shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
   try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
