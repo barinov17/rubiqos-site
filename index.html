@@ -193,7 +193,7 @@
   <button id="bOverview" class="on">Overview</button>
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
-<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button></div>
+<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button><button data-style="functional">Functional</button></div>
 </div>
 <div id="tip" class="panel"></div>
 <div id="vcard" class="panel" role="dialog" aria-label="Vehicle"></div>
@@ -2072,9 +2072,23 @@ function schematicMat(o) {
   if (/roof|slab|white|parapet|top band/i.test(mn + ' ' + n)) return flatMat(base.clone().lerp(new THREE.Color(0xffffff), 0.55).getHex());
   return flatMat(base.getHex());
 }
+// ===== Functional style (founder 2026-10-19): the Standard look, buildings recoloured by what they are for.
+// accommodation pink (the hotel's own pink), F&B outlets terracotta, amenities turquoise; guest pads muted blue, BOH pads muted red; everything else as exported.
+const FUNC = { stay: 0xf08db8, fnb: 0xc9623f, amenity: 0x3fb8b0, padGuest: 0x6f8fc9, padBoh: 0xb5574f };
+const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel|Pavilion module|Pavilion\.)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/, FUNC_AMENITY = /^(Longevity Clinic|event hall museum|gym\.|Tennis court|Pickleball court|Wellness Spa)/;
+function functionalMat(o) {
+  const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '';
+  if (/^Drop-off \| DO-/.test(n)) return flatMat(/DO-BOH/.test(n) ? FUNC.padBoh : FUNC.padGuest, 0.9);
+  if (/Pool water/.test(mn) || /planting|garden|paving|forecourt|courtyard/i.test(n)) return null;            // pools, gardens and paving keep the exported look
+  const cat = FUNC_STAY.test(t) || FUNC_STAY.test(n) ? 'stay' : FUNC_FNB.test(t) || FUNC_FNB.test(n) ? 'fnb' : FUNC_AMENITY.test(t) || FUNC_AMENITY.test(n) ? 'amenity' : null;
+  if (!cat) return null;
+  const c = new THREE.Color(FUNC[cat]);
+  if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return flatMat(c.lerp(new THREE.Color(0xffffff), 0.3).getHex(), 0.85);   // roofs a shade lighter so the massing reads
+  return flatMat(c.getHex(), 0.8);
+}
 let mapStyle = 'standard';
 function applyMapStyle(name) {
-  const sch = name === 'schematic', st = sch ? SCHEMATIC : STD, matFn = sch ? schematicMat : null; mapStyle = name;
+  const sch = name === 'schematic', st = sch ? SCHEMATIC : STD, matFn = sch ? schematicMat : name === 'functional' ? functionalMat : null; mapStyle = name;
   model.traverse(o => {
     if (!o.isMesh) return;
     if (!o.userData.baseMat) o.userData.baseMat = o.material;
@@ -2096,7 +2110,7 @@ function applyMapStyle(name) {
   try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
-{ let saved = 'schematic'; try { saved = localStorage.getItem('mapStyle3') || 'schematic'; } catch (e) {} applyMapStyle(saved === 'standard' ? 'standard' : 'schematic'); }   // schematic by default (founder 2026-10-19); the key changed so old choices do not stick
+{ let saved = 'schematic'; try { saved = localStorage.getItem('mapStyle3') || 'schematic'; } catch (e) {} applyMapStyle(saved === 'standard' || saved === 'functional' ? saved : 'schematic'); }   // schematic by default (founder 2026-10-19); the key changed so old choices do not stick
 
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
