@@ -634,7 +634,7 @@ let conceptList = [];
 const conceptOf = o => { const t = topOf(o); return conceptList.find(d => (d.hp || d.fp || []).some(pre => o.name.startsWith(pre) || t.name.startsWith(pre))) || null; };
 const conceptMeshes = d => { if (!d._meshes) { const out = []; byName.forEach((m, n) => { if (!FLAT.test(n) && (d.hp || d.fp).some(pre => d.fpExact ? n === pre : n.startsWith(pre))) for (const x of meshesUnder(m)) if (!out.includes(x)) out.push(x); }); d._meshes = out; } return d._meshes; };
 const hoverSel = o => { const d = conceptOf(o); return d ? conceptMeshes(d) : footprintMeshes(o); };
-const hoverHtml = (o, area) => { const d = conceptOf(o); return (d ? conceptHtml(d) : card(o)) + `<div class="k"${d ? ' style="margin-top:4px"' : ''}>footprint ≈ ${Math.round(area).toLocaleString()} m²</div>`; };
+const hoverHtml = (o, area) => { const d = conceptOf(o), vf = villageFnOf(o); return (d ? conceptHtml(d) : card(o)) + (vf ? `<div class="k" style="margin-top:4px">This module · <b>${vf.function}</b> · ${VILLAGE_CAT[vf.category] || vf.category}</div>` : '') + `<div class="k"${d ? ' style="margin-top:4px"' : ''}>footprint ≈ ${Math.round(area).toLocaleString()} m²</div>`; };
 function setHover(o) {
   hovered = o; const sel = pinned ? hoverSel(pinned) : o ? hoverSel(o) : [];
   outline.selectedObjects = sel;
@@ -881,6 +881,10 @@ const waterY = -4.0, boatY = waterY;   /* e020: sea level -4.0, was -2.5 */     
 
 // --- fleet models from Blender (prototype/resort-blender/export/fleet-models.glb; types and counts: vault "Fleet Register")
 const FLEET_GLB = 'fleet-models.glb', FLEET_MAN = 'fleet-models.manifest.json';
+// Marina Village: 30 modules with a function and a category each (data/marina-village-functions.json, assigned 2026-10-19 by the layout rules; the file is the source, nothing is recomputed)
+let VILLAGE_FN = {}; try { VILLAGE_FN = await fetch('data/marina-village-functions.json', { cache: 'no-store' }).then(r => r.json()); } catch (e) { console.warn('marina-village-functions.json not loaded', e); }
+const VILLAGE_CAT = { fnb: 'Food and bars', retail: 'Retail', services: 'Services and beauty', workshops: 'Workshops' };
+const villageFnOf = o => VILLAGE_FN[topOf(o).name] || VILLAGE_FN[o.name] || null;
 let FLEET = { models: [] }; const fleetTpl = new Map();
 try {
   FLEET = await fetch(FLEET_MAN, { cache: 'no-store' }).then(r => r.json());
@@ -1145,10 +1149,10 @@ const PRODUCTS = [
   { fp: ['gym.001', 'gym.002', 'Tennis court', 'Pickleball court'], name: 'GYM & Sports', zone: 'Z06', p: topOfPrefix('gym.002', 6), kpi: { 'Gym places': 40, 'Courts': '3 tennis · 6 pickleball', 'Sessions a day': 160, 'Staff': 15, 'Water': '12 m³', 'Energy': '1,900 kWh' } },   // e016: one complex
   { fp: ['Wellness Spa'], hp: ['Wellness Spa', 'wellness-spa'], name: 'Spa & Wellness', zone: 'Z06', p: topOfObj('Wellness Spa', 6) || topOfPrefix('wellness-spa', 6), kpi: { 'Treatment rooms': 24, 'Treatments a day': 260, 'Staff': 32, 'Water': '58 m³', 'Energy': '3,800 kWh', 'Sewage': '49 m³' } },
   { fp: ['Arrivals Reception |'], hp: ['Arrivals Reception'], name: 'Arrivals Reception', zone: 'Z08', p: topOfPrefix('Arrivals Reception |', 8), kpi: { 'Function': 'Guest arrivals: face check-in, digital key, luggage to the room; marina support wing', 'Shuttle landings a day': 24, 'Staff': 11 } },
-  { fp: ['Marina support |', 'arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], hp: ['Marina support', 'arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], name: 'Marina', zone: 'Z04', p: topOfPrefix('Marina support |', 8) || topOfObj('arrivals dock', 6) || A.terminal, /* the reception is its own concept (founder 2026-10-19: different function, different highlight) */ kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
+  { fp: ['Marina support |', 'arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], hp: ['Marina support', 'arrivals dock', 'Terminal', 'Excursion pavilion', 'marina pier'], name: 'Marina', zone: 'Z04', p: new THREE.Vector3(-793, 2, 280), /* on the water between piers 1 and 2 (founder 2026-10-19) */ /* the reception is its own concept (founder 2026-10-19: different function, different highlight) */ kpi: { 'Berths planned': '90 (50 S · 32 M · 8 L)', 'Berths in the model': 255, 'Yacht guests and crew': 120, 'Staff': 28, 'Water': '60 m³', 'Energy': '4,100 kWh' } },
   { fp: ['Longevity Clinic | building'], hp: ['Longevity Clinic'], name: 'Longevity Clinic', zone: 'Z01', p: topOfPrefix('Longevity Clinic |', 6), kpi: { 'Function': 'Longevity clinic (e135, was the hotel lobby)', 'Programme': 'With the Spa & Wellness', 'Staff': 12 } },
   { fp: ['apart hotel Building'], hp: ['apart hotel Building'], name: 'Apart-hotel', zone: 'Z03', p: topOfPrefix('apart hotel Building.002', 7), kpi: { 'Buildings': 3, 'Floors': 5, 'Units': 40, 'Staff': 30 } },
-  { fp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], hp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], name: 'Marina Village', zone: 'Z03', p: topOfPrefix('Pavilion module.008', 7), kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
+  { fp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], hp: ['Pavilion module', 'Pavilion.', 'apart hotel Pavilion'], name: 'Marina Village', zone: 'Z03', p: topOfObj('Point of attraction.004', 4) || topOfPrefix('Pavilion module.008', 7), /* the village's point of attraction (founder 2026-10-19) */ kpi: { 'F&B outlets': 4, 'Shops': 17, 'Covers a day': '1,100', 'Staff': 85, 'Water': '48 m³', 'Energy': '9,600 kWh' } },
   { fp: [BC_NAME], hp: ['Beach Club', 'Beach club buildings'], name: 'Beach Club', zone: 'Z11', p: topOfObj(BC_NAME, 6), kpi: { 'Sunbeds': 180, 'Covers a day': 450, 'Staff': 40, 'Water': '32 m³', 'Energy': '3,600 kWh' } },
   { fp: ['Members Club | arc building', 'Members Club | pavilion'], hp: ['Members Club'], name: 'Members Club', zone: 'Z01', p: topOfPrefix('Members Club | pavilion', 6), kpi: { 'Members': 400, 'Seats': 160, 'Staff': 30, 'Water': '20 m³', 'Energy': '2,600 kWh' } },
 ];
@@ -2116,7 +2120,8 @@ function functionalMat(o) {
     if (/apron/i.test(n)) return flatMat(F.bohYard, 0.95);
     return flatMat(F.boh, 0.85); }
   if (/planting|garden|paving|forecourt|courtyard/i.test(n)) return /planting|garden/i.test(n) ? flatMat(F.green, 0.95) : flatMat(F.plaza, 0.95);
-  const cat = hit(FUNC_STAY) ? 'stay' : hit(FUNC_FNB) ? 'fnb' : hit(FUNC_AMENITY) ? 'amenity' : hit(FUNC_ATTR) ? 'attraction' : hit(FUNC_VILLAGE) ? 'village' : null;
+  if (hit(FUNC_VILLAGE)) { const vf = villageFnOf(o); const c = new THREE.Color(vf ? vf.color : F.village); return flatMat(/roof|slab|parapet|top band/i.test(mn + ' ' + n) ? c.lerp(new THREE.Color(0xffffff), 0.25).getHex() : c.getHex(), 0.85); }   // one flat colour per module by its category (data file)
+  const cat = hit(FUNC_STAY) ? 'stay' : hit(FUNC_FNB) ? 'fnb' : hit(FUNC_AMENITY) ? 'amenity' : hit(FUNC_ATTR) ? 'attraction' : null;
   if (!cat) return null;
   const c = new THREE.Color(F[cat]);
   if (/roof|slab|parapet|top band/i.test(mn + ' ' + n)) return flatMat(c.lerp(new THREE.Color(0xffffff), 0.3).getHex(), 0.85);   // roofs a shade lighter so the massing reads
