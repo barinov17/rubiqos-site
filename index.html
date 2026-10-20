@@ -20,7 +20,7 @@
   html, body { margin: 0; }
   body { font-family: var(--body); color: var(--ink); background: #f3f5f8; }
   #stageRow { display: flex; height: calc(100vh - var(--navh, 0px)); min-height: 520px; }   /* the map fills the visible screen; --navh comes from site.css */
-  #stage { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; overflow: hidden; background: #e4e9f0; }
+  #stage { position: relative; flex: 1 1 auto; min-width: 0; height: 100%; overflow: hidden; background: #e4e9f0; -webkit-user-select: none; user-select: none; }   /* founder 2026-10-20: dragging the map must not select the pin and label texts */
   #c { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .panel { position: absolute; background: var(--card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
            border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 24px rgba(10, 18, 32, 0.12); }
@@ -2239,11 +2239,14 @@ function setMarkerStyle(mode) {
     mk.material.map = vehIcon(VEH_ICON[f.type] || 'car', mode === 'schematic' ? '#1d3a8f' : hex6(FUNC_VEH(f.nonGuest ? 'L4' : f.type)));   /* pictograms in every style; standard and functional colour the backing by guest / non-guest / yacht (founder 2026-10-19) */ mk.material.needsUpdate = true; mk.scale.set(0.024, 0.024, 1); }
 }
 const SIG = /^(Beach Club|Beach club buildings|Rotunda Restaurant|restaurant$|event hall museum|Wellness Spa|wellness-spa|Arrivals Reception|Excursion pavilion)/;   // the signature buildings, one muted blue
+// the ORIGINAL material's name (fix 2026-10-20): o.material is whatever the previous style set — after Functional a nameless flat colour — so reading it
+// lost every rule keyed on the material name (lawn dots, beach, rock) when switching Functional → Schematic and back
+const matName = o => { const b = o.userData.baseMat || o.material; return o.userData.material || (Array.isArray(b) ? (b[0] && b[0].name) : b && b.name) || ''; };
 const meshTop = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q; };
 const meshGroup = o => { let g = o.userData.group, q = o; while (!g && q.parent) { q = q.parent; g = q.userData.group; } return g; };
 const meshFn = o => { let q = o; while (q.parent && q.parent !== model) q = q.parent; return q.userData.function || o.userData.function || ''; };
 function schematicMat(o) {
-  const n = o.name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), S = SCHEMATIC;
+  const n = o.name, mn = matName(o), g = meshGroup(o), S = SCHEMATIC;
   if (/^Drop-off \| DO-/.test(n)) return /DO-BOH/.test(n) ? hatchMat() : flatMat(S.guestPad, 0.9);   // back-of-house pads hatched, guest pads light blue
   if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
   if (n.startsWith('Infrastructure zone')) return /GREEN|Lawn/.test(mn) ? dotMat() : /Road surface/.test(mn) ? flatMat(S.roadMain) : /Plaza paving/.test(mn) ? flatMat(S.walk) : /Village stone|Hotel glass|Hotel white|Village roof|Utility concrete/.test(mn) ? flatMat(S.infraBld) : flatMat(S.infra);   // v073: plants and tanks in concrete grey, yards as paving
@@ -2286,7 +2289,7 @@ const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apar
 const FUNC_LIGHT = { sky: [0xf2f1ec, 0xf7f6f2], fog: 0xf3f2ee, fogRange: [6000, 20000], toneMapping: THREE.NoToneMapping, exposure: 1.0,
   hemi: [0xffffff, 0xdcd8cf, 2.0], sun: [0xffffff, 1.4], shadow: 0.35, aoBlend: 0.35, grade: { sat: 1.0, con: 1.0, lift: 0.0, tint: 0xffffff } };
 function functionalMat(o) {
-  const n = o.name, t = meshTop(o).name, mn = o.userData.material || (o.material && o.material.name) || '', g = meshGroup(o), F = FUNC, hit = re => re.test(t) || re.test(n);
+  const n = o.name, t = meshTop(o).name, mn = matName(o), g = meshGroup(o), F = FUNC, hit = re => re.test(t) || re.test(n);
   if (/^Drop-off \| DO-/.test(n)) return flatMat(/DO-BOH/.test(n) ? F.padBoh : F.padGuest, 0.9);
   if (g === 'zoning' || n === 'Sea' || n === 'Shallow water') return null;
   if (/Pool water/.test(mn)) return flatMat(F.pool, 0.4);
@@ -2357,7 +2360,7 @@ function applyMapStyle(name) {
   else for (const [k, v] of Object.entries(STD.water)) { if (W[k].value.copy) W[k].value.copy(v); else W[k].value = v; }
   for (const ln of fairwayLines) { ln.material.color.set(name === 'functional' ? FUNC.route : ln.userData.baseColor); ln.material.opacity = name === 'functional' ? 1 : 0.75; }   // functional: the boat routes dark and solid (founder 2026-10-20)
   setPinStyle(name); setMarkerStyle(name);   // the functional map uses the schematic icons (founder 2026-10-19)
-  if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (o.material.name || o.name).includes(k));
+  if (window.__helipadRoot) window.__helipadRoot.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const k = Object.keys(SCHEMATIC.heli).find(k => (matName(o) || o.name).includes(k));
     o.material = sch && k ? flatMat(SCHEMATIC.heli[k]) : name === 'functional' ? flatMat(k === 'lawn' || k === 'grass pavers' ? 0x93c49b : k === 'hedge' ? FUNC.green : k === 'white' || k === 'yellow' ? 0xffffff : k === 'FATO' ? FUNC.heliRing : FUNC.transport)   /* the round field around the pad: mid green, lighter than the old grey-blue (founder 2026-10-20) */ : o.userData.baseMat; });   // functional: the helipad is transport infrastructure
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
