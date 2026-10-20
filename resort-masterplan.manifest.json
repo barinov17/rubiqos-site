@@ -1,7 +1,7 @@
 {
- "version": "v080",
- "exported": "2026-10-19 23:53",
- "changes": "changes/v080.json",
+ "version": "v081",
+ "exported": "2026-10-20 00:01",
+ "changes": "changes/v081.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,

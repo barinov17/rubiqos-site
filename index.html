@@ -1784,7 +1784,7 @@ const crowdBody = new THREE.InstancedMesh(FIG.torso, matCloth, N_FIG), crowdHead
 const crowdAll = [crowdBody, crowdHead]; for (const im of crowdAll) { im.frustumCulled = false; scene.add(im); }   // no cast: the shadow map is static
 const GUEST_COLS = [0xf4f1ea, 0x86aee0, 0xe0795f, 0xf3c06b, 0x9fcb7c, 0xc9a3e6, 0x6fb4c9, 0xf2a7b5];
 const people = [], routeCache = new Map();
-const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44, FUNC_GUEST = 0xe0457b, FUNC_STAFF = 0x5b6b85, FUNC_CREW = 0x3fa0e0;
+const SCHEMATIC_PEOPLE = 0x2856e0, SCHEMATIC_STAFF = 0x1d2a44, FUNC_GUEST = 0xff2d7a, FUNC_STAFF = 0x4a63d6, FUNC_CREW = 0x1fb0ff;   /* brighter (founder 2026-10-20) */
 const dotColourOf = (type, mode) => mode === 'schematic' ? (type === 'staff' ? SCHEMATIC_STAFF : SCHEMATIC_PEOPLE) : type === 'crew' ? FUNC_CREW : type === 'staff' ? FUNC_STAFF : FUNC_GUEST;   // schematic: guests blue / staff navy; standard + functional: guests red-pink, staff slate, yacht crew light blue (founder 2026-10-19)   // schematic: guests / staff; functional: guests / staff / yacht crew (founder 2026-10-19)
 function refreshDotColours(mode) { const a = peopleDots.geometry.attributes.color, c = new THREE.Color(); for (const f of people) { c.set(dotColourOf(f.type, mode)); a.setXYZ(f.i, c.r, c.g, c.b); } a.needsUpdate = true; }   // people dots of the schematic style: guests blue, staff navy (founder 2026-10-19)
 const peopleDots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)).setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * N_FIG), 3)),
@@ -2087,7 +2087,7 @@ function schematicMat(o) {
 // ===== Functional style v3 (founder 2026-10-19): a planner's functional map on the Standard lighting. Flat colours by use, muted ground,
 // light trees, service roads dark, walkways cream, transport infrastructure slate blue, back of house grey, icons as in the schematic.
 const FUNC = { stay: 0xf07ab0, fnb: 0xe8762e, amenity: 0x3a9d7a, transport: 0x4a74a8, boh: 0x7f868f, bohYard: 0xb9bec5, attraction: 0xa8cc8a, village: 0x3d8bd4,
-  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xe3e4d2, green: 0xbcd6a4, lawn: 0xc9e0b0, rock: 0xcfccc0, beach: 0xeedfbf, tree: 0x8fb97c, trunk: 0x86a476,
+  padGuest: 0x5f84c9, padBoh: 0xb54c43, land: 0xe6e7e2, green: 0xeceee9, lawn: 0xf1f2ee, rock: 0xd6d6d0, beach: 0xeedfbf, tree: 0xe2e4df, trunk: 0xd3d5cf,   /* greens and trees light grey, almost white (founder 2026-10-20) */
   roadS: 0x676d75, path: 0xd6b27c, plaza: 0xe6d4b0, pier: 0x4a74a8, breakwater: 0xa3b2c2, yacht: 0xffffff, yachtGlass: 0x7fa3c8, pool: 0x62b9d8, fence: 0x6d737b, mast: 0x6d737b,
   robot: 0x2f9e8f, marine: 0x2f5f8f, arrival: 0x2fa8b5, utilities: 0xe3b83a, waste: 0xc0564e, laundry: 0x7fb3d9, kitchen: 0xe8762e, cold: 0x9fd0e8, dry: 0xc9a66b, heliRing: 0x24456f };   // v4.2: back of house by function (founder 2026-10-19)   // v4 (founder 2026-10-19): denser colours; amenities indigo vs pink stays; attractions yellow vs orange F&B
 const FUNC_STAY = /^(Beach Hotel|Hotel 2\.|branded residence|Villa(\.\d+)?$|apart hotel Building)/, FUNC_FNB = /^(Rotunda Restaurant|Members Club|Beach Club)/,
