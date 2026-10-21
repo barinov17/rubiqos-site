@@ -1361,6 +1361,7 @@ for (let k = 0; k < 12; k++) follower('L1', `P${k + 4}`, 'road', 22, f => {
   const h = hourOf(), from = f.place || anyOf(stops); let to, text; const n = 1 + Math.floor(rand() * 4);
   const legText = t => (typeof t === 'function' ? t() : t);
   if (f.job) { f.job.done = (f.job.done || 0) + 1; if (f.job.onLeg) f.job.onLeg(f.job.done); const leg = f.job.legs.shift(); if (leg) return trip(f, from, leg[0], legText(leg[1])); if (f.job.onDone) f.job.onDone(); f.job = null; }
+  if (f.battery < 30) return null;                                                // last riders are off: charge before the next job (33 sends it; at the peak the queue never ran dry and pods ran at 3 %)
   if (podJobs.length && !f.toCharge) { f.job = podJobs.shift(); f.job.pod = f; const leg = f.job.legs.shift(); return trip(f, from, leg[0], legText(leg[1])); }
   if (between(h, 7, 10.5) && rand() < 0.6) { to = pickNot([A.stopHotel, ...villas.map(v => stopNear(v.p))], from); text = `Arrival transfer · ${n} guests · Terminal stop → ${stopName(to)}`; }
   else if (between(h, 12.5, 14) && rand() < 0.6) { to = A.stopVillage; text = `Lunch wave · ${n} guests → Marina Village`; if (to === from) { to = pickNot(stops, from); text = `Pre-positioning for the lunch wave → ${stopName(to)}`; } }
@@ -1801,6 +1802,7 @@ function stepAmbient(dt) {
       }
       continue;
     }
+    if (f.gt) continue;                                                            // a pod the guest tour (52) has called: no trips of its own until it is released
     if (f.charging > 0) { f.charging -= dt; f.battery = Math.min(100, f.battery + dt * CHARGE_RATE); f.task = `Charging at the ${CHARGE[f.type].name}${f.bay >= 0 ? ' · bay ' + (f.bay + 1) : ''} · ${Math.round(f.battery)} %`;
       if (f.charging <= 0) { f.battery = 100; f.wait = 1; if (f.bay >= 0) { bayUsed.delete(f.bay); f.bay = -1; placeAt(f, roadR.posOf(...roadR.nearest(A.fleet))); f.place = A.fleet; } } continue; }
     if (f.toCharge) { f.toCharge = false; f.charging = CHARGE_MIN; f.bay = CHARGE[f.type] && CHARGE[f.type].name === 'Fleet Hub' ? takeBay() : -1; if (f.bay >= 0) placeAt(f, BAYS[f.bay], Math.PI / 2); continue; }
@@ -2462,13 +2464,14 @@ function applyMapStyle(style) {
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
 { let saved = 'schematic'; try { saved = localStorage.getItem('mapStyle3') || 'schematic'; } catch (e) {} applyMapStyle(saved === 'standard' || saved === 'functional' ? saved : 'schematic'); }   // schematic by default (founder 2026-10-19); the key changed so old choices do not stick
 
-// ===== Guest app style (2026-10-21, v1.4): a scripted tour of one guest's stay, told by the guest app on the right (#appPanel, guest-app.html)
-// and by callouts on the map. Standard look; the island keeps running but only the guest, his yacht and his pod are drawn (founder: "no other actors").
-// Movement rules: the yacht on the marina fairways (MAR, as yachtArrive), the guest on the walkways (walk), the pod on the roads (road), charging at the Fleet Hub.
+// ===== Guest app style (2026-10-21, v1.5): a scripted tour of one guest's stay, told by the guest app on the right (#appPanel, guest-app.html)
+// and by callouts on the map. Standard look; the island's base loop runs and is drawn (fleet, boats, marina), other people are not (founder: one guest, but a fleet he can call).
+// Movement rules: the yacht on the marina fairways (MAR, as yachtArrive), the guest on the walkways (walk), the pod on the roads (road); each ride calls the nearest free L1 of the fleet.
 // The camera follows whoever moves for the guest; dragging the map detaches it, "Center on guest" brings it back.
 // Vault: 2. Architecture/Simulation Rules — rubiqos.com.md, section "Guest app style".
 const GT_SPEED = { walk: 40, pod: 60, yacht: 30 };                              // per motion-minute (x MOTION per sim minute): walk 80 m/min, pod 120 m/min, yacht 60 m/min in the basin
 const GT_MUL = { yacht: 2, walk: 1, pod: 1.5, pass: 4 };                         // clock speed per phase (founder 2026-10-21: x12 was too fast for the camera); long waits jump the clock
+const GT_DIST = { walk: 230, pod: 280, yacht: 360, place: 380 };                 // follow-camera distance (founder 2026-10-21: one step further out than v1.4)
 const gtCss = document.createElement('style');
 gtCss.textContent = `
   .gtour .gpin { opacity: 0.35; } .gtour #layersPanel { display: none; }
@@ -2570,30 +2573,15 @@ function gtCamStep(rdt) {
   const k = 1 - Math.exp(-rdt * 3);
   controls.target.lerp(C.obj, k); camera.position.lerp(_gtv.copy(C.obj).addScaledVector(GT_OFF, C.dist), k);
 }
-// --- solo: only the guest's own yacht, pod and the guest are drawn; the island's simulation keeps running underneath
-function gtSoloOn() {
-  GT.people = peopleOn; peopleOn = false;
-  GT.snap = new Map(); for (const m of movers) GT.snap.set(m, m.visible); for (const k in actors) GT.snap.set(actors[k].mesh, actors[k].mesh.visible);
-  for (const id in yachtInst) for (const p of yachtInst[id].parts) GT.snap.set(p, p.visible);
-}
-function gtSoloStep() {
-  for (const m of movers) if (!GT.own.has(m)) m.visible = false;
-  for (const k in actors) if (!k.startsWith('GT-')) actors[k].mesh.visible = false;
-  for (const id in yachtInst) for (const p of yachtInst[id].parts) p.visible = false;
-}
-function gtSoloOff() {
-  if (!GT.snap) return; peopleOn = GT.people;
-  for (const [o, v] of GT.snap) o.visible = v;
-  for (const f of ambient) f.mesh.visible = fleetOn && (GT.snap.get(f.mesh) || !!f.path);
-  for (const y of yachtMovers) if (y !== GT.yacht) y.mesh.visible = !!(y.path || y.dock);
-  GT.snap = null;
-}
+// --- solo: the guest is the only person drawn; the fleet, the boats and the marina run and are drawn as the island's base loop
+function gtSoloOn() { GT.people = peopleOn; peopleOn = false; GT.snap = true; }
+function gtSoloStep() { for (const k in actors) if (!k.startsWith('GT-')) actors[k].mesh.visible = false; }
+function gtSoloOff() { if (!GT.snap) return; peopleOn = GT.people; GT.snap = null; }
 function stepGuest(rdt, dt) {
   if (!GT.tok) return;
   if (playing) GT.clock += rdt;
   for (let i = GT.beats.length - 1; i >= 0; i--) if (GT.clock >= GT.beats[i].until) { GT.beats[i].res(); GT.beats.splice(i, 1); }
   for (let i = GT.sims.length - 1; i >= 0; i--) if (simT >= GT.sims[i].until) { GT.sims[i].res(); GT.sims.splice(i, 1); }
-  const pod = GT.pod; if (pod) { if (pod.path) pod.battery = Math.max(3, pod.battery - DRAIN.L1 * dt * MOTION); else if (GT.charging) pod.battery = Math.min(100, pod.battery + CHARGE_RATE * dt); }
   gtSoloStep(); gtCamStep(rdt);
   GT.heroT += rdt; if (GT.heroT > 0.25) { GT.heroT = 0; gtHeroDraw(); const t = clockText(); if (t !== GT.bar) { GT.bar = t; gtApp(w => { const s = w.document.querySelector('.statusbar span'); if (s) s.textContent = t; }); } }
   for (const c of GT.calls) { const s = toScreen(_gtv.copy(c.p).setY(c.p.y + c.lift)); c.el.style.display = s ? '' : 'none'; if (s) c.el.style.cssText += `;left:${s[0]}px;top:${s[1]}px`; }
@@ -2602,7 +2590,7 @@ function stepGuest(rdt, dt) {
 function gtActor(id, mesh, medium) { scene.add(mesh); mesh.visible = false; const a = { id, type: id === 'Pod' ? 'L1' : 'guest', mesh, medium, heading: 0 }; actors['GT-' + id] = a; return a; }
 async function gtWalk(from, to, tok) {                                           // walkways only; a missing link is reported (founder rule: fix the model)
   const g = GT.guest, pts = walk(from, to); if (!pts) { placeAt(g, to); return; }
-  if (!g.mesh.visible) placeAt(g, pts[0]); const m = GT.mul; gtMul(GT_MUL.walk); gtFollow(g.mesh.position, 160);
+  if (!g.mesh.visible) placeAt(g, pts[0]); const m = GT.mul; gtMul(GT_MUL.walk); gtFollow(g.mesh.position, GT_DIST.walk);
   await move(g, pts, GT_SPEED.walk); gtChk(tok); gtMul(m);
 }
 async function gtDrive(to, label, tok) {
@@ -2613,28 +2601,51 @@ function gtChk(tok) { if (tok !== GT.tok) throw GT_STOP; }
 const gtStopOf = p => nearestStop(p);
 const gtStopWalk = s => { const q = (POI.stop || []).find(q => q.road === s); return q ? q.p : walkR.posOf(...walkR.nearest(s)); };
 const gtPoi = (cat, name) => (POI[cat] || []).find(q => q.name === name) || (POI[cat] || [])[0];
-// ride: the pod comes to the venue's stop, the guest walks to it, rides, walks from the stop to the venue
+// pod call: the nearest free L1 of the island's fleet answers; the tour drives it for one ride, then it goes back to the fleet.
+// Free = parked between trips with its last job delivered, or driving empty (repositioning); never one with riders, a pickup ahead or a battery under 40 %.
+// At the evening peak the crowd's queue (podJobs) keeps every pod busy, so the app call is served first by the next pod that drops its riders (a booked ride goes ahead of the queue).
+const gtPodOk = f => f.type === 'L1' && !f.gt && !f.toCharge && !(f.charging > 0) && !busyLegs(f) && f.battery >= 40 && f.pos &&
+  (f.path ? !f.job && /^(Pre-positioning|Return trip)/.test(f.task || '') : !f.job || !f.job.legs.length);
+function gtPodTake(at) {
+  const c = ambient.filter(gtPodOk), idle = c.filter(f => !f.path), pool = idle.length ? idle : c;
+  const f = pool.sort((p, q) => p.pos.distanceTo(at) - q.pos.distanceTo(at))[0]; if (!f) return null;
+  const j = f.job; if (j) { j.done = (j.done || 0) + 1; if (j.onLeg) j.onLeg(j.done); if (j.onDone) j.onDone(); f.job = null; }   // what 30's next() does when the last leg is in: the riders step off
+  f.gt = true; f.path = null; f.onDone = null; f.speed0 = f.speed; f.mesh.visible = true; return GT.pod = f;   // 33 skips a pod with .gt: its own trips stop while the guest has it
+}
+function gtPodBack() {
+  const f = GT.pod; if (!f) return; GT.pod = null;
+  f.gt = false; f.path = null; f.onDone = null; f.speed = f.speed0 || f.speed; f.place = roadR.posOf(...roadR.nearest(f.pos)); f.task = 'Standby'; f.wait = 2;
+}
+// ride: the guest calls a pod in the app, it comes to the venue's stop, the guest walks to it, rides, walks from the stop to the venue
 async function gtRide(fromPoi, toPoi, toName, icon, tok) {
-  const g = GT.guest, s0 = gtStopOf(fromPoi.p), s1 = gtStopOf(toPoi.p), pod = GT.pod, bat = () => Math.round(pod.battery);
-  if (pod.pos.distanceTo(s0) > 3) {
-    gtFollow(pod.mesh.position, 200); const c = gtCall(pod.mesh.position, 'car', 'Pod on its way', `to ${placeName(s0)}`, '', 5);
-    gtApp(w => w.setLive({ title: 'Pod on its way', sub: `to ${placeName(s0)}`, at: 'now', icon: 'buggy' }));
-    gtHero(() => ['On its way', 'Your pod', `to ${placeName(s0)} · battery ${bat()} %`, gtM(gtLeft(pod)), gtMu(gtLeft(pod)), bat()]);
-    await gtDrive(s0, `Pickup · guest · ${placeName(s0)}`, tok); c.set('Pod waiting', `${placeName(s0)} · ${bat()} %`);
+  const g = GT.guest, s0 = gtStopOf(fromPoi.p), s1 = gtStopOf(toPoi.p);
+  gtApp(w => w.setLive({ title: 'Calling a pod', sub: `to ${placeName(s0)}`, at: 'now', icon: 'buggy' }));
+  let pod = gtPodTake(s0);
+  if (!pod) {                                                                      // every pod is on a ride: the call waits for the next one to drop its riders; the clock runs faster meanwhile
+    const m = GT.mul, t0 = simT; gtMul(GT_MUL.pass);
+    gtHero(() => ['Pod called · in the queue', 'Waiting for a free pod', `every pod is on a ride · ${Math.round(simT - t0)} min so far`]);
+    while (!(pod = gtPodTake(s0))) { await gtSim(1); gtChk(tok); } gtMul(m);
   }
-  gtApp(w => w.setLive({ title: 'Your pod is here', sub: placeName(s0), at: 'now', icon: 'buggy' }));
-  gtHero(['Now', 'Your pod is here', `${placeName(s0)} · walk to the stop`, '', '', bat()]);
+  const bat = () => Math.round(pod.battery);
+  if (pod.pos.distanceTo(s0) > 3) {
+    gtFollow(pod.mesh.position, GT_DIST.pod); const c = gtCall(pod.mesh.position, 'car', `Pod ${pod.id} · called`, `nearest free pod · to ${placeName(s0)}`, '', 5);
+    gtApp(w => w.setLive({ title: `Pod ${pod.id} on its way`, sub: `to ${placeName(s0)}`, at: 'now', icon: 'buggy' }));
+    gtHero(() => ['Pod called · from the fleet', `Pod ${pod.id} is on its way`, `to ${placeName(s0)} · battery ${bat()} %`, gtM(gtLeft(pod)), gtMu(gtLeft(pod)), bat()]);
+    await gtDrive(s0, `Pod call · to ${placeName(s0)} for 1 guest`, tok); c.set(`Pod ${pod.id} waiting`, `${placeName(s0)} · ${bat()} %`);
+  }
+  gtApp(w => w.setLive({ title: `Pod ${pod.id} is here`, sub: placeName(s0), at: 'now', icon: 'buggy' }));
+  gtHero(['Now', `Pod ${pod.id} is here`, `${placeName(s0)} · walk to the stop`, '', '', bat()]);
   await gtWalk(fromPoi.p, gtStopWalk(s0), tok); g.mesh.visible = false;
-  gtFollow(pod.mesh.position, 200);
-  const c = gtCall(pod.mesh.position, 'car', `Pod → ${toName}`, `1 guest · battery ${bat()} %`, 'live', 5);
-  gtApp(w => w.setLive({ title: `Pod → ${toName}`, sub: `from ${placeName(s0)}`, at: 'riding', icon: 'buggy' }));
-  gtHero(() => ['Riding', `Pod → ${toName}`, `battery ${bat()} %`, gtM(gtLeft(pod)), gtMu(gtLeft(pod)) + ' to go', bat()]);
-  await gtDrive(s1, `Guest · ${placeName(s0)} → ${toName}`, tok); c.set(`Arrived · ${toName}`, `battery ${bat()} %`);
+  gtFollow(pod.mesh.position, GT_DIST.pod);
+  const c = gtCall(pod.mesh.position, 'car', `Pod ${pod.id} → ${toName}`, `1 guest · battery ${bat()} %`, 'live', 5);
+  gtApp(w => w.setLive({ title: `Pod ${pod.id} → ${toName}`, sub: `from ${placeName(s0)}`, at: 'riding', icon: 'buggy' }));
+  gtHero(() => ['Riding', `Pod ${pod.id} → ${toName}`, `battery ${bat()} %`, gtM(gtLeft(pod)), gtMu(gtLeft(pod)) + ' to go', bat()]);
+  await gtDrive(s1, `Pod · 1 guest · ${placeName(s0)} → ${toName}`, tok); c.set(`Arrived · ${toName}`, `pod ${pod.id} back to the fleet`); gtPodBack();
   placeAt(g, gtStopWalk(s1)); gtApp(w => w.setLive({ title: `Walking to ${toName}`, sub: 'from the pod stop', at: 'now', icon: 'pin' }));
   gtHero(['Arrived', toName, 'a short walk from the pod stop', '', '']);
   await gtWalk(gtStopWalk(s1), toPoi.p, tok); gtApp(w => w.setLive(null));
 }
-// ===== Guest app style, part 2 (2026-10-21, v1.4): the story of the tour, start / stop, the style button. Part 1 (52) holds the clock, the app driver, callouts, camera and solo mode.
+// ===== Guest app style, part 2 (2026-10-21, v1.5): the story of the tour, start / stop, the style button. Part 1 (52) holds the clock, the app driver, callouts, camera, solo mode and the pod call.
 // --- the story
 async function gtTour() {
   const tok = ++GT.tok; GT.clock = 0; gtMul(1); if (!playing) $('bPlay').click();
@@ -2668,7 +2679,7 @@ async function gtTour() {
   // 3 · the yacht comes in on the fairways (same route as the marina's own arrivals); from here the camera follows the guest
   const y = yachtMover(b.id); y.busy = true; GT.yacht = y; GT.own.add(y.mesh); y.task = `${TYPES[b.id].title} · guest arrival → berth ${b.berth_id}`;
   placeAt(y, SEA.out, Math.atan2(-(A.entrance.z - SEA.out.z), A.entrance.x - SEA.out.x)); setPath(y, [...MAR.out.map(p => p.clone()).reverse(), b.fairway.foot.clone(), b.approach.clone()]); y.speed = GT_SPEED.yacht; y.mesh.visible = true;
-  gtMul(GT_MUL.yacht); gtFollow(y.mesh.position, 260);
+  gtMul(GT_MUL.yacht); gtFollow(y.mesh.position, GT_DIST.yacht);
   gtApp(w => w.setLive({ title: 'Your yacht · inbound', sub: `berth ${b.berth_id} · AIS matched`, at: 'live', icon: 'boat' }));
   gtHero(() => ['Arrival · AIS track matched', 'Your yacht is on our radar', `pilot guidance through the entrance · berth ${b.berth_id}`, gtM(gtLeft(y)), gtMu(gtLeft(y)) + ' to berth']);
   const yc = gtCall(y.mesh.position, 'sailboat', 'Inbound · your yacht', `berth ${b.berth_id} assigned`, 'live', 12);
@@ -2676,7 +2687,7 @@ async function gtTour() {
   GT.moored = true; y.task = `${TYPES[b.id].title} · moored at berth ${b.berth_id}`; gtMul(1);   // ashore the clock runs at 1x: app beats take real seconds
   gtCall(b.pos, 'anchor', 'Moored', `berth ${b.berth_id} · shore power on`, 'ok', 4);
   gtApp(w => w.setLive(null));
-  // 4 · walk to Marina Support for check-in, then to the hotel
+  // 4 · walk to Marina Support for check-in, then the guest calls a pod from the fleet to the hotel
   const g = GT.guest = gtActor('Guest', personModel(0x2457e6), 'walk'); g.mesh.scale.setScalar(2.4);
   const berthPoi = bPoi(b) || POI.marina[0];
   placeAt(g, berthPoi.p);
@@ -2687,11 +2698,11 @@ async function gtTour() {
   gtKey('Suite 214');
   gtApp(w => { w.__S().access = [{ name: 'Beach Hotel · Suite 214', sub: 'digital key active · 2 nights', flash: true }, { name: `Marina berth ${b.berth_id}`, sub: 'shore power and water on your bill', flash: true }]; w.renderAccess(); });
   gtHero(['Checked in', 'Alex, welcome to Rose Island', 'your digital key opens Suite 214']); await gtBeat(1.8); gtChk(tok);
-  gtApp(w => w.setLive({ title: 'Walking to the Beach Hotel', sub: 'Suite 214', at: 'now', icon: 'pin' }));
-  const gc2 = gtCall(g.mesh.position, 'hotel', 'Guest · walking', 'to the Beach Hotel', 'live', 5);
-  await gtWalk(g.pos, hotelPoi.p, tok); gc2.set('At the Beach Hotel', 'the key opens the suite'); g.mesh.visible = false; gtApp(w => w.setLive(null));
+  gtHero(['Checked in', 'Call a pod to the Beach Hotel', 'the nearest free pod of the island fleet comes to you']); await gtBeat(1.2); gtChk(tok);
+  await gtRide(msPoi || berthPoi, hotelPoi, 'Beach Hotel', 'hotel', tok); g.mesh.visible = false;
+  gtCall(hotelPoi.p, 'hotel', 'At the Beach Hotel', 'the key opens Suite 214', 'ok', 10);
   // 5 · night
-  gtFollow(hotelPoi.p, 300);
+  gtFollow(hotelPoi.p, GT_DIST.place);
   gtHero(['Beach Hotel', 'Good evening, Alex', 'your yacht is plugged in and secure']);
   gtApp(w => w.openSheet()); await gtSay('<p>Good night, Alex. Your yacht is plugged in and secure. Breakfast is from 07:00.</p>', 800, tok);
   await gtBeat(1.6); gtChk(tok); gtApp(w => w.closeSheet());
@@ -2708,33 +2719,22 @@ async function gtTour() {
   gtApp(w => { w.__S().day.push({ time: '08:45', title: 'Massage at the Spa', sub: 'Spa · 60 min', kind: 'event', id: 'gt-spa', flash: true }, { time: '10:15', title: `Breakfast at the ${foodPoi.name}`, sub: `${foodPoi.name} · table for 1`, kind: 'event', id: 'gt-food', flash: true }); w.renderDay(); });
   await gtBeat(1.6); gtChk(tok);
   gtMe('And tennis before lunch.'); await gtBeat(0.6); gtChk(tok);
-  await gtSay(`${gtCard('Tennis court', '12:00 · 60 min · racquets at the court')}<p>A pod takes you all day: hotel → spa → breakfast → hotel → tennis.</p>`, 900, tok);
+  await gtSay(`${gtCard('Tennis court', '12:00 · 60 min · racquets at the court')}<p>Call a pod from the app for each ride: the nearest free one comes to you.</p>`, 900, tok);
   gtCall(tennisPoi.p, 'star', 'Tennis · 12:00', 'court booked · racquets at the court', 'ok', 6);
   gtApp(w => { w.__S().day.push({ time: '12:00', title: 'Tennis', sub: 'Tennis court · 60 min', kind: 'event', id: 'gt-tennis', flash: true }); w.renderDay(); });
   await gtBeat(1.8); gtChk(tok); gtApp(w => w.closeSheet());
-  // 7 · the pod: charges at the Fleet Hub, then serves the day
-  const pod = GT.pod = gtActor('Pod', fleetModel('L1'), 'road'); pod.battery = 70; GT.bay = takeBay();
-  placeAt(pod, GT.bay >= 0 ? BAYS[GT.bay] : roadR.posOf(...roadR.nearest(A.fleet)), Math.PI / 2); pod.mesh.visible = true;
-  gtFollow(pod.mesh.position, 200); const pc = gtCall(pod.mesh.position, 'car', 'Pod · charging', `Fleet Hub · ${pod.battery} % → 100 %`, 'live', 5);
-  gtApp(w => w.setLive({ title: 'Your pod · charging', sub: 'Fleet Hub', at: 'now', icon: 'buggy' }));
-  gtHero(() => ['Your pod', 'Charging at the Fleet Hub', 'before the first pickup at the Beach Hotel', Math.round(pod.battery), '%', pod.battery]);
-  GT.charging = true; const m0 = GT.mul; gtMul(GT_MUL.pass);
-  while (pod.battery < 100) { await gtSim(1); gtChk(tok); pc.set('Pod · charging', `Fleet Hub · ${Math.round(pod.battery)} % → 100 %`); }
-  GT.charging = false; gtMul(m0); if (GT.bay >= 0) { bayUsed.delete(GT.bay); GT.bay = -1; } placeAt(pod, roadR.posOf(...roadR.nearest(A.fleet))); pc.set('Pod · charged', '100 % · to the Beach Hotel');
-  gtApp(w => w.setLive({ title: 'Pod · to the Beach Hotel', sub: 'pickup 08:30', at: 'now', icon: 'buggy' }));
-  gtHero(() => ['Charged · 100 %', 'Pod to the Beach Hotel', 'pickup for the spa at 08:30', gtM(gtLeft(pod)), gtMu(gtLeft(pod)) + ' to go', pod.battery]);
-  await gtDrive(A.stopHotel, 'Pickup · Beach Hotel', tok);
-  gtHero(['Next up · 08:45', 'Massage at the Spa', 'the pod waits at the Beach Hotel']); await gtUntil(8.4, 'The pod waits at the Beach Hotel', tok);
+  // 7 · the day: before each booking the guest calls the nearest free pod of the fleet (52 gtRide); call times leave room for the pickup
+  gtHero(['Next up · 08:45', 'Massage at the Spa', 'call a pod at 08:15']); gtFollow(hotelPoi.p, GT_DIST.place); await gtUntil(8.25, 'Breakfast in the suite', tok);
   placeAt(g, hotelPoi.p);
-  const stay = (t, sub, icon, at, lift = 10) => { gtCall(at.p, icon, t, sub, 'live', lift); g.mesh.visible = false; gtFollow(at.p, 300); gtHero(['Now', t, sub]); };
+  const stay = (t, sub, icon, at, lift = 10) => { gtCall(at.p, icon, t, sub, 'live', lift); g.mesh.visible = false; gtFollow(at.p, GT_DIST.place); gtHero(['Now', t, sub]); };
   await gtRide(hotelPoi, spaPoi, 'Spa', 'leaf', tok);
   stay('Massage at the Spa', '60 min · until 09:45', 'leaf', spaPoi); await gtUntil(8.75, 'Spa · massage starts', tok); await gtUntil(9.75, 'Massage at the Spa', tok);
   await gtRide(spaPoi, foodPoi, foodPoi.name, 'utensils', tok);
   stay(`Breakfast at the ${foodPoi.name}`, 'table for 1 · until 11:00', 'utensils', foodPoi); await gtUntil(10.25, 'Breakfast is served', tok); await gtUntil(11, `Breakfast at the ${foodPoi.name}`, tok);
   await gtRide(foodPoi, hotelPoi, 'Beach Hotel', 'hotel', tok);
-  stay('Back at the Beach Hotel', 'tennis at 12:00', 'hotel', hotelPoi); await gtUntil(11.6, 'Back at the hotel', tok);
+  stay('Back at the Beach Hotel', 'tennis at 12:00', 'hotel', hotelPoi); await gtUntil(11.45, 'Back at the hotel', tok);
   await gtRide(hotelPoi, tennisPoi, 'Tennis court', 'star', tok);
-  gtCall(tennisPoi.p, 'star', 'Tennis', 'court booked until 13:00', 'live', 6); gtFollow(tennisPoi.p, 260); gtHero(['Now', 'Tennis', 'court booked until 13:00']);
+  gtCall(tennisPoi.p, 'star', 'Tennis', 'court booked until 13:00', 'live', 6); gtFollow(tennisPoi.p, GT_DIST.place); gtHero(['Now', 'Tennis', 'court booked until 13:00']);
   await gtUntil(12, 'Tennis starts', tok); await gtUntil(13, 'Tennis', tok);
   // 8 · events: the guest asks, the app answers from the island's programme
   const h = gtHour(), evs = EVENTS.filter(e => e.start >= h).sort((p, q) => p.start - q.start).slice(0, 4), fmt = x => clockAt(x);
@@ -2743,29 +2743,29 @@ async function gtTour() {
   await gtSay(`<p>Here is what's on from now:</p>${evs.map(e => gtCard(e.name, `${fmt(e.start)}–${fmt(e.end)} · ${where(e)}`, 'Open')).join('')}`, 1000, tok);
   await gtBeat(2.4); gtChk(tok);
   gtMe('The music evening at the Beach Club, please.'); await gtBeat(0.6); gtChk(tok);
-  await gtSay(`<p>Booked. Your pod picks you up at the hotel at 17:05.</p>${gtCard('Beach Club DJ sunset', '17:30–20:00 · Beach Club · 1 guest')}`, 900, tok);
+  await gtSay(`<p>Booked. Call a pod at 16:55; it takes you to the Beach Club.</p>${gtCard('Beach Club DJ sunset', '17:30–20:00 · Beach Club · 1 guest')}`, 900, tok);
   gtCall(clubPoi.p, 'music', 'DJ sunset · 17:30', 'Beach Club · booked', 'ok', 10);
   gtApp(w => { w.__S().day.push({ time: '17:30', title: 'DJ sunset at the Beach Club', sub: 'Beach Club · until 20:00', kind: 'event', id: 'gt-dj', flash: true }); w.renderDay(); });
   await gtBeat(1.6); gtChk(tok); gtApp(w => w.closeSheet());
   await gtRide(tennisPoi, hotelPoi, 'Beach Hotel', 'hotel', tok);
   // 9 · the afternoon passes, the pod takes the guest to the beach and back
-  stay('Afternoon at leisure', 'pod pickup at 17:05', 'hotel', hotelPoi);
-  gtBanner('Afternoon at leisure · until <b>17:05</b>'); await gtBeat(1.8); gtChk(tok); gtJump(17.05); await gtBeat(0.6); gtChk(tok); gtBanner('');
+  stay('Afternoon at leisure', 'pod call at 16:55', 'hotel', hotelPoi);
+  gtBanner('Afternoon at leisure · until <b>16:55</b>'); await gtBeat(1.8); gtChk(tok); gtJump(16.9); await gtBeat(0.6); gtChk(tok); gtBanner('');
   await gtRide(hotelPoi, clubPoi, 'Beach Club', 'music', tok);
   stay('DJ sunset at the Beach Club', 'live · until 20:00', 'music', clubPoi); await gtUntil(17.5, 'DJ sunset starts', tok); await gtUntil(20, 'DJ sunset at the Beach Club', tok);
   await gtRide(clubPoi, hotelPoi, 'Beach Hotel', 'hotel', tok); g.mesh.visible = false;
-  gtCall(hotelPoi.p, 'hotel', 'Day complete', 'yacht · walk · 7 pod trips · 5 bookings', 'ok', 10);
-  gtHero(['Good night', 'Day complete', 'yacht · walk · 7 pod trips · 5 bookings']);
+  gtCall(hotelPoi.p, 'hotel', 'Day complete', 'yacht · walk · 8 pod rides · 5 bookings', 'ok', 10);
+  gtHero(['Good night', 'Day complete', 'yacht · walk · 8 pod rides · 5 bookings']);
   gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); });
-  await gtSay('<p>Good night, Alex. Your pod is back on charge. Tomorrow: the snorkelling trip at 09:00?</p>', 900, tok);
+  await gtSay('<p>Good night, Alex. The pod has gone back to the fleet. Tomorrow: the snorkelling trip at 09:00?</p>', 900, tok);
   gtApp(w => w.chips([{ label: 'Replay the tour', primary: true, action: () => gtStart() }]));
-  gtFollow(pod.mesh.position, 220); gtDrive(roadR.posOf(...roadR.nearest(A.fleet)), 'Back to the Fleet Hub', tok).catch(() => {}); gtMul(1);
+  gtFollow(hotelPoi.p, GT_DIST.place); gtMul(1);
 }
 function gtClear() {
   GT.tok = 0; GT.beats = []; GT.sims = []; GT.charging = false; GT.hero = null; GT.cam.obj = null; gtLit(); gtBanner('');
   for (const c of GT.calls) c.el.remove(); GT.calls = [];
-  for (const k of ['GT-Guest', 'GT-Pod']) { const a = actors[k]; if (a) { scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors[k]; } }
-  GT.guest = GT.pod = null; if (GT.bay >= 0) { bayUsed.delete(GT.bay); GT.bay = -1; }
+  const a = actors['GT-Guest']; if (a) { scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors['GT-Guest']; }
+  gtPodBack(); GT.guest = null;   // a called pod goes back to the fleet, it is never removed if (GT.bay >= 0) { bayUsed.delete(GT.bay); GT.bay = -1; }
   const y = GT.yacht, b = GT.berth;
   if (y) { y.path = null; y.dock = null; y.onDone = null; y.mesh.visible = false; y.busy = false; GT.own.delete(y.mesh); GT.yacht = null; }
   if (b) { if (GT.moored || GT.berthWas) berthShow(b, true); b.busy = false; GT.berth = null; }   // the guest's yacht stays in the marina as a moored yacht
@@ -2780,7 +2780,7 @@ function gtStop() {
 gtCtl.addEventListener('click', e => { const b = e.target.closest('[data-gt]'); if (!b) return; if (b.dataset.gt === 'center') gtCenter(); else gtStart(); });
 function applyStyleBtn(style) { if (style === 'guest') { applyMapStyle('guest'); gtStart(); } else { gtStop(); applyMapStyle(style); } }
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyStyleBtn(b.dataset.style); });
-window.__guestTour = { start: () => applyStyleBtn('guest'), stop: () => applyStyleBtn('standard'), state: GT };
+window.__guestTour = { start: () => applyStyleBtn('guest'), stop: () => applyStyleBtn('standard'), state: GT, fleet: ambient };   // fleet: QA of the pod call
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { let ph = Math.min(row.clientHeight - 76, 714), pw = ph * 390 / 844; const cap = row.clientWidth * 0.45 - 16; if (pw > cap) { pw = cap; ph = pw * 844 / 390; } row.style.setProperty('--appw', Math.round(pw + 16) + 'px'); row.style.setProperty('--apph', Math.round(ph + 16) + 'px'); };   // the phone 12 px from the top, 64 px from the bottom, at most 330 x 714 appW(); addEventListener('resize', appW);
   const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').innerHTML = v ? '<span>Guest app</span><span class="arr">→</span>' : '<span class="arr">←</span><span>Guest app</span>';   // arrow: where the panel goes
