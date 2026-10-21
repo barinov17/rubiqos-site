@@ -197,7 +197,7 @@
   <button id="bOverview" class="on">Overview</button>
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
-<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button><button data-style="functional">Functional</button></div>
+<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button><button data-style="functional">Functional</button><button data-style="guest">Guest app</button></div>
 </div>
 <div id="tip" class="panel"></div>
 <div id="vcard" class="panel" role="dialog" aria-label="Vehicle"></div>
@@ -2435,7 +2435,8 @@ function standardMat(o) {
   if (FUNC_VILLAGE.test(t)) return roofed(base, ROOF_BROWN);
   return base; }
 let mapStyle = 'standard';
-function applyMapStyle(name) {
+function applyMapStyle(style) {
+  const name = style === 'guest' ? 'schematic' : style;                         // the guest app tour (part 52) runs on the schematic look
   const sch = name === 'schematic', st = sch ? SCHEMATIC : name === 'functional' ? FUNC_LIGHT : STD, matFn = sch ? schematicMat : name === 'functional' ? functionalMat : null; mapStyle = name;
   model.traverse(o => {
     if (!o.isMesh) return;
@@ -2455,12 +2456,234 @@ function applyMapStyle(name) {
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
   { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; peopleHalo.visible = name !== 'schematic'; refreshDotColours(name); } renderLegend(name); shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
-  document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
+  document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === style));
   try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
 { let saved = 'schematic'; try { saved = localStorage.getItem('mapStyle3') || 'schematic'; } catch (e) {} applyMapStyle(saved === 'standard' || saved === 'functional' ? saved : 'schematic'); }   // schematic by default (founder 2026-10-19); the key changed so old choices do not stick
 
+// ===== Guest app style (2026-10-21): a scripted tour of one guest's stay, told by the guest app (left) and by callouts on the map.
+// The map uses the schematic look; the simulation keeps running around the guest. Actors obey the movement rules:
+// the yacht on the marina fairways (MAR, as yachtArrive), the guest on the walkways (walk), the pod on the roads (road) with charging at the Fleet Hub.
+// Vault: 2. Architecture/Simulation Rules — rubiqos.com.md, section "Guest app style".
+const GT_SPEED = { walk: 40, pod: 60, yacht: 30 };                              // per motion-minute (x MOTION per sim minute): walk 80 m/min, pod 120 m/min, yacht 60 m/min in the basin
+const GT_MUL = { travel: 4, pass: 12 };                                          // clock speed while somebody moves / while time just passes (spa, breakfast, the afternoon)
+const gtCss = document.createElement('style');
+gtCss.textContent = `
+  #gtPhone { position: absolute; left: 12px; top: 12px; bottom: 64px; aspect-ratio: 390 / 844; max-width: 330px; max-height: 714px; z-index: 6; display: none;
+    background: #0a1220; border-radius: 38px; padding: 9px; box-shadow: 0 18px 40px rgba(10, 18, 32, 0.35); font-family: "DM Sans", system-ui, sans-serif; }
+  .gtour #gtPhone { display: block; }
+  .gtour .gpin { opacity: 0.35; } .gtour #layersPanel { display: none; }
+  #gtPhone .scr { position: relative; height: 100%; border-radius: 30px; overflow: hidden; background: #f3f5f8; color: #0a1220; display: flex; flex-direction: column; }
+  #gtPhone .sb { display: flex; justify-content: space-between; padding: 10px 22px 4px; font: 600 12px "DM Sans", sans-serif; }
+  #gtPhone .vw { flex: 1; overflow: hidden; padding: 6px 16px 10px; display: flex; flex-direction: column; gap: 9px; }
+  #gtPhone h1 { font: 500 25px/1.1 "Cormorant Garamond", Georgia, serif; margin: 2px 0 0; letter-spacing: -0.01em; }
+  #gtPhone .k { font: 600 10px "DM Sans", sans-serif; text-transform: uppercase; letter-spacing: 0.08em; color: #5b6676; }
+  #gtPhone .card { background: #fff; border: 1px solid rgba(10, 18, 32, 0.1); border-radius: 16px; padding: 10px 12px; font-size: 12.5px; line-height: 1.4; transition: border-color .3s, box-shadow .3s; }
+  #gtPhone .card b { display: block; font-size: 13.5px; }
+  #gtPhone .card small { color: #5b6676; }
+  #gtPhone .card.pick { border-color: #2457e6; box-shadow: 0 0 0 2px rgba(36, 87, 230, 0.25); }
+  #gtPhone .card.ok { border-color: #3f8f6e; } #gtPhone .card.ok::after { content: 'Booked'; display: inline-block; margin-top: 6px; font: 700 10px "DM Sans"; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: #3f8f6e; border-radius: 6px; padding: 2px 7px; }
+  #gtPhone .deep { background: #15233a; color: #e9eff3; border: 0; } #gtPhone .deep small { color: #9fb3c2; }
+  #gtPhone .btn { align-self: flex-start; font: 600 12px "DM Sans"; color: #fff; background: #2457e6; border-radius: 10px; padding: 7px 12px; }
+  #gtPhone .chat { display: flex; flex-direction: column; gap: 7px; }
+  #gtPhone .msg { max-width: 86%; padding: 8px 11px; border-radius: 14px; font-size: 12.5px; line-height: 1.4; animation: gtIn .35s ease-out; }
+  #gtPhone .msg.b { background: #15233a; color: #e9eff3; border-bottom-left-radius: 4px; } #gtPhone .msg.me { align-self: flex-end; background: #2457e6; color: #fff; border-bottom-right-radius: 4px; }
+  #gtPhone .opts { display: flex; flex-wrap: wrap; gap: 5px; } #gtPhone .opt { font: 500 11.5px "DM Sans"; border: 1px solid rgba(10, 18, 32, 0.15); border-radius: 999px; padding: 4px 10px; background: #fff; } #gtPhone .opt.pick { background: #2457e6; border-color: #2457e6; color: #fff; }
+  #gtPhone .it { display: grid; grid-template-columns: 44px 1fr; gap: 2px 8px; font-size: 12px; padding: 5px 0; border-bottom: 1px solid rgba(10, 18, 32, 0.08); } #gtPhone .it b { font-variant-numeric: tabular-nums; } #gtPhone .it.now { color: #2457e6; font-weight: 600; } #gtPhone .it.done { color: #8a94a3; }
+  #gtPhone .bar { height: 5px; border-radius: 3px; background: #e4e9f0; overflow: hidden; margin-top: 6px; } #gtPhone .bar i { display: block; height: 100%; background: #3f8f6e; }
+  #gtPhone .tb { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; height: 64px; padding: 0 10px 8px; background: #fff; border-top: 1px solid rgba(10, 18, 32, 0.08); font: 600 11px "DM Sans"; color: #5b6676; text-align: center; }
+  #gtPhone .tb .on { color: #2457e6; } #gtPhone .tb .orb { justify-self: center; width: 50px; height: 50px; border-radius: 50%; background: #15233a; color: #fff; display: grid; place-items: center; margin-top: -18px; box-shadow: 0 6px 14px rgba(10, 18, 32, 0.3); font: 500 15px "Cormorant Garamond", serif; }
+  #gtPhone .tb .orb.on { background: #2457e6; }
+  #gtPhone .ctl { position: absolute; right: 12px; top: 34px; display: flex; gap: 5px; } #gtPhone .ctl button { font: 600 10.5px "DM Sans"; color: #0a1220; background: #fff; border: 1px solid rgba(10, 18, 32, 0.15); border-radius: 8px; padding: 3px 8px; cursor: pointer; }
+  #gtPhone .night { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(10, 18, 32, 0.92); color: #e9eff3; font: 500 24px "Cormorant Garamond", serif; opacity: 0; pointer-events: none; transition: opacity .6s; text-align: center; }
+  #gtPhone .night.on { opacity: 1; }
+  @keyframes gtIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .gcall { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 10px)); z-index: 5; pointer-events: none; background: #fff; border-radius: 12px; padding: 7px 11px 7px 8px;
+    box-shadow: 0 6px 16px rgba(10, 18, 32, 0.22); display: flex; gap: 8px; align-items: center; font: 12px/1.3 "DM Sans", sans-serif; color: #0a1220; width: max-content; max-width: 250px; animation: gtIn .35s ease-out; transition: opacity .4s; }
+  .gcall::after { content: ''; position: absolute; left: 50%; bottom: -6px; width: 12px; height: 12px; background: inherit; transform: translateX(-50%) rotate(45deg); }
+  .gcall svg { flex: none; width: 26px; height: 26px; padding: 5px; border-radius: 50%; background: #2457e6; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .gcall b { display: block; font-size: 12.5px; } .gcall span { color: #5b6676; font-size: 11.5px; }
+  .gcall.ok svg { background: #3f8f6e; } .gcall.live svg { background: #0a1220; } .gcall.old { opacity: 0.5; }
+  @media (max-width: 760px) { #gtPhone { max-width: 220px; bottom: auto; height: 60%; } }`;
+document.head.appendChild(gtCss);
+{ const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap'; document.head.appendChild(l); }   // the pitch display font, only for the app panel
+const gtPhone = document.createElement('div'); gtPhone.id = 'gtPhone';
+gtPhone.innerHTML = `<div class="scr"><div class="sb"><span id="gtTime">07:00</span><span>Rose Island</span></div><div class="ctl"><button data-gt="replay">Replay</button><button data-gt="exit">Exit</button></div>
+  <div class="vw" id="gtView"></div><div class="tb"><span data-tab="island">Island</span><span class="orb" data-tab="butler">B</span><span data-tab="you">You</span></div><div class="night" id="gtNight"></div></div>`;
+stage.appendChild(gtPhone);
+const gtView = gtPhone.querySelector('#gtView');
+const GT = { tok: 0, clock: 0, beats: [], sims: [], calls: [], guest: null, pod: null, yacht: null, berth: null, bay: -1, charging: false, mul: 1 };
+const GT_STOP = new Error('guest tour stopped');
+const gtIcon = k => `<svg viewBox="0 0 24 24"><path d="${ICON[k] || ICON.star}"/></svg>`;
+// --- time: app beats run on real seconds (paused with the clock), story waits on simulated minutes
+const gtBeat = sec => new Promise(res => GT.beats.push({ until: GT.clock + sec, res }));
+const gtSim = min => new Promise(res => GT.sims.push({ until: simT + min, res }));
+function gtMul(m) { GT.mul = m; speedMul = m; $('bSpeed').textContent = `Speed ${m}×`; }
+const gtHour = () => ((START_MIN + simT) / 60) % 24;
+async function gtUntil(h) { const d = ((h - gtHour()) * 60 + 1440) % 1440; if (d > 0 && d < 720) { const m = GT.mul; gtMul(GT_MUL.pass); await gtSim(d); gtMul(m); } }   // wait for a booked time (never more than half a day)
+function gtJump(h) { const d = ((h - gtHour()) * 60 + 1440) % 1440; simT += d; window.SIM_T = simT; }   // night / afternoon: the clock jumps, the island goes on
+// --- app panel
+function gtTab(t) { for (const e of gtPhone.querySelectorAll('[data-tab]')) e.classList.toggle('on', e.dataset.tab === t); }
+function gtShow(tab, html) { gtTab(tab); gtView.innerHTML = html; }
+function gtAdd(html) { gtView.insertAdjacentHTML('beforeend', html); while (gtView.scrollHeight > gtView.clientHeight + 4 && gtView.children.length > 2) gtView.children[1].remove(); return gtView.lastElementChild; }   // the header stays, the oldest lines scroll away
+const gtMsg = (who, text) => gtAdd(`<div class="msg ${who}">${text}</div>`);
+// --- callouts above the place where an action happens; p = a point or a live mesh position
+function gtCall(p, icon, title, sub = '', kind = '', lift = 6) {
+  GT.calls = GT.calls.filter(c => { if (c.p.distanceTo(p) > 25) return c.el.classList.add('old') || true; c.el.remove(); return false; });   // one callout per place: a new one replaces the old one there
+  const el = document.createElement('div'); el.className = 'gcall ' + kind; el.innerHTML = `${gtIcon(icon)}<div><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`; stage.appendChild(el);
+  const c = { el, p, lift, set: (t, s) => { el.querySelector('b').textContent = t; const sp = el.querySelector('span'); if (sp && s !== undefined) sp.textContent = s; } }; GT.calls.push(c);
+  while (GT.calls.length > 3) GT.calls.shift().el.remove();
+  return c;
+}
+const _gtv = new THREE.Vector3();
+function stepGuest(rdt, dt) {
+  if (!GT.tok) return;
+  if (playing) GT.clock += rdt;
+  for (let i = GT.beats.length - 1; i >= 0; i--) if (GT.clock >= GT.beats[i].until) { GT.beats[i].res(); GT.beats.splice(i, 1); }
+  for (let i = GT.sims.length - 1; i >= 0; i--) if (simT >= GT.sims[i].until) { GT.sims[i].res(); GT.sims.splice(i, 1); }
+  const pod = GT.pod; if (pod) { if (pod.path) pod.battery = Math.max(3, pod.battery - DRAIN.L1 * dt * MOTION); else if (GT.charging) pod.battery = Math.min(100, pod.battery + CHARGE_RATE * dt); }
+  $('gtTime').textContent = clockText();
+  for (const c of GT.calls) { const s = toScreen(_gtv.copy(c.p).setY(c.p.y + c.lift)); c.el.style.display = s ? '' : 'none'; if (s) c.el.style.cssText += `;left:${s[0]}px;top:${s[1]}px`; }
+}
+// --- actors
+function gtActor(id, mesh, medium) { scene.add(mesh); mesh.visible = false; const a = { id, type: id === 'Pod' ? 'L1' : 'guest', mesh, medium, heading: 0 }; actors['GT-' + id] = a; return a; }
+async function gtWalk(from, to, tok) {                                           // walkways only; a missing link is reported (founder rule: fix the model)
+  const g = GT.guest, pts = walk(from, to); if (!pts) { placeAt(g, to); return; }
+  if (!g.mesh.visible) placeAt(g, pts[0]); await move(g, pts, GT_SPEED.walk); gtChk(tok);
+}
+async function gtDrive(to, label, tok) {
+  const pod = GT.pod, pts = road(pod.pos, to); pod.task = label; if (pts) { await move(pod, pts, GT_SPEED.pod); gtChk(tok); } else placeAt(pod, to);
+}
+function gtChk(tok) { if (tok !== GT.tok) throw GT_STOP; }
+const gtStopOf = p => nearestStop(p);
+const gtStopWalk = s => { const q = (POI.stop || []).find(q => q.road === s); return q ? q.p : walkR.posOf(...walkR.nearest(s)); };
+const gtPoi = (cat, name) => (POI[cat] || []).find(q => q.name === name) || (POI[cat] || [])[0];
+// ride: the guest walks to the venue's pod stop, rides, walks from the stop to the venue
+async function gtRide(fromPoi, toPoi, toName, icon, tok) {
+  const g = GT.guest, s0 = gtStopOf(fromPoi.p), s1 = gtStopOf(toPoi.p), pod = GT.pod;
+  if (pod.pos.distanceTo(s0) > 3) { const c = gtCall(pod.mesh.position, 'car', 'Pod on its way', `to ${placeName(s0)}`, '', 5); await gtDrive(s0, `Pickup · guest · ${placeName(s0)}`, tok); c.set('Pod waiting', `${placeName(s0)} · ${Math.round(pod.battery)} %`); }
+  await gtWalk(fromPoi.p, gtStopWalk(s0), tok); g.mesh.visible = false;
+  focus(pod.mesh.position, 240);
+  const c = gtCall(pod.mesh.position, 'car', `Pod → ${toName}`, `1 guest · battery ${Math.round(pod.battery)} %`, 'live', 5);
+  await gtDrive(s1, `Guest · ${placeName(s0)} → ${toName}`, tok); c.set(`Arrived · ${toName}`, `battery ${Math.round(pod.battery)} %`);
+  focus(g.mesh.position, 200); placeAt(g, gtStopWalk(s1)); await gtWalk(gtStopWalk(s1), toPoi.p, tok);
+}
+// --- the story
+async function gtTour() {
+  const tok = ++GT.tok; GT.clock = 0; gtMul(GT_MUL.travel); if (!playing) $('bPlay').click();
+  stage.classList.add('gtour'); setAutoCam(true); gtJump(16.5);   // day 1: the guest arrives in the late afternoon
+  const hotelPoi = gtPoi('hotel', 'Beach Hotel lobby'), spaPoi = gtPoi('spa', 'Spa'), foodPoi = gtPoi('food', 'Rotunda Restaurant'), tennisPoi = gtPoi('sport', 'Tennis court'), clubPoi = gtPoi('beach', 'Beach Club'), msPoi = gtPoi('crewlounge', 'Crew lounge');
+  const villa = villas[0];
+  // 1 · stay: not signed in, pick and book
+  gtShow('island', `<div><div class="k">Welcome · not signed in</div><h1>Plan your stay on Rose Island</h1></div>
+    <div class="card" id="gtS1"><b>Beach Hotel · sea-view suite</b><small>2 nights · 2 guests · breakfast included</small></div>
+    <div class="card" id="gtS2"><b>${villa ? villa.name : 'Villa'} · private pool</b><small>2 nights · up to 6 guests</small></div>`);
+  focus(A.hotel, 520); await gtBeat(2); gtChk(tok);
+  gtView.querySelector('#gtS2').classList.add('pick'); if (villa) gtCall(villa.p, 'home', villa.name, 'private pool · available'); await gtBeat(1.6); gtChk(tok);
+  gtView.querySelector('#gtS2').classList.remove('pick'); gtView.querySelector('#gtS1').classList.add('pick'); gtCall(A.hotel, 'hotel', 'Beach Hotel · sea-view suite', 'available · 2 nights'); await gtBeat(1.4); gtChk(tok);
+  gtView.querySelector('#gtS1').classList.replace('pick', 'ok'); gtCall(A.hotel, 'hotel', 'Stay booked', 'Beach Hotel · sea-view suite · 2 nights', 'ok'); await gtBeat(1.8); gtChk(tok);
+  // 2 · marina berth for the guest's own yacht
+  let b = berths.find(x => x.cls === 'M' && !x.occupied && !x.busy) || berths.find(x => x.cls === 'M' && !x.busy);
+  if (!b) { gtShow('island', `<div class="card">No free berth for the demo.</div>`); return; }
+  if (b.occupied) berthShow(b, false);                                         // the demo frees one M berth if the marina is full
+  b.busy = true; GT.berth = b;
+  gtShow('island', `<div><div class="k">Getting here</div><h1>How will you arrive?</h1></div><div class="opts"><span class="opt pick">Own yacht</span><span class="opt">Helicopter</span><span class="opt">Shuttle boat</span></div>
+    <div class="card" id="gtB"><b>Marina berth ${b.berth_id}</b><small>Class ${b.cls} · stern-to · shore power and water</small></div>`);
+  focus(b.pos, 360); gtCall(b.pos, 'anchor', `Berth ${b.berth_id}`, 'reserved for your arrival', '', 4); await gtBeat(1.8); gtChk(tok);
+  gtView.querySelector('#gtB').classList.add('ok'); gtCall(b.pos, 'anchor', 'Berth booked', `${b.berth_id} · class ${b.cls}`, 'ok', 4); await gtBeat(1.4); gtChk(tok);
+  // 3 · the yacht comes in on the fairways (same route as the marina's own arrivals)
+  const y = yachtMover(b.id); y.busy = true; GT.yacht = y; y.task = `${TYPES[b.id].title} · guest arrival → berth ${b.berth_id}`;
+  if (mapStyle === 'schematic') y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; o.material = /glass/i.test(o.userData.baseMat.name) ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff); });
+  placeAt(y, SEA.out, Math.atan2(-(A.entrance.z - SEA.out.z), A.entrance.x - SEA.out.x)); setPath(y, [...MAR.out.map(p => p.clone()).reverse(), b.fairway.foot.clone(), b.approach.clone()]); y.speed = GT_SPEED.yacht;
+  gtShow('island', `<div><div class="k">Arrival</div><h1>Your yacht is on our radar</h1></div><div class="card deep"><b>AIS track matched to the booking</b><small>Pilot guidance through the entrance · berth ${b.berth_id}</small></div>`);
+  focus(y.mesh.position, 320); const yc = gtCall(y.mesh.position, 'sailboat', 'Inbound · your yacht', `berth ${b.berth_id} assigned`, 'live', 12);
+  await new Promise(res => { y.onDone = () => { y.task = `${TYPES[b.id].title} · docking at berth ${b.berth_id}`; yc.set('Docking stern-to', `berth ${b.berth_id}`); dockLeg(y, b.approach, b.pos, y.heading, b.heading, res); }; }); gtChk(tok);
+  y.mesh.visible = false; y.busy = false; GT.yacht = null; berthShow(b, true);
+  gtCall(b.pos, 'anchor', 'Moored', `berth ${b.berth_id} · shore power on`, 'ok', 4);
+  // 4 · walk to Marina Support for check-in, then to the hotel
+  const g = GT.guest = gtActor('Guest', personModel(0x2457e6), 'walk'); g.mesh.scale.setScalar(2.4);
+  const berthPoi = (POI.marina || []).find(q => q.name === `Berth ${b.berth_id}`) || POI.marina[0];
+  placeAt(g, berthPoi.p);
+  gtShow('island', `<div><div class="k">Welcome</div><h1>Check-in at Marina Support</h1></div><div class="card"><b>3-minute walk</b><small>Passport scan and your digital key</small></div>`);
+  focus(g.mesh.position, 200); const gc = gtCall(g.mesh.position, 'anchor', 'Guest · walking', 'to Marina Support', 'live', 5);
+  if (msPoi) { await gtWalk(berthPoi.p, msPoi.p, tok); gc.set('Check-in done', 'Marina Support'); gtCall(msPoi.p, 'building', 'Check-in', 'passport scan · digital key issued', 'ok', 14); }
+  gtShow('you', `<div><div class="k">Your stay</div><h1>Alex, welcome to Rose Island</h1></div><div class="card deep"><b>Digital key · active</b><small>Beach Hotel · sea-view suite · 2 nights</small></div><div class="card"><b>Yacht</b><small>Berth ${b.berth_id} · shore power and water on your bill</small></div>`);
+  await gtBeat(1.6); gtChk(tok);
+  const gc2 = gtCall(g.mesh.position, 'hotel', 'Guest · walking', 'to the Beach Hotel', 'live', 5);
+  await gtWalk(g.pos, hotelPoi.p, tok); gc2.set('At the Beach Hotel', 'the key opens the suite'); g.mesh.visible = false;
+  // 5 · night
+  gtShow('butler', `<div><div class="k">Butler</div><h1>Good evening</h1></div><div class="chat"></div>`); gtMsg('b', 'Good night, Alex. Your yacht is plugged in and secure. Breakfast is from 07:00.');
+  await gtBeat(1.8); gtChk(tok);
+  const night = gtPhone.querySelector('#gtNight'); night.textContent = 'Night at the Beach Hotel'; night.classList.add('on'); for (const c of GT.calls) c.el.remove(); GT.calls = [];
+  focus(A.hotel, 520); await gtBeat(1.5); gtChk(tok); gtJump(7); await gtBeat(1); gtChk(tok); night.classList.remove('on');
+  // 6 · morning: the butler asks, the guest books the spa, breakfast and tennis
+  gtShow('butler', `<div><div class="k">Butler · ${clockText()}</div><h1>Good morning</h1></div><div class="chat"></div>`);
+  gtMsg('b', 'Good morning, Alex. What would you like to book today?'); gtAdd(`<div class="opts"><span class="opt">Spa</span><span class="opt">Breakfast</span><span class="opt">Tennis</span><span class="opt">Excursion</span></div>`);
+  await gtBeat(2); gtChk(tok);
+  gtMsg('me', 'A massage first, then breakfast.'); await gtBeat(1.4); gtChk(tok);
+  gtMsg('b', 'Booked: massage at the Spa at 08:45, then a table at the Rotunda Restaurant at 10:15.');
+  focus(spaPoi.p, 520); gtCall(spaPoi.p, 'leaf', 'Spa · 08:45', 'massage · 60 min · booked', 'ok', 10); await gtBeat(1.2); gtChk(tok);
+  gtCall(foodPoi.p, 'utensils', 'Breakfast · 10:15', `${foodPoi.name} · table for 1`, 'ok', 10); await gtBeat(1.4); gtChk(tok);
+  gtMsg('me', 'And tennis before lunch.'); await gtBeat(1.2); gtChk(tok);
+  gtMsg('b', 'Court at 12:00 is yours. A pod takes you all day: hotel → spa → breakfast → hotel → tennis.');
+  gtCall(tennisPoi.p, 'star', 'Tennis · 12:00', 'court booked · racquets at the court', 'ok', 6); await gtBeat(1.8); gtChk(tok);
+  // 7 · the pod: charges at the Fleet Hub, then serves the day
+  const pod = GT.pod = gtActor('Pod', fleetModel('L1'), 'road'); pod.battery = 70; GT.bay = takeBay();
+  placeAt(pod, GT.bay >= 0 ? BAYS[GT.bay] : roadR.posOf(...roadR.nearest(A.fleet)), Math.PI / 2);
+  gtShow('you', `<div><div class="k">Today · ${clockText()}</div><h1>Your day</h1></div>
+    <div class="card deep"><b>Pod · planned</b><small>Charging at the Fleet Hub before the first pickup</small><div class="bar"><i id="gtBat" style="width:70%"></i></div></div>
+    <div class="card" id="gtDay"><div class="it now"><b>08:30</b><span>Pod pickup · Beach Hotel</span></div><div class="it"><b>08:45</b><span>Spa · massage</span></div><div class="it"><b>10:15</b><span>Breakfast · ${foodPoi.name}</span></div><div class="it"><b>11:30</b><span>Back at the hotel</span></div><div class="it"><b>12:00</b><span>Tennis</span></div></div>`);
+  focus(pod.mesh.position, 220); const pc = gtCall(pod.mesh.position, 'car', 'Pod · charging', `Fleet Hub · ${pod.battery} % → 100 %`, 'live', 5);
+  GT.charging = true; const m0 = GT.mul; gtMul(GT_MUL.pass);
+  while (pod.battery < 100) { await gtSim(1); gtChk(tok); pc.set('Pod · charging', `Fleet Hub · ${Math.round(pod.battery)} % → 100 %`); const bi = $('gtBat'); if (bi) bi.style.width = Math.round(pod.battery) + '%'; }
+  GT.charging = false; gtMul(m0); if (GT.bay >= 0) { bayUsed.delete(GT.bay); GT.bay = -1; } placeAt(pod, roadR.posOf(...roadR.nearest(A.fleet))); pc.set('Pod · charged', '100 % · to the Beach Hotel');
+  await gtDrive(A.stopHotel, 'Pickup · Beach Hotel', tok); await gtUntil(8.4); gtChk(tok);
+  const day = n => { const rows = gtView.querySelectorAll('#gtDay .it'); rows.forEach((r, i) => { r.classList.toggle('done', i < n); r.classList.toggle('now', i === n); }); };
+  placeAt(g, hotelPoi.p);
+  await gtRide(hotelPoi, spaPoi, 'Spa', 'leaf', tok); day(1);
+  gtCall(spaPoi.p, 'leaf', 'At the Spa', 'massage · 60 min', 'live', 10); g.mesh.visible = false; await gtUntil(8.75); await gtUntil(9.75); gtChk(tok);
+  await gtRide(spaPoi, foodPoi, foodPoi.name, 'utensils', tok); day(2);
+  gtCall(foodPoi.p, 'utensils', 'Breakfast', foodPoi.name, 'live', 10); g.mesh.visible = false; await gtUntil(10.25); await gtUntil(11); gtChk(tok);
+  await gtRide(foodPoi, hotelPoi, 'Beach Hotel', 'hotel', tok); day(3); g.mesh.visible = false; await gtUntil(11.6); gtChk(tok);
+  await gtRide(hotelPoi, tennisPoi, 'Tennis court', 'star', tok); day(4);
+  gtCall(tennisPoi.p, 'star', 'Tennis', 'court booked until 13:00', 'live', 6); await gtUntil(12); await gtUntil(13); gtChk(tok);
+  // 8 · events: the guest asks, the app answers from the island's programme
+  const h = gtHour(), evs = EVENTS.filter(e => e.start >= h).sort((p, q) => p.start - q.start).slice(0, 4), fmt = x => clockAt(x);
+  gtShow('butler', `<div><div class="k">Butler · ${clockText()}</div><h1>What's on?</h1></div><div class="chat"></div>`);
+  gtMsg('me', 'Which events are on today?'); await gtBeat(1.2); gtChk(tok);
+  gtMsg('b', 'Here is today\'s programme:'); gtAdd(evs.map(e => `<div class="card${e.name === 'Beach Club DJ sunset' ? ' pick' : ''}"><b>${e.name}</b><small>${fmt(e.start)}–${fmt(e.end)} · ${e.venue === 'beach' && /Beach Club/.test(e.name) ? 'Beach Club' : POI_LABEL[e.venue] || e.venue}</small></div>`).join(''));
+  await gtBeat(2.2); gtChk(tok);
+  gtShow('butler', `<div><div class="k">Butler · ${clockText()}</div><h1>Music evening</h1></div><div class="chat"></div>`);
+  gtMsg('me', 'The music evening at the Beach Club, please.'); await gtBeat(1); gtChk(tok);
+  gtMsg('b', 'Booked: DJ sunset at the Beach Club, 17:30–20:00. Your pod picks you up at the hotel at 17:05.');
+  focus(clubPoi.p, 480); gtCall(clubPoi.p, 'music', 'DJ sunset · 17:30', 'Beach Club · booked', 'ok', 10); await gtBeat(1.8); gtChk(tok);
+  await gtRide(tennisPoi, hotelPoi, 'Beach Hotel', 'hotel', tok); g.mesh.visible = false;
+  // 9 · the afternoon passes, the pod takes the guest to the beach and back
+  night.textContent = 'Afternoon at leisure'; night.classList.add('on'); await gtBeat(1.2); gtChk(tok); gtJump(17.05); await gtBeat(0.8); gtChk(tok); night.classList.remove('on');
+  await gtRide(hotelPoi, clubPoi, 'Beach Club', 'music', tok);
+  gtCall(clubPoi.p, 'music', 'Live · DJ sunset', 'Beach Club · until 20:00', 'live', 10); g.mesh.visible = false; await gtUntil(20); gtChk(tok);
+  await gtRide(clubPoi, hotelPoi, 'Beach Hotel', 'hotel', tok); g.mesh.visible = false;
+  gtShow('butler', `<div><div class="k">Butler · ${clockText()}</div><h1>Good night</h1></div><div class="chat"></div>`);
+  gtMsg('b', 'Good night, Alex. Your pod is back on charge. Tomorrow: the snorkelling trip at 09:00?'); gtAdd(`<div class="btn" data-gt="replay">Replay the tour</div>`);
+  gtCall(hotelPoi.p, 'hotel', 'Day complete', 'yacht · walk · 7 pod trips · 4 bookings', 'ok', 10);
+  gtDrive(roadR.posOf(...roadR.nearest(A.fleet)), 'Back to the Fleet Hub', tok).catch(() => {}); gtMul(1);
+}
+function gtClear() {
+  GT.tok = 0; GT.beats = []; GT.sims = []; GT.charging = false;
+  for (const c of GT.calls) c.el.remove(); GT.calls = [];
+  for (const k of ['GT-Guest', 'GT-Pod']) { const a = actors[k]; if (a) { scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors[k]; } }
+  GT.guest = GT.pod = null; if (GT.bay >= 0) { bayUsed.delete(GT.bay); GT.bay = -1; }
+  if (GT.yacht) { const y = GT.yacht; y.path = null; y.dock = null; y.onDone = null; y.mesh.visible = false; y.busy = false; GT.yacht = null; }
+  if (GT.berth) { GT.berth.busy = false; GT.berth = null; }
+  gtPhone.querySelector('#gtNight').classList.remove('on');
+}
+function gtStart() { gtClear(); gtTour().catch(e => { if (e !== GT_STOP) console.error(e); }); }
+function gtStop() { if (!stage.classList.contains('gtour')) return; gtClear(); stage.classList.remove('gtour'); gtMul(1); setAutoCam(false); }
+gtPhone.addEventListener('click', e => { const b = e.target.closest('[data-gt]'); if (!b) return; if (b.dataset.gt === 'replay') gtStart(); else applyStyleBtn('schematic'); });
+function applyStyleBtn(style) { if (style === 'guest') { applyMapStyle('guest'); gtStart(); } else { gtStop(); applyMapStyle(style); } }
+document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyStyleBtn(b.dataset.style); });
+window.__guestTour = { start: () => applyStyleBtn('guest'), stop: () => applyStyleBtn('schematic'), state: GT };
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { const H = row.clientHeight; const w = Math.min(Math.round((H - 24) * 390 / 844) + 24, Math.round(row.clientWidth * 0.45)); row.style.setProperty('--appw', w + 'px'); }; appW(); addEventListener('resize', appW);
   const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').innerHTML = v ? '<span>Guest app</span><span class="arr">→</span>' : '<span class="arr">←</span><span>Guest app</span>';   // arrow: where the panel goes
@@ -2493,7 +2716,7 @@ function tick(rdt, draw = true) {
   simT += dt; window.SIM_T = simT;
   const dtm = dt * MOTION;                                                  // movement runs faster than the clock-driven timers
   for (const a of Object.values(actors)) stepMover(a, dtm);
-  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE);
+  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE); stepGuest(rdt, dt);
   for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].until) { waiters[i].res(); waiters.splice(i, 1); }
   directCamera(rdt); controls.update();
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }   // the snapshot, drawn or not (headless frame)
