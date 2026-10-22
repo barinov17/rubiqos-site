@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="/site.css?v=20261020c">
+<link rel="stylesheet" href="/site.css?v=20261021a">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · Live demo</title>
@@ -850,7 +850,7 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
 }
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
 const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-(guest|BOH)-\d+$/.test(n)).flatMap(meshOf);   // v073: pads are `Drop-off | DO-guest-NN` and `Drop-off | DO-BOH-NN` (blocks of the DWG)
-const roadR = surfaceGrid([...['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE roundabout east tip', 'ROADS_SERVICE link reception', 'loading zone surface', 'Longevity Clinic road', 'Infrastructure zone | WH service apron', 'Service dock.001'].flatMap(meshOf), ...padMeshes], 3);   // v073 live road surfaces only (founder brief 2026-10-19)
+const roadR = surfaceGrid([...['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE roundabout east tip', 'ROADS_SERVICE link reception', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', 'Longevity Clinic road', 'Infrastructure zone | WH service apron', 'Service dock.001'].flatMap(meshOf), ...padMeshes], 3);   // v073 live road surfaces only (founder brief 2026-10-19)
 const walkR = surfaceGrid([...['ROADS_SERVICE (block) surface', 'ROADS_GUEST surface', 'ROADS_GUEST straight path | surface', 'PROMENADE surface', 'Marina Village paths', 'Spa path', 'Marina pier walkway 1', 'Marina pier walkway 2', 'Marina pier walkway 3', 'Rotunda Restaurant | path NE', 'Rotunda park | path N', 'Rotunda Restaurant | Restaurant paving', 'Rotunda Restaurant | Restaurant court paving', 'Beach Hotel | forecourt', 'Beach Hotel | lobby', 'Arrivals Reception | reception footprint', 'Infrastructure zone | FH fleet hub yard', 'Infrastructure zone | SA staff accommodation courtyard', 'Infrastructure zone | W waste management ground', 'Infrastructure zone | IF infrastructure ground', 'Infrastructure zone | WH service apron', 'BEACH.001', 'BEACH.003'].flatMap(meshOf), ...[...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/DO-BOH/.test(m.name))], 2.5, 12);   // v073: guest paths, the promenade and the village paths, plazas, the beaches, the attractions; the BOH block's service roads and yards are the staff's walkways (no guests there)
 // --- roads only where no building stands over them (founder 2026-10-20: "vehicles drive through buildings; keep them on the roads, open a road
 // through only where a needed function has no other access"). Audit before the fix: 256 of 13,369 moving-vehicle samples (1.9 %) had a building
@@ -1142,7 +1142,7 @@ const hatchMat = (base = SCHEMATIC.hatchBase, line = SCHEMATIC.hatchLine, step =
   const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x9dbdf0, roughness: 0.9 }), bohPadMat = hatchMat(0xe4e9f3, 0x4e5d6e);   // founder 2026-10-19: guest pads light blue, back-of-house pads hatched at 45° (both styles)
   const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
-  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$| service road \| surface$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
+  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$| service road \| surface$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
     m.updateWorldMatrix(true, false); const g = m.geometry, pos = g.attributes.position, idx = g.index, cnt = idx ? idx.count : pos.count;
     for (let i = 0; i < cnt; i += 3) {
       const ia = idx ? idx.getX(i) : i, ib = idx ? idx.getX(i + 1) : i + 1, ic = idx ? idx.getX(i + 2) : i + 2;
