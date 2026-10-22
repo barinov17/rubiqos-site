@@ -199,7 +199,7 @@
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
 <div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button><button data-style="functional">Functional</button></div>
-<div id="scenSw" class="panel" role="group" aria-label="Scenarios"><span class="lab">Scenarios</span><button data-scen="guest">Guest Journey</button></div>
+<div id="scenSw" class="panel" role="group" aria-label="Scenarios"><span class="lab">Scenarios</span><button data-scen="guest">Guest Journey</button><button data-scen="supply">Supply</button></div>
 </div>
 <div id="tip" class="panel"></div>
 <div id="vcard" class="panel" role="dialog" aria-label="Vehicle"></div>
@@ -852,8 +852,8 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
 }
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
 const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-(guest|BOH)-\d+$/.test(n)).flatMap(meshOf);   // v073: pads are `Drop-off | DO-guest-NN` and `Drop-off | DO-BOH-NN` (blocks of the DWG)
-const roadR = surfaceGrid([...['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE roundabout east tip', 'ROADS_SERVICE link reception', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', 'Longevity Clinic road', 'Infrastructure zone | WH service apron', 'Service dock.001'].flatMap(meshOf), ...padMeshes], 3);   // v073 live road surfaces only (founder brief 2026-10-19)
-const walkR = surfaceGrid([...['ROADS_SERVICE (block) surface', 'ROADS_GUEST surface', 'ROADS_GUEST link marina promenade', 'ROADS_GUEST straight path | surface', 'PROMENADE surface', 'Marina Village paths', 'Spa path', 'Marina pier walkway 1', 'Marina pier walkway 2', 'Marina pier walkway 3', 'Rotunda Restaurant | path NE', 'Rotunda park | path N', 'Rotunda Restaurant | Restaurant paving', 'Rotunda Restaurant | Restaurant court paving', 'Beach Hotel | forecourt', 'Beach Hotel | lobby', 'Arrivals Reception | reception footprint', 'Infrastructure zone | FH fleet hub yard', 'Infrastructure zone | SA staff accommodation courtyard', 'Infrastructure zone | W waste management ground', 'Infrastructure zone | IF infrastructure ground', 'Infrastructure zone | WH service apron', 'BEACH.001', 'BEACH.003'].flatMap(meshOf), ...[...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/DO-BOH/.test(m.name))], 2.5, 12);   // v073: guest paths, the promenade and the village paths, plazas, the beaches, the attractions; the BOH block's service roads and yards are the staff's walkways (no guests there)
+const roadR = surfaceGrid([...['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE roundabout east tip', 'ROADS_SERVICE link reception', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', 'loading zone link beach club', 'Longevity Clinic road', 'Infrastructure zone | WH service apron', 'Service dock.001'].flatMap(meshOf), ...padMeshes], 3);   // v073 live road surfaces only (founder brief 2026-10-19)
+const walkR = surfaceGrid([...['ROADS_SERVICE (block) surface', 'ROADS_GUEST surface', 'ROADS_GUEST link marina promenade', 'ROADS_GUEST link beach club drop-offs', 'ROADS_GUEST straight path | surface', 'PROMENADE surface', 'Marina Village paths', 'Spa path', 'Marina pier walkway 1', 'Marina pier walkway 2', 'Marina pier walkway 3', 'Rotunda Restaurant | path NE', 'Rotunda park | path N', 'Rotunda Restaurant | Restaurant paving', 'Rotunda Restaurant | Restaurant court paving', 'Beach Hotel | forecourt', 'Beach Hotel | lobby', 'Arrivals Reception | reception footprint', 'Infrastructure zone | FH fleet hub yard', 'Infrastructure zone | SA staff accommodation courtyard', 'Infrastructure zone | W waste management ground', 'Infrastructure zone | IF infrastructure ground', 'Infrastructure zone | WH service apron', 'BEACH.001', 'BEACH.003'].flatMap(meshOf), ...[...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/DO-BOH/.test(m.name))], 2.5, 12);   // v073: guest paths, the promenade and the village paths, plazas, the beaches, the attractions; the BOH block's service roads and yards are the staff's walkways (no guests there)
 // --- roads only where no building stands over them (founder 2026-10-20: "vehicles drive through buildings; keep them on the roads, open a road
 // through only where a needed function has no other access"). Audit before the fix: 256 of 13,369 moving-vehicle samples (1.9 %) had a building
 // roof 3–16 m above them, all on road cells: the WH service apron under the warehouses, the drives under the residence towers and their entrance
@@ -1147,7 +1147,7 @@ const hatchMat = (base = SCHEMATIC.hatchBase, line = SCHEMATIC.hatchLine, step =
   const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x9dbdf0, roughness: 0.9 }), bohPadMat = hatchMat(0xf2c4c4, 0xb04a4a);   // founder 2026-10-19: guest pads light blue, back-of-house pads hatched at 45°; 2026-10-21: back-of-house pink with red hatch, unlike the blue
   const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
-  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$| service road \| surface$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
+  for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', 'loading zone link beach club', ...[...byName.keys()].filter(n => / \| access road$| service road \| surface$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
     m.updateWorldMatrix(true, false); const g = m.geometry, pos = g.attributes.position, idx = g.index, cnt = idx ? idx.count : pos.count;
     for (let i = 0; i < cnt; i += 3) {
       const ia = idx ? idx.getX(i) : i, ib = idx ? idx.getX(i + 1) : i + 1, ic = idx ? idx.getX(i + 2) : i + 2;
@@ -2465,7 +2465,7 @@ function applyMapStyle(style) {
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
   { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; peopleHalo.visible = name !== 'schematic'; refreshDotColours(name); } renderLegend(name); shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
   document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
-  document.querySelectorAll('#scenSw button').forEach(b => b.classList.toggle('on', style === 'guest' && b.dataset.scen === 'guest'));   // Guest Journey is a scenario, not a style (founder 2026-10-21): it runs on Standard
+  document.querySelectorAll('#scenSw button').forEach(b => b.classList.toggle('on', b.dataset.scen === 'supply' ? stage.classList.contains('supply') : style === 'guest' && b.dataset.scen === 'guest'));   // Guest Journey is a scenario, not a style (founder 2026-10-21): it runs on Standard
   try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
@@ -2526,8 +2526,26 @@ async function gtAppReady(tok) { for (let i = 0; i < 80 && !gtA(); i++) { await 
 function gtApp(fn) { const w = gtA(); if (!w) return; try { return fn(w); } catch (e) { console.warn('guest app', e); } }
 async function gtSay(html, ms, tok) { const w = gtA(); if (w) { try { await w.butler(html, ms); } catch (e) { console.warn(e); } } gtChk(tok); }
 function gtMe(text) { gtApp(w => w.me(text)); }
-const gtCard = (t, sub, st = 'Confirmed') => `<div class="card"><b>${t}</b><span class="st">${st}</span><small class="num">${sub}</small></div>`;
+// pictures for offers (founder 2026-10-22: every offered service has a picture): stock photos in guest-img/, or Unsplash photos linked by id (free Unsplash licence)
+const GT_PIC = { gallery: '1757009632210-a395ae3f53ce', ceramics: '1610701596007-11502861dcfa', tennis: '1780992178782-4c1a73c7d09c', clinic: '1758691462863-9e1b8a863140', sail: '1788900157708-af7c60859334' };
+const gtImg = k => GT_PIC[k] ? `https://images.unsplash.com/photo-${GT_PIC[k]}?w=240&h=180&fit=crop&q=70` : `guest-img/${k}`;
+const gtCard = (t, sub, st = 'Confirmed', pic, id) => pic
+  ? `<div class="card gpic"${id ? ` id="${id}"` : ''}><img src="${gtImg(pic)}" alt=""><b>${t}</b><span class="st">${st}</span><small class="num">${sub}</small></div>`
+  : `<div class="card"${id ? ` id="${id}"` : ''}><b>${t}</b><span class="st">${st}</span><small class="num">${sub}</small></div>`;
+// tour styles inside the app document: picture cards and the transfer card (54 gtTr)
+const GT_APP_CSS = `
+.card.gpic{grid-template-columns:56px 1fr auto;column-gap:10px}
+.card.gpic img{grid-column:1;grid-row:1/3;width:56px;height:44px;object-fit:cover;border-radius:9px;align-self:center}
+.card.gpic b,.card.gpic small{grid-column:2}.card.gpic .st{grid-column:3;grid-row:1/3}
+#gtTr{position:absolute;left:14px;right:14px;bottom:92px;z-index:30;display:flex;gap:10px;align-items:center;background:var(--p-card,#fff);border:1px solid var(--p-line);border-radius:18px;
+  padding:10px 10px 10px 14px;box-shadow:0 10px 28px rgba(10,18,32,.18);animation:up .35s ease-out;transition:opacity .4s,transform .4s}
+#gtTr.out{opacity:0;transform:translateY(10px)}#gtTr div{flex:1;min-width:0}#gtTr b{display:block;font-size:13.5px;color:var(--p-fg)}#gtTr small{font-size:11.5px;color:var(--p-muted)}
+#gtTr .go{flex:none;background:var(--sun);color:#fff;border-radius:999px;padding:9px 15px;font-weight:600;font-size:13px;transition:transform .15s,box-shadow .15s}
+#gtTr .go svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:5px}
+#gtTr .go.tap{transform:scale(.94);box-shadow:0 0 0 6px var(--sun-soft)}`;
+function gtAppCss() { gtApp(w => { const d = w.document; if (d.getElementById('gtAppCss')) return; const s = d.createElement('style'); s.id = 'gtAppCss'; s.textContent = GT_APP_CSS; d.head.appendChild(s); }); }
 function gtAppReset() {
+  gtAppCss();
   gtApp(w => {
     w.eval("S=freshState(); S.chatStarted=true; S.day=[]; S.booked=new Set(); S.access=[]; PACE=1; window.__S=()=>S");
     w.eval("if(!window.__rh0){window.__rh0=renderHero; renderHero=function(){ if(window.__th){const h=$('#hero');h.className='hero live';h.innerHTML=window.__th;return} __rh0(); }}");
@@ -2558,13 +2576,36 @@ function gtCall(p, icon, title, sub = '', kind = '', lift = 6) {
   return c;
 }
 // --- camera: rigid follow (the camera moves with the object by the same step) plus a soft pull to the framing; a drag detaches the framing
-const GT_OFF = new THREE.Vector3(0.45, 0.62, 0.55), GT_OFFLEN = GT_OFF.length();
-function gtFollow(p, dist) { const C = GT.cam; C.obj = p; C.dist = dist; C.has = false; C.frame = true; fly = null; gtLit(); }
+// founder 2026-10-22: one tilt for every view, 60° above the horizon (v1.7's top view was 74°, too vertical); every view fits all the points the guest deals with
+const GT_TILT = THREE.MathUtils.degToRad(60);
+const gtDir = (x, z) => { const h = Math.hypot(x, z); return new THREE.Vector3(x / h * Math.cos(GT_TILT), Math.sin(GT_TILT), z / h * Math.cos(GT_TILT)); };   // unit vector from the target to the camera
+const GT_OFF = gtDir(0.45, 0.55), GT_OFFLEN = 1, GT_TOP = gtDir(0.04, 0.27);   // follow: from the south-east; views: from the south, as the founder's default view
+// fit: the camera distance and the target that keep every point (and a callout above it) inside the free part of the stage, left of the phone panel.
+// Camera space: D = target→camera, r = right, u = up; a point q (from the box centre) sits at depth d − q·D. The view shifts right by −cx·d so the box centre lands in the middle of the free part;
+// then a point fits when |x + cx·q·D| ≤ hw·(d − q·D) and |y| ≤ vv·(d − q·D), so d = max over the points of q·D + |x + cx·q·D| / hw and q·D + |y| / vv.
+const _gfB = new THREE.Box3(), _gfQ = new THREE.Vector3(), _gfR = new THREE.Vector3(), _gfU = new THREE.Vector3(), _gfV = new THREE.Vector3(), _gfUP = new THREE.Vector3(0, 1, 0);
+function gtFitCalc(pts, D, dmin = 0, lift = 14, padR = 0) {   // padR: px kept free on the right of the points (a callout opens to the right of its point)
+  const W = stage.clientWidth, H = stage.clientHeight, ap = $('appPanel'), free = Math.max(W * 0.3, (ap && ap.classList.contains('open') ? Math.max(W * 0.4, ap.getBoundingClientRect().left) : W) - padR);
+  const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), th = tv * W / H, hw = th * free / W * 0.84, cx = th * (free / W - 1), vv = tv * 0.76;
+  _gfB.makeEmpty(); for (const p of pts) _gfB.expandByPoint(p);
+  const t = _gfB.getCenter(new THREE.Vector3()); t.y = Math.max(0, t.y);
+  _gfV.copy(D).negate(); _gfR.crossVectors(_gfV, _gfUP).normalize(); _gfU.crossVectors(_gfR, _gfV);
+  let d = dmin;
+  for (const p of pts) for (const up of [0, lift]) {
+    _gfQ.copy(p).setY(p.y + up).sub(t); const qD = _gfQ.dot(D), x = _gfQ.dot(_gfR), y = _gfQ.dot(_gfU);
+    d = Math.max(d, qD + Math.abs(x + cx * qD) / hw, qD + Math.abs(y) / vv);
+  }
+  const target = t.addScaledVector(_gfR, -cx * d);
+  return { target, pos: target.clone().addScaledVector(D, d), d };
+}
+function gtFollow(p, dist, also) { const C = GT.cam; C.obj = p; C.pts = also && also.length ? [p, ...also] : null; C.dist = dist; C.has = false; C.frame = true; fly = null; gtLit(); }   // also: places that stay in the frame with the mover
 function gtCenter() { const C = GT.cam; C.frame = true; C.has = false; fly = null; gtLit(); }
 function gtLit() { gtCtl.querySelector('[data-gt="center"]').classList.toggle('lit', !!GT.cam.obj && !GT.cam.frame); }
-function gtApproachView() {                                                      // the whole resort, seen from the sea where the guest comes from
-  const d = OVER.pos.distanceTo(OVER.target), dir = new THREE.Vector3(SEA.out.x - OVER.target.x, 0, SEA.out.z - OVER.target.z).normalize();
-  GT.cam.obj = null; gtLit(); flyTo(OVER.target.clone(), OVER.target.clone().addScaledVector(dir, d * 0.8).add(new THREE.Vector3(0, d * 0.45, 0)), 2.5);
+function gtApproachView() {                                                      // the whole resort, seen from the sea where the guest comes from: every corner of the island in the frame
+  const c = islandBox.getCenter(new THREE.Vector3()), a = islandBox.min, b = islandBox.max;
+  const corners = [[a.x, a.z], [a.x, b.z], [b.x, a.z], [b.x, b.z]].map(([x, z]) => new THREE.Vector3(x, 0, z));
+  const f = gtFitCalc(corners, gtDir(SEA.out.x - c.x, SEA.out.z - c.z), 0, 30);
+  GT.cam.obj = null; gtLit(); flyTo(f.target, f.pos, 2.5);
 }
 controls.addEventListener('start', () => { if (GT.tok && GT.cam.obj) { GT.cam.frame = false; gtLit(); } });
 canvas.addEventListener('wheel', e => {                                          // runs after the director's wheel handler (43): a plain zoom keeps the follow at the new distance
@@ -2575,22 +2616,30 @@ canvas.addEventListener('wheel', e => {                                         
 const _gtv = new THREE.Vector3(), _gtd = new THREE.Vector3();
 function gtCamStep(rdt) {
   const C = GT.cam; if (!C.obj || fly) { C.has = false; return; }
+  if (C.pts) {                                                                   // several places: the frame follows the box of all of them, at least C.dist away
+    if (!C.frame) return; const f = gtFitCalc(C.pts, GT_OFF, C.dist), k = 1 - Math.exp(-rdt * 2.5);
+    controls.target.lerp(f.target, k); camera.position.lerp(f.pos, k); return;
+  }
   if (C.has) { _gtd.subVectors(C.obj, C.last); controls.target.add(_gtd); camera.position.add(_gtd); }
   C.last.copy(C.obj); C.has = true;
   if (!C.frame) return;
   const k = 1 - Math.exp(-rdt * 3);
   controls.target.lerp(C.obj, k); camera.position.lerp(_gtv.copy(C.obj).addScaledVector(GT_OFF, C.dist), k);
 }
-// --- solo: the guest is the only person drawn; the fleet, the boats and the marina run and are drawn as the island's base loop
-function gtSoloOn() { GT.people = peopleOn; peopleOn = false; GT.snap = true; }
-function gtSoloStep() { for (const k in actors) if (!k.startsWith('GT-')) actors[k].mesh.visible = false; }
-function gtSoloOff() { if (!GT.snap) return; peopleOn = GT.people; GT.snap = null; }
+// --- solo: the crowd, the fleet and the boats run and are drawn as the island's base loop; only the units in the scenario keep their icons (founder 2026-10-22)
+function gtSoloOn() { GT.snap = true; }
+function gtSoloStep() {                                                         // runs after stepAmbient / stepYachts, which set the icons each frame
+  for (const k in actors) if (!k.startsWith('GT-')) actors[k].mesh.visible = false;
+  for (const f of ambient) if (f.marker) f.marker.visible = f === GT.pod && !!f.gt;   // the guest's pod only
+  for (const y of yachtMovers) y.marker.visible = y === GT.yacht;                 // the guest's boat only
+}
+function gtSoloOff() { if (!GT.snap) return; for (const f of ambient) if (f.marker) f.marker.visible = !!f.path; GT.snap = null; }
 function stepGuest(rdt, dt) {
   if (!GT.tok) return;
   if (playing) GT.clock += rdt;
   for (let i = GT.beats.length - 1; i >= 0; i--) if (GT.clock >= GT.beats[i].until) { GT.beats[i].res(); GT.beats.splice(i, 1); }
   for (let i = GT.sims.length - 1; i >= 0; i--) if (simT >= GT.sims[i].until) { GT.sims[i].res(); GT.sims.splice(i, 1); }
-  gtSoloStep(); gtCamStep(rdt); gtFxStep(rdt);   // 54: booking arcs, pings
+  gtSoloStep(); gtFamStep(); gtCamStep(rdt); gtFxStep(rdt);   // 53: the family walks with John; 54: booking arcs, pings
   GT.heroT += rdt; if (GT.heroT > 0.25) { GT.heroT = 0; gtHeroDraw(); const t = clockText(); if (t !== GT.bar) { GT.bar = t; gtApp(w => { const s = w.document.querySelector('.statusbar span'); if (s) s.textContent = t; }); } }
   for (const c of GT.calls) { const s = toScreen(_gtv.copy(c.p).setY(c.p.y + c.lift)); c.el.style.display = s ? '' : 'none'; if (s) c.el.style.cssText += `;left:${s[0]}px;top:${s[1]}px`; }
 }
@@ -2598,7 +2647,7 @@ function stepGuest(rdt, dt) {
 function gtActor(id, mesh, medium, type = id === 'Pod' ? 'L1' : 'guest') { scene.add(mesh); mesh.visible = false; const a = { id, type, mesh, medium, heading: 0 }; actors['GT-' + id] = a; return a; }
 async function gtWalk(from, to, tok) {                                           // walkways only; a missing link is reported (founder rule: fix the model)
   const g = GT.guest, pts = walk(from, to); if (!pts) { placeAt(g, to); return; }
-  if (!g.mesh.visible) placeAt(g, pts[0]); const m = GT.mul; gtMul(GT_MUL.walk); gtFollow(g.mesh.position, GT_DIST.walk);
+  if (!g.mesh.visible) placeAt(g, pts[0]); const m = GT.mul; gtMul(GT_MUL.walk); gtFollow(g.mesh.position, GT_DIST.walk, [pts[pts.length - 1]]);   // the place he walks to stays in the frame
   await move(g, pts, GT_SPEED.walk); gtChk(tok); gtMul(m);
 }
 async function gtDrive(to, label, tok) {
@@ -2636,7 +2685,9 @@ async function gtRide(fromPoi, toPoi, toName, icon, tok) {
   }
   const bat = () => Math.round(pod.battery);
   // the fleet assigns a pod (founder 2026-10-21, v1.7): top view, John in orange, a blue arrow drops on the assigned pod, then the pod drives to his stop
-  const span = gtView([fromPoi.p, pod.pos, s0]); gtMeIcon(fromPoi.p); await gtBeat(2); gtChk(tok);
+  // founder 2026-10-22: one view shows John still at his place, the place he goes to and the pod on its whole way to him
+  const span = gtView([fromPoi.p, pod.pos, s0, s1, toPoi.p, ...(road(pod.pos, s0) || [])]); gtMeIcon(fromPoi.p);
+  gtCall(toPoi.p, icon, toName, `next · pod from ${placeName(s0)}`, 'live', 10); await gtBeat(2); gtChk(tok);
   gtDrop(pod.mesh.position, () => gtStamp(pod.mesh.position, 'car', `Pod ${pod.id}`, `nearest free pod · battery ${bat()} %`, 5, '✓ ASSIGNED'), span, 7);
   await gtBeat(3.6); gtChk(tok);
   if (pod.pos.distanceTo(s0) > 3) {
@@ -2649,7 +2700,7 @@ async function gtRide(fromPoi, toPoi, toName, icon, tok) {
   gtApp(w => w.setLive({ title: `Pod ${pod.id} is here`, sub: placeName(s0), at: 'now', icon: 'buggy' }));
   gtHero(['Now', `Pod ${pod.id} is here`, `${placeName(s0)} · walk to the stop`, '', '', bat()]);
   await gtWalk(fromPoi.p, gtStopWalk(s0), tok); g.mesh.visible = false;
-  gtFollow(pod.mesh.position, GT_DIST.pod);
+  gtFollow(pod.mesh.position, GT_DIST.pod, [s1, toPoi.p]);                       // the pod, its stop and the venue stay in the frame
   const c = gtCall(pod.mesh.position, 'car', `Pod ${pod.id} → ${toName}`, `1 guest · battery ${bat()} %`, 'live', 5);
   gtApp(w => w.setLive({ title: `Pod ${pod.id} → ${toName}`, sub: `from ${placeName(s0)}`, at: 'riding', icon: 'buggy' }));
   gtHero(() => ['Riding', `Pod ${pod.id} → ${toName}`, `battery ${bat()} %`, gtM(gtLeft(pod)), gtMu(gtLeft(pod)) + ' to go', bat()]);
@@ -2664,140 +2715,162 @@ async function gtTour() {
   const tok = GT.tok = ++GT.runs; GT.clock = 0; gtMul(1); if (!playing) $('bPlay').click();   // runs only grows: a restarted tour never shares a token with the run it stopped
   stage.classList.add('gtour'); setAutoCam(false); gtSoloOn(); gtJump(16.5);   // day 1: the guest arrives in the late afternoon
   GT.openedApp = !$('appPanel').classList.contains('open'); window.__setApp(true);
-  const hotelPoi = gtPoi('hotel', 'Beach Hotel lobby'), spaPoi = gtPoi('spa', 'Spa'), foodPoi = gtPoi('food', 'Rotunda Restaurant'), tennisPoi = gtPoi('sport', 'Tennis court'), clubPoi = gtPoi('beach', 'Beach Club'), msPoi = gtPoi('crewlounge', 'Crew lounge');
+  GT.n = { ride: 0, walk: 0, book: 2 };                                          // the final count: the family suite and the berth are booked in the onboarding
+  const hotelPoi = gtPoi('hotel', 'Beach Hotel lobby'), clinicPoi = gtPoi('spa', 'Longevity Clinic'), foodPoi = gtPoi('food', 'Rotunda Restaurant'), tennisPoi = gtPoi('sport', 'Tennis court'), clubPoi = gtPoi('beach', 'Beach Club'), msPoi = gtPoi('crewlounge', 'Crew lounge');
   const villa = villas[0];
-  // 1–2 · before the trip: the app's own screens (54 gtOnboard): sign in → hotel → room → how you arrive → own yacht → berth. The guest is still at sea; the camera shows the resort from his approach
+  // 1–2 · before the trip: the app's own screens (54 gtOnboard): sign in → hotel → room → how you arrive → own boat → berth. John, his wife and daughter are still at sea (founder 2026-10-22: a small boat, not a yacht); the camera shows the resort from his approach
   gtApproachView();
   const bPoi = x => (POI.marina || []).find(q => q.name === `Berth ${x.berth_id}`), ashore = x => { const q = bPoi(x); return !!(q && msPoi && walkR.route(q.p, msPoi.p)); };   // the guest must be able to walk off the pier
-  let b = berths.find(x => x.cls === 'M' && !x.occupied && !x.busy && ashore(x)) || berths.find(x => x.cls === 'M' && !x.busy && ashore(x)) || berths.find(x => x.cls === 'M' && !x.busy);
+  let b = berths.find(x => x.cls === 'S' && !x.occupied && !x.busy && ashore(x)) || berths.find(x => x.cls === 'S' && !x.busy && ashore(x)) || berths.find(x => x.cls === 'S' && !x.busy);   // S berth: the small boat
   await gtAppReady(tok); gtAppReset(); gtDate('Planning a stay');
   if (!b) { await gtSay('<p>No free berth for the demo.</p>', 300, tok); return; }
-  GT.berthWas = !!b.occupied; if (b.occupied) berthShow(b, false);             // the demo frees one M berth if the marina is full
+  GT.berthWas = !!b.occupied; if (b.occupied) berthShow(b, false);             // the demo frees one S berth if the marina is full
   b.busy = true; GT.berth = b;
-  gtHero(['Arrival today', 'Beach Hotel · Suite 214', `your yacht · berth ${b.berth_id}`]);
+  gtHero(['Arrival today', 'Beach Hotel · Suite 214', `your boat · berth ${b.berth_id}`]);
   await gtOnboard(b, villa, tok);
-  gtApp(w => { w.__S().day = [{ time: clockText(), title: 'Arrival by yacht', sub: `Marina · berth ${b.berth_id}`, kind: 'event', id: 'gt-arr', flash: true }]; w.renderDay(); });
-  // 3 · the yacht comes in on the fairways (same route as the marina's own arrivals); from here the camera follows the guest
+  gtApp(w => { w.__S().day = [{ time: clockText(), title: 'Arrival by boat', sub: `Marina · berth ${b.berth_id}`, kind: 'event', id: 'gt-arr', flash: true }]; w.renderDay(); });
+  // 3 · the boat comes in on the fairways (same route as the marina's own arrivals); from here the camera follows the guest
   const y = yachtMover(b.id); y.busy = true; GT.yacht = y; GT.own.add(y.mesh); y.task = `${TYPES[b.id].title} · guest arrival → berth ${b.berth_id}`;
   placeAt(y, SEA.out, Math.atan2(-(A.entrance.z - SEA.out.z), A.entrance.x - SEA.out.x)); setPath(y, [...MAR.out.map(p => p.clone()).reverse(), b.fairway.foot.clone(), b.approach.clone()]); y.speed = GT_SPEED.yacht; y.mesh.visible = true;
   gtMul(GT_MUL.yacht); gtFollow(y.mesh.position, GT_DIST.yacht);
-  gtApp(w => w.setLive({ title: 'Your yacht · inbound', sub: `berth ${b.berth_id} · AIS matched`, at: 'live', icon: 'boat' }));
-  gtHero(() => ['Arrival · AIS track matched', 'Your yacht is on our radar', `pilot guidance through the entrance · berth ${b.berth_id}`, gtM(gtLeft(y)), gtMu(gtLeft(y)) + ' to berth']);
-  const yc = gtCall(y.mesh.position, 'sailboat', 'Inbound · your yacht', `berth ${b.berth_id} assigned`, 'live', 12);
+  gtApp(w => w.setLive({ title: 'Your boat · inbound', sub: `berth ${b.berth_id} · AIS matched`, at: 'live', icon: 'boat' }));
+  gtHero(() => ['Arrival · AIS track matched', 'Your boat is on our radar', `pilot guidance through the entrance · berth ${b.berth_id}`, gtM(gtLeft(y)), gtMu(gtLeft(y)) + ' to berth']);
+  const yc = gtCall(y.mesh.position, 'sailboat', 'Inbound · your boat', `berth ${b.berth_id} assigned`, 'live', 12);
   await new Promise(res => { y.onDone = () => { y.task = `${TYPES[b.id].title} · docking at berth ${b.berth_id}`; yc.set('Docking stern-to', `berth ${b.berth_id}`); gtHero(['Arrival', 'Docking stern-to', `berth ${b.berth_id} · the marina team takes your lines`]); dockLeg(y, b.approach, b.pos, y.heading, b.heading, res); }; }); gtChk(tok);
   GT.moored = true; y.task = `${TYPES[b.id].title} · moored at berth ${b.berth_id}`; gtMul(1);   // ashore the clock runs at 1x: app beats take real seconds
   gtCall(b.pos, 'anchor', 'Moored', `berth ${b.berth_id}`, 'ok', 4);
   gtApp(w => w.setLive(null));
   const berthPoi = bPoi(b) || POI.marina[0];
-  // 3b · yacht service: the butler asks, the guest says yes, the marina sends shore power, the pump-out cart and the fuel bowser (54)
-  await gtYachtService(b, berthPoi, msPoi, tok);
-  // 4 · walk to Marina Support for check-in, then the guest calls a pod from the fleet to the hotel
-  const g = GT.guest = gtActor('Guest', personModel(0x2457e6), 'walk'); g.mesh.scale.setScalar(2.4);
+  // 3b · boat service: the butler asks, the guest says yes, the marina sends shore power, the pump-out cart and the fuel bowser (54)
+  await gtBoatService(b, berthPoi, msPoi, tok);
+  // 4 · John, his wife and daughter walk to Marina Support for check-in, then the guest calls a pod from the fleet to the hotel
+  const g = GT.guest = gtActor('Guest', personModel(0x2457e6), 'walk'); g.mesh.scale.setScalar(2.4); gtFamily();
   placeAt(g, berthPoi.p);
   gtApp(w => w.setLive({ title: 'Walking to Marina Support', sub: 'check-in · 3 min', at: 'now', icon: 'pin' }));
-  gtHero(['Welcome to Rose Island', 'Check-in at Marina Support', 'passport scan and your digital key']);
-  const gc = gtCall(g.mesh.position, 'anchor', 'Guest · walking', 'to Marina Support', 'live', 5);
-  if (msPoi) { await gtWalk(berthPoi.p, msPoi.p, tok); gc.set('Check-in done', 'Marina Support'); gtCall(msPoi.p, 'building', 'Check-in', 'passport scan · digital key issued', 'ok', 14); }
+  gtHero(['Welcome to Coral Key', 'Check-in at Marina Support', 'passport scan and your digital key']);
+  const gc = gtCall(g.mesh.position, 'anchor', 'John and family · walking', 'to Marina Support', 'live', 5);
+  if (msPoi) { GT.n.walk++; await gtWalk(berthPoi.p, msPoi.p, tok); gc.set('Check-in done', 'Marina Support'); gtCall(msPoi.p, 'building', 'Check-in', '3 passports · digital keys issued', 'ok', 14); }
   gtKey('Suite 214');
-  gtApp(w => { w.__S().access = [{ name: 'Beach Hotel · Suite 214', sub: 'digital key active · 2 nights', flash: true }, { name: `Marina berth ${b.berth_id}`, sub: 'shore power and water on your bill', flash: true }]; w.renderAccess(); });
-  gtHero(['Checked in', 'John, welcome to Rose Island', 'your digital key opens Suite 214']); await gtBeat(1.8); gtChk(tok);
-  gtHero(['Checked in', 'Call a pod to the Beach Hotel', 'the nearest free pod of the island fleet comes to you']); await gtBeat(1.2); gtChk(tok);
+  gtApp(w => { w.__S().access = [{ name: 'Beach Hotel · Suite 214', sub: '3 digital keys · 2 nights', flash: true }, { name: `Marina berth ${b.berth_id}`, sub: 'shore power and water on your bill', flash: true }]; w.renderAccess(); });
+  gtHero(['Checked in', 'John, welcome to Coral Key', 'your digital key opens Suite 214']); await gtBeat(1.8); gtChk(tok);
   gtUnitsHome((msPoi || berthPoi).p);                                            // the service carts are done: back along the pier
-  await gtRide(msPoi || berthPoi, hotelPoi, 'Beach Hotel', 'hotel', tok); g.mesh.visible = false;
+  // moving between places (founder 2026-10-22): no questions about a transfer. The app shows the next place with a Transfer button (54 gtTr);
+  // the guest taps it (a pod from the fleet, 52 gtRide) or does nothing and walks
+  const stay = (t, sub, icon, at, lift = 10) => { gtCall(at.p, icon, t, sub, 'live', lift); g.mesh.visible = false; gtFollow(at.p, GT_DIST.place); gtHero(['Now', t, sub]); };
+  const walkTo = async (from, to, t, icon) => { placeAt(g, from.p); gtCall(g.mesh.position, icon, 'John and family · walking', t, 'live', 5); gtHero(['Walking', t, 'on the island footpaths']); await gtWalk(from.p, to.p, tok); };
+  const walkMin = (a, b) => { const pts = walk(a.p, b.p); let L = 0; if (pts) for (let i = 1; i < pts.length; i++) L += pts[i].distanceTo(pts[i - 1]); return Math.max(1, Math.round(L / 80)); };   // 80 m/min on foot
+  const go = async (from, to, name, icon, take) => {
+    gtApp(w => w.closeSheet()); const min = walkMin(from, to);
+    gtTr(name, `${min} min on foot · or a pod to the door`); gtView([from.p, to.p]); gtMeIcon(from.p); gtHero(['Next', name, `${min} min on foot`]);
+    await gtBeat(take ? 2.2 : 3.4); gtChk(tok); gtMeIcon(null);
+    if (take) { await gtTrTap(tok); GT.n.ride++; await gtRide(from, to, name, icon, tok); } else { gtTrOff(); GT.n.walk++; await walkTo(from, to, `to ${name}`, icon); }
+  };
+  // 4b · a programme planned up front (founder 2026-10-22): the Longevity Clinic runs its baseline tests today; the Butler plans them for the morning of day 2
+  gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); });
+  await gtSay(`<p>One idea for your stay, John: the Longevity Clinic runs its baseline assessment this week. The tests need a fasting morning, so tomorrow at 07:30 fits, with breakfast after.</p>${gtCard('Longevity assessment', 'tomorrow 07:30 · 75 min · blood panel, VO₂ max, body scan', 'Fasting', 'clinic')}${gtCard(`Breakfast · ${foodPoi.name}`, 'tomorrow 09:00 · after the tests', 'Open', 'bfast-2.jpg')}`, 1000, tok);
+  gtApp(w => w.chips([{ label: 'Plan my morning', primary: true, action() {} }, { label: 'Not now', action() {} }])); await gtBeat(2.4); gtChk(tok);
+  gtApp(w => w.chips([])); gtMe('Yes, plan my morning.'); await gtBeat(1.2); gtChk(tok);
+  await gtSay(`<p>Done. No food after 22:00 tonight; water is fine.</p>${gtCard('Longevity assessment · Clinic', 'tomorrow 07:30 · 75 min', 'Confirmed', 'clinic')}${gtCard(`Breakfast · ${foodPoi.name}`, 'tomorrow 09:00 · table for 3', 'Confirmed', 'bfast-2.jpg')}`, 900, tok);
+  await gtBook((msPoi || berthPoi).p, 'Marina Support', [{ p: clinicPoi.p, icon: 'heartpulse', title: 'Longevity Clinic · 07:30', sub: 'baseline assessment · tomorrow' }, { p: foodPoi.p, icon: 'utensils', title: 'Breakfast · 09:00', sub: `${foodPoi.name} · tomorrow` }], tok);   // 54: an arrow drops on each booked place
+  await go(msPoi || berthPoi, hotelPoi, 'Beach Hotel', 'hotel', true); g.mesh.visible = false;
   gtCall(hotelPoi.p, 'hotel', 'At the Beach Hotel', 'the key opens Suite 214', 'ok', 10);
   // 5 · night
   gtFollow(hotelPoi.p, GT_DIST.place);
-  gtHero(['Beach Hotel', 'Good evening, John', 'your yacht is plugged in and secure']);
-  gtApp(w => w.openSheet()); await gtSay('<p>Good night, John. Your yacht is plugged in and secure. Breakfast is from 07:00.</p>', 800, tok);
+  gtHero(['Beach Hotel', 'Good evening, John', 'your boat is plugged in and secure']);
+  gtApp(w => w.openSheet()); await gtSay('<p>Good night, John. Your boat is plugged in and secure. No food after 22:00; the clinic expects you at 07:30.</p>', 800, tok);
   await gtBeat(1.6); gtChk(tok); gtApp(w => w.closeSheet());
   for (const c of GT.calls) c.el.remove(); GT.calls = [];
   gtNight(true); gtBanner('Night at the Beach Hotel · until <b>07:00</b>'); await gtBeat(2.4); gtChk(tok);   // the map goes dark while the guest sleeps (founder 2026-10-21)
   gtJump(7); await gtBeat(1.6); gtChk(tok); gtNight(false); await gtBeat(1.4); gtChk(tok); gtBanner('');
-  // 6 · morning (founder 2026-10-21): the butler offers breakfast, the guest wants a spa treatment first, the butler offers the transfer
-  gtDate('Day 2 · Rose Island'); gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.__S().day = []; w.renderDay(); w.openSheet(); });
-  gtHero(['Good morning', 'Breakfast?', 'the Butler offers the options']);
-  await gtSay(`<p>Good morning, John. Would you like breakfast? Here are the options this morning:</p>${gtCard(foodPoi.name, 'terrace · from 07:00 · à la carte', 'Open')}${gtCard('Beach Club', 'brunch by the sea · from 09:00', 'Open')}${gtCard('In your suite', 'room service · 30 min', 'Open')}`, 1000, tok);
-  gtApp(w => w.chips([{ label: foodPoi.name, primary: true, action() {} }, { label: 'Beach Club', action() {} }, { label: 'In my suite', action() {} }])); await gtBeat(2.4); gtChk(tok);
-  gtApp(w => w.chips([])); gtMe(`Breakfast at the ${foodPoi.name}, please. But first I want a massage at the Spa.`); await gtBeat(1.4); gtChk(tok);
-  await gtSay(`<p>Then the Spa first. These treatments are free this morning:</p>${gtCard('Hot-stone massage', '07:45 · 60 min', 'Free')}${gtCard('Deep-tissue massage', '08:15 · 60 min', 'Free')}${gtCard('Hydrotherapy circuit', '08:00 · 45 min', 'Free')}`, 1000, tok);
-  gtApp(w => w.chips([{ label: 'Hot-stone massage', primary: true, action() {} }, { label: 'Deep-tissue massage', action() {} }, { label: 'Hydrotherapy', action() {} }])); await gtBeat(2.4); gtChk(tok);
-  gtApp(w => w.chips([])); gtMe('The hot-stone massage.'); await gtBeat(1.2); gtChk(tok);
-  await gtSay(`<p>Booked.</p>${gtCard('Hot-stone massage · Spa', '07:45 · 60 min · 1 guest')}${gtCard(`Breakfast · ${foodPoi.name}`, '09:00 · table for 1 · terrace')}`, 900, tok);
-  gtApp(w => { w.__S().day.push({ time: '07:45', title: 'Hot-stone massage', sub: 'Spa · 60 min', kind: 'event', id: 'gt-spa', flash: true }, { time: '09:00', title: `Breakfast at the ${foodPoi.name}`, sub: `${foodPoi.name} · table for 1`, kind: 'event', id: 'gt-food', flash: true }); w.renderDay(); });
-  await gtBook(hotelPoi.p, 'Beach Hotel · Suite 214', [{ p: spaPoi.p, icon: 'leaf', title: 'Spa · 07:45', sub: 'hot-stone massage · 60 min' }, { p: foodPoi.p, icon: 'utensils', title: 'Breakfast · 09:00', sub: `${foodPoi.name} · table for 1` }], tok);   // 54: top view, an arrow drops on each booked place
-  // 7 · the day: every ride is offered as a question (54 gtAsk); a yes calls the nearest free pod (52 gtRide), a no is a walk
-  const stay = (t, sub, icon, at, lift = 10) => { gtCall(at.p, icon, t, sub, 'live', lift); g.mesh.visible = false; gtFollow(at.p, GT_DIST.place); gtHero(['Now', t, sub]); };
-  const walkTo = async (from, to, t, icon) => { placeAt(g, from.p); gtCall(g.mesh.position, icon, 'John · walking', t, 'live', 5); gtHero(['Walking', t, 'on the island footpaths']); await gtWalk(from.p, to.p, tok); };
+  // 6 · morning of day 2: the programme planned on arrival. The clinic first (fasting), breakfast after
+  gtDate('Day 2 · Coral Key');
+  gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.__S().day = [{ time: '07:30', title: 'Longevity assessment', sub: 'Longevity Clinic · 75 min · fasting', kind: 'event', id: 'gt-clinic', flash: true }, { time: '09:00', title: `Breakfast at the ${foodPoi.name}`, sub: `${foodPoi.name} · table for 1`, kind: 'event', id: 'gt-food', flash: true }]; w.renderDay(); w.openSheet(); });
+  gtHero(['Good morning', 'Longevity assessment · 07:30', 'Longevity Clinic · breakfast at 09:00']);
+  await gtSay(`<p>Good morning, John. Your assessment is at 07:30, breakfast at 09:00.</p>${gtCard('Longevity assessment', '07:30 · 75 min · blood panel, VO₂ max, body scan', 'Today', 'clinic')}`, 900, tok);
+  await gtBeat(1.4); gtChk(tok);
   placeAt(g, hotelPoi.p); g.mesh.visible = false;
-  await gtAsk('Shall I arrange a transfer to the Spa? A pod can be at the hotel in a few minutes.', true, "Yes, a transfer please. Let's go.", tok);
-  await gtRide(hotelPoi, spaPoi, 'Spa', 'leaf', tok);
-  stay('Hot-stone massage', '60 min · until 08:45', 'leaf', spaPoi); await gtUntil(7.75, 'Spa · massage starts', tok); await gtUntil(8.75, 'Hot-stone massage', tok);
-  await gtAsk(`Your table at the ${foodPoi.name} is at 09:00. Shall I arrange a transfer?`, true, 'Yes, please.', tok);
-  await gtRide(spaPoi, foodPoi, foodPoi.name, 'utensils', tok);
+  await go(hotelPoi, clinicPoi, 'Longevity Clinic', 'heartpulse', false);
+  stay('Longevity assessment', 'blood panel · VO₂ max · body scan', 'heartpulse', clinicPoi); await gtUntil(7.5, 'Assessment starts', tok); await gtUntil(8.75, 'Longevity assessment', tok);
+  gtCall(clinicPoi.p, 'heartpulse', 'Assessment done', 'results tomorrow 08:30 with the doctor', 'ok', 10);
+  gtApp(w => w.openSheet()); await gtSay('<p>All tests are done. The doctor goes through the results with you tomorrow at 08:30. Your table is ready at 09:00.</p>', 800, tok); await gtBeat(1.2); gtChk(tok);
+  await go(clinicPoi, foodPoi, foodPoi.name, 'utensils', false);
   stay(`Breakfast at the ${foodPoi.name}`, 'table for 1 · until 10:00', 'utensils', foodPoi); await gtUntil(9, 'Breakfast is served', tok); await gtUntil(10, `Breakfast at the ${foodPoi.name}`, tok);
-  await gtAsk('I hope you enjoyed breakfast. Shall I arrange a transfer back to the hotel?', false, "No thanks, I'll walk.", tok);
-  await walkTo(foodPoi, hotelPoi, 'to the Beach Hotel', 'users');
+  await go(foodPoi, hotelPoi, 'Beach Hotel', 'users', false);
   stay('Back at the Beach Hotel', 'the morning is free', 'hotel', hotelPoi);
-  // at the hotel the guest asks what to do (founder 2026-10-21); he picks tennis and walks to the court
-  gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); }); gtMe('What can I do this morning?'); await gtBeat(1.2); gtChk(tok);
-  await gtSay(`<p>A few ideas for the next hours:</p>${gtCard('Tennis court', '11:00 · 60 min · racquets at the court', 'Free')}${gtCard('Beach Club pool', 'sun loungers · towel service', 'Open')}${gtCard('Snorkelling trip', '14:00 · 2 h · from the excursion dock', '3 places')}`, 1000, tok);
-  gtApp(w => w.chips([{ label: 'Tennis', primary: true, action() {} }, { label: 'Pool', action() {} }, { label: 'Snorkelling', action() {} }])); await gtBeat(2.4); gtChk(tok);
-  gtApp(w => w.chips([])); gtMe("I'll go and play tennis."); await gtBeat(1.2); gtChk(tok);
-  await gtSay(`<p>Booked.</p>${gtCard('Tennis court', '11:00 · 60 min · racquets at the court')}`, 800, tok);
-  gtApp(w => { w.__S().day.push({ time: '11:00', title: 'Tennis', sub: 'Tennis court · 60 min', kind: 'event', id: 'gt-tennis', flash: true }); w.renderDay(); });
-  await gtBook(hotelPoi.p, 'Beach Hotel · Suite 214', [{ p: tennisPoi.p, icon: 'star', title: 'Tennis · 11:00', sub: 'court booked · racquets at the court', lift: 6 }], tok);
-  await gtAsk('Shall I arrange a transfer to the tennis court?', false, "No, I'll walk.", tok);
+  // 7 · at the hotel the guest asks what to do: elevated, private offers with pictures (founder 2026-10-22: no snorkelling trips); he picks tennis with the pro
+  gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); }); gtMe('What can I do today?'); await gtBeat(1.2); gtChk(tok);
+  await gtSay(`<p>Three ideas for today:</p>${gtCard('Tennis with the island pro', '11:00 · 60 min · private lesson', '1 slot', 'tennis')}${gtCard('Private catamaran sail', '14:00 · 3 h · skipper, lunch on board', 'Private', 'sail')}${gtCard('Hydrotherapy circuit', 'any time · 45 min · after the tests', 'Open', 'pool-1.jpg')}`, 1000, tok);
+  gtApp(w => w.chips([{ label: 'Tennis with the pro', primary: true, action() {} }, { label: 'Catamaran', action() {} }, { label: 'Hydrotherapy', action() {} }])); await gtBeat(2.4); gtChk(tok);
+  gtApp(w => w.chips([])); gtMe('Tennis with the pro, please.'); await gtBeat(1.2); gtChk(tok);
+  await gtSay(`<p>Booked. The pro meets you at the court.</p>${gtCard('Tennis with the island pro', '11:00 · 60 min · racquets at the court', 'Confirmed', 'tennis')}`, 800, tok);
+  gtApp(w => { w.__S().day.push({ time: '11:00', title: 'Tennis with the pro', sub: 'Tennis court · 60 min', kind: 'event', id: 'gt-tennis', flash: true }); w.renderDay(); });
+  await gtBook(hotelPoi.p, 'Beach Hotel · Suite 214', [{ p: tennisPoi.p, icon: 'star', title: 'Tennis · 11:00', sub: 'private lesson with the pro', lift: 6 }], tok);
   await gtUntil(10.6, 'At the Beach Hotel', tok);
-  await walkTo(hotelPoi, tennisPoi, 'to the tennis court', 'star');
-  g.mesh.visible = false; gtCall(tennisPoi.p, 'star', 'Tennis', 'court booked until 12:00', 'live', 6); gtFollow(tennisPoi.p, GT_DIST.place); gtHero(['Now', 'Tennis', 'court booked until 12:00']);
-  await gtUntil(11, 'Tennis starts', tok); await gtUntil(12, 'Tennis', tok);
-  // 8 · events: the guest asks, the app answers from the island's programme
-  const h = gtHour(), evs = EVENTS.filter(e => e.start >= h).sort((p, q) => p.start - q.start).slice(0, 4), fmt = x => clockAt(x);
-  const where = e => e.venue === 'beach' && /Beach Club/.test(e.name) ? 'Beach Club' : POI_LABEL[e.venue] || e.venue;
-  gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); }); gtMe('Which events are on today?'); await gtBeat(1.2); gtChk(tok);
-  await gtSay(`<p>Here is what's on from now:</p>${evs.map(e => gtCard(e.name, `${fmt(e.start)}–${fmt(e.end)} · ${where(e)}`, 'Open')).join('')}`, 1000, tok);
-  await gtBeat(2.6); gtChk(tok);
-  gtMe('The music evening at the Beach Club, please.'); await gtBeat(1); gtChk(tok);
-  await gtSay(`<p>Booked. I will offer you a transfer at 16:55.</p>${gtCard('Beach Club DJ sunset', '17:30–20:00 · Beach Club · 1 guest')}`, 900, tok);
-  gtApp(w => { w.__S().day.push({ time: '17:30', title: 'DJ sunset at the Beach Club', sub: 'Beach Club · until 20:00', kind: 'event', id: 'gt-dj', flash: true }); w.renderDay(); });
-  await gtBook(tennisPoi.p, 'Tennis court', [{ p: clubPoi.p, icon: 'music', title: 'DJ sunset · 17:30', sub: 'Beach Club · booked' }], tok);
-  // 9 · Marina Village (founder 2026-10-21): the guest asks, the butler sends the village card, the guest opens it, reads the shop list, goes back to the chat
-  const shops = [...new Set((POI.retail || []).map(q => q.name))].slice(0, 6), shopPoi = gtPoi('retail', 'Concept store') || gtPoi('village');
-  gtApp(w => w.openSheet()); gtMe("What's in Marina Village?"); await gtBeat(1.2); gtChk(tok);
-  await gtSay(`<p>Shops, cafés and the market around the marina basin. Have a look:</p><div class="card" id="gtMV"><b>Marina Village</b><span class="st">Open</span><small class="num">17 shops · 4 cafés · until 22:00 · tap to see</small></div>`, 900, tok);
+  await go(hotelPoi, tennisPoi, 'Tennis court', 'star', false);
+  stay('Tennis with the pro', 'court booked until 12:00', 'star', tennisPoi, 6);
+  await gtUntil(11, 'Tennis starts', tok); await gtUntil(12, 'Tennis with the pro', tok);
+  // 8 · the evening: three picks with pictures; the guest takes the sunset cabana
+  gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); }); gtMe('Anything special this evening?'); await gtBeat(1.2); gtChk(tok);
+  await gtSay(`<p>Tonight on the island:</p>${gtCard('Sunset cabana · Beach Club', '17:30–20:00 · champagne · live DJ set', '2 left', 'spa-2.jpg')}${gtCard('Sommelier wine tasting', `18:00 · ${foodPoi.name} · six island wines`, 'Open', 'dinner-2.jpg')}${gtCard('Chef residency dinner', '19:30 · Marina Village · seven courses', '4 seats', 'dinner-1.jpg')}`, 1000, tok);
+  gtApp(w => w.chips([{ label: 'Sunset cabana', primary: true, action() {} }, { label: 'Wine tasting', action() {} }, { label: 'Chef dinner', action() {} }])); await gtBeat(2.4); gtChk(tok);
+  gtApp(w => w.chips([])); gtMe('The sunset cabana, please.'); await gtBeat(1); gtChk(tok);
+  await gtSay(`<p>Booked.</p>${gtCard('Sunset cabana · Beach Club', '17:30–20:00 · 1 guest · champagne on ice', 'Confirmed', 'spa-2.jpg')}`, 900, tok);
+  gtApp(w => { w.__S().day.push({ time: '17:30', title: 'Sunset cabana', sub: 'Beach Club · until 20:00', kind: 'event', id: 'gt-dj', flash: true }); w.renderDay(); });
+  await gtBook(tennisPoi.p, 'Tennis court', [{ p: clubPoi.p, icon: 'music', title: 'Sunset cabana · 17:30', sub: 'Beach Club · booked' }], tok);
+  // 9 · Marina Village (founder 2026-10-22): less, but concrete — today's news with pictures, not a shop list
+  const shopPoi = gtPoi('retail', 'Concept store') || gtPoi('village');
+  gtApp(w => w.openSheet()); gtMe('Anything new in Marina Village?'); await gtBeat(1.2); gtChk(tok);
+  await gtSay(`<p>Two things today:</p>${gtCard('Marina Village · today', 'gallery opening until 15:00 · new hand-made ceramics · tap', 'New', 'gallery', 'gtMV')}`, 900, tok);
   await gtBeat(1.6); gtChk(tok); await gtTap('gtMV', tok, true);
-  gtOnbPage(`<h1>Marina Village</h1><p class="lead">By the marina basin · open until 22:00</p>${shops.map((n, i) => gtOpt('oS' + i, 'store', n, i ? 'Marina Village' : 'Marina Village · new linen collection')).join('')}<div class="btn1" id="oGo">Back to the Butler</div>`, -1);
+  gtOnbPage(`<h1>Marina Village · today</h1><p class="lead">By the marina basin · open until 22:00</p>${gtOpt('oS0', 'gallery', 'Island painters · gallery opening', 'today 11:00–15:00 · meet the artists')}${gtOpt('oS1', 'ceramics', 'Hand-made ceramics just in', `local potters · bowls from $40 · ${shopPoi.name}`)}<div class="btn1" id="oGo">Back to the Butler</div>`, -1);
   await gtBeat(4.2); gtChk(tok); await gtTap('oGo', tok); gtOnbOff(); await gtBeat(0.8); gtChk(tok);
-  gtMe("Yes, let's go and have a look."); await gtBeat(1); gtChk(tok);
-  await gtAsk('Shall I arrange a transfer to Marina Village?', true, 'Yes, a transfer please.', tok);
-  await gtRide(tennisPoi, shopPoi, 'Marina Village', 'store', tok);
-  stay(`Shopping · ${shopPoi.name}`, 'Marina Village', 'store', shopPoi); await gtUntil(13.25, 'Shopping in Marina Village', tok);
-  gtStamp(shopPoi.p, 'store', 'Linen shirt', `${shopPoi.name} · charged to Suite 214`, 12, '✓ PAID'); await gtBeat(2.4); gtChk(tok);
-  await gtAsk('The linen shirt is on your Suite 214 bill. Shall I arrange a transfer back to the hotel?', true, 'Yes, please.', tok);
-  await gtRide(shopPoi, hotelPoi, 'Beach Hotel', 'hotel', tok);
-  // 10 · the afternoon passes, then the evening event: the transfer is offered again
-  stay('Afternoon at leisure', 'DJ sunset at 17:30', 'hotel', hotelPoi);
+  gtMe("Let's go and have a look."); await gtBeat(1); gtChk(tok);
+  await go(tennisPoi, shopPoi, 'Marina Village', 'store', true);
+  stay('Gallery opening · ceramics', `Marina Village · ${shopPoi.name}`, 'store', shopPoi); await gtUntil(13.25, 'Marina Village', tok);
+  gtStamp(shopPoi.p, 'store', 'Ceramic bowl · $60', `${shopPoi.name} · charged to Suite 214`, 12, '✓ PAID'); await gtBeat(2.4); gtChk(tok);
+  gtApp(w => w.openSheet()); await gtSay('<p>The bowl is on your Suite 214 bill. The shop sends it to your suite tonight.</p>', 800, tok); await gtBeat(1); gtChk(tok);
+  await go(shopPoi, hotelPoi, 'Beach Hotel', 'hotel', true);
+  // 10 · the afternoon passes, then the evening: the Transfer button again, no question
+  stay('Afternoon at leisure', 'sunset cabana at 17:30', 'hotel', hotelPoi);
   gtBanner('Afternoon at leisure · until <b>16:55</b>'); await gtBeat(2.2); gtChk(tok); gtJump(16.9); await gtBeat(0.8); gtChk(tok); gtBanner('');
-  await gtAsk('The DJ sunset starts at 17:30. Shall I arrange a transfer to the Beach Club?', true, 'Yes, a transfer please.', tok);
-  await gtRide(hotelPoi, clubPoi, 'Beach Club', 'music', tok);
-  stay('DJ sunset at the Beach Club', 'live · until 20:00', 'music', clubPoi); await gtUntil(17.5, 'DJ sunset starts', tok); await gtUntil(20, 'DJ sunset at the Beach Club', tok);
-  await gtAsk('Shall I arrange a transfer back to the hotel?', true, 'Yes, please.', tok);
-  await gtRide(clubPoi, hotelPoi, 'Beach Hotel', 'hotel', tok); g.mesh.visible = false;
-  gtCall(hotelPoi.p, 'hotel', 'Day complete', 'yacht · 7 pod rides · 3 walks · 4 bookings', 'ok', 10);
-  gtHero(['Good night', 'Day complete', 'yacht · 7 pod rides · 3 walks · 4 bookings · 1 purchase']);
+  await go(hotelPoi, clubPoi, 'Beach Club · sunset cabana', 'music', true);
+  stay('Sunset cabana · Beach Club', 'champagne · live DJ set · until 20:00', 'music', clubPoi); await gtUntil(17.5, 'Sunset cabana', tok); await gtUntil(20, 'Sunset cabana at the Beach Club', tok);
+  await go(clubPoi, hotelPoi, 'Beach Hotel', 'hotel', true); g.mesh.visible = false;
+  const n = GT.n, sum = `boat · ${n.ride} pod rides · ${n.walk} walks · ${n.book} bookings · 1 purchase`;
+  gtCall(hotelPoi.p, 'hotel', 'Day complete', sum, 'ok', 10);
+  gtHero(['Good night', 'Day complete', sum]);
   gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); });
-  await gtSay('<p>Good night, John. The pod has gone back to the fleet. Tomorrow: the snorkelling trip at 09:00?</p>', 900, tok);
+  await gtSay('<p>Good night, John. Tomorrow at 08:30 the doctor goes through your longevity results with you.</p>', 900, tok);
   gtApp(w => w.chips([{ label: 'Replay the tour', primary: true, action: () => gtStart() }]));
   gtFollow(hotelPoi.p, GT_DIST.place); gtMul(1);
 }
+// --- the family (founder 2026-10-22): wife and daughter walk a step behind John along his own track; in a pod or indoors they are hidden with him
+function gtFamily() {
+  const w = gtActor('FamWife', personModel(0xc0577a), 'walk'), d = gtActor('FamGirl', personModel(0xf0a43c), 'walk');
+  w.mesh.scale.setScalar(2.3); d.mesh.scale.setScalar(1.6); GT.fam = [[w, 2.4, 0.9], [d, 2.2, -0.9]]; GT.trail = [];   // [actor, metres behind, metres to the side]
+}
+function gtFamStep() {
+  const f = GT.fam, g = GT.guest; if (!f) return;
+  if (!g || !g.mesh.visible) { for (const [a] of f) a.mesh.visible = false; GT.trail = []; return; }
+  const p = g.mesh.position, t = GT.trail, h = g.mesh.rotation.y, last = t[t.length - 1];
+  if (last && last.distanceTo(p) > 15) t.length = 0;                             // placed somewhere new: start a new track
+  if (!t.length || t[t.length - 1].distanceTo(p) > 0.3) t.push(p.clone()); if (t.length > 40) t.shift();
+  for (const [a, back, side] of f) {
+    let q = p, d = back;                                                          // walk back along the track; past its start, go straight back from John's heading
+    for (let i = t.length - 1; i >= 0 && d > 0; i--) { const s = q.distanceTo(t[i]); if (s >= d) { q = _gtFam.copy(q).lerp(t[i], d / s); d = 0; } else { d -= s; q = t[i]; } }
+    a.mesh.position.set(q.x - Math.cos(h) * d + Math.sin(h) * side, p.y, q.z + Math.sin(h) * d + Math.cos(h) * side);
+    a.mesh.rotation.y = h; a.mesh.visible = true;
+  }
+}
+const _gtFam = new THREE.Vector3();
 function gtClear() {
   GT.tok = 0; GT.beats = []; GT.sims = []; GT.charging = false; GT.hero = null; GT.cam.obj = null; gtLit(); gtBanner(''); gtFxClear();   // 54: arcs, pings, night, onboarding screens, service carts
   for (const c of GT.calls) c.el.remove(); GT.calls = [];
   const a = actors['GT-Guest']; if (a) { scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors['GT-Guest']; }
-  gtPodBack(); GT.guest = null; if (GT.bay >= 0) { bayUsed.delete(GT.bay); GT.bay = -1; }   // a called pod goes back to the fleet, it is never removed
+  gtPodBack(); GT.guest = null; GT.fam = null;   // the family actors (GT-Fam*) go with the other GT- actors in gtFxClear if (GT.bay >= 0) { bayUsed.delete(GT.bay); GT.bay = -1; }   // a called pod goes back to the fleet, it is never removed
   const y = GT.yacht, b = GT.berth;
   if (y) { y.path = null; y.dock = null; y.onDone = null; y.mesh.visible = false; y.busy = false; GT.own.delete(y.mesh); GT.yacht = null; }
-  if (b) { if (GT.moored || GT.berthWas) berthShow(b, true); b.busy = false; GT.berth = null; }   // the guest's yacht stays in the marina as a moored yacht
+  if (b) { if (GT.moored || GT.berthWas) berthShow(b, true); b.busy = false; GT.berth = null; }   // the guest's boat stays in the marina as a moored boat
   GT.moored = GT.berthWas = false;
 }
 function gtStart() { gtClear(); gtSoloOff(); gtTour().catch(e => { if (e !== GT_STOP) console.error(e); }); }
@@ -2807,13 +2880,13 @@ function gtStop() {
   if (GT.openedApp) window.__setApp(false); GT.openedApp = false;
 }
 gtCtl.addEventListener('click', e => { const b = e.target.closest('[data-gt]'); if (!b) return; if (b.dataset.gt === 'center') gtCenter(); else gtStart(); });
-function applyStyleBtn(style) { if (style === 'guest') { applyMapStyle('guest'); gtStart(); } else { gtStop(); applyMapStyle(style); } }
+function applyStyleBtn(style) { if (style === 'guest') { suStop(); applyMapStyle('guest'); gtStart(); } else { gtStop(); applyMapStyle(style); } }
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyStyleBtn(b.dataset.style); });
 // Scenarios panel (founder 2026-10-21): Guest Journey starts the tour on the standard look; a second click, or any style button, ends it
-document.querySelectorAll('#scenSw button').forEach(b => { b.onclick = () => applyStyleBtn(stage.classList.contains('gtour') ? 'standard' : 'guest'); });
+document.querySelectorAll('#scenSw button[data-scen="guest"]').forEach(b => { b.onclick = () => applyStyleBtn(stage.classList.contains('gtour') ? 'standard' : 'guest'); });
 window.__guestTour = { start: () => applyStyleBtn('guest'), stop: () => applyStyleBtn('standard'), state: GT, fleet: ambient };   // fleet: QA of the pod call
-// ===== Guest Journey scenario, part 3 (2026-10-21, v1.6): onboarding screens in the app, booking arcs and the zoom-out, the night, yacht service at the berth.
-// Hooks: 52 stepGuest → gtFxStep; 53 story → gtOnboard, gtBook, gtNight, gtYachtService; 53 gtClear → gtFxClear.
+// ===== Guest Journey scenario, part 3 (2026-10-21, v1.6): onboarding screens in the app, booking arcs and the zoom-out, the night, boat service at the berth.
+// Hooks: 52 stepGuest → gtFxStep; 53 story → gtOnboard, gtBook, gtNight, gtBoatService; 53 gtClear → gtFxClear.
 const gtFxCss = document.createElement('style');
 gtFxCss.textContent = `
   #gtNight { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0; transition: opacity 1.6s ease; mix-blend-mode: multiply;
@@ -2831,8 +2904,10 @@ function gtFxStep(rdt) {
 function gtFxDrop(f) { scene.remove(f.g); f.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
 // what the guest picks in the app (a booked place, the pod the fleet assigns): a blue arrow comes straight down from above onto it (founder 2026-10-21, v1.7:
 // no arcs). p = a point or a live mesh position; span = the width of the view in metres (sets the arrow size); onLand runs when the tip touches down
+// gtDropSz: the arrow size and its fall height for a view span; top = the arrow's highest point over p at the start (gtView fits it, founder 2026-10-22: every arrow whole in the frame)
+const gtDropSz = span => { const r = THREE.MathUtils.clamp(span * 0.005, 1.6, 7), L = r * 11, H = THREE.MathUtils.clamp(span * 0.18, 40, 220); return { r, L, H, top: 2 + H + r * 5 + L }; };
 function gtDrop(p, onLand, span = 600, life = 9, col = 0x2457e6) {
-  const r = THREE.MathUtils.clamp(span * 0.005, 1.6, 7), L = r * 11, H = THREE.MathUtils.clamp(span * 0.3, 60, 420), T = 2.2;
+  const { r, L, H } = gtDropSz(span), T = 2.2;
   const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0, depthTest: false, depthWrite: false });
   const shaft = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 12), mat), head = new THREE.Mesh(new THREE.ConeGeometry(r * 2.6, r * 5, 16), mat);
   head.rotation.x = Math.PI; head.position.y = r * 2.5; shaft.position.y = r * 5 + L / 2; shaft.renderOrder = head.renderOrder = 20;   // the tip is the group's origin, pointing down
@@ -2864,18 +2939,13 @@ function gtPing(p, col = 0x2457e6, loop = false, size = 14) {
   const m = new THREE.Mesh(new THREE.RingGeometry(0.75, 1, 40), mat); m.rotation.x = -Math.PI / 2; m.position.copy(p).setY(p.y + 1); m.renderOrder = 19; scene.add(m);
   GT.fx.push({ g: m, t: 0, life: loop ? Infinity : 1.8, step(t) { const k = (t % 1.8) / 1.8; m.scale.setScalar(size * (0.3 + k)); mat.opacity = 0.9 * (1 - k); } });
 }
-// top view (founder 2026-10-21, v1.7): the camera rises almost straight above the guest and the places the guest picks; returns the view width in metres
-function gtView(pts, k = 1.35) {
-  const bx = new THREE.Box3(); for (const p of pts) bx.expandByPoint(p);
-  const s = bx.getSize(new THREE.Vector3()), m = Math.max(110, Math.max(s.x, s.z) * 0.3);
-  bx.expandByVector(new THREE.Vector3(m * 0.5, 0, m * 0.5));
-  // the phone panel covers the right of the stage: fit the box into the free part on the left and look at a point right of its centre
-  const W = stage.clientWidth, ap = $('appPanel'), free = ap && ap.classList.contains('open') ? Math.max(W * 0.4, ap.getBoundingClientRect().left) : W;
-  const f = frameBox(bx, k * W / free), d = f.pos.distanceTo(f.target), dir = new THREE.Vector3(0.04, 0.96, 0.27).normalize();
-  const right = new THREE.Vector3().crossVectors(dir.clone().negate(), new THREE.Vector3(0, 1, 0)).normalize();
-  const px = 2 * d * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / stage.clientHeight, tg = f.target.clone().addScaledVector(right, (W - free) / 2 * px);
-  GT.cam.obj = null; gtLit(); flyTo(tg, tg.clone().addScaledVector(dir, d), 2.4);
-  return Math.max(s.x, s.z) + m;
+// overview of the guest and the places he deals with (founder 2026-10-22: 60° tilt, not the v1.7 top view; every point and its callout in the frame, left of the phone panel,
+// never closer than dmin metres so the island around stays readable); returns the view width in metres (sets the arrow size)
+function gtView(pts, dmin = 380) {
+  const s = new THREE.Box3().setFromPoints(pts).getSize(new THREE.Vector3()), span = Math.max(s.x, s.z, 200) + 110;
+  const f = gtFitCalc(pts, GT_TOP, dmin, Math.max(20, gtDropSz(span).top), 190);   // the arrow at its start height and the callouts stay in the frame
+  GT.cam.obj = null; gtLit(); flyTo(f.target, f.pos, 2.4);
+  return span;
 }
 // "Booked" on the map: a stamped callout and a ring where the arrow lands
 function gtStamp(p, icon, title, sub, lift = 10, tag = '✓ BOOKED') {
@@ -2886,17 +2956,20 @@ async function gtBook(from, fromName, items, tok) {
   const span = gtView([from, ...items.map(i => i.p)]); gtMeIcon(from);
   await gtBeat(2.6); gtChk(tok);
   for (const it of items) { gtDrop(it.p, () => gtStamp(it.p, it.icon, it.title, it.sub, it.lift || 10), span, 11); await gtBeat(3.2); gtChk(tok); }
-  await gtBeat(2.4); gtChk(tok); gtMeIcon(null);
+  await gtBeat(2.4); gtChk(tok); gtMeIcon(null); if (GT.n) GT.n.book += items.length;
 }
-// a transfer is always offered, never pushed (founder 2026-10-21): the butler asks, the guest answers; returns true for a pod
-async function gtAsk(q, yes, answer, tok) {
-  gtApp(w => w.openSheet()); await gtSay(`<p>${q}</p>`, 800, tok);
-  gtApp(w => w.chips([{ label: 'Yes, a pod please', primary: yes, action() {} }, { label: "No, I'll walk", primary: !yes, action() {} }])); await gtBeat(2.4); gtChk(tok);
-  gtApp(w => w.chips([])); gtMe(answer || (yes ? 'Yes, a pod please.' : "No thanks, I'll walk.")); await gtBeat(1.4); gtChk(tok);
-  if (!yes) { await gtSay('<p>Enjoy the walk. I keep your day on time.</p>', 700, tok); await gtBeat(1); gtChk(tok); }
-  gtApp(w => w.closeSheet()); return yes;
+// transfer (founder 2026-10-22: no questions about a transfer): the app shows the next place with a Transfer button; the guest taps it or does nothing and walks
+function gtTr(title, sub) {
+  gtAppCss();
+  gtApp(w => {
+    const d = w.document; let e = d.getElementById('gtTr'); if (e && e.classList.contains('out')) { e.remove(); e = null; }
+    if (!e) { e = d.createElement('div'); e.id = 'gtTr'; d.querySelector('.screen').appendChild(e); }
+    e.innerHTML = `<div><b>${title}</b><small>${sub}</small></div><span class="go">${gtIcon('car')}Transfer</span>`;
+  });
 }
-// --- onboarding (founder 2026-10-21): before the story, the app shows its own screens: sign in → hotel → room → how you arrive → yacht and berth
+async function gtTrTap(tok) { gtApp(w => { const e = w.document.querySelector('#gtTr .go'); if (e) e.classList.add('tap'); }); await gtBeat(0.45); gtChk(tok); gtTrOff(); }
+function gtTrOff(now) { gtApp(w => { const e = w.document.getElementById('gtTr'); if (!e) return; if (now) e.remove(); else { e.classList.add('out'); setTimeout(() => e.remove(), 450); } }); }
+// --- onboarding (founder 2026-10-21): before the story, the app shows its own screens: sign in → hotel → room → how you arrive → boat and berth
 const GT_ONB_CSS = `
 #gtOnb{position:absolute;left:0;right:0;top:44px;bottom:0;z-index:40;background:var(--p-bg);transition:opacity .5s}
 #gtOnb.out{opacity:0;pointer-events:none}
@@ -2919,7 +2992,10 @@ const GT_ONB_CSS = `
 #gtOnb .opt.sel{border-color:var(--sun);box-shadow:0 0 0 3px var(--sun-soft)}
 #gtOnb .tap{transform:scale(.96);box-shadow:0 0 0 6px var(--sun-soft)}
 #gtOnb .ok{display:flex;gap:10px;align-items:center;background:var(--ok-soft);color:var(--ok);border-radius:14px;padding:10px 12px;font-weight:600}
-#gtOnb .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}`;
+#gtOnb .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#gtOnb .hero{width:100%;height:170px;object-fit:cover;border-radius:16px;flex:none}
+#gtOnb .facts{display:flex;flex-direction:column;gap:6px}#gtOnb .facts span{font-size:13px;color:var(--p-fg)}#gtOnb .facts span::before{content:'· ';color:var(--sun);font-weight:700}
+#gtOnb .btn3{border:1.5px solid var(--p-line);background:#fff;color:var(--p-fg);border-radius:999px;padding:11px;text-align:center;font-weight:600;font-size:14px;transition:transform .15s,box-shadow .15s}`;
 function gtOnbPage(html, n) {
   gtApp(w => {
     const d = w.document; let o = d.getElementById('gtOnb');
@@ -2939,50 +3015,64 @@ async function gtTap(id, tok, sel) {
   await gtBeat(0.35); gtChk(tok); if (e) e.classList.remove('tap'); await gtBeat(0.25); gtChk(tok);
 }
 function gtDone(id, html) { gtApp(w => { const e = w.document.getElementById(id); if (e) e.outerHTML = `<div class="ok">${html}</div>`; }); }
-const gtOpt = (id, pic, t, s) => `<div class="opt" id="${id}">${pic.endsWith('.jpg') ? `<img src="guest-img/${pic}" alt="">` : `<span class="ic">${gtIcon(pic)}</span>`}<div><b>${t}</b><span>${s}</span></div></div>`;
+const gtOpt = (id, pic, t, s) => `<div class="opt" id="${id}">${pic.endsWith('.jpg') || GT_PIC[pic] ? `<img src="${gtImg(pic)}" alt="">` : `<span class="ic">${gtIcon(pic)}</span>`}<div><b>${t}</b><span>${s}</span></div></div>`;
 async function gtOnboard(b, villa, tok) {
   const eta = clockAt(Math.ceil((gtHour() + 0.25) * 4) / 4);
-  gtOnbPage(`<div class="logo">Rose Island</div><p class="lead">Sign in to plan your stay: one account for the room, the berth and the Butler.</p>
+  gtOnbPage(`<div class="logo">Coral Key</div><p class="lead">Sign in to plan your stay: one account for the room, the berth and the Butler.</p>
     <div class="fld"><small>Email</small><b class="caret" id="oE"></b></div><div class="btn1" id="oGo">Continue</div><div class="btn2">Continue with Apple</div>`, 0);
   await gtBeat(0.9); gtChk(tok); await gtType('oE', 'john.carter@example.com', tok); await gtTap('oGo', tok);
-  gtOnbPage(`<h1>Where will you stay?</h1><p class="lead">From today · 2 nights · 2 guests</p>${gtOpt('oH1', 'villa-1.jpg', 'Beach Hotel', 'south shore · sea-view suites')}${gtOpt('oH2', 'pool-1.jpg', 'Hill Hotel', 'garden rooms · lagoon views')}${gtOpt('oH3', 'villa-2.jpg', villa ? villa.name : 'Private villa', 'private pool · up to 6 guests')}`, 1);
-  gtCall(A.hotel, 'hotel', 'Beach Hotel', 'sea-view suites · available'); if (villa) gtCall(villa.p, 'home', villa.name, 'private pool · available');
-  await gtBeat(2); gtChk(tok); await gtTap('oH1', tok, true);
-  gtOnbPage(`<h1>Beach Hotel</h1><p class="lead">Choose a room</p>${gtOpt('oR1', 'villa-1.jpg', 'Sea-view suite', 'terrace · breakfast included')}${gtOpt('oR2', 'pool-2.jpg', 'Garden room', 'breakfast included')}
+  // where to stay (founder 2026-10-22): John opens each of the three places, looks at it on the map, goes back, and picks the Beach Hotel
+  const stays = [['oH3', 'villa-2.jpg', villa ? villa.name : 'Private villa', 'private pool · up to 6 guests', villa ? villa.p : A.villa, 'home', ['private pool and garden', 'own chef on request', '3 bedrooms']],
+    ['oH2', 'pool-1.jpg', 'Hill Hotel', 'garden rooms · lagoon views', A.hillHotel, 'hotel', ['garden rooms on the hill', 'lagoon views', 'quiet · pod to the beach']],
+    ['oH1', 'villa-1.jpg', 'Beach Hotel', 'south shore · sea-view suites', A.hotel, 'hotel', ['on the beach · south shore', 'family suites · kids club', 'pool, spa and clinic close by']]];
+  const list = () => gtOnbPage(`<h1>Where will you stay?</h1><p class="lead">From today · 2 nights · 3 guests: John, Emma and Lily (9)</p>${[...stays].reverse().map(([id, pic, t, sub]) => gtOpt(id, pic, t, sub)).join('')}`, 1);
+  list(); await gtBeat(1.6); gtChk(tok);
+  for (const [id, pic, t, sub, p, icon, facts] of stays) {
+    const pick = id === 'oH1';
+    await gtTap(id, tok, true);
+    gtOnbPage(`<img class="hero" src="${gtImg(pic)}" alt=""><h1>${t}</h1><p class="lead">${sub}</p><div class="facts">${facts.map(f => `<span>${f}</span>`).join('')}</div>
+      <div class="btn1" id="oPick">${pick ? 'Choose the Beach Hotel' : 'Choose'}</div><div class="btn3" id="oBack">Back</div>`, 1);
+    gtView([p], 380); gtCall(p, icon, t, `${sub} · available`, 'live', 9);
+    await gtBeat(2.6); gtChk(tok);
+    await gtTap(pick ? 'oPick' : 'oBack', tok);
+    if (!pick) { list(); await gtBeat(0.9); gtChk(tok); }
+  }
+  gtApproachView();
+  gtOnbPage(`<h1>Beach Hotel</h1><p class="lead">Choose a room</p>${gtOpt('oR1', 'villa-1.jpg', 'Sea-view family suite', 'terrace · extra bed for Lily · breakfast included')}${gtOpt('oR2', 'pool-2.jpg', 'Garden room', 'breakfast included')}
     <div class="row2"><div class="fld"><small>Check-in</small><b>Today</b></div><div class="fld"><small>Check-out</small><b>In 2 nights</b></div></div><div class="btn1" id="oGo">Book the suite</div>`, 2);
   await gtBeat(1.5); gtChk(tok); await gtTap('oR1', tok, true); await gtBeat(0.3); gtChk(tok); await gtTap('oGo', tok);
   gtDone('oGo', '✓ Booked · Suite 214 · 2 nights');
   gtDrop(A.hotel, () => gtStamp(A.hotel, 'hotel', 'Stay booked', 'Beach Hotel · Suite 214 · 2 nights'), 1400, 9); await gtBeat(3.4); gtChk(tok);
-  gtOnbPage(`<h1>How will you arrive?</h1><p class="lead">We plan the transfer for you</p>${gtOpt('oA1', 'sailboat', 'On my own yacht', 'we reserve a berth in the marina')}${gtOpt('oA2', 'heli', 'Helicopter', 'helipad · a pod to the hotel')}${gtOpt('oA3', 'ship', 'Shuttle boat', 'from the mainland pier')}`, 3);
+  gtOnbPage(`<h1>How will you arrive?</h1><p class="lead">We plan the transfer for you</p>${gtOpt('oA1', 'sailboat', 'On my own boat', 'we reserve a berth in the marina')}${gtOpt('oA2', 'heli', 'Helicopter', 'helipad · a pod to the hotel')}${gtOpt('oA3', 'ship', 'Shuttle boat', 'from the mainland pier')}`, 3);
   await gtBeat(1.7); gtChk(tok); await gtTap('oA1', tok, true);
-  gtOnbPage(`<h1>Your yacht</h1><p class="lead">The marina reserves a berth that fits her</p>
+  gtOnbPage(`<h1>Your boat</h1><p class="lead">The marina reserves a berth that fits her</p>
     <div class="row2"><div class="fld"><small>Length</small><b class="caret" id="oL"></b></div><div class="fld"><small>Arrival</small><b>Today · ${eta}</b></div></div>
-    <div class="fld"><small>Yacht name</small><b id="oN"></b></div>${gtOpt('oB', 'anchor', `Berth ${b.berth_id}`, `class ${b.cls} · stern-to · shore power and water`)}<div class="btn1" id="oGo">Reserve the berth</div>`, 4);
-  await gtBeat(0.6); gtChk(tok); await gtType('oL', '24 m', tok); await gtType('oN', 'Aurora', tok);
+    <div class="fld"><small>Boat name</small><b id="oN"></b></div>${gtOpt('oB', 'anchor', `Berth ${b.berth_id}`, `class ${b.cls} · stern-to · shore power and water`)}<div class="btn1" id="oGo">Reserve the berth</div>`, 4);
+  await gtBeat(0.6); gtChk(tok); await gtType('oL', `${Math.round(b.length)} m`, tok); await gtType('oN', 'Aurora', tok);
   await gtBeat(0.6); gtChk(tok); await gtTap('oB', tok, true); await gtTap('oGo', tok);
   gtDone('oGo', `✓ Berth ${b.berth_id} reserved · today ${eta}`);
   gtDrop(b.pos, () => gtStamp(b.pos, 'anchor', 'Berth booked', `${b.berth_id} · class ${b.cls}`, 4), 1400, 9); await gtBeat(3.4); gtChk(tok);
   gtOnbPage(`<h1>All set, John</h1><p class="lead">Your Butler takes it from here.</p><div class="ok">✓ Beach Hotel · Suite 214 · 2 nights</div><div class="ok">✓ Berth ${b.berth_id} · Aurora · today ${eta}</div>`, 4);
   await gtBeat(2.2); gtChk(tok); gtOnbOff(); await gtBeat(0.6); gtChk(tok);
 }
-// --- yacht service at the berth (founder 2026-10-21): the butler asks, the guest says yes, the marina sends its units.
+// --- boat service at the berth (founder 2026-10-21): the butler asks, the guest says yes, the marina sends its units.
 // Register types (rubiqos-site-src/proforma-data.js ROBOTS): smart shore-power pedestal (auto, at every berth), pump-out cart (staff tow it), automated fuel dock (its bowser cart brings fuel to the berth), hull-cleaning robot.
-// Quantities: the marina's own service rates YS_RATE (32) for the berth class; the jobs go to the marina log (ysLog) like the island's other yachts.
+// Quantities: the marina's own service rates YS_RATE (32) for the berth class; the jobs go to the marina log (ysLog) like the island's other boats and yachts.
 function gtUnit(id, type, p, col) {
   const mesh = fleetModel(type), mk = beacon(col); mk.scale.set(0.014, 0.014, 1); mk.position.y = (FM[type] ? FM[type].height_m : 2) + 4; mesh.add(mk);
   const a = gtActor(id, mesh, 'walk', type); placeAt(a, p); return a;
 }
-async function gtYachtService(b, berthPoi, msPoi, tok) {
+async function gtBoatService(b, berthPoi, msPoi, tok) {
   const home = (msPoi || berthPoi).p, fuelL = YS_RATE.diesel[b.cls], pumpM = YS_RATE.pump[b.cls];
   gtFollow(b.pos, GT_DIST.walk);
   gtApp(w => { w.document.getElementById('chat').innerHTML = ''; w.openSheet(); });
-  await gtSay(`<p>Welcome to Rose Island, John. Aurora is moored at berth ${b.berth_id}.</p><p>Does she need service while you are ashore?</p>`, 900, tok);
+  await gtSay(`<p>Welcome to Coral Key, John, Emma and Lily. Aurora is moored at berth ${b.berth_id}.</p><p>Does she need anything while you are ashore?</p>`, 900, tok);
   gtApp(w => w.chips([{ label: 'Refuel', action() {} }, { label: 'Sewage pump-out', action() {} }, { label: 'Shore power', action() {} }, { label: 'Hull clean', action() {} }])); await gtBeat(1.8); gtChk(tok);
   gtApp(w => w.chips([])); gtMe('Yes: refuel, pump-out and shore power, please.'); await gtBeat(0.7); gtChk(tok);
   await gtSay(`<p>Sent to berth ${b.berth_id}:</p>${gtCard('Shore power · smart pedestal', 'on now · metered to your bill')}${gtCard('Pump-out cart · dock hand', `on the way · ≈ ${pumpM} m³`, 'Dispatched')}${gtCard('Fuel · fuel dock bowser', `diesel ≈ ${fuelL.toLocaleString('en')} l · on the way`, 'Dispatched')}`, 900, tok);
-  gtApp(w => w.setLive({ title: 'Yacht service · 3 jobs', sub: `berth ${b.berth_id}`, at: 'live', icon: 'boat' }));
+  gtApp(w => w.setLive({ title: 'Boat service · 3 jobs', sub: `berth ${b.berth_id}`, at: 'live', icon: 'boat' }));
   // the pedestal at the berth goes live at once; the two carts come along the pier from Marina Support
-  gtView([home, b.pos], 1.8); gtPing(b.pos, 0x3f8f6e, true, 10); ysLog('power', b, 0);
+  gtView([home, b.pos], 420); gtPing(b.pos, 0x3f8f6e, true, 10); ysLog('power', b, 0);
   gtCall(b.pos, 'zap', 'Shore power on', `smart pedestal · berth ${b.berth_id} · metered`, 'ok', 4);
   const pump = gtUnit('Pump', 'L3', home, 0x9fcb7c), fuel = gtUnit('Fuel', 'L3', home, 0xe0b04a);
   pump.task = `Pump-out cart · to berth ${b.berth_id}`; fuel.task = `Fuel bowser · to berth ${b.berth_id}`;
@@ -2991,20 +3081,555 @@ async function gtYachtService(b, berthPoi, msPoi, tok) {
   const go = (u, pts) => pts ? move(u, pts, GT_SPEED.walk) : (placeAt(u, berthPoi.p), Promise.resolve());
   const pP = go(pump, rt); await gtBeat(1.2); gtChk(tok);
   const fc = gtCall(fuel.mesh.position, 'truck', 'Fuel bowser', `from the fuel dock · ${fuelL.toLocaleString('en')} l`, 'live', 4);
-  gtHero(['Yacht service', `Berth ${b.berth_id} · 3 jobs`, 'shore power on · pump-out and fuel on the way', '', '', 33]);
+  gtHero(['Boat service', `Berth ${b.berth_id} · 3 jobs`, 'shore power on · pump-out and fuel on the way', '', '', 33]);
   await Promise.all([pP, go(fuel, rtF)]); gtChk(tok);
   pc.set('Pump-out · connected', `≈ ${pumpM} m³ · berth ${b.berth_id}`); fc.set('Fuelling · diesel', `≈ ${fuelL.toLocaleString('en')} l · berth ${b.berth_id}`);
   ys.pump += pumpM; ysLog('pumpout', b, pumpM); ys.diesel += fuelL; ysLog('fuel', b, fuelL);
-  gtHero(['Yacht service', `Berth ${b.berth_id} · 3 jobs on`, 'power, pump-out and fuel at the berth', '', '', 100]);
+  gtHero(['Boat service', `Berth ${b.berth_id} · 3 jobs on`, 'power, pump-out and fuel at the berth', '', '', 100]);
   gtApp(w => w.closeSheet()); await gtBeat(1.6); gtChk(tok); gtApp(w => w.setLive(null));
 }
 function gtUnitsHome(home) {                                                     // jobs done: the carts go back along the pier and leave the map
   for (const id of ['Pump', 'Fuel']) { const u = actors['GT-' + id]; if (!u || u.path) continue; const pts = walk(u.pos, home); const off = () => { scene.remove(u.mesh); delete actors['GT-' + id]; }; if (pts) move(u, pts, GT_SPEED.walk).then(off); else off(); }
 }
 function gtFxClear() {
-  for (const f of GT.fx) gtFxDrop(f); GT.fx = []; gtNight(false); gtOnbOff(true); gtMeIcon(null);
+  for (const f of GT.fx) gtFxDrop(f); GT.fx = []; gtNight(false); gtOnbOff(true); gtTrOff(true); gtMeIcon(null);
   for (const k of Object.keys(actors)) if (k.startsWith('GT-') && k !== 'GT-Guest') { const a = actors[k]; scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors[k]; }
 }
+// ===== Supply scenario, part 1 (2026-10-22, v089): what the island runs on, shown in one run (founder 2026-10-22).
+// Infrastructure labels (stores, laundry, medical, fuel, water, power, sewage, waste), a small utilities dashboard top-left (water, energy, sewage),
+// outlet cards on the main outlets (on order / arriving / delivered). The story is in 56. The island's base loop runs on underneath.
+// Utilities model (assumptions, full working in vault 2. Architecture/Supply Scenario v089 — 2026-10-22.md):
+//   water: potable tank 666 m³ (model: 10.3 m dia × 8 m), RO 3 trains × 15 m³/h, use 900 m³/day on a daily profile; trains on: 3 under 60 % stock, 2 under 85 %, else 1
+//   energy: peak 9 MW, load profile below (≈ 98 MWh/day), solar 2.2 MWp; gen sets 12 × 0.8 MW, ceil((load − solar) / 0.8) run; diesel 0.27 L/kWh
+//   fuel: 6 tanks 4 m dia × 11 m, 829 m³ gross, 746 m³ usable (90 %); sewage inflow 0.78 × water use, 64 % reclaimed (proforma 450 / 700 m³/day)
+const suCss = document.createElement('style');
+suCss.textContent = `
+  .supply #layersPanel { display: none; } .supply .gpin { opacity: 0.35; }
+  #suDash { position: absolute; left: 12px; top: 12px; z-index: 6; width: 290px; background: #fff; border-radius: 12px; box-shadow: 0 6px 18px rgba(10, 18, 32, 0.16); padding: 10px 12px 8px;
+    font: 12px/1.35 "DM Sans", system-ui, sans-serif; color: #0a1220; }
+  #suDash h4 { margin: 0 0 4px; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: #5b6676; font-weight: 600; }
+  #suDash .r { display: grid; grid-template-columns: 56px 1fr; gap: 0 8px; padding: 6px 0 5px; border-top: 1px solid rgba(10, 18, 32, 0.08); }
+  #suDash .r i { font-style: normal; font-weight: 600; grid-row: span 3; } #suDash .r b { font-variant-numeric: tabular-nums; font-weight: 600; } #suDash .r small { color: #5b6676; font-variant-numeric: tabular-nums; }
+  .subar { height: 4px; background: rgba(10, 18, 32, 0.1); border-radius: 2px; overflow: hidden; margin: 3px 0 2px; } .subar u { display: block; height: 100%; background: #2457e6; transition: width .4s; }
+  .sulab { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); z-index: 4; pointer-events: none; background: rgba(10, 18, 32, 0.86); color: #f3f5f8; border-radius: 8px; padding: 3px 8px;
+    font: 11px/1.25 "DM Sans", sans-serif; white-space: nowrap; } .sulab b { font-weight: 600; } .sulab span { color: #b9c6d8; margin-left: 5px; font-variant-numeric: tabular-nums; }
+  .sucard { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 8px)); z-index: 5; pointer-events: none; background: #fff; border-radius: 10px; padding: 7px 9px; width: 178px;
+    box-shadow: 0 6px 16px rgba(10, 18, 32, 0.2); font: 11px/1.3 "DM Sans", sans-serif; color: #0a1220; } .sucard > b { font-size: 12px; } .sucard small { color: #5b6676; }
+  .sucard ul { list-style: none; margin: 4px 0 0; padding: 0; } .sucard li { padding: 2px 0; } .sucard li em { font-style: normal; font-weight: 600; font-size: 10px; padding: 1px 6px; border-radius: 999px; margin-right: 5px; color: #fff; }
+  .sucard li.order em { background: #d08a1f; } .sucard li.way em { background: #2457e6; } .sucard li.done em { background: #3f8f6e; }`;
+document.head.appendChild(suCss);
+const SU_ICON = { droplet: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z',   // Lucide (ISC), as ICON in 24
+  shirt: 'M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z',
+  fuel: 'M3 22h12M4 9h10M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2 2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5' };
+const suIcon = k => `<svg viewBox="0 0 24 24"><path d="${SU_ICON[k] || ICON[k] || ICON.star}"/></svg>`;
+// --- infrastructure: [key, label, point, lift m]; utilities are bbox centres measured in GLB v087 (2026-10-22), stores come from WH (30)
+const SU_P = (x, z) => new THREE.Vector3(x, 0, z);
+const SU_TANKS = SU_P(-956, -86);
+const SU_INF = [['laundry', 'WH-1 Laundry', WH.laundry, 16], ['prep', 'WH-2 Prep kitchen', WH.prep, 16], ['cold', 'WH-3 Cold store', WH.cold, 16], ['dry', 'WH-4 Dry store', WH.dry, 16],
+  ['med', 'Medical store · first aid', ADMIN_P, 20], ['diesel', 'Diesel tank farm', SU_TANKS, 6], ['power', 'Power plant · 12 gen sets', SU_P(-928, -60), 24], ['water', 'Potable water', SU_P(-923, -40), 14],
+  ['ro', 'RO desalination', SU_P(-961, -44), 34], ['sewage', 'Sewage plant', SU_P(-958, -64), 44], ['waste', 'Waste yard', WH.waste, 10]];
+const SU_BOH = SU_P(-900, -90);
+// --- outlets with a card: OUTLET_DEF keys (30); the card sits over the building, the trucks use its back-of-house pad (outletAt)
+const SU_OUT = ['Beach Hotel', 'Hill Hotel', 'Restaurant', 'Marina Village', 'Beach Club', 'Members Club', 'Spa & Wellness', 'Longevity Clinic'];
+const SU_NAME = { Restaurant: 'Rotunda Restaurant' };
+const SU_OP = Object.fromEntries(OUTLET_DEF.map(r => [r[0], r[1]]));
+const SU_ST = { order: 'On order', way: 'Arriving', done: 'Delivered' };
+// --- utilities model
+const SU_USE = [.4, .35, .3, .3, .35, .6, 1.1, 1.6, 1.7, 1.4, 1.2, 1.1, 1.1, 1.0, 1.0, 1.0, 1.1, 1.3, 1.5, 1.5, 1.3, 1.0, .7, .5];
+const SU_USEM = SU_USE.reduce((a, b) => a + b) / 24;
+const SU_LOAD = [.28, .28, .28, .28, .28, .28, .33, .38, .42, .46, .5, .55, .6, .64, .66, .66, .62, .56, .52, .55, .56, .5, .42, .34];   // share of the 9 MW peak, by hour
+const suAt = (arr, h) => { const i = Math.floor(h) % 24, t = h % 1; return arr[i] + (arr[(i + 1) % 24] - arr[i]) * t; };
+const suSolar = h => h > 6 && h < 18 ? 2.2 * Math.sin(Math.PI * (h - 6) / 12) : 0;
+const SU_U = { cap: 666, water: 480, ro: 1, use: 0, prod: 0, peak: 9, load: 0, solar: 0, sets: 0, diesel: 400, dieselCap: 746, burn: 0, sew: 0, sewDay: 0, day: -1 };
+SU_U.dayBurn = SU_LOAD.reduce((s, p, h) => s + Math.max(0, SU_U.peak * p - suSolar(h + 0.5)) * 0.27, 0);   // m³ of diesel a day (≈ 21)
+function suUtil(dt) {                                                            // dt in sim minutes; flows in m³/h, power in MW
+  const U = SU_U, h = hourOf(), d = dayIndex();
+  U.use = 900 / 24 * suAt(SU_USE, h) / SU_USEM;
+  const f = U.water / U.cap; U.ro = f < 0.6 ? 3 : f < 0.85 ? 2 : 1; U.prod = U.ro * 15;
+  U.water = Math.min(U.cap, Math.max(0, U.water + (U.prod - U.use) * dt / 60));
+  U.load = U.peak * suAt(SU_LOAD, h); U.solar = suSolar(h);
+  const gen = Math.max(0, U.load - U.solar); U.sets = Math.min(12, Math.ceil(gen / 0.8)); U.burn = gen * 0.27;   // MW × 1000 kWh/h × 0.27 L/kWh = m³/h × 1000
+  U.diesel = Math.max(0, U.diesel - U.burn * dt / 60);
+  U.sew = 0.78 * U.use; if (d !== U.day) { U.day = d; U.sewDay = 0; } U.sewDay += U.sew * dt / 60;
+}
+// --- state; beats run on real seconds (paused with the clock), sims on simulated minutes
+const SU = { tok: 0, runs: 0, clock: 0, beats: [], sims: [], cam: { fn: null, D: null, dmin: 0, frame: false }, root: null, dash: null, labels: [], cards: [], calls: [], items: {}, fx: [], sv: null, t: 0, inKg: 0 };
+const SU_STOP = new Error('supply scenario stopped');
+const suChk = tok => { if (tok !== SU.tok) throw SU_STOP; };
+const suBeat = sec => new Promise(res => SU.beats.push({ until: SU.clock + sec, res }));
+const suSim = min => new Promise(res => SU.sims.push({ until: simT + min, res }));
+const fmt = n => Math.round(n).toLocaleString('en-US');
+function suBuild() {                                                             // DOM: labels, cards, dashboard
+  const root = SU.root = document.createElement('div'); root.id = 'suLay'; stage.appendChild(root);
+  SU.labels = SU_INF.map(([k, t, p, lift]) => { const el = document.createElement('div'); el.className = 'sulab'; el.innerHTML = `<b>${t}</b><span></span>`; root.appendChild(el); return { k, el, p, lift, sp: el.querySelector('span') }; });
+  SU.cards = SU_OUT.filter(k => outlets[k] && SU_OP[k]).map(k => { const el = document.createElement('div'); el.className = 'sucard'; root.appendChild(el); return { k, el, p: SU_OP[k], lift: 18, html: '' }; });
+  const d = SU.dash = document.createElement('div'); d.id = 'suDash';
+  d.innerHTML = `<h4>Island utilities · live</h4>
+    <div class="r"><i>Water</i><b data-v="w1"></b><div class="subar"><u data-v="wb"></u></div><small data-v="w2"></small></div>
+    <div class="r"><i>Energy</i><b data-v="e1"></b><div class="subar"><u data-v="eb"></u></div><small data-v="e2"></small></div>
+    <div class="r"><i>Sewage</i><b data-v="s1"></b><small data-v="s2"></small></div>`;
+  stage.appendChild(d);
+}
+const suSet = (k, v) => { const e = SU.dash && SU.dash.querySelector(`[data-v="${k}"]`); if (!e) return; if (k.endsWith('b')) e.style.width = v; else e.textContent = v; };
+function suLabVal(k) {
+  const U = SU_U, t = x => (x / 1000).toFixed(1);
+  if (k === 'cold') return `${t(STORE.cold.stock)} of ${t(STORE.cold.cap)} t`;
+  if (k === 'dry') return `${t(STORE.dry.stock + STORE.bev.stock)} of ${t(STORE.dry.cap + STORE.bev.cap)} t`;
+  if (k === 'laundry') return `${fmt(supply.linenKg)} kg linen today`;
+  if (k === 'diesel') return `${fmt(U.diesel)} of ${U.dieselCap} m³ · ${(U.diesel / U.dayBurn).toFixed(0)} days`;
+  if (k === 'power') return `${U.load.toFixed(1)} MW · ${U.sets} of 12 sets`;
+  if (k === 'water') return `${fmt(U.water)} of ${U.cap} m³`;
+  if (k === 'ro') return `${U.ro} of 3 trains · ${U.prod} m³/h`;
+  if (k === 'sewage') return `${Math.round(U.sew)} m³/h in`;
+  if (k === 'waste') return `${fmt(supply.wasteKg)} kg today`;
+  return '';
+}
+function suCardHtml(k) {
+  const o = outlets[k], pct = Math.round(100 * o.stock / o.par), it = SU.items[k] || [], last = supply.log.find(l => l.to === k);
+  let rows = it.map(i => `<li class="${i.st}"><em>${i.lab || SU_ST[i.st]}</em>${i.what} · ${fmt(i.kg)} kg${i.t ? ' · ' + i.t : ''}</li>`).join('');
+  if (!rows) rows = o.pending > 0 ? `<li class="way"><em>Arriving</em>restock ${fmt(o.pending)} kg</li>` : last ? `<li class="done"><em>Delivered</em>${last.what} · ${last.t}</li>` : '';
+  return `<b>${SU_NAME[k] || k}</b><div class="subar"><u style="width:${Math.min(100, pct)}%"></u></div><small>stock ${pct} % of par</small><ul>${rows}</ul>`;
+}
+function suDraw() {                                                              // values: dashboard, label texts, card contents
+  const U = SU_U;
+  suSet('w1', `${fmt(U.water)} m³ stored · ${Math.round(100 * U.water / U.cap)} %`); suSet('wb', `${100 * U.water / U.cap}%`);
+  suSet('w2', `RO ${U.ro} of 3 trains · makes ${U.prod} m³/h · use ${Math.round(U.use)} m³/h`);
+  suSet('e1', `${U.load.toFixed(1)} MW load · ${U.sets} of 12 gen sets`); suSet('eb', `${100 * U.load / U.peak}%`);
+  suSet('e2', `solar ${U.solar.toFixed(1)} MW · diesel ${fmt(U.diesel)} m³ = ${(U.diesel / U.dayBurn).toFixed(0)} days`);
+  suSet('s1', `${Math.round(U.sew)} m³/h in · ${fmt(U.sewDay)} m³ treated today`); suSet('s2', '64 % reclaimed for irrigation and flushing');
+  for (const l of SU.labels) l.sp.textContent = suLabVal(l.k);
+  for (const c of SU.cards) { const h = suCardHtml(c.k); if (h !== c.html) { c.html = h; c.el.innerHTML = h; } }
+}
+const _suv = new THREE.Vector3();
+function suPlace(list, show = true) { for (const c of list) { const s = show ? toScreen(_suv.copy(c.p).setY((c.p.y || 0) + c.lift)) : null; c.el.style.display = s ? '' : 'none'; if (s) { c.el.style.left = s[0] + 'px'; c.el.style.top = s[1] + 'px'; } } }
+// callouts (the .gcall look of the guest tour, 52): at most three on the map
+function suCall(p, icon, title, sub = '', kind = 'live', lift = 12) {
+  const el = document.createElement('div'); el.className = 'gcall ' + kind; el.innerHTML = `${suIcon(icon)}<div><b>${title}</b>${sub !== null ? `<span>${sub}</span>` : ''}</div>`; (SU.root || stage).appendChild(el);
+  const c = { el, p, lift, set: (t, s) => { el.querySelector('b').textContent = t; const sp = el.querySelector('span'); if (sp && s !== undefined) sp.textContent = s; } }; SU.calls.push(c);
+  while (SU.calls.length > 3) SU.calls.shift().el.remove();
+  return c;
+}
+// camera: suFollow keeps the given (live) points in the frame at the 60° tilt of the tour (gtFitCalc, 52); a drag detaches it until the next step of the story
+function suFollow(fn, dmin = 160, D = GT_OFF) { SU.cam = { fn, D, dmin, frame: true }; fly = null; }
+function suView(pts, D = GT_TOP, dmin = 0, lift = 30) { SU.cam.fn = null; if (!stage.clientWidth) return; const f = gtFitCalc(pts, D, dmin, lift); flyTo(f.target, f.pos, 2.2); }
+controls.addEventListener('start', () => { if (SU.tok) SU.cam.frame = false; });
+function stepSupply(rdt, dt) {
+  if (!SU.tok) return;
+  if (playing) SU.clock += rdt;
+  for (let i = SU.beats.length - 1; i >= 0; i--) if (SU.clock >= SU.beats[i].until) { SU.beats[i].res(); SU.beats.splice(i, 1); }
+  for (let i = SU.sims.length - 1; i >= 0; i--) if (simT >= SU.sims[i].until) { SU.sims[i].res(); SU.sims.splice(i, 1); }
+  suUtil(dt);
+  const C = SU.cam; if (C.fn && C.frame && !fly && stage.clientWidth) { const f = gtFitCalc(C.fn(), C.D, C.dmin), k = 1 - Math.exp(-rdt * 2.5); controls.target.lerp(f.target, k); camera.position.lerp(f.pos, k); }
+  suPlace(SU.labels, camera.position.distanceTo(SU_BOH) < 1800); suPlace(SU.cards); suPlace(SU.calls);
+  SU.t += rdt; if (SU.t > 0.3) { SU.t = 0; suDraw(); }
+}
+// ===== Supply scenario, part 2 (2026-10-22, v089): the story, start / stop. Model, dashboard, cards and the frame step are in 55.
+// One day of supply in about two minutes: unscheduled food call by sea (crane, AGVs, cold store, reefer multi-drop), the linen loop through WH-1, a diesel tanker to the tank farm.
+// Movement rules: the vessel and the tanker on the water grid (seaLegs), the trucks and the AGVs on roads (road), no one off a network. Robot names as in ROBOTS (proforma-data.js).
+function suActor(id, mesh, medium, type, col) {
+  scene.add(mesh); mesh.visible = false;
+  if (col !== undefined) { const mk = beacon(col); mk.scale.set(0.014, 0.014, 1); mk.position.y = (FM[type] ? FM[type].height_m : 2) + 4; mesh.add(mk); }
+  const a = { id: 'SU-' + id, type, mesh, medium, heading: 0, task: '' }; actors['SU-' + id] = a; return a;
+}
+function suAgv(n) { const g = new THREE.Group(); g.add(box(1.6, 0.6, 1.2, 0x6f9fd8, 0, 0.3, 0)); const load = box(1.1, 0.9, 1.0, 0xd9c7a0, 0, 1.05, 0); g.add(load); const a = suActor('AGV-' + n, g, 'road', 'agv', TYPE_COL.L5 || 0x6f9fd8); a.load = load; return a; }
+function suItem(k, what, kg, st = 'order') { const i = { what, kg, st }; (SU.items[k] ||= []).push(i); return i; }
+const suRoad = (from, to) => { const r = road(from, to); if (!r) console.warn('supply: no road', from.toArray().map(v => v | 0), '->', to.toArray().map(v => v | 0)); return r; };
+// the supply vessel: an idle ambient SV from the mainland port (its own loop pauses while f.gt is set), else one of our own
+function suVessel() {
+  const f = ambient.find(v => v.type === 'W2' && v.place === A.cargoSea && !v.path && !v.gt);
+  if (f) { f.gt = true; f.mesh.visible = true; SU.sv = f; return f; }
+  const a = suActor('SV-3', fleetModel('W2'), 'water', 'W2', TYPE_COL.W2); placeAt(a, A.cargoSea.clone().setY(waterY)); return a;
+}
+function suVesselBack() {
+  const f = SU.sv; if (!f) return; SU.sv = null;
+  if (f.path) { f.path = null; placeAt(f, A.cargoSea.clone().setY(waterY)); }
+  f.gt = false; f.onDone = null; f.place = A.cargoSea; f.dockedAt = undefined; f.task = 'At the mainland port'; f.wait = 2;
+}
+async function suStory(tok) {
+  const U = SU_U, chk = () => suChk(tok);
+  gtJump(11); suMul(1);
+  // A. what the island runs on
+  suView(SU_INF.map(r => r[2]), GT_TOP, 0, 40);
+  gtBanner('<b>Supply</b> · what the island runs on: stores, laundry, medical, fuel, power, water, sewage · utilities live top-left'); await suBeat(6); chk();
+  // B. an unscheduled order: a private dinner for 40 at the Rotunda the same evening
+  const fish = suItem('Restaurant', 'Fish, shellfish, produce', 620), club = suItem('Beach Club', 'Fish and produce', 180), hot = suItem('Beach Hotel', 'Fresh produce, dairy', 400);
+  for (const k of ['Restaurant', 'Beach Club', 'Beach Hotel']) outlets[k].orders++; const tOrder = simT;
+  suView([WH.cold, SU_OP.Restaurant, SU_OP['Beach Club'], SU_OP['Beach Hotel']], GT_TOP, 0, 40);
+  gtBanner('<b>11:00 · unscheduled order</b> · private dinner for 40 at the Rotunda tonight · the stock system finds 1,200 kg short');
+  suCall(WH.cold, 'package', 'WH-3 Cold store · 1,200 kg short', 'call-off to the mainland supplier · SV sails at 11:20', 'live', 18); await suBeat(5); chk();
+  // C. the supply vessel sails, mainland port → Service dock, on the water grid
+  const sv = suVessel(); sv.task = 'Unscheduled call · 1.2 t cold chain · mainland → Service dock';
+  suCall(A.cargoBerth, 'ship', `Unscheduled call · ${sv.id}`, 'autonomous · 1 remote operator', 'live', 14);
+  gtBanner(`<b>${sv.id}</b> · autonomous supply vessel · mainland → Service dock`); suMul(6);
+  suFollow(() => [sv.mesh.position, A.cargoBerth], 260);
+  await move(sv, seaLegs([A.cargoSea, A.cargoBerth]), 14); chk();
+  // D. unloading: the remote-operated crane lands 6 reefer pallets, 3 AGVs carry them to WH-3
+  suMul(4); const crane = suCall(A.dock, 'wrench', 'Remote-operated crane', '6 reefer pallets · 200 kg each', 'live', 16);
+  const wh = suCall(WH.cold, 'package', 'WH-3 Cold store · 0 of 6 pallets in', '2 °C cold chain', 'live', 18);
+  gtBanner('<b>Unloading</b> · Remote-operated crane · AGV (goods and linen) × 3 · Service dock → WH-3 by the service road');
+  const toWh = suRoad(A.dock, WH.cold), back = toWh && toWh.slice().reverse(); let inN = 0;
+  suFollow(() => [A.dock, WH.cold], 200);
+  const agvRun = async n => {
+    const a = suAgv(n); placeAt(a, toWh[0]); await suSim(n * 2); chk();
+    for (let trip = 0; trip < 2; trip++) {
+      a.load.visible = true; a.task = 'Reefer pallet 200 kg · Service dock → WH-3'; await move(a, toWh, 9); chk();
+      STORE.cold.stock = Math.min(STORE.cold.cap, STORE.cold.stock + 200); supply.inKg += 200; logDelivery('Reefer pallet', 'Service dock', 'WH-3 Cold storage', 200);
+      inN++; wh.set(`WH-3 Cold store · ${inN} of 6 pallets in`, '2 °C cold chain'); crane.set('Remote-operated crane', `${6 - inN} pallets left aboard`);
+      a.load.visible = false; if (trip === 0) { a.task = 'Empty · back to the Service dock'; await move(a, back, 9); chk(); }
+    }
+    scene.remove(a.mesh); delete actors[a.id];
+  };
+  if (toWh) await Promise.all([0, 1, 2].map(agvRun)); chk();
+  wh.set('WH-3 Cold store · 1,200 kg in', 'picked into 3 drops'); crane.set('Remote-operated crane', 'done · SV free to sail');
+  // E. the vessel goes back; the reefer truck runs one multi-drop loop WH-3 → Rotunda → Beach Club → Beach Hotel → WH-3
+  move(sv, seaLegs([A.cargoBerth, A.cargoSea]), 14).then(() => { if (SU.tok === tok) suVesselBack(); });
+  const rt = suActor('RT-1', fleetModel('L4'), 'road', 'L4', TYPE_COL.L4); const drops = [['Restaurant', fish], ['Beach Club', club], ['Beach Hotel', hot]];
+  placeAt(rt, roadR.posOf(...roadR.nearest(WH.cold))); for (const [, i] of drops) i.st = 'way';
+  gtBanner('<b>RT-1 reefer truck</b> · one loop, three drops · Rotunda → Beach Club → Beach Hotel'); suMul(10);
+  suFollow(() => [rt.mesh.position, ...drops.map(d => outletAt[d[0]])], 200);
+  let at = rt.pos.clone();
+  for (const [k, i] of drops) {
+    rt.task = `Cold chain 2 °C · ${i.what} ${i.kg} kg → ${SU_NAME[k] || k}`; await move(rt, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k];
+    const c = suCall(outletAt[k], 'utensils', `${SU_NAME[k] || k} · ${i.kg} kg in`, 'robot cart to the kitchen cold room', 'ok', 12);
+    await suSim(5); chk();
+    outlets[k].stock += i.kg; supply.truckKg += i.kg; STORE.cold.stock = Math.max(0, STORE.cold.stock - i.kg); logDelivery(i.what, 'WH-3 Cold storage', k, i.kg);
+    i.st = 'done'; i.t = clockText(); c.set(`${SU_NAME[k] || k} · delivered ${i.t}`);
+  }
+  rt.task = 'Empty · back to WH-3'; await move(rt, suRoad(at, roadR.posOf(...roadR.nearest(WH.cold))), 18); chk(); scene.remove(rt.mesh); delete actors[rt.id];
+  gtBanner(`<b>Order closed</b> · ${suDur(simT - tOrder)} from the order to the last drop · no outlet ran short`); await suBeat(3); chk();
+  // F. the linen loop: soiled linen from the hotel and the restaurant to WH-1, wash and fold, clean linen back (straight after the food run, same afternoon)
+  suMul(10); const tLin = simT;
+  const lin = { 'Beach Hotel': 380, Restaurant: 60 }, li = {}; for (const k in lin) li[k] = suItem(k, 'Soiled linen out', lin[k], 'order'), li[k].lab = 'Pick-up';
+  const lv = suActor('LV-1', fleetModel('L4'), 'road', 'L4', TYPE_COL.L4), wh1 = roadR.posOf(...roadR.nearest(WH.laundry)); placeAt(lv, wh1);
+  gtBanner('<b>Linen loop</b> · LV-1 collects soiled linen · Beach Hotel → Rotunda → WH-1 Laundry');
+  suFollow(() => [lv.mesh.position, wh1, ...Object.keys(lin).map(k => outletAt[k])], 200);
+  at = wh1;
+  for (const k in lin) { li[k].lab = 'Collecting'; li[k].st = 'way'; lv.task = `Linen pick-up · ${SU_NAME[k] || k}`; await move(lv, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k]; await suSim(4); chk(); li[k].st = 'done'; li[k].lab = 'Collected'; li[k].t = clockText(); }
+  lv.task = 'Soiled linen 440 kg · to WH-1 Laundry'; await move(lv, suRoad(at, wh1), 18); chk();
+  supply.linenKg += 440; logDelivery('Soiled linen', 'Beach Hotel, Rotunda', 'WH-1 Laundry', 440);
+  suView([WH.laundry, WH.prep], GT_OFF, 140, 30); suMul(20);
+  const st = suCall(WH.laundry, 'shirt', 'WH-1 Laundry · sort', '440 kg in', 'live', 18);
+  for (const [name, min] of [['Sort', 15], ['Tunnel washer line', 45], ['Dry and iron', 40], ['Folding robot', 30], ['Clean carts loaded', 10]]) { st.set(`WH-1 Laundry · ${name}`, `${min} min · 440 kg`); await suSim(min); chk(); }
+  for (const k in lin) { const i = suItem(k, 'Clean linen', lin[k], 'way'); i.lab = 'Arriving'; delete SU.items[k][SU.items[k].indexOf(li[k])]; SU.items[k] = SU.items[k].filter(Boolean); li[k] = i; }
+  suMul(10); gtBanner(`<b>Clean linen back</b> · same loop · ${suDur(simT - tLin)} from the first pick-up to the clean carts`);
+  suFollow(() => [lv.mesh.position, wh1, ...Object.keys(lin).map(k => outletAt[k])], 200);
+  at = wh1;
+  for (const k in lin) { lv.task = `Clean linen ${lin[k]} kg → ${SU_NAME[k] || k}`; await move(lv, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k]; await suSim(4); chk(); li[k].st = 'done'; li[k].lab = ''; li[k].t = clockText(); logDelivery('Clean linen', 'WH-1 Laundry', k, lin[k]); }
+  await move(lv, suRoad(at, wh1), 18); chk(); scene.remove(lv.mesh); delete actors[lv.id];
+  // G. diesel: a coastal tanker berths at the Service dock and pumps 300 m³ into the tank farm by the hose line along the service road
+  suMul(8); const tk = suActor('TK-1', fleetModel('W2'), 'water', 'W2', 0xd08a1f); placeAt(tk, A.cargoSea.clone().setY(waterY)); tk.task = 'Diesel tanker · 300 m³ · mainland → Service dock';
+  gtBanner(`<b>Diesel</b> · coastal tanker TK-1 · 300 m³ · tank farm at ${Math.round(100 * U.diesel / U.dieselCap)} % (${(U.diesel / U.dayBurn).toFixed(0)} days of gen-set fuel)`);
+  suFollow(() => [tk.mesh.position, A.cargoBerth], 260);
+  await move(tk, seaLegs([A.cargoSea, A.cargoBerth]), 14); chk();
+  const hose = suRoad(A.dock, SU_TANKS);
+  if (hose) { const g = new THREE.BufferGeometry().setFromPoints([A.cargoBerth.clone().setY(0.6), ...hose.map(p => p.clone().setY((p.y || 0) + 0.6))]); const ln = new THREE.Line(g, new THREE.LineDashedMaterial({ color: 0xd08a1f, dashSize: 4, gapSize: 3 })); ln.computeLineDistances(); ln.renderOrder = 7; scene.add(ln); SU.fx.push(ln); }
+  suView([A.cargoBerth, SU_TANKS, A.dock], GT_OFF, 160, 30); suMul(20);
+  const pump = suCall(SU_TANKS, 'fuel', 'Diesel tank farm · pumping 150 m³/h', '', 'live', 14);
+  const d0 = U.diesel, t0 = simT;
+  while (simT - t0 < 120) { await suSim(2); chk(); U.diesel = Math.min(U.dieselCap, d0 + 2.5 * (simT - t0)); pump.set('Diesel tank farm · pumping 150 m³/h', `${fmt(U.diesel)} of ${U.dieselCap} m³ · +${fmt(U.diesel - d0)} m³`); }
+  U.diesel = Math.min(U.dieselCap, d0 + 300); pump.set('Diesel tank farm · full load in', `${fmt(U.diesel)} m³ · ${(U.diesel / U.dayBurn).toFixed(0)} days`); logDelivery('Diesel 300 m³', 'TK-1 tanker', 'Tank farm', 255000);
+  for (const ln of SU.fx) { scene.remove(ln); ln.geometry.dispose(); } SU.fx = [];
+  suMul(8); tk.task = 'Empty · Service dock → mainland'; move(tk, seaLegs([A.cargoBerth, A.cargoSea]), 14).then(() => { if (actors[tk.id]) { scene.remove(tk.mesh); delete actors[tk.id]; } });
+  // H. back to the overview; the dashboard and the cards stay live
+  await suBeat(3); chk(); suMul(1);
+  suView(SU_INF.map(r => r[2]).concat(SU_OUT.map(k => SU_OP[k]).filter(Boolean)), GT_TOP, 0, 40);
+  gtBanner('<b>Supply loop closed</b> · food, linen and fuel in · water, power and sewage run on their own · press Supply to leave');
+}
+const suMul = m => gtMul(m);
+const suDur = min => { const m = Math.round(min); return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
+function suClear() {
+  SU.beats = []; SU.sims = []; SU.cam = { fn: null, D: null, dmin: 0, frame: false }; SU.items = {}; SU.calls = [];
+  suVesselBack();
+  for (const k of Object.keys(actors)) if (k.startsWith('SU-')) { const a = actors[k]; scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors[k]; }
+  for (const ln of SU.fx) { scene.remove(ln); ln.geometry.dispose(); } SU.fx = [];
+  if (SU.root) SU.root.remove(); if (SU.dash) SU.dash.remove(); SU.root = SU.dash = null; SU.labels = []; SU.cards = [];
+}
+const suBtn = () => document.querySelector('#scenSw button[data-scen="supply"]');
+function suStart() {
+  gtStop(); if (typeof opStop === 'function') opStop(); suClear(); SU.tok = ++SU.runs; stage.classList.add('supply'); const b = suBtn(); if (b) b.classList.add('on');
+  playing = true; $('bPlay').textContent = 'Pause'; $('bPlay').classList.add('on'); setAutoCam(false);
+  suBuild(); suDraw();
+  suStory(SU.tok).catch(e => { if (e !== SU_STOP) console.error(e); });
+}
+function suStop() {
+  if (!SU.tok && !stage.classList.contains('supply')) return;
+  SU.tok = 0; suClear(); stage.classList.remove('supply'); const b = suBtn(); if (b) b.classList.remove('on'); gtMul(1); gtBanner('');
+}
+{ const b = suBtn(); if (b) b.onclick = () => (SU.tok ? suStop() : suStart()); }
+$('scenSw').addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.scen !== 'supply' && SU.tok) suStop(); }, true);   // another scenario ends this one; capture: before that button starts its own
+window.__supply = { start: suStart, stop: suStop, state: SU, util: SU_U };
+// ===== Operations scenario, part 1 (2026-10-22): the island's own robots at work, in one run (founder: «много не надо», «не пересложняй»).
+// A fleet dashboard top-left (counts by type and state: the live fleet `ambient` + the units below), robot mowers on the lawns, patrol drones over the beaches,
+// the lifebuoy drone beat, marina service at the berths (smart pedestal + pump-out cart; YS_RATE / ysLog from 32). The story is in 58. The island's base loop runs on underneath.
+// Register types (rubiqos-site-src/proforma-data.js ROBOTS): mower, dronePatrol, droneRescue, pedestal, pumpout. The fleet GLB has no mower or drone model:
+// massing boxes at true size here (open item: no Model Register entry). Full working in vault 2. Architecture/Operations Scenario — 2026-10-22.md.
+const opCss = document.createElement('style');
+opCss.textContent = `
+  .ops #layersPanel { display: none; }
+  #opDash { position: absolute; left: 12px; top: 12px; z-index: 6; width: 292px; background: #fff; border-radius: 12px; box-shadow: 0 6px 18px rgba(10, 18, 32, 0.16); padding: 10px 12px 8px;
+    font: 12px/1.35 "DM Sans", system-ui, sans-serif; color: #0a1220; }
+  #opDash h4 { margin: 0 0 2px; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: #5b6676; font-weight: 600; }
+  #opDash .now { margin: 0 0 6px; font-weight: 600; color: #2457e6; min-height: 16px; }
+  #opDash table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  #opDash th { font-size: 10px; font-weight: 600; color: #5b6676; text-align: right; padding: 0 0 3px 4px; } #opDash th:first-child, #opDash td:first-child { text-align: left; padding-left: 0; }
+  #opDash td { padding: 2px 0 2px 4px; text-align: right; border-top: 1px solid rgba(10, 18, 32, 0.07); } #opDash td.z { color: #c3cad4; }
+  #opDash tr.op td:first-child { font-weight: 600; } #opDash tr.sep td { border-top: 1px solid rgba(10, 18, 32, 0.25); }
+  #opDash small { display: block; margin-top: 5px; color: #5b6676; font-variant-numeric: tabular-nums; }
+  .gcall.alert svg { background: #d93b2b; }`;
+document.head.appendChild(opCss);
+const OP_ICON = { lifebuoy: 'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20zM12 8a4 4 0 1 0 0 8 4 4 0 1 0 0-8zM4.93 4.93l4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24' };   // Lucide (ISC), as ICON in 24
+const opIcon = k => `<svg viewBox="0 0 24 24"><path d="${OP_ICON[k] || ICON[k] || ICON.star}"/></svg>`;
+// --- dashboard rows: the live fleet by type (30, 31) and the scenario's own units; states: moving (empty / repositioning), on a job, charging, idle
+const OP_FLEET = [['L1', 'L1 pods'], ['L2', 'L2 shuttles'], ['L3', 'L3 service carts'], ['L4', 'L4 trucks'], ['L5', 'L5 delivery robots'], ['W1', 'W1 shuttle boats'], ['W2', 'W2 supply vessels'], ['W3', 'W3 excursion boat'], ['A1', 'A1 helicopter']];
+const OP_OWN = [['mower', 'Robot mowers'], ['dronePatrol', 'Patrol drones'], ['droneRescue', 'Lifebuoy drone'], ['pumpout', 'Pump-out cart']];
+const OP_COL = { mower: 0x4f9a4a, dronePatrol: 0x2457e6, droneRescue: 0xd93b2b, pumpout: 0x9fcb7c, lifeguard: 0xf2c230 };
+const OP_SPEED = { mow: 18, drive: 40, drone: 100, rescue: 300, swim: 60 };      // m per motion-minute (60: ×2 = m per sim-minute): mower 0.6 m/s mowing, drones 3.3 / 10 m/s, lifeguard 2 m/s
+const OP_ALT = { patrol: 35, rescue: 18 };                                       // flight height, m over the ground / sea
+const opState = f => f.charging > 0 || f.toCharge ? 'ch' : f.path ? (/^(Empty|Return|Back)/i.test(f.task || '') ? 'mv' : 'job') : 'idle';
+// --- state; beats run on real seconds (paused with the clock)
+const OP = { tok: 0, runs: 0, clock: 0, beats: [], units: [], calls: [], fx: [], bands: [], berths: [], dash: null, now: '', t: 0, cam: { fn: null, D: null, dmin: 0, frame: false }, mul: 1, n: { mowed: 0, patrolKm: 0, water: 0, pump: 0 } };
+const OP_STOP = new Error('operations scenario stopped');
+const opChk = tok => { if (tok !== OP.tok) throw OP_STOP; };
+const opBeat = sec => new Promise(res => OP.beats.push({ until: OP.clock + sec, res }));
+function opSpeed(m) { OP.mul = m; speedMul = m; $('bSpeed').textContent = `Speed ${m}×`; }
+function opBuild() {
+  const d = OP.dash = document.createElement('div'); d.id = 'opDash';
+  const tr = ([k, t], cls = '') => `<tr class="${cls}" data-k="${k}"><td>${t}</td><td></td><td></td><td></td><td></td><td></td></tr>`;
+  d.innerHTML = `<h4>Fleet operations · live</h4><div class="now"></div><table><tr><th></th><th>Moving</th><th>On job</th><th>Charging</th><th>Idle</th><th>All</th></tr>
+    ${OP_FLEET.map(r => tr(r)).join('')}${OP_OWN.map((r, i) => tr(r, i ? 'op' : 'op sep')).join('')}</table><small data-v="foot"></small>`;
+  stage.appendChild(d);
+}
+function opDraw() {
+  const c = {}; const add = (k, st) => { const r = c[k] ||= { mv: 0, job: 0, ch: 0, idle: 0, n: 0 }; r[st]++; r.n++; };
+  for (const f of ambient) add(f.type, opState(f));
+  for (const u of OP.units) add(u.type, u.st || 'idle');
+  for (const tr of OP.dash.querySelectorAll('tr[data-k]')) { const r = c[tr.dataset.k] || { mv: 0, job: 0, ch: 0, idle: 0, n: 0 }, td = tr.children;
+    ['mv', 'job', 'ch', 'idle', 'n'].forEach((k, i) => { td[i + 1].textContent = r[k]; td[i + 1].className = r[k] ? '' : 'z'; }); }
+  OP.dash.querySelector('.now').textContent = OP.now;
+  const ped = OP.berths.length, n = OP.n;
+  OP.dash.querySelector('[data-v="foot"]').textContent = `Lawn mowed ${(n.mowed / 1000).toFixed(2)} km of stripe · patrol ${n.patrolKm.toFixed(1)} km · pedestals live ${ped} · water ${n.water.toFixed(1)} m³ · pump-out ${n.pump.toFixed(1)} m³`;
+}
+// --- units: massing at true size (assumptions: mower 1.2 × 0.9 × 0.5 m large-area class; patrol drone 1.2 m span; lifebuoy drone 1.8 m span) + a beacon in the type colour
+function opModel(type) {
+  const g = new THREE.Group();
+  if (type === 'mower') g.add(box(1.2, 0.4, 0.9, 0x4f9a4a, 0, 0.3), box(0.4, 0.12, 0.6, 0x2b3440, -0.2, 0.56));
+  else if (type === 'pumpout') return fleetModel('L3');
+  else if (type === 'lifeguard') return personModel(OP_COL.lifeguard);
+  else { const s = type === 'droneRescue' ? 1.5 : 1, col = OP_COL[type];
+    g.add(box(0.5 * s, 0.22 * s, 0.5 * s, col), box(1.2 * s, 0.06, 0.08, 0x2b3440), box(0.08, 0.06, 1.2 * s, 0x2b3440));
+    for (const [x, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) g.add(box(0.4 * s, 0.03, 0.4 * s, 0x2b3440, x * 0.6 * s, 0.06, z * 0.6 * s));
+    if (type === 'droneRescue') { const r = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.11, 8, 20), mat(0xf07a1a)); r.rotation.x = Math.PI / 2; r.position.y = -0.35; r.name = 'opBuoy'; g.add(r); } }
+  return g;
+}
+function opUnit(id, type, p, medium, task = '') {
+  const mesh = opModel(type), mk = beacon(OP_COL[type]); mk.scale.set(0.016, 0.016, 1); mk.position.y = (type === 'pumpout' && FM.L3 ? FM.L3.height_m : 1) + 4; mesh.add(mk);
+  scene.add(mesh); const a = { id: 'OP-' + id, type, mesh, medium, heading: 0, task, st: 'idle' }; actors[a.id] = a; OP.units.push(a); placeAt(a, p); return a;
+}
+// --- callouts (the .gcall look of the guest tour, 52): at most three on the map; kind '', ok, live, alert
+function opCall(p, icon, title, sub = '', kind = 'live', lift = 10) {
+  const el = document.createElement('div'); el.className = 'gcall ' + kind; el.innerHTML = `${opIcon(icon)}<div><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`; stage.appendChild(el);
+  const c = { el, p, lift, set: (t, s, k) => { el.querySelector('b').textContent = t; const sp = el.querySelector('span'); if (sp && s !== undefined) sp.textContent = s; if (k !== undefined) el.className = 'gcall ' + k; } }; OP.calls.push(c);
+  while (OP.calls.length > 3) OP.calls.shift().el.remove();
+  return c;
+}
+// --- effects: a ring that spreads (once, or looping until cleared) and the mowed band behind a mower
+function opPing(p, col = 0x2457e6, loop = false, size = 14) {
+  const m2 = new THREE.MeshBasicMaterial({ color: col, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide });
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.75, 1, 40), m2); m.rotation.x = -Math.PI / 2; m.position.copy(p).setY(p.y + 1); m.renderOrder = 19; scene.add(m);
+  const f = { g: m, t: 0, life: loop ? Infinity : 1.8, step(t) { const k = (t % 1.8) / 1.8; m.scale.setScalar(size * (0.3 + k)); m2.opacity = 0.9 * (1 - k); } }; OP.fx.push(f); return f;
+}
+const OP_BAND = { w: 5, col: 0xd5ecb0 };                                         // one drawn band stands for the passes between two stripes (stripe spacing 6 m)
+function opBand(a, u) {                                                          // a light band from the stripe start to the mower, on the lawn
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1, OP_BAND.w), new THREE.MeshBasicMaterial({ color: OP_BAND.col, transparent: true, opacity: 0.75, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  m.rotation.x = -Math.PI / 2; m.rotation.order = 'YXZ'; scene.add(m); const b = { m, a: a.clone(), u, len: 0 }; OP.bands.push(b); return b;
+}
+function opBandStep(b) {
+  const p = b.u.pos, dx = p.x - b.a.x, dz = p.z - b.a.z, L = Math.hypot(dx, dz); if (L < 0.1) { b.m.visible = false; return; }
+  b.m.visible = true; b.m.scale.x = L; b.m.rotation.y = Math.atan2(-dz, dx); b.m.position.set((p.x + b.a.x) / 2, Math.max(p.y, b.a.y) + 0.12, (p.z + b.a.z) / 2); b.len = L;
+}
+// --- lawn stripes: down rays on the lawn mesh of the GLB (group 'landscape', material 'Lawn'); boustrophedon rows across the lawn, 1.5 m in from its edge
+const _opRay = new THREE.Raycaster(), _opDn = new THREE.Vector3(0, -1, 0), _opO = new THREE.Vector3();
+function opLawnRows(name, step = 6, max = 6, from = null) {
+  const m = byName.get(name); if (!m) { console.warn('no lawn', name); return null; }
+  m.updateWorldMatrix(true, true); const bb = new THREE.Box3().setFromObject(m), rows = [];
+  const zs = []; for (let z = bb.min.z + step / 2; z < bb.max.z; z += step) zs.push(z);
+  if (from && Math.abs(from.z - bb.max.z) < Math.abs(from.z - bb.min.z)) zs.reverse();   // start on the side the mower comes from
+  for (const z of zs) {
+    if (rows.length >= max) break;
+    let run = null, best = null;
+    for (let x = bb.min.x + 0.5; x <= bb.max.x + 2; x += 2) {
+      _opRay.set(_opO.set(x, bb.max.y + 30, z), _opDn); const h = x <= bb.max.x ? _opRay.intersectObject(m, true)[0] : null;
+      if (h) { if (!run) run = [h.point.clone(), null]; run[1] = h.point.clone(); }
+      else if (run) { if (!best || run[1].x - run[0].x > best[1].x - best[0].x) best = run; run = null; }
+    }
+    if (!best || best[1].x - best[0].x < 10) continue;
+    best[0].x += 1.5; best[1].x -= 1.5;
+    rows.push(rows.length % 2 ? [best[1], best[0]] : best);
+  }
+  return rows;
+}
+// --- camera: opView fits points at the 60° tilt of the tour (gtFitCalc, 52); opFollow keeps live points in the frame; a drag detaches it until the next step
+// opFit: gtFitCalc over the whole width, then pulled back and shifted so the points sit right of the dashboard card (top-left)
+const _opR = new THREE.Vector3(), _opUP = new THREE.Vector3(0, 1, 0);
+function opFit(pts, D, dmin) {
+  const f = gtFitCalc(pts, D, dmin, 30), W = stage.clientWidth, dash = $('opDash');
+  const wd = dash ? dash.getBoundingClientRect().right - stage.getBoundingClientRect().left + 16 : 0;
+  if (!W || wd <= 0 || wd > W * 0.5) return f;
+  const d = f.d * W / (W - wd), th = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * W / stage.clientHeight;
+  _opR.copy(D).negate().cross(_opUP).normalize();                            // screen right
+  const target = f.target.clone().addScaledVector(_opR, -th * d * wd / W);   // centre moves left by wd/2 px → the points move right of the card
+  return { target, pos: target.clone().addScaledVector(D, d), d };
+}
+function opView(pts, dmin = 0, D = GT_TOP) { OP.cam.fn = null; const f = opFit(pts, D, dmin); flyTo(f.target, f.pos, 2.2); }
+function opFollow(fn, dmin = 160, D = GT_OFF) { OP.cam = { fn, D, dmin, frame: true }; fly = null; }
+controls.addEventListener('start', () => { if (OP.tok) OP.cam.frame = false; });
+const _opv = new THREE.Vector3();
+function stepOps(rdt, dt) {
+  if (!OP.tok) return;
+  if (playing) OP.clock += rdt;
+  for (let i = OP.beats.length - 1; i >= 0; i--) if (OP.clock >= OP.beats[i].until) { OP.beats[i].res(); OP.beats.splice(i, 1); }
+  for (let i = OP.fx.length - 1; i >= 0; i--) { const f = OP.fx[i]; f.t += rdt; f.step(f.t); if (f.t > f.life) { scene.remove(f.g); OP.fx.splice(i, 1); } }
+  for (const b of OP.bands) if (b.live) opBandStep(b);
+  const C = OP.cam; if (C.fn && C.frame && !fly) { const f = opFit(C.fn(), C.D, C.dmin), k =1 - Math.exp(-rdt * 2.5); controls.target.lerp(f.target, k); camera.position.lerp(f.pos, k); }
+  for (const c of OP.calls) { const s = toScreen(_opv.copy(c.p).setY((c.p.y || 0) + c.lift)); c.el.style.display = s ? '' : 'none'; if (s) { c.el.style.left = s[0] + 'px'; c.el.style.top = s[1] + 'px'; } }
+  const btn = document.querySelector('#scenSw button[data-scen="ops"]'); if (btn && !btn.classList.contains('on')) btn.classList.add('on');   // 51 clears every Scenarios button on a style change
+  OP.t += rdt; if (OP.t > 0.5) { OP.t = 0; opDraw(); }
+}
+// ===== Operations scenario, part 2 (2026-10-22): the story, start / stop, the Scenarios button.
+// Order: dashboard on → 3 robot mowers leave the Fleet Hub by road, mow their lawns, drive back and charge → 2 patrol drones loop over the north and south beaches →
+// marina round (smart pedestals live, one pump-out cart from Marina Support to two berths) → a swimmer in trouble: the lifebuoy drone drops a ring, the lifeguards are alerted.
+// Mowers and drones keep working after the story ends; a second click on the button ends the scenario.
+const OP_LAWNS = ['Lawn.005', 'Lawn.004', 'Lawn.003'];                           // the resort lawns nearest the Fleet Hub (GLB group 'landscape')
+const opP = (p, y) => new THREE.Vector3(p.x, y, p.z);
+const opPoi = (cat, re) => (POI[cat] || []).filter(q => re.test(q.name));
+async function opMower(i, lawn, tok) {
+  const u = opUnit('Mower' + (i + 1), 'mower', A.fleet, 'walk', `Robot mower ${i + 1} · to ${lawn.replace('Lawn.0', 'lawn ')}`);
+  const rows = opLawnRows(lawn, 6, 6, A.fleet); if (!rows || !rows.length) { u.st = 'idle'; return; }
+  const gate = roadR.posOf(...roadR.nearest(rows[0][0])), out = road(A.fleet, gate);
+  u.st = 'mv'; if (out) await move(u, out, OP_SPEED.drive); else placeAt(u, gate); opChk(tok);
+  u.st = 'job'; u.task = `Robot mower ${i + 1} · mowing ${lawn.replace('Lawn.0', 'lawn ')}`;
+  await move(u, [gate, rows[0][0]], OP_SPEED.drive); opChk(tok);              // off the road onto its lawn: the mower's job area
+  for (let r = 0; r < rows.length; r++) {
+    const [a, b] = rows[r], band = opBand(a, u); band.live = true;
+    await move(u, [a, b], OP_SPEED.mow); opChk(tok); opBandStep(band); band.live = false; OP.n.mowed += band.len;
+    if (rows[r + 1]) { await move(u, [b, rows[r + 1][0]], OP_SPEED.mow); opChk(tok); }
+  }
+  u.st = 'mv'; u.task = `Robot mower ${i + 1} · back to the Fleet Hub`;
+  const end = u.pos.clone(), g2 = roadR.posOf(...roadR.nearest(end)), back = road(g2, A.fleet);
+  await move(u, [end, g2], OP_SPEED.drive); opChk(tok); if (back) { await move(u, back, OP_SPEED.drive); opChk(tok); }
+  placeAt(u, u.pos.clone().add(new THREE.Vector3((i - 1) * 2.5, 0, 0)));   // three bays side by side, not one point
+  u.st = 'ch'; u.task = `Robot mower ${i + 1} · charging at the Fleet Hub`;
+}
+async function opPatrol(id, pts, sea, dock, tok) {                               // a loop: along the beach line, back 60 m out over the water; take-off from its dock
+  const u = opUnit('Drone' + id, 'dronePatrol', opP(dock, dock.y + 4), 'air', `Patrol drone ${id} · take-off`);
+  const air = pts.map(p => opP(p, OP_ALT.patrol)), back = [...pts].reverse().map(p => new THREE.Vector3(p.x, OP_ALT.patrol, p.z + sea));
+  u.st = 'mv'; await move(u, [u.pos.clone(), opP(dock, OP_ALT.patrol), air[0]], OP_SPEED.drone); opChk(tok);
+  u.st = 'job'; u.task = `Patrol drone ${id} · beach loop · camera on`;
+  const loop = [...air, ...back, air[0]]; let L = 0; for (let k = 1; k < loop.length; k++) L += loop[k].distanceTo(loop[k - 1]);
+  for (;;) { await move(u, loop, OP_SPEED.drone); opChk(tok); OP.n.patrolKm += L / 1000; }
+}
+async function opMarina(tok) {
+  const ms = gtPoi('crewlounge', 'Crew lounge'), bp = b => (POI.marina || []).find(q => q.name === `Berth ${b.berth_id}`);
+  const pick = berths.filter(b => b.occupied && !b.busy && bp(b)).sort((a, b) => ms ? a.pos.distanceTo(ms.p) - b.pos.distanceTo(ms.p) : 0).slice(0, 2);
+  if (!pick.length || !ms) { console.warn('operations: no berth to serve'); return; }
+  for (const b of pick) { b.busy = true; b.opHeld = true; } OP.berths = pick;                        // busy: the marina traffic (32) leaves these boats at their berths while they are served
+  opView([ms.p, ...pick.map(b => b.pos)], 260);
+  for (const b of pick) { const w = YS_RATE.water[b.cls];
+    opPing(b.pos, 0x3f8f6e, true, 10); ysLog('power', b, 0); ys.water += w; ysLog('water', b, w); OP.n.water += w;
+    opCall(b.pos, 'zap', `Smart pedestal · berth ${b.berth_id}`, `shore power on · water ${w} m³ · metered`, 'ok', 6); await opBeat(1.2); opChk(tok); }
+  const cart = opUnit('Pump', 'pumpout', ms.p, 'walk', 'Pump-out cart · dock hand'); let at = ms.p;
+  const cc = opCall(cart.mesh.position, 'wrench', 'Pump-out cart', `Marina Support → ${pick.length} berths`, 'live', 6);
+  opFollow(() => [cart.mesh.position, ...pick.map(b => b.pos)], 200);
+  for (const b of pick) {
+    const to = bp(b).p, q = YS_RATE.pump[b.cls]; cart.st = 'job'; cart.task = `Pump-out cart · to berth ${b.berth_id}`; cc.set('Pump-out cart', `to berth ${b.berth_id}`);
+    const pts = walk(at, to); if (pts) await move(cart, pts, OP_SPEED.drive); else placeAt(cart, to); opChk(tok); at = to;
+    cc.set(`Pump-out · berth ${b.berth_id}`, `≈ ${q} m³ · logged`, 'ok'); ys.pump += q; ysLog('pumpout', b, q); OP.n.pump += q; await opBeat(1.6); opChk(tok);
+  }
+  cart.st = 'mv'; cart.task = 'Pump-out cart · back to Marina Support'; cc.set('Pump-out cart', 'jobs done · back to Marina Support', 'live');
+  const home = walk(at, ms.p); (home ? move(cart, home, OP_SPEED.drive) : Promise.resolve()).then(() => { if (OP.tok === tok) { cart.st = 'idle'; cart.task = 'Pump-out cart · parked'; } });
+  for (const b of pick) { b.busy = false; b.opHeld = false; }
+}
+async function opRescue(tok) {
+  const wa = gtPoi('beach', 'Water activities'), club = gtPoi('beach', 'Beach Club'); if (!wa || !club) { console.warn('operations: no beach POI'); return; }
+  const sw = waterPoint(wa.p, [180, 200, 160, 220, 140], 400, 45); if (!sw) { console.warn('operations: no water off the beach'); return; }
+  sw.y = waterY; const tower = opPoi('beach', /^South beach/).sort((a, b) => a.p.distanceTo(sw) - b.p.distanceTo(sw))[0] || wa;
+  const prevMul = OP.mul; opSpeed(0.2);                                          // the beat is seconds long: slow the clock so it can be seen
+  // 1 · flagged: the beach camera / patrol drone video sees a swimmer in distress
+  const man = personModel(0xd93b2b); man.position.copy(sw).setY(waterY - 1.6); scene.add(man);
+  OP.fx.push({ g: man, t: 0, life: Infinity, step(t) { man.position.y = waterY - 1.6 + Math.sin(t * 5) * 0.25; } });
+  const ping = opPing(sw, 0xd93b2b, true, 16);
+  opView([sw, club.p, tower.p], 220);
+  const c1 = opCall(sw, 'users', 'Swimmer in trouble', `flagged by the beach camera · ${Math.round(sw.distanceTo(tower.p))} m out`, 'alert', 6);
+  await opBeat(2.2); opChk(tok);
+  // 2 · the lifebuoy drone flies out from its dock on the Beach Club and drops the ring
+  const d = opUnit('Rescue', 'droneRescue', opP(club.p, club.p.y + 6), 'air', 'Lifebuoy drone · launch'); d.st = 'job';
+  const over = opP(sw, waterY + OP_ALT.rescue), path = [d.pos.clone(), opP(club.p, OP_ALT.rescue + 10), over], t0 = simT;
+  const c2 = opCall(d.mesh.position, 'lifebuoy', 'Lifebuoy drone', 'launched from the Beach Club dock', 'live', 6);
+  await move(d, path, OP_SPEED.rescue); opChk(tok);
+  const sec = Math.round((simT - t0) * 60), m =Math.round(path.reduce((s, p, k) => k ? s + p.distanceTo(path[k - 1]) : 0, 0));   // simT is in sim minutes
+  const buoy = d.mesh.getObjectByName('opBuoy'), ring = buoy.clone(); buoy.visible = false; ring.position.copy(over).setY(over.y - 0.4); ring.scale.setScalar(1.5); scene.add(ring);
+  OP.fx.push({ g: ring, t: 0, life: Infinity, step(t) { const k = Math.min(1, t / 1.1); ring.position.y = over.y - 0.4 - (over.y - 0.4 - waterY - 0.2) * k * k + (k >= 1 ? Math.sin(t * 5) * 0.15 : 0); } });
+  c2.set('Lifebuoy dropped', `on scene ${sec} s after launch · ${m} m flown`, 'ok');
+  await opBeat(1.6); opChk(tok); c1.set('Swimmer holds the lifebuoy', 'drone camera on him · live to the lifeguards', 'live');
+  // 3 · the lifeguards: the nearest tower is alerted (security team, 8 lifeguards); one swims out
+  opPing(tower.p, 0xd93b2b, false, 20);
+  const c3 = opCall(tower.p, 'radiotower', 'Lifeguards alerted', `${tower.name} tower · team of 8 · one swims out`, 'alert', 8);
+  const lg = opUnit('Lifeguard', 'lifeguard', tower.p, 'air', 'Lifeguard · swims out'); lg.st = 'job';
+  await move(lg, [tower.p.clone(), opP(sw, waterY - 1.2).add(new THREE.Vector3(0, 0, -3))], OP_SPEED.swim); opChk(tok);
+  ping.life = 0; c1.set('Swimmer safe', 'lifeguard with him · back to the beach', 'ok'); c3.set('Rescue closed', `${tower.name} · logged with the drone video`, 'ok');
+  d.st = 'mv'; d.task = 'Lifebuoy drone · back to the Beach Club dock'; move(d,[d.pos.clone(), opP(club.p, OP_ALT.rescue + 10), opP(club.p, club.p.y + 6)], OP_SPEED.rescue).then(() => { if (OP.tok === tok) { d.st = 'ch'; d.task = 'Lifebuoy drone · docked, new ring loaded'; } });
+  await opBeat(2.5); opChk(tok); opSpeed(prevMul);
+}
+async function opStory(tok) {
+  OP.now = 'Fleet on duty · live counts by state'; opDraw();
+  const lawnC = OP_LAWNS.map(n => { const m = byName.get(n); return m ? new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()) : null; }).filter(Boolean);
+  opView([A.fleet, ...lawnC], 300); await opBeat(2.5); opChk(tok);
+  // 1 · mowers
+  OP.now = 'Robot mowers · Fleet Hub → lawns';
+  OP_LAWNS.forEach((n, i) => opMower(i, n, tok).catch(e => { if (e !== OP_STOP) console.error(e); }));
+  opCall(A.fleet, 'bot', 'Robot mowers · 3 sent', 'Fleet Hub → lawns 3, 4 and 5 · by road', 'live', 10);
+  await opBeat(4); opChk(tok);
+  opFollow(() => OP.units.filter(u => u.type === 'mower').map(u => u.mesh.position), 220); await opBeat(6); opChk(tok);
+  const m1 = actors['OP-Mower1']; if (m1) opCall(m1.mesh.position, 'leaf', 'Mowing · lawn 5', 'stripes 6 m apart · 0.6 m/s · back to the hub to charge', 'ok', 6);
+  await opBeat(4); opChk(tok);
+  // 2 · patrol drones
+  OP.now = 'Beach patrol · 2 drones';
+  const N = opPoi('beach', /^North beach/).map(q => q.p), S = opPoi('beach', /^South beach/).map(q => q.p);
+  const club = gtPoi('beach', 'Beach Club'), mc = gtPoi('club', 'Members Club') || gtPoi('beach', 'Members Club beach');
+  if (N.length > 1) opPatrol(1, N, -60, (mc || { p: N[0] }).p, tok).catch(e => { if (e !== OP_STOP) console.error(e); });
+  if (S.length > 1) opPatrol(2, S, 60, (club || { p: S[0] }).p, tok).catch(e => { if (e !== OP_STOP) console.error(e); });
+  opView([...N, ...S], 300);
+  if (N.length) opCall(N[2] || N[0], 'radiotower', 'Patrol drone 1 · north beach', `loop ${OP_ALT.patrol} m up · camera to the lifeguards`, 'live', OP_ALT.patrol + 6);
+  if (S.length) opCall(S[2] || S[0], 'radiotower', 'Patrol drone 2 · south beach', `loop ${OP_ALT.patrol} m up · camera to the lifeguards`, 'live', OP_ALT.patrol + 6);
+  await opBeat(7); opChk(tok);
+  // 3 · marina service
+  OP.now = 'Marina service · pedestals and pump-out';
+  await opMarina(tok); opChk(tok); await opBeat(1.5); opChk(tok);
+  // 4 · rescue
+  OP.now = 'Swimmer in trouble · lifebuoy drone';
+  await opRescue(tok); opChk(tok);
+  // 5 · the island runs on
+  OP.now = 'All units on duty · the island runs on';
+  opView([A.fleet, ...lawnC, ...N, ...S], 400);
+}
+function opClear() {
+  OP.tok = 0; for (const b of OP.beats) b.res(); OP.beats = []; OP.cam.fn = null; OP.now = '';
+  for (const u of OP.units) { scene.remove(u.mesh); u.path = null; u.onDone = null; delete actors[u.id]; } OP.units = [];
+  for (const f of OP.fx) scene.remove(f.g); OP.fx = []; for (const b of OP.bands) scene.remove(b.m); OP.bands = [];
+  for (const c of OP.calls) c.el.remove(); OP.calls = []; for (const b of OP.berths) if (b.opHeld) { b.busy = false; b.opHeld = false; } OP.berths = [];
+  if (OP.dash) { OP.dash.remove(); OP.dash = null; } OP.n = { mowed: 0, patrolKm: 0, water: 0, pump: 0 };
+}
+function opStart() {
+  if (stage.classList.contains('gtour') && window.__guestTour) window.__guestTour.stop();
+  if (window.__supply && window.__supply.stop && stage.classList.contains('supply')) window.__supply.stop();
+  opClear(); stage.classList.add('ops'); opBuild(); opSpeed(1); OP.clock = 0; const tok = OP.tok = ++OP.runs;
+  opStory(tok).catch(e => { if (e !== OP_STOP) console.error(e); });
+}
+function opStop() { if (!OP.tok && !stage.classList.contains('ops')) return; opClear(); stage.classList.remove('ops'); opSpeed(1); const b = document.querySelector('#scenSw button[data-scen="ops"]'); if (b) b.classList.remove('on'); }
+{ const b = document.createElement('button'); b.dataset.scen = 'ops'; b.textContent = 'Operations'; $('scenSw').appendChild(b);
+  b.onclick = () => { if (OP.tok) opStop(); else { opStart(); b.classList.add('on'); } }; }
+$('scenSw').addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.scen !== 'ops' && OP.tok) opStop(); });   // another scenario ends this one
+window.__opsScen = { start: opStart, stop: opStop, state: OP };   // not __ops: part 60 sets that to the fleet ops log
 // ---------- controls
 { const row = $('stageRow'); const appW = () => { let ph = Math.min(row.clientHeight - 76, 714), pw = ph * 390 / 844; const cap = row.clientWidth * 0.45 - 16; if (pw > cap) { pw = cap; ph = pw * 844 / 390; } row.style.setProperty('--appw', Math.round(pw + 16) + 'px'); row.style.setProperty('--apph', Math.round(ph + 16) + 'px'); };   // the phone 12 px from the top, 64 px from the bottom, at most 330 x 714 appW(); addEventListener('resize', appW);
   const setApp = v => { $('appPanel').classList.toggle('open', v); $('bApp').classList.toggle('on', v); stage.classList.toggle('app', v); $('bApp').innerHTML = v ? '<span>Guest app</span><span class="arr">→</span>' : '<span class="arr">←</span><span>Guest app</span>';   // arrow: where the panel goes
@@ -3037,7 +3662,7 @@ function tick(rdt, draw = true) {
   simT += dt; window.SIM_T = simT;
   const dtm = dt * MOTION;                                                  // movement runs faster than the clock-driven timers
   for (const a of Object.values(actors)) stepMover(a, dtm);
-  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE); stepGuest(rdt, dt);
+  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE); stepGuest(rdt, dt); stepSupply(rdt, dt); stepOps(rdt, dt);
   for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].until) { waiters[i].res(); waiters.splice(i, 1); }
   directCamera(rdt); controls.update();
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }   // the snapshot, drawn or not (headless frame)

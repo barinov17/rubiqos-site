@@ -1,7 +1,7 @@
 {
- "version": "v085",
- "exported": "2026-10-21 22:05",
- "changes": "changes/v085.json",
+ "version": "v087",
+ "exported": "2026-10-22 11:48",
+ "changes": "changes/v087.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -1322,6 +1322,24 @@
    "verts": 512
   },
   {
+   "name": "GREEN AREAS patch beach club old BOH pad",
+   "type": "MESH",
+   "collection": "02_Landscape/GREEN AREAS",
+   "parent": null,
+   "group": "landscape",
+   "function": "planting",
+   "zone_id": "Z00",
+   "zone_name": "Island common",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": 0.6,
+   "derived": "design edit e146",
+   "hand_made": false,
+   "material": "DWG GREEN AREAS",
+   "verts": 8
+  },
+  {
    "name": "Lawn.001",
    "type": "MESH",
    "collection": "02_Landscape/Lawn",
@@ -1661,7 +1679,7 @@
    "derived": "tropical trees, wild mode on the west cape and the villa peninsula (e118)",
    "hand_made": false,
    "material": "Tree crown",
-   "verts": 86996
+   "verts": 86896
   },
   {
    "name": "Trees | village rows",
@@ -1824,6 +1842,24 @@
    "hand_made": false,
    "material": "Road surface",
    "verts": 63678
+  },
+  {
+   "name": "loading zone link beach club",
+   "type": "MESH",
+   "collection": "04_Mobility/loading zone",
+   "parent": null,
+   "group": "mobility",
+   "function": "road",
+   "zone_id": "Z00",
+   "zone_name": "Island common",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": 0.95,
+   "derived": "design edit e146",
+   "hand_made": false,
+   "material": "Road surface",
+   "verts": 58
   },
   {
    "name": "PARKING",
@@ -2040,6 +2076,24 @@
    "hand_made": false,
    "material": "Guest road surface",
    "verts": 8
+  },
+  {
+   "name": "ROADS_GUEST link beach club drop-offs",
+   "type": "MESH",
+   "collection": "04_Mobility/ROADS_GUEST",
+   "parent": null,
+   "group": "mobility",
+   "function": "path",
+   "zone_id": "Z00",
+   "zone_name": "Island common",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": 1.0,
+   "derived": "design edit e146",
+   "hand_made": false,
+   "material": "Promenade surface",
+   "verts": 16
   },
   {
    "name": "ROADS_SERVICE surface",
