@@ -370,49 +370,67 @@ const TEAM = {
 };
 
 // Operations (founder 2026-10-21): the card shows the key operations of each object, not its workforce. At most 10 per object, each one
-// task that one actor could do (verb + object, task-statement level as in O*NET), so the next step can mark it robot / fixed automation / person.
-// TEAM above stays as the source of the Physical AI page; every people row and robot of TEAM is covered by an operation here.
+// task that one actor could do (verb + object, task-statement level as in O*NET).
+// Mark (founder 2026-10-21): who does the task with technology deployable today — R = robot (it moves: a ROBOTS 'object' or 'fleet' type),
+// A = fixed automation (machines, kiosks, sensors, software that do not move), H = human. Third item = the linked ROBOTS id: for R/A the type
+// that does it; for H the tool the person uses (pumpout) or a type not yet a product (hedge, charger). A without an id = software (booking, app).
+// Check: opsCheck() below — every id is in ROBOTS, R links a moving type, A a fixed one, every TEAM robot of the object is linked.
 const OPS = {
-  'beach-hotel': ['Check-in and check-out', 'Luggage to and from the room', 'Room cleaning and turndown', 'Linen and amenity restock', 'Breakfast and restaurant service', 'Kitchen production', 'Room service delivery', 'Pool and beach service', 'Butler requests', 'Maintenance and repairs'],
-  'apart-hotel': ['Check-in and key handover', 'Apartment cleaning', 'Linen and amenity restock', 'Parcel and grocery drop', 'Maintenance and repairs', 'Guest requests'],
-  'hill-hotel': ['Check-in and check-out', 'Luggage to and from the room', 'Room cleaning and turndown', 'Linen and amenity restock', 'Breakfast and restaurant service', 'Kitchen production', 'Room service delivery', 'Pool service and cleaning', 'Butler requests', 'Maintenance and repairs'],
-  villas: ['Arrival and villa briefing', 'Butler requests', 'Villa cleaning and turndown', 'In-villa cooking', 'Pool cleaning and water care', 'Garden and lawn care', 'Grocery and linen restock', 'Maintenance and repairs'],
-  residences: ['Owner and guest check-in', 'Concierge requests', 'Apartment cleaning (rental pool)', 'Parcel and grocery drop', 'Common-area cleaning', 'Owner services (handover, inspections)', 'Maintenance and repairs'],
-  village: ['Table service', 'Kitchen production', 'Bar service', 'Retail sales and restock', 'Market stalls set-up', 'Dish washing', 'Paths and terrace cleaning', 'Goods receiving'],
-  restaurant: ['Reservations and seating', 'Kitchen production', 'Table service', 'Wine service', 'Cocktail and bar service', 'Dish washing', 'Goods receiving and storage'],
-  'beach-club': ['Sunbed and cabana service', 'Food and drink service', 'Kitchen production', 'Cocktail and bar service', 'Beach raking and cleaning', 'Towel service', 'DJ sunset set-up'],
-  'members-club': ['Membership desk', 'Dining service', 'Kitchen production', 'Bar service', 'Pool deck service', 'Private events', 'Club cleaning'],
-  'hotel-beach': ['Sunbed set-up and towels', 'Beach raking and cleaning', 'Kiosk and bar service', 'Order at the sunbed', 'Lifeguard watch'],
-  'club-beach': ['Sunbed set-up and towels', 'Beach raking and cleaning', 'Drinks from the club', 'Water activity hand-over', 'Lifeguard watch'],
-  'water-sports': ['Bookings and waivers', 'Equipment issue and return', 'Lessons', 'Dive and snorkel trips', 'Boat crewing', 'Water rescue watch', 'Buoy and zone marking', 'Equipment washing and repair'],
-  spa: ['Bookings and reception', 'Treatments and massage', 'Longevity diagnostics', 'Thermal area attendance', 'Pool water care', 'Linen supply to rooms', 'Room reset and cleaning'],
-  sport: ['Bookings and reception', 'Personal training and classes', 'Court booking and set-up', 'Ball collection and court care', 'Equipment care', 'Clubhouse service'],
-  marina: ['Berth booking and allocation', 'Mooring and line handling', 'Power and water at the berth', 'Sewage pump-out', 'Fuel dock', 'Harbour patrol', 'Technical repairs', 'Billing'],
-  events: ['Event booking and planning', 'Set-up and breakdown', 'Sound and light', 'Stage operation', 'Ticketing and entry', 'Catering service', 'Venue cleaning'],
-  power: ['Generation dispatch', 'Solar panel cleaning', 'Battery storage control', 'Metering', 'Preventive maintenance', 'Fault response'],
-  desal: ['Reverse-osmosis plant control', 'Water quality testing', 'Storage and pressure control', 'Membrane cleaning', 'Preventive maintenance'],
-  sewage: ['Treatment plant control', 'Effluent quality testing', 'Sludge handling', 'Pipe inspection', 'Reclaimed water supply'],
-  network: ['Network monitoring (NOC)', 'Wi-Fi and cellular coverage', 'Device and sensor provisioning', 'Cyber security', 'Fault repair'],
-  stores: ['Goods receiving and checking', 'Put-away and storage', 'Cold-chain monitoring', 'Prep-kitchen production', 'Picking for outlets', 'Internal delivery', 'Stock counts'],
-  darkstore: ['Order intake', 'Picking and packing', 'Hand-over to delivery', 'Pick-up lockers', 'Restock from the warehouse'],
-  laundry: ['Collection of used linen', 'Sorting', 'Washing and drying', 'Ironing and folding', 'Delivery of clean linen', 'Stock and repair of linen'],
-  office: ['Management and planning', 'Finance and payroll', 'HR and hiring', 'Sales and revenue', 'Operator console', 'IT support'],
-  staffacc: ['Room allocation and keys', 'Room and common-area cleaning', 'Staff laundry', 'Shift-change shuttle', 'Maintenance and repairs'],
-  canteen: ['Meal production', 'Serving at shift changes', 'Ordering at kiosks', 'Dish washing', 'Goods receiving'],
-  cleaning: ['Guest room cleaning', 'Public-area cleaning', 'Floor scrubbing', 'Window cleaning', 'Pool cleaning', 'Quality inspections'],
-  landscaping: ['Lawn mowing', 'Hedge trimming', 'Irrigation', 'Beach raking', 'Planting and tree care', 'Green waste collection'],
-  waste: ['Collection from objects', 'Sorting', 'Compaction', 'Composting', 'Ship-out to the mainland'],
-  dock: ['Vessel berthing', 'Unloading and loading', 'Container and pallet handling', 'Transfer to the warehouse', 'Waste ship-out'],
-  guestservices: ['Butler requests', 'Concierge and bookings', 'Guest-app chat', 'Luggage handling', 'Info kiosks', 'Complaint handling'],
-  medical: ['Clinic consultations', 'First aid', 'Emergency response', 'Medical evacuation', 'Pharmacy and kiosks'],
-  security: ['Control room monitoring', 'Patrols', 'Drone patrol', 'Lifeguard watch', 'Fire response', 'Access control', 'Sensor alarms'],
-  'marina-support': ['Harbour office', 'Customs and crew papers', 'Technical workshop', 'Crew lounge', 'Info kiosk'],
-  'yacht-services': ['Fuel delivery', 'Hull cleaning', 'Provisioning', 'Water and power top-up', 'Line handling'],
-  'guest-dock': ['Boat arrival and mooring', 'Guest welcome', 'Luggage transfer', 'Shuttle boat dispatch', 'Check-in kiosks'],
-  'excursion-terminal': ['Excursion booking', 'Guide hand-over', 'Boarding', 'Boat crewing', 'Return and feedback'],
-  fleet: ['Job dispatch', 'Remote supervision', 'Charging', 'Cleaning of vehicles', 'Maintenance and repairs', 'Fleet planning'],
+  'beach-hotel': [['Check-in and check-out', 'A', 'kiosk'], ['Luggage to and from the room', 'R', 'luggage'], ['Room cleaning, turndown and restock', 'H'], ['Corridor and lobby floors', 'R', 'scrubber'], ['Breakfast and restaurant service', 'H'], ['Kitchen production', 'H'], ['Room service delivery', 'R', 'L5'], ['Pool cleaning', 'R', 'pool'], ['Pool, beach and butler service', 'H'], ['Maintenance and repairs', 'H']],
+  'apart-hotel': [['Check-in and key handover', 'A', 'kiosk'], ['Apartment cleaning', 'H'], ['Linen and amenity restock', 'H'], ['Corridor floors', 'R', 'scrubber'], ['Parcel and grocery drop', 'A', 'lockers'], ['Maintenance and repairs', 'H'], ['Guest requests', 'H']],
+  'hill-hotel': [['Check-in and check-out', 'A', 'kiosk'], ['Luggage to and from the room', 'R', 'luggage'], ['Room cleaning, turndown and restock', 'H'], ['Corridor and lobby floors', 'R', 'scrubber'], ['Breakfast and restaurant service', 'H'], ['Kitchen production', 'H'], ['Room service delivery', 'R', 'L5'], ['Pool cleaning', 'R', 'pool'], ['Pool and butler service', 'H'], ['Maintenance and repairs', 'H']],
+  villas: [['Arrival and villa briefing', 'H'], ['Butler requests', 'H'], ['Villa cleaning and turndown', 'H'], ['In-villa cooking', 'H'], ['Pool cleaning', 'R', 'pool'], ['Lawn mowing', 'R', 'mower'], ['Garden care', 'H'], ['Breakfast, grocery and amenity drop', 'R', 'L5'], ['Maintenance and repairs', 'H']],
+  residences: [['Owner and guest check-in', 'A', 'kiosk'], ['Concierge requests', 'H'], ['Apartment cleaning (rental pool)', 'H'], ['Parcel and grocery drop', 'A', 'lockers'], ['Common-area floors', 'R', 'scrubber'], ['Owner services (handover, inspections)', 'H'], ['Maintenance and repairs', 'H']],
+  village: [['Order taking and hosting', 'H'], ['Plate and drink running', 'R', 'table'], ['Kitchen production', 'H'], ['Bar service', 'H'], ['Shop checkout', 'A', 'kiosk'], ['Shelf restock', 'H'], ['Market stalls set-up', 'H'], ['Dish washing', 'A', 'dishline'], ['Paths and terrace floors', 'R', 'scrubber'], ['Goods receiving', 'H']],
+  restaurant: [['Reservations', 'A'], ['Greeting and seating', 'H'], ['Kitchen production', 'H'], ['Table service', 'H'], ['Wine service', 'H'], ['Cocktail mixing', 'R', 'cocktail'], ['Dish washing', 'A', 'dishline'], ['Goods receiving and storage', 'H']],
+  'beach-club': [['Sunbed and cabana service', 'H'], ['Order at the sunbed (guest app)', 'A'], ['Food and drink service', 'H'], ['Kitchen production', 'H'], ['Cocktail mixing', 'R', 'cocktail'], ['Beach raking', 'R', 'raker'], ['Towel service', 'H'], ['DJ sunset set-up', 'H']],
+  'members-club': [['Member entry', 'A', 'kiosk'], ['Dining service', 'H'], ['Kitchen production', 'H'], ['Bar service', 'H'], ['Pool deck service', 'H'], ['Private events', 'H'], ['Club floors', 'R', 'scrubber']],
+  'hotel-beach': [['Sunbed set-up and towels', 'H'], ['Beach raking', 'R', 'raker'], ['Bar service', 'H'], ['Kiosk sales', 'A', 'kiosk'], ['Order at the sunbed (guest app)', 'A'], ['Delivery to the sunbed', 'H'], ['Lifeguard watch', 'H']],
+  'club-beach': [['Sunbed set-up and towels', 'H'], ['Beach raking', 'R', 'raker'], ['Drinks from the club', 'H'], ['Water activity hand-over', 'H'], ['Lifeguard watch', 'H']],
+  'water-sports': [['Bookings and waivers', 'A'], ['Equipment issue and return', 'H'], ['Lessons', 'H'], ['Dive and snorkel trips', 'H'], ['Boat crewing', 'H'], ['Lifeguard watch', 'H'], ['Rescue float drop', 'R', 'droneRescue'], ['Swim-zone marking and weather', 'A', 'buoy'], ['Equipment washing and repair', 'H']],
+  spa: [['Bookings', 'A'], ['Reception and welcome', 'H'], ['Treatments and massage', 'H'], ['Body scans and lab tests', 'A'], ['Longevity doctor consultation', 'H'], ['Thermal area attendance', 'H'], ['Pool cleaning', 'R', 'pool'], ['Linen supply to rooms', 'R', 'agv'], ['Room reset and cleaning', 'H']],
+  sport: [['Bookings', 'A'], ['Reception and clubhouse service', 'H'], ['Personal training and classes', 'H'], ['Court set-up', 'H'], ['Ball collection and court sweeping', 'R', 'court'], ['Equipment care', 'H']],
+  marina: [['Berth booking and allocation', 'A'], ['Mooring and line handling', 'H'], ['Power and water at the berth', 'A', 'pedestal'], ['Sewage pump-out', 'H', 'pumpout'], ['Fuel dock', 'A', 'fuel'], ['Harbour patrol', 'R', 'dronePatrol'], ['Technical repairs', 'H'], ['Billing', 'A']],
+  events: [['Event booking and planning', 'H'], ['Set-up and breakdown', 'H'], ['Sound, light and rigging presets', 'A', 'stage'], ['Show operation', 'H'], ['Ticketing and entry', 'A', 'kiosk'], ['Catering service', 'H'], ['Venue floors', 'R', 'scrubber']],
+  power: [['Generation dispatch', 'A'], ['Solar panel cleaning', 'R', 'solar'], ['Battery storage control', 'A'], ['Metering', 'A'], ['Preventive maintenance', 'H'], ['Fault response', 'H']],
+  desal: [['Reverse-osmosis plant control', 'A'], ['Water quality testing (online analysers)', 'A'], ['Storage and pressure control', 'A'], ['Membrane cleaning', 'H'], ['Preventive maintenance', 'H']],
+  sewage: [['Treatment plant control', 'A'], ['Effluent quality testing (online analysers)', 'A'], ['Sludge handling', 'H'], ['Pipe inspection', 'R', 'pipe'], ['Reclaimed water supply', 'A']],
+  network: [['Network monitoring (NOC)', 'A'], ['Wi-Fi and cellular coverage', 'A'], ['Device and sensor provisioning', 'A'], ['Cyber security', 'H'], ['Fault repair', 'H']],
+  stores: [['Goods receiving and checking', 'H'], ['Put-away and storage', 'A', 'racking'], ['Pallet moves in the warehouse', 'R', 'agv'], ['Cold-chain monitoring', 'A'], ['Prep-kitchen production', 'R', 'kitchen'], ['Picking for outlets', 'H'], ['Delivery to the outlets', 'R', 'L4'], ['Stock counts (RFID)', 'A']],
+  darkstore: [['Order intake (guest app)', 'A'], ['Picking and packing', 'R', 'picker'], ['Hand-over to delivery', 'H'], ['Pick-up lockers', 'A', 'lockers'], ['Restock from the warehouse', 'H']],
+  laundry: [['Collection of used linen', 'R', 'L4'], ['Sorting', 'H'], ['Washing and drying', 'A', 'washline'], ['Folding and stacking', 'R', 'folder'], ['Cart moves in the laundry', 'R', 'agv'], ['Delivery of clean linen', 'R', 'L4'], ['Stock and repair of linen', 'H']],
+  office: [['Management and planning', 'H'], ['Finance and payroll', 'H'], ['HR and hiring', 'H'], ['Sales and revenue', 'H'], ['Operator console', 'H'], ['IT support', 'H'], ['Visitor entry', 'A', 'kiosk']],
+  staffacc: [['Room allocation and keys', 'A', 'kiosk'], ['Room cleaning', 'H'], ['Corridor floors', 'R', 'scrubber'], ['Staff laundry (self-service)', 'A'], ['Shift-change shuttle', 'R', 'L2'], ['Maintenance and repairs', 'H']],
+  canteen: [['Meal production (hot line)', 'R', 'kitchen'], ['Serving at shift changes', 'H'], ['Ordering at kiosks', 'A', 'kiosk'], ['Dish washing', 'A', 'dishline'], ['Goods receiving', 'H']],
+  cleaning: [['Guest room cleaning', 'H'], ['Public-area cleaning', 'H'], ['Floor scrubbing', 'R', 'scrubber'], ['Window and façade cleaning', 'R', 'window'], ['Pool cleaning', 'R', 'pool'], ['Quality inspections', 'H']],
+  landscaping: [['Lawn mowing', 'R', 'mower'], ['Hedge trimming', 'H', 'hedge'], ['Irrigation', 'A', 'irrigation'], ['Beach raking', 'R', 'raker'], ['Planting and tree care', 'H'], ['Green waste collection', 'H']],
+  waste: [['Collection from objects', 'R', 'L4'], ['Sorting', 'R', 'sorter'], ['Compaction', 'A', 'compactor'], ['Composting', 'A'], ['Ship-out to the mainland', 'R', 'W2']],
+  dock: [['Vessel berthing', 'R', 'W2'], ['Unloading and loading', 'A', 'crane'], ['Container and pallet handling', 'H'], ['Transfer to the warehouse', 'R', 'L4'], ['Waste ship-out', 'R', 'W2']],
+  guestservices: [['Butler requests', 'H'], ['Concierge and bookings', 'H'], ['Guest-app chat', 'A'], ['Luggage handling', 'R', 'luggage'], ['Info kiosks', 'A', 'kiosk'], ['Complaint handling', 'H']],
+  medical: [['Clinic consultations', 'H'], ['First aid', 'H'], ['Emergency response', 'H'], ['AED and float drop', 'R', 'droneRescue'], ['Medical evacuation', 'H'], ['Pharmacy and telemedicine kiosks', 'A', 'kiosk']],
+  security: [['Control room monitoring', 'H'], ['Patrols', 'H'], ['Drone patrol', 'R', 'dronePatrol'], ['Lifeguard watch', 'H'], ['Fire response', 'H'], ['Access control (face gates)', 'A', 'kiosk'], ['Sensor alarms', 'A', 'sensors']],
+  'marina-support': [['Harbour office', 'H'], ['Customs and crew papers', 'H'], ['Technical workshop', 'H'], ['Crew lounge', 'H'], ['Info kiosk', 'A', 'kiosk']],
+  'yacht-services': [['Fuelling', 'A', 'fuel'], ['Hull cleaning', 'R', 'hull'], ['Provisioning', 'H'], ['Water and power top-up', 'A', 'pedestal'], ['Line handling', 'H']],
+  'guest-dock': [['Boat arrival and mooring', 'H'], ['Guest welcome', 'H'], ['Luggage transfer', 'R', 'luggage'], ['Shuttle boat trips', 'R', 'W1'], ['Check-in kiosks', 'A', 'kiosk']],
+  'excursion-terminal': [['Excursion booking', 'A'], ['Guide hand-over', 'H'], ['Boarding', 'H'], ['Boat crewing', 'H'], ['Return and feedback (guest app)', 'A']],
+  fleet: [['Job dispatch', 'A'], ['Guest trips (pods, shuttles, boats)', 'R', 'L1'], ['Goods trips (trucks, robots, vessels)', 'R', 'L4'], ['Remote supervision', 'H'], ['Charging', 'H', 'charger'], ['Vehicle washing', 'A'], ['Maintenance and repairs', 'H'], ['Fleet planning', 'H']],
 };
-const opsHtml = id => { const o = OPS[id]; if (!o) return ''; return `<div class="sec ops"><div class="cap">Operations · ${o.length}</div><ol>${o.map(x => `<li>${x}</li>`).join('')}</ol></div>`; };
+const MARK = { R: 'Robot', A: 'Automation', H: 'Human' };
+const opTip = ([, m, rid]) => { if (!rid) return m === 'A' ? 'Software: booking, guest app or plant control' : '';
+  const r = robotOf(rid), early = ORIGIN[rid] && /prototype|invented|Pilots only/.test(ORIGIN[rid].note);
+  return `${r.name}: ${r.does}${m === 'H' ? (early ? ' Not a product yet: a person does it today.' : ' A person runs it.') : ''}`; };
+const opsHtml = id => { const o = OPS[id]; if (!o) return ''; const n = k => o.filter(x => x[1] === k).length;
+  return `<div class="sec ops"><div class="cap">Operations · ${o.length}<span class="mk-sum"><b class="mk R">R ${n('R')}</b><b class="mk A">A ${n('A')}</b><b class="mk H">H ${n('H')}</b></span></div><ol>${o.map(x => `<li title="${opTip(x).replace(/"/g, '&quot;')}"><b class="mk ${x[1]}">${MARK[x[1]]}</b>${x[0]}</li>`).join('')}</ol></div>`; };
+// Register check (run in the console): unknown ids, a robot marked A or an automation marked R, a TEAM robot no operation links.
+const opsCheck = () => { const err = [];
+  for (const [eid, o] of Object.entries(OPS)) { if (o.length > 10) err.push(`${eid}: ${o.length} ops`);
+    for (const [name, m, rid] of o) { if (!MARK[m]) err.push(`${eid}/${name}: mark ${m}`);
+      if (!rid) { if (m === 'R') err.push(`${eid}/${name}: R without a robot`); continue; }
+      const r = ROBOTS[rid]; if (!r) { err.push(`${eid}/${name}: unknown ${rid}`); continue; }
+      if (m === 'R' && r.scope === 'auto') err.push(`${eid}/${name}: R on fixed ${rid}`); if (m === 'A' && r.scope !== 'auto') err.push(`${eid}/${name}: A on moving ${rid}`); }
+    const linked = new Set(o.map(x => x[2]));
+    for (const rid of Object.keys((TEAM[eid] || {}).robots || {})) if (!linked.has(rid) && !(eid === 'fleet' && ROBOTS[rid]?.scope === 'fleet')) err.push(`${eid}: TEAM robot ${rid} not linked`); }
+  return err; };
 // 30-day occupancy (founder 2026-10-19): today is day 5; days 1–4 are actuals, today is live, days 6–30 are the forecast.
 // The month runs from low to high season (base 48 % → 78 %), Friday and Saturday nights +12, Sunday +4, product factor, deterministic noise.
 const TODAY_IDX = 4, DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

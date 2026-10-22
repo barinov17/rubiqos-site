@@ -109,3 +109,10 @@ body.site table.t.ys td { padding: 4px 8px; } body.site .ys-in { color: #1f9e4a;
 /* operations list on a card (founder 2026-10-21: replaces Workforce) */
 body.site .con .sec.ops ol { margin: 2px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.45; }
 body.site .con .sec.ops li::marker { color: var(--muted); }
+/* R / A / H mark per operation (founder 2026-10-21): robot teal, fixed automation slate blue, human amber */
+body.site .con .sec.ops .mk { display: inline-block; min-width: 74px; margin-right: 6px; padding: 0 5px; border-radius: 3px; font-size: 10.5px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: #fff; text-align: center; }
+body.site .con .sec.ops .mk.R { background: #0f8a7a; }
+body.site .con .sec.ops .mk.A { background: #4a6a93; }
+body.site .con .sec.ops .mk.H { background: #b2641a; }
+body.site .con .sec.ops .mk-sum { margin-left: 8px; }
+body.site .con .sec.ops .mk-sum .mk { min-width: 0; margin-right: 3px; }
