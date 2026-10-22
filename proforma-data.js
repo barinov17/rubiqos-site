@@ -218,7 +218,7 @@ function productInner(c, link = true) {
   <div class="sec"><div class="cap">Produces</div>${c.rooms ? roomRows(c) : `<p>${c.produces}</p><div class="kv">${kv(objs)}</div>`}</div>
   <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
   <div class="sec detail"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
-  ${teamHtml(c.id)}`;
+  ${opsHtml(c.id)}`;
 }
 // Physical AI register (founder 2026-10-19): ONE list of robot types. Every robot row in TEAM is an id from here, so a card, the
 // Fleet Hub and the Physical AI page always say the same thing. Add a type here first; never type a robot name into TEAM.
@@ -369,15 +369,50 @@ const TEAM = {
   fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: Object.assign({ charger: 2 }, ...['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2'].map(k => ({ [k]: FLEET_PLAN[k] }))) },
 };
 
-const tsum = o => Object.values(o).reduce((a, b) => a + b, 0);
-const kvc = (o, cls) => Object.entries(o).map(([k, v]) => `<span class="${cls}">${k}</span><span class="${cls}">${v}</span>`).join('');
-// Workforce on a card (founder 2026-10-20: "Workforce", not "Labor force"; the last block of the card): people, then robots (scope 'object'; the Fleet Hub also lists its 'fleet' types), then fixed automation apart.
-const robotRows = (o, scopes) => Object.entries(o).filter(([k]) => scopes.includes(robotOf(k).scope)).map(([k, v]) => `<span class="rb" title="${robotOf(k).does}">${robotOf(k).name}${k.length <= 2 ? ' · ' + k : ''}</span><span class="rb">${v}</span>`).join('');
-const robotSum = (o, scopes) => Object.entries(o).filter(([k]) => scopes.includes(robotOf(k).scope)).reduce((a, [, v]) => a + v, 0);
-const teamHtml = id => { const t = TEAM[id]; if (!t) return ''; const rb = robotSum(t.robots, ['object', 'fleet']), au = robotSum(t.robots, ['auto']);
-  return `<div class="sec team"><div class="cap">Workforce</div><div class="kv"><span class="sub pp">People · ${fmt(tsum(t.people))}</span><span class="sub pp"></span>${kvc(t.people, 'pp')}` +
-    (rb ? `<span class="sub rb">Robots · ${fmt(rb)}</span><span class="sub rb"></span>${robotRows(t.robots, ['object', 'fleet'])}` : '') +
-    (au ? `<span class="sub rb">Automation · ${fmt(au)}</span><span class="sub rb"></span>${robotRows(t.robots, ['auto'])}` : '') + `</div></div>`; };
+// Operations (founder 2026-10-21): the card shows the key operations of each object, not its workforce. At most 10 per object, each one
+// task that one actor could do (verb + object, task-statement level as in O*NET), so the next step can mark it robot / fixed automation / person.
+// TEAM above stays as the source of the Physical AI page; every people row and robot of TEAM is covered by an operation here.
+const OPS = {
+  'beach-hotel': ['Check-in and check-out', 'Luggage to and from the room', 'Room cleaning and turndown', 'Linen and amenity restock', 'Breakfast and restaurant service', 'Kitchen production', 'Room service delivery', 'Pool and beach service', 'Butler requests', 'Maintenance and repairs'],
+  'apart-hotel': ['Check-in and key handover', 'Apartment cleaning', 'Linen and amenity restock', 'Parcel and grocery drop', 'Maintenance and repairs', 'Guest requests'],
+  'hill-hotel': ['Check-in and check-out', 'Luggage to and from the room', 'Room cleaning and turndown', 'Linen and amenity restock', 'Breakfast and restaurant service', 'Kitchen production', 'Room service delivery', 'Pool service and cleaning', 'Butler requests', 'Maintenance and repairs'],
+  villas: ['Arrival and villa briefing', 'Butler requests', 'Villa cleaning and turndown', 'In-villa cooking', 'Pool cleaning and water care', 'Garden and lawn care', 'Grocery and linen restock', 'Maintenance and repairs'],
+  residences: ['Owner and guest check-in', 'Concierge requests', 'Apartment cleaning (rental pool)', 'Parcel and grocery drop', 'Common-area cleaning', 'Owner services (handover, inspections)', 'Maintenance and repairs'],
+  village: ['Table service', 'Kitchen production', 'Bar service', 'Retail sales and restock', 'Market stalls set-up', 'Dish washing', 'Paths and terrace cleaning', 'Goods receiving'],
+  restaurant: ['Reservations and seating', 'Kitchen production', 'Table service', 'Wine service', 'Cocktail and bar service', 'Dish washing', 'Goods receiving and storage'],
+  'beach-club': ['Sunbed and cabana service', 'Food and drink service', 'Kitchen production', 'Cocktail and bar service', 'Beach raking and cleaning', 'Towel service', 'DJ sunset set-up'],
+  'members-club': ['Membership desk', 'Dining service', 'Kitchen production', 'Bar service', 'Pool deck service', 'Private events', 'Club cleaning'],
+  'hotel-beach': ['Sunbed set-up and towels', 'Beach raking and cleaning', 'Kiosk and bar service', 'Order at the sunbed', 'Lifeguard watch'],
+  'club-beach': ['Sunbed set-up and towels', 'Beach raking and cleaning', 'Drinks from the club', 'Water activity hand-over', 'Lifeguard watch'],
+  'water-sports': ['Bookings and waivers', 'Equipment issue and return', 'Lessons', 'Dive and snorkel trips', 'Boat crewing', 'Water rescue watch', 'Buoy and zone marking', 'Equipment washing and repair'],
+  spa: ['Bookings and reception', 'Treatments and massage', 'Longevity diagnostics', 'Thermal area attendance', 'Pool water care', 'Linen supply to rooms', 'Room reset and cleaning'],
+  sport: ['Bookings and reception', 'Personal training and classes', 'Court booking and set-up', 'Ball collection and court care', 'Equipment care', 'Clubhouse service'],
+  marina: ['Berth booking and allocation', 'Mooring and line handling', 'Power and water at the berth', 'Sewage pump-out', 'Fuel dock', 'Harbour patrol', 'Technical repairs', 'Billing'],
+  events: ['Event booking and planning', 'Set-up and breakdown', 'Sound and light', 'Stage operation', 'Ticketing and entry', 'Catering service', 'Venue cleaning'],
+  power: ['Generation dispatch', 'Solar panel cleaning', 'Battery storage control', 'Metering', 'Preventive maintenance', 'Fault response'],
+  desal: ['Reverse-osmosis plant control', 'Water quality testing', 'Storage and pressure control', 'Membrane cleaning', 'Preventive maintenance'],
+  sewage: ['Treatment plant control', 'Effluent quality testing', 'Sludge handling', 'Pipe inspection', 'Reclaimed water supply'],
+  network: ['Network monitoring (NOC)', 'Wi-Fi and cellular coverage', 'Device and sensor provisioning', 'Cyber security', 'Fault repair'],
+  stores: ['Goods receiving and checking', 'Put-away and storage', 'Cold-chain monitoring', 'Prep-kitchen production', 'Picking for outlets', 'Internal delivery', 'Stock counts'],
+  darkstore: ['Order intake', 'Picking and packing', 'Hand-over to delivery', 'Pick-up lockers', 'Restock from the warehouse'],
+  laundry: ['Collection of used linen', 'Sorting', 'Washing and drying', 'Ironing and folding', 'Delivery of clean linen', 'Stock and repair of linen'],
+  office: ['Management and planning', 'Finance and payroll', 'HR and hiring', 'Sales and revenue', 'Operator console', 'IT support'],
+  staffacc: ['Room allocation and keys', 'Room and common-area cleaning', 'Staff laundry', 'Shift-change shuttle', 'Maintenance and repairs'],
+  canteen: ['Meal production', 'Serving at shift changes', 'Ordering at kiosks', 'Dish washing', 'Goods receiving'],
+  cleaning: ['Guest room cleaning', 'Public-area cleaning', 'Floor scrubbing', 'Window cleaning', 'Pool cleaning', 'Quality inspections'],
+  landscaping: ['Lawn mowing', 'Hedge trimming', 'Irrigation', 'Beach raking', 'Planting and tree care', 'Green waste collection'],
+  waste: ['Collection from objects', 'Sorting', 'Compaction', 'Composting', 'Ship-out to the mainland'],
+  dock: ['Vessel berthing', 'Unloading and loading', 'Container and pallet handling', 'Transfer to the warehouse', 'Waste ship-out'],
+  guestservices: ['Butler requests', 'Concierge and bookings', 'Guest-app chat', 'Luggage handling', 'Info kiosks', 'Complaint handling'],
+  medical: ['Clinic consultations', 'First aid', 'Emergency response', 'Medical evacuation', 'Pharmacy and kiosks'],
+  security: ['Control room monitoring', 'Patrols', 'Drone patrol', 'Lifeguard watch', 'Fire response', 'Access control', 'Sensor alarms'],
+  'marina-support': ['Harbour office', 'Customs and crew papers', 'Technical workshop', 'Crew lounge', 'Info kiosk'],
+  'yacht-services': ['Fuel delivery', 'Hull cleaning', 'Provisioning', 'Water and power top-up', 'Line handling'],
+  'guest-dock': ['Boat arrival and mooring', 'Guest welcome', 'Luggage transfer', 'Shuttle boat dispatch', 'Check-in kiosks'],
+  'excursion-terminal': ['Excursion booking', 'Guide hand-over', 'Boarding', 'Boat crewing', 'Return and feedback'],
+  fleet: ['Job dispatch', 'Remote supervision', 'Charging', 'Cleaning of vehicles', 'Maintenance and repairs', 'Fleet planning'],
+};
+const opsHtml = id => { const o = OPS[id]; if (!o) return ''; return `<div class="sec ops"><div class="cap">Operations · ${o.length}</div><ol>${o.map(x => `<li>${x}</li>`).join('')}</ol></div>`; };
 // 30-day occupancy (founder 2026-10-19): today is day 5; days 1–4 are actuals, today is live, days 6–30 are the forecast.
 // The month runs from low to high season (base 48 % → 78 %), Friday and Saturday nights +12, Sunday +4, product factor, deterministic noise.
 const TODAY_IDX = 4, DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -404,7 +439,7 @@ const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c
     <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p></div>
     <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
     <div class="sec detail"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
-  <div class="col">${teamHtml('marina')}</div>
+  <div class="col">${opsHtml('marina')}</div>
   <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div>
   <div class="col"><div class="cap">Yacht services · this month</div><div class="kv" data-live="ys-month"><span>Fresh water</span><span>—</span></div>
     <div class="cap" style="margin-top:10px">Log</div><table class="t mini ys"><tbody id="ysLog"><tr><td class="muted">—</td></tr></tbody></table></div></div>`; };   // yacht services as the fifth column (founder 2026-10-20)
@@ -412,14 +447,14 @@ const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdH
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
   <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
-  ${teamHtml(c.id)}</div>`;
+  ${opsHtml(c.id)}</div>`;
 const fleetCard = (link = true) => `<div class="con wide cols" id="fleetCard">
   <div class="col">${hdHtml(FLEET_HUB, link)}${opTag(FLEET_HUB.op)}<p>${FLEET_HUB.what}</p>
     <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="fleet"><span>Load</span><span>—</span></div></div></div>
   <div class="col">
     <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
     <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div></div>
-  <div class="col">${teamHtml('fleet')}</div>
+  <div class="col">${opsHtml('fleet')}</div>
   <div class="col span2"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;   // the same vertical blocks as the marina (founder 2026-10-19); the fleet table takes two columns
 // --- the event programme as a schedule (founder 2026-10-19): the event, its time, its venue, its bookings against capacity. Nothing else.
 EVENTS.forEach((e, i) => { e.i = i; const [a, b] = e.time.split('–').map(t => { const [h, m] = t.split(':').map(Number); return h + m / 60; }); e.start = a; e.end = b; });

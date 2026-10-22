@@ -105,3 +105,7 @@ body.site .con .kv .sub.rb { color: #0f8a7a; } body.site .con .kv .rb { color: #
 
 /* yacht services log: arrivals green down-arrow, departures red up-arrow (founder 2026-10-20) */
 body.site table.t.ys td { padding: 4px 8px; } body.site .ys-in { color: #1f9e4a; } body.site .ys-out { color: #d43d32; } body.site .ys-svc { color: var(--muted); }
+
+/* operations list on a card (founder 2026-10-21: replaces Workforce) */
+body.site .con .sec.ops ol { margin: 2px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.45; }
+body.site .con .sec.ops li::marker { color: var(--muted); }
