@@ -851,7 +851,7 @@ function finishGrid(y, W, H, ox, oz, cell, gap) {                               
 const meshOf = n => { const o = byName.get(n); const m = []; o && o.traverse(x => { if (x.isMesh) m.push(x); }); return m; };
 const padMeshes = [...byName.keys()].filter(n => /^Drop-off \| DO-(guest|BOH)-\d+$/.test(n)).flatMap(meshOf);   // v073: pads are `Drop-off | DO-guest-NN` and `Drop-off | DO-BOH-NN` (blocks of the DWG)
 const roadR = surfaceGrid([...['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE roundabout east tip', 'ROADS_SERVICE link reception', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', 'Longevity Clinic road', 'Infrastructure zone | WH service apron', 'Service dock.001'].flatMap(meshOf), ...padMeshes], 3);   // v073 live road surfaces only (founder brief 2026-10-19)
-const walkR = surfaceGrid([...['ROADS_SERVICE (block) surface', 'ROADS_GUEST surface', 'ROADS_GUEST straight path | surface', 'PROMENADE surface', 'Marina Village paths', 'Spa path', 'Marina pier walkway 1', 'Marina pier walkway 2', 'Marina pier walkway 3', 'Rotunda Restaurant | path NE', 'Rotunda park | path N', 'Rotunda Restaurant | Restaurant paving', 'Rotunda Restaurant | Restaurant court paving', 'Beach Hotel | forecourt', 'Beach Hotel | lobby', 'Arrivals Reception | reception footprint', 'Infrastructure zone | FH fleet hub yard', 'Infrastructure zone | SA staff accommodation courtyard', 'Infrastructure zone | W waste management ground', 'Infrastructure zone | IF infrastructure ground', 'Infrastructure zone | WH service apron', 'BEACH.001', 'BEACH.003'].flatMap(meshOf), ...[...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/DO-BOH/.test(m.name))], 2.5, 12);   // v073: guest paths, the promenade and the village paths, plazas, the beaches, the attractions; the BOH block's service roads and yards are the staff's walkways (no guests there)
+const walkR = surfaceGrid([...['ROADS_SERVICE (block) surface', 'ROADS_GUEST surface', 'ROADS_GUEST link marina promenade', 'ROADS_GUEST straight path | surface', 'PROMENADE surface', 'Marina Village paths', 'Spa path', 'Marina pier walkway 1', 'Marina pier walkway 2', 'Marina pier walkway 3', 'Rotunda Restaurant | path NE', 'Rotunda park | path N', 'Rotunda Restaurant | Restaurant paving', 'Rotunda Restaurant | Restaurant court paving', 'Beach Hotel | forecourt', 'Beach Hotel | lobby', 'Arrivals Reception | reception footprint', 'Infrastructure zone | FH fleet hub yard', 'Infrastructure zone | SA staff accommodation courtyard', 'Infrastructure zone | W waste management ground', 'Infrastructure zone | IF infrastructure ground', 'Infrastructure zone | WH service apron', 'BEACH.001', 'BEACH.003'].flatMap(meshOf), ...[...byName.keys()].filter(n => /^(Point of attraction|Viewpoint)\.\d+$/.test(n)).flatMap(meshOf), ...padMeshes.filter(m => !/DO-BOH/.test(m.name))], 2.5, 12);   // v073: guest paths, the promenade and the village paths, plazas, the beaches, the attractions; the BOH block's service roads and yards are the staff's walkways (no guests there)
 // --- roads only where no building stands over them (founder 2026-10-20: "vehicles drive through buildings; keep them on the roads, open a road
 // through only where a needed function has no other access"). Audit before the fix: 256 of 13,369 moving-vehicle samples (1.9 %) had a building
 // roof 3–16 m above them, all on road cells: the WH service apron under the warehouses, the drives under the residence towers and their entrance
@@ -1139,7 +1139,7 @@ const hatchMat = (base = SCHEMATIC.hatchBase, line = SCHEMATIC.hatchLine, step =
 };
 // ===== drop-off pads (founder 2026-10-17): every drop-off is red; each pad turned so its long side runs along the adjoining road
 {
-  const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x9dbdf0, roughness: 0.9 }), bohPadMat = hatchMat(0xe4e9f3, 0x4e5d6e);   // founder 2026-10-19: guest pads light blue, back-of-house pads hatched at 45° (both styles)
+  const guestPadMat = new THREE.MeshStandardMaterial({ color: 0x9dbdf0, roughness: 0.9 }), bohPadMat = hatchMat(0xf2c4c4, 0xb04a4a);   // founder 2026-10-19: guest pads light blue, back-of-house pads hatched at 45°; 2026-10-21: back-of-house pink with red hatch, unlike the blue
   const roadTris = [];                                                           // centroids + directions of road triangles for the local road axis
   const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
   for (const n of ['ROADS_SERVICE surface', 'ROADS_SERVICE (block) surface', 'ROADS_SERVICE reception link guest', 'ROADS_SERVICE reception link BOH', 'loading zone surface', ...[...byName.keys()].filter(n => / \| access road$| service road \| surface$/.test(n))]) for (const m of meshOf(n)) {   // parcel access roads count as roads for the pads at their ends
@@ -1155,13 +1155,13 @@ const hatchMat = (base = SCHEMATIC.hatchBase, line = SCHEMATIC.hatchLine, step =
   const pads = []; model.traverse(o => { if (o.isMesh && /^Drop-off \| DO-(guest|BOH)-\d+/.test(o.name)) pads.push(o); });
   const fixed = [];
   for (const m of pads) {
-    m.userData.origMat = m.userData.origMat || m.material; m.material = /\(BOH\)|service drop-off$/.test(m.name) ? bohPadMat : guestPadMat;   // e015: access-road pads of the club, hotel and residences are service drop-offs
+    m.userData.origMat = m.userData.origMat || m.material; m.material = /DO-BOH-|\(BOH\)|service drop-off$/.test(m.name) ? bohPadMat : guestPadMat;   // e015: access-road pads of the club, hotel and residences are service drop-offs; 2026-10-21: the v073 names DO-BOH-NN were missed and drew blue
     m.updateWorldMatrix(true, false);
     const pos = m.geometry.attributes.position, pts = []; const v = new THREE.Vector3();
     for (let i = 0; i < pos.count; i++) { v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld); pts.push([v.x, v.z]); }
     const cx = pts.reduce((s, q) => s + q[0], 0) / pts.length, cz = pts.reduce((s, q) => s + q[1], 0) / pts.length;
     const near = roadTris.filter(([x, z]) => Math.hypot(x - cx, z - cz) < 40 && Math.hypot(x - cx, z - cz) > 6);
-    const padAng = pca(pts), roadAng = near.length >= 12 ? pca(near) : padAng, service = m.material === bohPadMat;   // no road within 40 m: the pad keeps its own axis
+    const padAng = pca(pts), roadAng = near.length >= 12 ? pca(near) : padAng, service = /\(BOH\)|service drop-off$/.test(m.name);   // no road within 40 m: the pad keeps its own axis; DO-BOH pads keep the orientation they had (along the road)
     // size: the pad's own extents along its axes, scaled to 70 % of the area; orientation: guest = long side along the road, service = across
     const ca = Math.cos(padAng), sa = Math.sin(padAng);
     const us = pts.map(([x, z]) => (x - cx) * ca + (z - cz) * sa), vs = pts.map(([x, z]) => -(x - cx) * sa + (z - cz) * ca);
@@ -2433,6 +2433,7 @@ model.traverse(o => { if (!o.isMesh) return; for (const m of (Array.isArray(o.ma
 function standardMat(o) {
   const base = o.userData.baseMat, g = meshGroup(o), t = meshTop(o).name;
   if (o.name === 'Sea' || o.name === 'Shallow water' || g === 'zoning') return base;
+  if (/^Drop-off \| DO-/.test(o.name)) return base;                              // pads keep their own material: grain would drop the back-of-house hatch (2026-10-21)
   if (g === 'terrain' || g === 'landscape' || g === 'mobility') return grained(base);
   if (FUNC_VILLAGE.test(t)) return roofed(base, ROOF_BROWN);
   return base; }

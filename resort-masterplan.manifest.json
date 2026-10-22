@@ -1,7 +1,7 @@
 {
- "version": "v084",
- "exported": "2026-10-21 21:57",
- "changes": "changes/v084.json",
+ "version": "v085",
+ "exported": "2026-10-21 22:05",
+ "changes": "changes/v085.json",
  "source_dwg": "demo.dxf",
  "dwg_origin": [
   7543.327006922384,
@@ -1679,7 +1679,7 @@
    "derived": "palm rows along the Marina Village roads, 10 m (e119)",
    "hand_made": false,
    "material": "Tree crown",
-   "verts": 13928
+   "verts": 13742
   },
   {
    "name": "Trees | village fill",
@@ -1697,7 +1697,7 @@
    "derived": "random tropical canopy between the Marina Village rows (e119)",
    "hand_made": false,
    "material": "Tree crown",
-   "verts": 8446
+   "verts": 8320
   },
   {
    "name": "Trees | village fill 2",
@@ -2022,6 +2022,24 @@
    "hand_made": true,
    "material": "Guest road surface",
    "verts": 4
+  },
+  {
+   "name": "ROADS_GUEST link marina promenade",
+   "type": "MESH",
+   "collection": "04_Mobility/ROADS_GUEST",
+   "parent": null,
+   "group": "mobility",
+   "function": "path",
+   "zone_id": "Z00",
+   "zone_name": "Island common",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": 1.0,
+   "derived": "design edit e144",
+   "hand_made": false,
+   "material": "Guest road surface",
+   "verts": 8
   },
   {
    "name": "ROADS_SERVICE surface",
@@ -2615,6 +2633,24 @@
    "derived": "design edit e143",
    "hand_made": false,
    "material": "Drop-off pad",
+   "verts": 8
+  },
+  {
+   "name": "Drop-off | DO-guest-13",
+   "type": "MESH",
+   "collection": "04_Mobility/Drop-off",
+   "parent": "Drop-off",
+   "group": "mobility",
+   "function": "road",
+   "zone_id": "Z00",
+   "zone_name": "Island common",
+   "dwg_layer": null,
+   "dwg_handle": null,
+   "dwg_block": null,
+   "height_m": "0.06",
+   "derived": "design edit e144",
+   "hand_made": false,
+   "material": "Guest drop-off",
    "verts": 8
   },
   {
