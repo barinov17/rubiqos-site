@@ -3095,13 +3095,23 @@ function gtFxClear() {
   for (const f of GT.fx) gtFxDrop(f); GT.fx = []; gtNight(false); gtOnbOff(true); gtTrOff(true); gtMeIcon(null);
   for (const k of Object.keys(actors)) if (k.startsWith('GT-') && k !== 'GT-Guest') { const a = actors[k]; scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors[k]; }
 }
-// ===== Supply scenario, part 1 (2026-10-22, v089): what the island runs on, shown in one run (founder 2026-10-22).
-// Infrastructure labels (stores, laundry, medical, fuel, water, power, sewage, waste), a small utilities dashboard top-left (water, energy, sewage),
-// outlet cards on the main outlets (on order / arriving / delivered). The story is in 56. The island's base loop runs on underneath.
+// ===== Supply scenario, part 1 (2026-10-22, v090): what the island runs on, shown in one run (founder 2026-10-22).
+// One static overview of the masterplan, no camera moves; only supply actors are drawn (cast below). Infrastructure labels, a utilities dashboard top-left,
+// warehouse cards (stock and load by type), outlet cards (stock by supply type + on order / arriving / delivered), pop-ups over each event. Story in 56.
 // Utilities model (assumptions, full working in vault 2. Architecture/Supply Scenario v089 — 2026-10-22.md):
 //   water: potable tank 666 m³ (model: 10.3 m dia × 8 m), RO 3 trains × 15 m³/h, use 900 m³/day on a daily profile; trains on: 3 under 60 % stock, 2 under 85 %, else 1
 //   energy: peak 9 MW, load profile below (≈ 98 MWh/day), solar 2.2 MWp; gen sets 12 × 0.8 MW, ceil((load − solar) / 0.8) run; diesel 0.27 L/kWh
 //   fuel: 6 tanks 4 m dia × 11 m, 829 m³ gross, 746 m³ usable (90 %); sewage inflow 0.78 × water use, 64 % reclaimed (proforma 450 / 700 m³/day)
+// ---------- scenario cast (founder 2026-10-22, every scenario): while a scenario runs only its actors are drawn; the base loop runs on underneath, hidden.
+// castOn(keep): keep(mover) → true for the ambient fleet units and yachts the scenario uses; crowd off. castApply runs each frame (60). castOff restores what was drawn.
+const CAST = { keep: null, people: true, snap: null };
+function castOn(keep) { if (!CAST.keep) { CAST.people = peopleOn; CAST.snap = new Map(ambient.map(f => [f, f.mesh.visible])); } CAST.keep = keep; peopleOn = false; castApply(); }
+function castOff() {
+  if (!CAST.keep) return; CAST.keep = null; peopleOn = CAST.people;
+  for (const f of ambient) f.mesh.visible = fleetOn && (f.type === 'A1' ? !!f.path || f.landedAt !== undefined : !!f.path || CAST.snap.get(f));
+  for (const y of yachtMovers) y.mesh.visible = y.busy; CAST.snap = null;
+}
+function castApply() { const k = CAST.keep; if (!k) return; for (const f of ambient) if (!k(f)) f.mesh.visible = false; for (const y of yachtMovers) if (!k(y)) y.mesh.visible = false; }
 const suCss = document.createElement('style');
 suCss.textContent = `
   .supply #layersPanel { display: none; } .supply .gpin { opacity: 0.35; }
@@ -3111,12 +3121,19 @@ suCss.textContent = `
   #suDash .r { display: grid; grid-template-columns: 56px 1fr; gap: 0 8px; padding: 6px 0 5px; border-top: 1px solid rgba(10, 18, 32, 0.08); }
   #suDash .r i { font-style: normal; font-weight: 600; grid-row: span 3; } #suDash .r b { font-variant-numeric: tabular-nums; font-weight: 600; } #suDash .r small { color: #5b6676; font-variant-numeric: tabular-nums; }
   .subar { height: 4px; background: rgba(10, 18, 32, 0.1); border-radius: 2px; overflow: hidden; margin: 3px 0 2px; } .subar u { display: block; height: 100%; background: #2457e6; transition: width .4s; }
-  .sulab { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); z-index: 4; pointer-events: none; background: rgba(10, 18, 32, 0.86); color: #f3f5f8; border-radius: 8px; padding: 3px 8px;
+  #suLay > div { position: absolute; left: 0; top: 0; transform: none !important; }
+  #suLay svg.lead { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; overflow: visible; }
+  #suLay svg.lead path { stroke: rgba(10, 18, 32, 0.55); stroke-width: 1; fill: none; } #suLay svg.lead circle { fill: #0a1220; }
+  .sulab { z-index: 4; pointer-events: none; background: rgba(10, 18, 32, 0.86); color: #f3f5f8; border-radius: 8px; padding: 3px 8px;
     font: 11px/1.25 "DM Sans", sans-serif; white-space: nowrap; } .sulab b { font-weight: 600; } .sulab span { color: #b9c6d8; margin-left: 5px; font-variant-numeric: tabular-nums; }
-  .sucard { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 8px)); z-index: 5; pointer-events: none; background: #fff; border-radius: 10px; padding: 7px 9px; width: 178px;
-    box-shadow: 0 6px 16px rgba(10, 18, 32, 0.2); font: 11px/1.3 "DM Sans", sans-serif; color: #0a1220; } .sucard > b { font-size: 12px; } .sucard small { color: #5b6676; }
-  .sucard ul { list-style: none; margin: 4px 0 0; padding: 0; } .sucard li { padding: 2px 0; } .sucard li em { font-style: normal; font-weight: 600; font-size: 10px; padding: 1px 6px; border-radius: 999px; margin-right: 5px; color: #fff; }
-  .sucard li.order em { background: #d08a1f; } .sucard li.way em { background: #2457e6; } .sucard li.done em { background: #3f8f6e; }`;
+  .sucard { z-index: 5; pointer-events: none; background: #fff; border-radius: 10px; padding: 6px 8px 5px; width: 168px;
+    box-shadow: 0 6px 16px rgba(10, 18, 32, 0.2); font: 10.5px/1.25 "DM Sans", sans-serif; color: #0a1220; } .sucard > b { font-size: 11.5px; display: block; margin-bottom: 2px; } .sucard small { color: #5b6676; }
+  .sucard.wh { background: #0a1220; color: #f3f5f8; width: 176px; } .sucard.wh small, .sucard.wh .sut i { color: #b9c6d8; } .sucard.wh .subar { background: rgba(255, 255, 255, 0.16); }
+  .sut { display: grid; grid-template-columns: 58px 1fr 30px; gap: 0 5px; align-items: center; } .sut .subar { margin: 0; } .sut i { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: #5b6676; }
+  .sut.lo u { background: #d08a1f !important; } .sut.out u { background: #c8452f !important; }
+  .sucard ul { list-style: none; margin: 3px 0 0; padding: 0; } .sucard li { padding: 1px 0; } .sucard li em { font-style: normal; font-weight: 600; font-size: 9.5px; padding: 1px 5px; border-radius: 999px; margin-right: 4px; color: #fff; }
+  .sucard li.order em { background: #d08a1f; } .sucard li.way em { background: #2457e6; } .sucard li.done em { background: #3f8f6e; }
+  .supply .gcall { transition: opacity .5s; } .supply .gcall.out { opacity: 0; }`;
 document.head.appendChild(suCss);
 const SU_ICON = { droplet: 'M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z',   // Lucide (ISC), as ICON in 24
   shirt: 'M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z',
@@ -3125,15 +3142,65 @@ const suIcon = k => `<svg viewBox="0 0 24 24"><path d="${SU_ICON[k] || ICON[k] |
 // --- infrastructure: [key, label, point, lift m]; utilities are bbox centres measured in GLB v087 (2026-10-22), stores come from WH (30)
 const SU_P = (x, z) => new THREE.Vector3(x, 0, z);
 const SU_TANKS = SU_P(-956, -86);
-const SU_INF = [['laundry', 'WH-1 Laundry', WH.laundry, 16], ['prep', 'WH-2 Prep kitchen', WH.prep, 16], ['cold', 'WH-3 Cold store', WH.cold, 16], ['dry', 'WH-4 Dry store', WH.dry, 16],
-  ['med', 'Medical store · first aid', ADMIN_P, 20], ['diesel', 'Diesel tank farm', SU_TANKS, 6], ['power', 'Power plant · 12 gen sets', SU_P(-928, -60), 24], ['water', 'Potable water', SU_P(-923, -40), 14],
+const SU_INF = [['med', 'Medical store', ADMIN_P, 20], ['diesel', 'Diesel tank farm', SU_TANKS, 6], ['power', 'Power plant', SU_P(-928, -60), 24], ['water', 'Potable water', SU_P(-923, -40), 14],
   ['ro', 'RO desalination', SU_P(-961, -44), 34], ['sewage', 'Sewage plant', SU_P(-958, -64), 44], ['waste', 'Waste yard', WH.waste, 10]];
-const SU_BOH = SU_P(-900, -90);
+const SU_WHS = [['cold', 'WH-3 Cold store', WH.cold], ['dry', 'WH-4 Dry store', WH.dry], ['prep', 'WH-2 Prep kitchen', WH.prep], ['laundry', 'WH-1 Laundry', WH.laundry]];
 // --- outlets with a card: OUTLET_DEF keys (30); the card sits over the building, the trucks use its back-of-house pad (outletAt)
 const SU_OUT = ['Beach Hotel', 'Hill Hotel', 'Restaurant', 'Marina Village', 'Beach Club', 'Members Club', 'Spa & Wellness', 'Longevity Clinic'];
 const SU_NAME = { Restaurant: 'Rotunda Restaurant' };
 const SU_OP = Object.fromEntries(OUTLET_DEF.map(r => [r[0], r[1]]));
 const SU_ST = { order: 'On order', way: 'Arriving', done: 'Delivered' };
+// --- stock by supply type at each outlet (kg). Food par = outlet par (30) × the base MIX with cold split into fresh and chilled (A): fresh .15, chilled .25, dry .45, beverages .15.
+// Linen = clean linen on the floor shelves (A: ≈ 1 day of changes); amenities = guest amenities; spa / clinic main goods = the outlet's own stock (30).
+const SU_TY = { fresh: 'Fresh food', cold: 'Chilled', dry: 'Dry goods', bev: 'Beverages', linen: 'Linen', amen: 'Amenities', med: 'Medical' };
+const SU_FMIX = { fresh: 0.15, cold: 0.25, dry: 0.45, bev: 0.15 }, SU_EAT = { fresh: 0.3, cold: 0.3, dry: 0.25, bev: 0.15 };   // what a cover uses, by type (A)
+const SU_XP = { 'Beach Hotel': { linen: 900, amen: 150 }, 'Hill Hotel': { linen: 600, amen: 100 }, Restaurant: { linen: 120 }, 'Beach Club': { linen: 200 }, 'Members Club': { linen: 80 },
+  'Spa & Wellness': { amen: 0, linen: 250, bev: 60 }, 'Longevity Clinic': { med: 0, linen: 60 } };   // 0 = the outlet's own par (30)
+const SU_OS = {}, SU_LOG = { head: null };
+function suSplit(what) {                                                         // delivery text (logDelivery, 30 / 56) → shares by type
+  if (/clean linen/i.test(what)) return { linen: 1 };
+  if (/linen|waste/i.test(what)) return null;                                    // soiled linen and waste go out, not in
+  if (/medical/i.test(what)) return { med: 1 };
+  if (/amenit/i.test(what)) return { amen: 1 };
+  if (/beverage/i.test(what)) return { bev: 1 };
+  if (/fish|meat|dairy|reefer|produce/i.test(what)) return { cold: 0.6, fresh: 0.4 };
+  if (/mise en place|prepared/i.test(what)) return { fresh: 1 };
+  return { dry: 1 };
+}
+// a base restock truck (30) carries one store's load; the outlet's pick list is order-up-to-par by type, so the kg go to each food type in proportion to its shortfall
+function suToPar(L) { const sp = {}; let s = 0; for (const t in SU_FMIX) if (L[t]) { sp[t] = Math.max(0, L[t].par - L[t].s); s += sp[t]; } if (!s) return { ...SU_FMIX }; for (const t in sp) sp[t] /= s; return sp; }
+const SU_BASE = new Set(Object.values(LOAD_TEXT));
+function suLedger() {                                                            // start values: the outlet's live stock share, fresh a little lower in the morning
+  for (const k of SU_OUT) { const o = outlets[k]; if (!o) continue; const L = SU_OS[k] = { _last: o.stock }, f = o.stock / o.par, x = SU_XP[k] || {};
+    if (o.kind === 'food') for (const t in SU_FMIX) L[t] = { par: o.par * SU_FMIX[t], s: o.par * SU_FMIX[t] * f * (t === 'fresh' ? 0.8 : 1) };
+    for (const t in x) L[t] = x[t] ? { par: x[t], s: x[t] * (0.6 + 0.25 * f) } : { par: o.par, s: o.stock, own: true }; }
+}
+const SU_WS = { coldIn: 0, coldOut: 0, dryOut: 0, mep: 0, meals: 0, queue: 600, clean: 1500, washed: 0 };   // warehouse counters since the run started; laundry line 600 kg/h (A)
+const suWsReset = () => { SU_WS.coldIn = SU_WS.coldOut = SU_WS.dryOut = SU_WS.mep = SU_WS.meals = SU_WS.washed = 0; };
+function suLedgerStep(dt) {                                                       // dt sim minutes: new log rows → stock by type; outlet stock drops → use by type; laundry line
+  const fresh = []; for (const l of supply.log) { if (l === SU_LOG.head) break; fresh.push(l); } if (supply.log.length) SU_LOG.head = supply.log[0];
+  const add = {};
+  for (const l of fresh.reverse()) {
+    if (l.to === 'WH-3 Cold storage') SU_WS.coldIn += l.kg; if (l.from === 'WH-3 Cold storage') SU_WS.coldOut += l.kg; if (l.from === 'WH-4 Dry storage') SU_WS.dryOut += l.kg;
+    if (l.from === 'WH-2 Prep kitchen') { if (/meals/i.test(l.what)) SU_WS.meals += l.kg; else SU_WS.mep += l.kg; }
+    // WH-1 is a closed linen pool: a base clean run (30) swaps cages, the same kg come back soiled; its separate 'Used linen' runs would count them twice
+    if (l.to === 'WH-1 Laundry' && l.what !== 'Used linen') SU_WS.queue += l.kg;
+    if (l.from === 'WH-1 Laundry') { SU_WS.clean = Math.max(0, SU_WS.clean - l.kg); if (l.what === 'Clean linen') SU_WS.queue += l.kg; }
+    const L = SU_OS[l.to], sp = L && (SU_BASE.has(l.what) && L.fresh ? suToPar(L) : suSplit(l.what)); if (!sp) continue;
+    if (sp.dry && L.amen && !L.amen.own) { L.amen.s += 0.15 * l.kg; sp.dry = 0.85; }
+    for (const t in sp) { if (!L[t]) continue; if (L[t].own) continue; L[t].s = Math.min(L[t].par * 1.3, L[t].s + sp[t] * l.kg); if (t !== 'linen' && t !== 'amen') add[l.to] = (add[l.to] || 0) + sp[t] * l.kg; }
+  }
+  const h = hourOf(), turn = h >= 7 && h < 13 ? 0.6 / 360 : 0.1 / 1080;           // linen: 60 % of the shelf goes out 07–13 (room changes), 10 % over the rest (A)
+  for (const k in SU_OS) { const L = SU_OS[k], o = outlets[k];
+    const use = o.stock - L._last - (add[k] || 0); L._last = o.stock;
+    if (use < 0 && L.fresh) { let w = 0; for (const t in SU_EAT) w += SU_EAT[t] * (L[t].s > 1 ? 1 : 0); for (const t in SU_EAT) if (w && L[t].s > 1) L[t].s = Math.max(0, L[t].s + use * SU_EAT[t] / w); }
+    for (const t in L) if (L[t] && L[t].own) L[t].s = o.stock;
+    if (L.linen) L.linen.s = Math.max(0, L.linen.s - L.linen.par * turn * dt);
+    if (L.amen && !L.amen.own) L.amen.s = Math.max(0, L.amen.s - L.amen.par * 0.15 / 1440 * dt);
+  }
+  const wash = Math.min(SU_WS.queue, 600 * dt / 60); SU_WS.queue -= wash; SU_WS.clean += wash; SU_WS.washed += wash;
+}
+const SU_PREP = h => [[4.5, 6], [9.5, 11], [12.5, 14], [15.5, 17], [20.5, 22]].some(([a, b]) => h >= a && h < b) ? 0.9 : h >= 6 && h < 22 ? 0.4 : 0.15;   // prep line load: cooking windows before each run (A)
 // --- utilities model
 const SU_USE = [.4, .35, .3, .3, .35, .6, 1.1, 1.6, 1.7, 1.4, 1.2, 1.1, 1.1, 1.0, 1.0, 1.0, 1.1, 1.3, 1.5, 1.5, 1.3, 1.0, .7, .5];
 const SU_USEM = SU_USE.reduce((a, b) => a + b) / 24;
@@ -3153,16 +3220,19 @@ function suUtil(dt) {                                                           
   U.sew = 0.78 * U.use; if (d !== U.day) { U.day = d; U.sewDay = 0; } U.sewDay += U.sew * dt / 60;
 }
 // --- state; beats run on real seconds (paused with the clock), sims on simulated minutes
-const SU = { tok: 0, runs: 0, clock: 0, beats: [], sims: [], cam: { fn: null, D: null, dmin: 0, frame: false }, root: null, dash: null, labels: [], cards: [], calls: [], items: {}, fx: [], sv: null, t: 0, inKg: 0 };
+const SU = { tok: 0, runs: 0, clock: 0, beats: [], sims: [], view: false, root: null, lead: null, dash: null, labels: [], whs: [], cards: [], calls: [], items: {}, fx: [], sv: null, t: 0 };
 const SU_STOP = new Error('supply scenario stopped');
 const suChk = tok => { if (tok !== SU.tok) throw SU_STOP; };
 const suBeat = sec => new Promise(res => SU.beats.push({ until: SU.clock + sec, res }));
 const suSim = min => new Promise(res => SU.sims.push({ until: simT + min, res }));
 const fmt = n => Math.round(n).toLocaleString('en-US');
-function suBuild() {                                                             // DOM: labels, cards, dashboard
+function suBuild() {                                                             // DOM: leader lines, labels, warehouse cards, outlet cards, dashboard
   const root = SU.root = document.createElement('div'); root.id = 'suLay'; stage.appendChild(root);
-  SU.labels = SU_INF.map(([k, t, p, lift]) => { const el = document.createElement('div'); el.className = 'sulab'; el.innerHTML = `<b>${t}</b><span></span>`; root.appendChild(el); return { k, el, p, lift, sp: el.querySelector('span') }; });
-  SU.cards = SU_OUT.filter(k => outlets[k] && SU_OP[k]).map(k => { const el = document.createElement('div'); el.className = 'sucard'; root.appendChild(el); return { k, el, p: SU_OP[k], lift: 18, html: '' }; });
+  root.insertAdjacentHTML('beforeend', '<svg class="lead"></svg>'); SU.lead = root.querySelector('svg.lead');
+  const add = (cls, html = '') => { const el = document.createElement('div'); el.className = cls; el.innerHTML = html; root.appendChild(el); return el; };
+  SU.labels = SU_INF.map(([k, t, p, lift]) => { const el = add('sulab', `<b>${t}</b><span></span>`); return { k, el, p, lift, sp: el.querySelector('span') }; });
+  SU.whs = SU_WHS.map(([k, t, p]) => ({ k, t, el: add('sucard wh'), p, lift: 16, html: '' }));
+  SU.cards = SU_OUT.filter(k => outlets[k] && SU_OP[k]).map(k => ({ k, el: add('sucard'), p: SU_OP[k], lift: 18, html: '' }));
   const d = SU.dash = document.createElement('div'); d.id = 'suDash';
   d.innerHTML = `<h4>Island utilities · live</h4>
     <div class="r"><i>Water</i><b data-v="w1"></b><div class="subar"><u data-v="wb"></u></div><small data-v="w2"></small></div>
@@ -3172,23 +3242,31 @@ function suBuild() {                                                            
 }
 const suSet = (k, v) => { const e = SU.dash && SU.dash.querySelector(`[data-v="${k}"]`); if (!e) return; if (k.endsWith('b')) e.style.width = v; else e.textContent = v; };
 function suLabVal(k) {
-  const U = SU_U, t = x => (x / 1000).toFixed(1);
-  if (k === 'cold') return `${t(STORE.cold.stock)} of ${t(STORE.cold.cap)} t`;
-  if (k === 'dry') return `${t(STORE.dry.stock + STORE.bev.stock)} of ${t(STORE.dry.cap + STORE.bev.cap)} t`;
-  if (k === 'laundry') return `${fmt(supply.linenKg)} kg linen today`;
-  if (k === 'diesel') return `${fmt(U.diesel)} of ${U.dieselCap} m³ · ${(U.diesel / U.dayBurn).toFixed(0)} days`;
-  if (k === 'power') return `${U.load.toFixed(1)} MW · ${U.sets} of 12 sets`;
-  if (k === 'water') return `${fmt(U.water)} of ${U.cap} m³`;
-  if (k === 'ro') return `${U.ro} of 3 trains · ${U.prod} m³/h`;
-  if (k === 'sewage') return `${Math.round(U.sew)} m³/h in`;
-  if (k === 'waste') return `${fmt(supply.wasteKg)} kg today`;
+  const U = SU_U;
+  if (k === 'diesel') return `${fmt(U.diesel)} m³ · ${(U.diesel / U.dayBurn).toFixed(0)} days`;
+  if (k === 'power') return `${U.sets} of 12 sets`;
+  if (k === 'water') return `${Math.round(100 * U.water / U.cap)} %`;
+  if (k === 'ro') return `${U.ro} of 3 trains`;
+  if (k === 'sewage') return `${Math.round(U.sew)} m³/h`;
+  if (k === 'waste') return `${(wasteYard / 1000).toFixed(1)} t`;
   return '';
 }
+// one stock row: label, bar (blue; amber under 55 %, red under 30 %), percent
+const suRow = (lab, f, txt) => `<div class="sut${f < 0.3 ? ' out' : f < 0.55 ? ' lo' : ''}"><span>${lab}</span><div class="subar"><u style="width:${Math.min(100, 100 * f)}%"></u></div><i>${txt ?? Math.round(100 * f) + '%'}</i></div>`;
+function suWhHtml(k, t) {
+  const S = STORE, W = SU_WS, ton = x => (x / 1000).toFixed(1);                 // in / out / washed: since the scenario started
+  if (k === 'cold') return `<b>${t}</b>${suRow('Chilled', S.cold.stock / S.cold.cap)}<small>${ton(S.cold.stock)} of ${ton(S.cold.cap)} t · in ${ton(W.coldIn)} t · out ${ton(W.coldOut)} t</small>`;
+  if (k === 'dry') { const s = S.dry.stock + S.bev.stock, c = S.dry.cap + S.bev.cap;
+    return `<b>${t}</b>${suRow('Dry goods', S.dry.stock / S.dry.cap)}${suRow('Beverages', S.bev.stock / S.bev.cap)}${suRow('Load', s / c)}<small>${ton(s)} of ${ton(c)} t · out ${ton(W.dryOut)} t</small>`; }
+  if (k === 'prep') return `<b>${t}</b>${suRow('Line load', SU_PREP(hourOf()))}<small>out: mise en place ${fmt(W.mep)} kg · staff meals ${fmt(W.meals)} kg</small>`;
+  if (k === 'laundry') return `<b>${t}</b>${suRow('Line load', Math.min(1, W.queue / 600))}${suRow('Clean stock', Math.min(1, W.clean / 3000))}<small>soiled ${fmt(W.queue)} kg waiting · ${fmt(W.washed)} kg washed</small>`;
+  return `<b>${t}</b>`;
+}
 function suCardHtml(k) {
-  const o = outlets[k], pct = Math.round(100 * o.stock / o.par), it = SU.items[k] || [], last = supply.log.find(l => l.to === k);
-  let rows = it.map(i => `<li class="${i.st}"><em>${i.lab || SU_ST[i.st]}</em>${i.what} · ${fmt(i.kg)} kg${i.t ? ' · ' + i.t : ''}</li>`).join('');
-  if (!rows) rows = o.pending > 0 ? `<li class="way"><em>Arriving</em>restock ${fmt(o.pending)} kg</li>` : last ? `<li class="done"><em>Delivered</em>${last.what} · ${last.t}</li>` : '';
-  return `<b>${SU_NAME[k] || k}</b><div class="subar"><u style="width:${Math.min(100, pct)}%"></u></div><small>stock ${pct} % of par</small><ul>${rows}</ul>`;
+  const L = SU_OS[k] || {}, it = SU.items[k] || [];
+  const bars = Object.keys(SU_TY).filter(t => L[t]).map(t => suRow(SU_TY[t], L[t].s / L[t].par)).join('');
+  const rows = it.slice(-2).map(i => `<li class="${i.st}"><em>${i.lab || SU_ST[i.st]}</em>${i.what} · ${fmt(i.kg)} kg${i.t ? ' · ' + i.t : ''}</li>`).join('');
+  return `<b>${SU_NAME[k] || k}</b>${bars}${rows ? `<ul>${rows}</ul>` : ''}`;
 }
 function suDraw() {                                                              // values: dashboard, label texts, card contents
   const U = SU_U;
@@ -3198,33 +3276,67 @@ function suDraw() {                                                             
   suSet('e2', `solar ${U.solar.toFixed(1)} MW · diesel ${fmt(U.diesel)} m³ = ${(U.diesel / U.dayBurn).toFixed(0)} days`);
   suSet('s1', `${Math.round(U.sew)} m³/h in · ${fmt(U.sewDay)} m³ treated today`); suSet('s2', '64 % reclaimed for irrigation and flushing');
   for (const l of SU.labels) l.sp.textContent = suLabVal(l.k);
+  for (const c of SU.whs) { const h = suWhHtml(c.k, c.t); if (h !== c.html) { c.html = h; c.el.innerHTML = h; } }
   for (const c of SU.cards) { const h = suCardHtml(c.k); if (h !== c.html) { c.html = h; c.el.innerHTML = h; } }
 }
+// --- screen layout: every box wants to sit just above its point; overlaps are pushed apart (pop-ups move least), a leader line ties a moved box to its point
 const _suv = new THREE.Vector3();
-function suPlace(list, show = true) { for (const c of list) { const s = show ? toScreen(_suv.copy(c.p).setY((c.p.y || 0) + c.lift)) : null; c.el.style.display = s ? '' : 'none'; if (s) { c.el.style.left = s[0] + 'px'; c.el.style.top = s[1] + 'px'; } } }
-// callouts (the .gcall look of the guest tour, 52): at most three on the map
-function suCall(p, icon, title, sub = '', kind = 'live', lift = 12) {
+function suLayout() {
+  const W = stage.clientWidth, H = stage.clientHeight; if (!W) return;
+  const dash = SU.dash ? SU.dash.getBoundingClientRect() : null, st = stage.getBoundingClientRect(), dr = dash ? dash.bottom - st.top + 8 : 0, dw = dash ? dash.right - st.left + 8 : 0;
+  const all = [...SU.calls, ...SU.whs, ...SU.cards, ...SU.labels], vis = [];
+  for (const c of all) {
+    const s = toScreen(_suv.copy(c.p).setY((c.p.y || 0) + c.lift)); c.s = s;
+    if (!s || s[0] < -40 || s[0] > W + 40 || s[1] < -40 || s[1] > H + 40) { c.el.style.display = 'none'; continue; }
+    c.el.style.display = ''; c.w = c.el.offsetWidth; c.h = c.el.offsetHeight; c.x = s[0] - c.w / 2; c.y = s[1] - c.h - 10; c.m = SU.calls.includes(c) ? 0.25 : 1; vis.push(c);
+  }
+  for (let it = 0; it < 60; it++) {
+    let moved = false;
+    for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) {
+      const a = vis[i], b = vis[j], ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) + 4, oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) + 4;
+      if (ox <= 0 || oy <= 0) continue; moved = true; const ka = a.m / (a.m + b.m), kb = 1 - ka;
+      if (oy < ox) { const s = a.y + a.h / 2 < b.y + b.h / 2 ? -1 : 1; a.y += s * oy * ka; b.y -= s * oy * kb; }
+      else { const s = a.x + a.w / 2 < b.x + b.w / 2 ? -1 : 1; a.x += s * ox * ka; b.x -= s * ox * kb; }
+    }
+    for (const c of vis) { c.x = Math.max(6, Math.min(W - c.w - 6, c.x)); c.y = Math.max(6, Math.min(H - c.h - 6, c.y)); if (c.x < dw && c.y < dr) { if (dr - c.y < dw - c.x) c.y = dr; else c.x = dw; } }
+    if (!moved) break;
+  }
+  let d = '', dots = '';
+  for (const c of vis) {
+    c.el.style.left = c.x + 'px'; c.el.style.top = c.y + 'px';
+    const ex = Math.max(c.x + 8, Math.min(c.x + c.w - 8, c.s[0])), ey = c.s[1] < c.y ? c.y : c.y + c.h;
+    if (Math.hypot(ex - c.s[0], ey - c.s[1]) > 14) { d += `M${c.s[0].toFixed(1)} ${c.s[1].toFixed(1)}L${ex.toFixed(1)} ${ey.toFixed(1)}`; dots += `<circle cx="${c.s[0].toFixed(1)}" cy="${c.s[1].toFixed(1)}" r="2.2"/>`; }
+  }
+  if (SU.lead) SU.lead.innerHTML = `<path d="${d}"/>${dots}`;
+}
+// pop-ups (the .gcall look of the guest tour, 52) over the place of an event; p may be a live vector (a moving vessel or truck). At most five; ttl real seconds, then they fade (0 = until pushed out)
+function suCall(p, icon, title, sub = '', kind = 'live', lift = 12, ttl = 0) {
   const el = document.createElement('div'); el.className = 'gcall ' + kind; el.innerHTML = `${suIcon(icon)}<div><b>${title}</b>${sub !== null ? `<span>${sub}</span>` : ''}</div>`; (SU.root || stage).appendChild(el);
-  const c = { el, p, lift, set: (t, s) => { el.querySelector('b').textContent = t; const sp = el.querySelector('span'); if (sp && s !== undefined) sp.textContent = s; } }; SU.calls.push(c);
-  while (SU.calls.length > 3) SU.calls.shift().el.remove();
+  const c = { el, p, lift, end: ttl ? SU.clock + ttl : Infinity, set: (t, s) => { el.querySelector('b').textContent = t; const sp = el.querySelector('span'); if (sp && s !== undefined) sp.textContent = s; } }; SU.calls.push(c);
+  while (SU.calls.length > 5) SU.calls.shift().el.remove();
   return c;
 }
-// camera: suFollow keeps the given (live) points in the frame at the 60° tilt of the tour (gtFitCalc, 52); a drag detaches it until the next step of the story
-function suFollow(fn, dmin = 160, D = GT_OFF) { SU.cam = { fn, D, dmin, frame: true }; fly = null; }
-function suView(pts, D = GT_TOP, dmin = 0, lift = 30) { SU.cam.fn = null; if (!stage.clientWidth) return; const f = gtFitCalc(pts, D, dmin, lift); flyTo(f.target, f.pos, 2.2); }
-controls.addEventListener('start', () => { if (SU.tok) SU.cam.frame = false; });
+const suDrop = c => { if (!c) return; const i = SU.calls.indexOf(c); if (i >= 0) SU.calls.splice(i, 1); c.el.remove(); };
+// camera: one static overview of the masterplan for the whole run (founder 2026-10-22); a drag is the viewer's own and stays
+function suOverview() {
+  SU.view = false; if (!stage.clientWidth) { SU.view = true; return; }   // pane hidden: set the view when it shows
+  const pts = [...SU_INF.map(r => r[2]), ...SU_WHS.map(r => r[2]), ...SU_OUT.map(k => SU_OP[k]).filter(Boolean), A.cargoBerth];
+  const f = gtFitCalc(pts, GT_TOP, 0, 40); flyTo(f.target, f.pos, 2.2);
+}
 function stepSupply(rdt, dt) {
   if (!SU.tok) return;
   if (playing) SU.clock += rdt;
   for (let i = SU.beats.length - 1; i >= 0; i--) if (SU.clock >= SU.beats[i].until) { SU.beats[i].res(); SU.beats.splice(i, 1); }
   for (let i = SU.sims.length - 1; i >= 0; i--) if (simT >= SU.sims[i].until) { SU.sims[i].res(); SU.sims.splice(i, 1); }
-  suUtil(dt);
-  const C = SU.cam; if (C.fn && C.frame && !fly && stage.clientWidth) { const f = gtFitCalc(C.fn(), C.D, C.dmin), k = 1 - Math.exp(-rdt * 2.5); controls.target.lerp(f.target, k); camera.position.lerp(f.pos, k); }
-  suPlace(SU.labels, camera.position.distanceTo(SU_BOH) < 1800); suPlace(SU.cards); suPlace(SU.calls);
+  suUtil(dt); suLedgerStep(dt);
+  if (SU.view && stage.clientWidth) suOverview();
+  for (let i = SU.calls.length - 1; i >= 0; i--) { const c = SU.calls[i]; if (SU.clock > c.end + 0.6) suDrop(c); else if (SU.clock > c.end) c.el.classList.add('out'); }
+  suLayout();
   SU.t += rdt; if (SU.t > 0.3) { SU.t = 0; suDraw(); }
 }
-// ===== Supply scenario, part 2 (2026-10-22, v089): the story, start / stop. Model, dashboard, cards and the frame step are in 55.
+// ===== Supply scenario, part 2 (2026-10-22, v090): the story, start / stop. Model, dashboards, cards, layout and the frame step are in 55.
 // One day of supply in about two minutes: unscheduled food call by sea (crane, AGVs, cold store, reefer multi-drop), the linen loop through WH-1, a diesel tanker to the tank farm.
+// One static overview (suOverview, set once at start); each event shows a pop-up over its place, and a pop-up rides on each moving vessel or truck.
 // Movement rules: the vessel and the tanker on the water grid (seaLegs), the trucks and the AGVs on roads (road), no one off a network. Robot names as in ROBOTS (proforma-data.js).
 function suActor(id, mesh, medium, type, col) {
   scene.add(mesh); mesh.visible = false;
@@ -3234,6 +3346,9 @@ function suActor(id, mesh, medium, type, col) {
 function suAgv(n) { const g = new THREE.Group(); g.add(box(1.6, 0.6, 1.2, 0x6f9fd8, 0, 0.3, 0)); const load = box(1.1, 0.9, 1.0, 0xd9c7a0, 0, 1.05, 0); g.add(load); const a = suActor('AGV-' + n, g, 'road', 'agv', TYPE_COL.L5 || 0x6f9fd8); a.load = load; return a; }
 function suItem(k, what, kg, st = 'order') { const i = { what, kg, st }; (SU.items[k] ||= []).push(i); return i; }
 const suRoad = (from, to) => { const r = road(from, to); if (!r) console.warn('supply: no road', from.toArray().map(v => v | 0), '->', to.toArray().map(v => v | 0)); return r; };
+const suEnd = (c, sec = 4) => { if (c) c.end = SU.clock + sec; };   // a pop-up fades sec real seconds from now
+// an order raises the outlet's need for the event: fresh and chilled bars drop to "short" until the drop (split as suSplit in 55)
+function suNeed(k, what, kg) { const L = SU_OS[k], sp = suSplit(what); if (!L || !sp) return; for (const t in sp) if (L[t] && !L[t].own) L[t].par += sp[t] * kg; }
 // the supply vessel: an idle ambient SV from the mainland port (its own loop pauses while f.gt is set), else one of our own
 function suVessel() {
   const f = ambient.find(v => v.type === 'W2' && v.place === A.cargoSea && !v.path && !v.gt);
@@ -3249,26 +3364,25 @@ async function suStory(tok) {
   const U = SU_U, chk = () => suChk(tok);
   gtJump(11); suMul(1);
   // A. what the island runs on
-  suView(SU_INF.map(r => r[2]), GT_TOP, 0, 40);
-  gtBanner('<b>Supply</b> · what the island runs on: stores, laundry, medical, fuel, power, water, sewage · utilities live top-left'); await suBeat(6); chk();
+  gtBanner('<b>Supply</b> · what the island runs on: stores, laundry, medical, fuel, power, water, sewage · stock by type over every outlet and store'); await suBeat(6); chk();
   // B. an unscheduled order: a private dinner for 40 at the Rotunda the same evening
   const fish = suItem('Restaurant', 'Fish, shellfish, produce', 620), club = suItem('Beach Club', 'Fish and produce', 180), hot = suItem('Beach Hotel', 'Fresh produce, dairy', 400);
-  for (const k of ['Restaurant', 'Beach Club', 'Beach Hotel']) outlets[k].orders++; const tOrder = simT;
-  suView([WH.cold, SU_OP.Restaurant, SU_OP['Beach Club'], SU_OP['Beach Hotel']], GT_TOP, 0, 40);
+  for (const [k, i] of [['Restaurant', fish], ['Beach Club', club], ['Beach Hotel', hot]]) { outlets[k].orders++; suNeed(k, i.what, i.kg); }
+  const tOrder = simT;
   gtBanner('<b>11:00 · unscheduled order</b> · private dinner for 40 at the Rotunda tonight · the stock system finds 1,200 kg short');
-  suCall(WH.cold, 'package', 'WH-3 Cold store · 1,200 kg short', 'call-off to the mainland supplier · SV sails at 11:20', 'live', 18); await suBeat(5); chk();
-  // C. the supply vessel sails, mainland port → Service dock, on the water grid
+  suCall(SU_OP.Restaurant, 'utensils', 'Private dinner for 40 tonight', 'fresh and chilled short · 620 kg ordered', 'alert', 18, 9);
+  suCall(WH.cold, 'package', 'WH-3 Cold store · 1,200 kg short', 'call-off to the mainland supplier · SV sails at 11:20', 'live', 18, 9); await suBeat(5); chk();
+  // C. the supply vessel sails, mainland port → Service dock, on the water grid; its pop-up rides on it
   const sv = suVessel(); sv.task = 'Unscheduled call · 1.2 t cold chain · mainland → Service dock';
-  suCall(A.cargoBerth, 'ship', `Unscheduled call · ${sv.id}`, 'autonomous · 1 remote operator', 'live', 14);
+  const svc = suCall(sv.mesh.position, 'ship', `${sv.id} · unscheduled call`, '1.2 t cold chain · autonomous · 1 remote operator', 'live', 14);
   gtBanner(`<b>${sv.id}</b> · autonomous supply vessel · mainland → Service dock`); suMul(6);
-  suFollow(() => [sv.mesh.position, A.cargoBerth], 260);
   await move(sv, seaLegs([A.cargoSea, A.cargoBerth]), 14); chk();
+  svc.set(`${sv.id} · at the Service dock`, 'berthed · unloading'); suEnd(svc, 3);
   // D. unloading: the remote-operated crane lands 6 reefer pallets, 3 AGVs carry them to WH-3
   suMul(4); const crane = suCall(A.dock, 'wrench', 'Remote-operated crane', '6 reefer pallets · 200 kg each', 'live', 16);
   const wh = suCall(WH.cold, 'package', 'WH-3 Cold store · 0 of 6 pallets in', '2 °C cold chain', 'live', 18);
   gtBanner('<b>Unloading</b> · Remote-operated crane · AGV (goods and linen) × 3 · Service dock → WH-3 by the service road');
   const toWh = suRoad(A.dock, WH.cold), back = toWh && toWh.slice().reverse(); let inN = 0;
-  suFollow(() => [A.dock, WH.cold], 200);
   const agvRun = async n => {
     const a = suAgv(n); placeAt(a, toWh[0]); await suSim(n * 2); chk();
     for (let trip = 0; trip < 2; trip++) {
@@ -3280,88 +3394,99 @@ async function suStory(tok) {
     scene.remove(a.mesh); delete actors[a.id];
   };
   if (toWh) await Promise.all([0, 1, 2].map(agvRun)); chk();
-  wh.set('WH-3 Cold store · 1,200 kg in', 'picked into 3 drops'); crane.set('Remote-operated crane', 'done · SV free to sail');
+  wh.set('WH-3 Cold store · 1,200 kg in', 'picked into 3 drops'); crane.set('Remote-operated crane', 'done · SV free to sail'); suEnd(wh, 5); suEnd(crane, 5);
   // E. the vessel goes back; the reefer truck runs one multi-drop loop WH-3 → Rotunda → Beach Club → Beach Hotel → WH-3
   move(sv, seaLegs([A.cargoBerth, A.cargoSea]), 14).then(() => { if (SU.tok === tok) suVesselBack(); });
   const rt = suActor('RT-1', fleetModel('L4'), 'road', 'L4', TYPE_COL.L4); const drops = [['Restaurant', fish], ['Beach Club', club], ['Beach Hotel', hot]];
   placeAt(rt, roadR.posOf(...roadR.nearest(WH.cold))); for (const [, i] of drops) i.st = 'way';
   gtBanner('<b>RT-1 reefer truck</b> · one loop, three drops · Rotunda → Beach Club → Beach Hotel'); suMul(10);
-  suFollow(() => [rt.mesh.position, ...drops.map(d => outletAt[d[0]])], 200);
-  let at = rt.pos.clone();
+  const rtc = suCall(rt.mesh.position, 'truck', 'RT-1 reefer · 1,200 kg', 'cold chain 2 °C · 3 drops', 'live', 10);
+  let at = rt.pos.clone(), left = 1200;
   for (const [k, i] of drops) {
-    rt.task = `Cold chain 2 °C · ${i.what} ${i.kg} kg → ${SU_NAME[k] || k}`; await move(rt, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k];
-    const c = suCall(outletAt[k], 'utensils', `${SU_NAME[k] || k} · ${i.kg} kg in`, 'robot cart to the kitchen cold room', 'ok', 12);
+    rt.task = `Cold chain 2 °C · ${i.what} ${i.kg} kg → ${SU_NAME[k] || k}`; rtc.set(`RT-1 reefer · ${fmt(left)} kg`, `next: ${SU_NAME[k] || k} · ${i.kg} kg`);
+    await move(rt, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k];
+    const c = suCall(SU_OP[k] || outletAt[k], 'utensils', `${SU_NAME[k] || k} · ${i.kg} kg in`, 'robot cart to the kitchen cold room', 'ok', 18);
     await suSim(5); chk();
     outlets[k].stock += i.kg; supply.truckKg += i.kg; STORE.cold.stock = Math.max(0, STORE.cold.stock - i.kg); logDelivery(i.what, 'WH-3 Cold storage', k, i.kg);
-    i.st = 'done'; i.t = clockText(); c.set(`${SU_NAME[k] || k} · delivered ${i.t}`);
+    left -= i.kg; i.st = 'done'; i.t = clockText(); c.set(`${SU_NAME[k] || k} · delivered ${i.t}`, 'fresh and chilled back over par'); suEnd(c, 6);
   }
-  rt.task = 'Empty · back to WH-3'; await move(rt, suRoad(at, roadR.posOf(...roadR.nearest(WH.cold))), 18); chk(); scene.remove(rt.mesh); delete actors[rt.id];
+  rt.task = 'Empty · back to WH-3'; rtc.set('RT-1 reefer · empty', 'back to WH-3'); await move(rt, suRoad(at, roadR.posOf(...roadR.nearest(WH.cold))), 18); chk(); suDrop(rtc); scene.remove(rt.mesh); delete actors[rt.id];
   gtBanner(`<b>Order closed</b> · ${suDur(simT - tOrder)} from the order to the last drop · no outlet ran short`); await suBeat(3); chk();
   // F. the linen loop: soiled linen from the hotel and the restaurant to WH-1, wash and fold, clean linen back (straight after the food run, same afternoon)
   suMul(10); const tLin = simT;
   const lin = { 'Beach Hotel': 380, Restaurant: 60 }, li = {}; for (const k in lin) li[k] = suItem(k, 'Soiled linen out', lin[k], 'order'), li[k].lab = 'Pick-up';
   const lv = suActor('LV-1', fleetModel('L4'), 'road', 'L4', TYPE_COL.L4), wh1 = roadR.posOf(...roadR.nearest(WH.laundry)); placeAt(lv, wh1);
   gtBanner('<b>Linen loop</b> · LV-1 collects soiled linen · Beach Hotel → Rotunda → WH-1 Laundry');
-  suFollow(() => [lv.mesh.position, wh1, ...Object.keys(lin).map(k => outletAt[k])], 200);
-  at = wh1;
-  for (const k in lin) { li[k].lab = 'Collecting'; li[k].st = 'way'; lv.task = `Linen pick-up · ${SU_NAME[k] || k}`; await move(lv, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k]; await suSim(4); chk(); li[k].st = 'done'; li[k].lab = 'Collected'; li[k].t = clockText(); }
-  lv.task = 'Soiled linen 440 kg · to WH-1 Laundry'; await move(lv, suRoad(at, wh1), 18); chk();
-  supply.linenKg += 440; logDelivery('Soiled linen', 'Beach Hotel, Rotunda', 'WH-1 Laundry', 440);
-  suView([WH.laundry, WH.prep], GT_OFF, 140, 30); suMul(20);
+  const lvc = suCall(lv.mesh.position, 'shirt', 'LV-1 linen van · empty', 'pick-up: Beach Hotel, Rotunda', 'live', 10);
+  at = wh1; let onb = 0;
+  for (const k in lin) {
+    li[k].lab = 'Collecting'; li[k].st = 'way'; lv.task = `Linen pick-up · ${SU_NAME[k] || k}`; await move(lv, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k]; await suSim(4); chk();
+    onb += lin[k]; li[k].st = 'done'; li[k].lab = 'Collected'; li[k].t = clockText(); lvc.set(`LV-1 linen van · ${onb} kg soiled`, `collected at ${SU_NAME[k] || k}`);
+  }
+  lv.task = 'Soiled linen 440 kg · to WH-1 Laundry'; lvc.set('LV-1 linen van · 440 kg soiled', 'to WH-1 Laundry'); await move(lv, suRoad(at, wh1), 18); chk();
+  supply.linenKg += 440; logDelivery('Soiled linen', 'Beach Hotel, Rotunda', 'WH-1 Laundry', 440); suDrop(lvc);
+  suMul(20);
   const st = suCall(WH.laundry, 'shirt', 'WH-1 Laundry · sort', '440 kg in', 'live', 18);
   for (const [name, min] of [['Sort', 15], ['Tunnel washer line', 45], ['Dry and iron', 40], ['Folding robot', 30], ['Clean carts loaded', 10]]) { st.set(`WH-1 Laundry · ${name}`, `${min} min · 440 kg`); await suSim(min); chk(); }
+  suEnd(st, 4);
   for (const k in lin) { const i = suItem(k, 'Clean linen', lin[k], 'way'); i.lab = 'Arriving'; delete SU.items[k][SU.items[k].indexOf(li[k])]; SU.items[k] = SU.items[k].filter(Boolean); li[k] = i; }
   suMul(10); gtBanner(`<b>Clean linen back</b> · same loop · ${suDur(simT - tLin)} from the first pick-up to the clean carts`);
-  suFollow(() => [lv.mesh.position, wh1, ...Object.keys(lin).map(k => outletAt[k])], 200);
-  at = wh1;
-  for (const k in lin) { lv.task = `Clean linen ${lin[k]} kg → ${SU_NAME[k] || k}`; await move(lv, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k]; await suSim(4); chk(); li[k].st = 'done'; li[k].lab = ''; li[k].t = clockText(); logDelivery('Clean linen', 'WH-1 Laundry', k, lin[k]); }
-  await move(lv, suRoad(at, wh1), 18); chk(); scene.remove(lv.mesh); delete actors[lv.id];
+  const lvb = suCall(lv.mesh.position, 'shirt', 'LV-1 linen van · 440 kg clean', 'to Beach Hotel, Rotunda', 'live', 10);
+  at = wh1; onb = 440;
+  for (const k in lin) {
+    lv.task = `Clean linen ${lin[k]} kg → ${SU_NAME[k] || k}`; await move(lv, suRoad(at, outletAt[k]), 18); chk(); at = outletAt[k]; await suSim(4); chk();
+    li[k].st = 'done'; li[k].lab = ''; li[k].t = clockText(); logDelivery('Clean linen, loop', 'WH-1 Laundry', k, lin[k]); onb -= lin[k];
+    suEnd(suCall(SU_OP[k] || outletAt[k], 'shirt', `${SU_NAME[k] || k} · clean linen in`, `${lin[k]} kg · linen shelf refilled`, 'ok', 18), 6); lvb.set(`LV-1 linen van · ${onb} kg clean`, onb ? 'next drop' : 'empty · back to WH-1');
+  }
+  await move(lv, suRoad(at, wh1), 18); chk(); suDrop(lvb); scene.remove(lv.mesh); delete actors[lv.id];
   // G. diesel: a coastal tanker berths at the Service dock and pumps 300 m³ into the tank farm by the hose line along the service road
   suMul(8); const tk = suActor('TK-1', fleetModel('W2'), 'water', 'W2', 0xd08a1f); placeAt(tk, A.cargoSea.clone().setY(waterY)); tk.task = 'Diesel tanker · 300 m³ · mainland → Service dock';
   gtBanner(`<b>Diesel</b> · coastal tanker TK-1 · 300 m³ · tank farm at ${Math.round(100 * U.diesel / U.dieselCap)} % (${(U.diesel / U.dayBurn).toFixed(0)} days of gen-set fuel)`);
-  suFollow(() => [tk.mesh.position, A.cargoBerth], 260);
-  await move(tk, seaLegs([A.cargoSea, A.cargoBerth]), 14); chk();
+  const tkc = suCall(tk.mesh.position, 'fuel', 'TK-1 diesel tanker · 300 m³', 'mainland → Service dock', 'live', 14);
+  await move(tk, seaLegs([A.cargoSea, A.cargoBerth]), 14); chk(); tkc.set('TK-1 diesel tanker · berthed', 'hose line to the tank farm'); suEnd(tkc, 3);
   const hose = suRoad(A.dock, SU_TANKS);
   if (hose) { const g = new THREE.BufferGeometry().setFromPoints([A.cargoBerth.clone().setY(0.6), ...hose.map(p => p.clone().setY((p.y || 0) + 0.6))]); const ln = new THREE.Line(g, new THREE.LineDashedMaterial({ color: 0xd08a1f, dashSize: 4, gapSize: 3 })); ln.computeLineDistances(); ln.renderOrder = 7; scene.add(ln); SU.fx.push(ln); }
-  suView([A.cargoBerth, SU_TANKS, A.dock], GT_OFF, 160, 30); suMul(20);
+  suMul(20);
   const pump = suCall(SU_TANKS, 'fuel', 'Diesel tank farm · pumping 150 m³/h', '', 'live', 14);
   const d0 = U.diesel, t0 = simT;
   while (simT - t0 < 120) { await suSim(2); chk(); U.diesel = Math.min(U.dieselCap, d0 + 2.5 * (simT - t0)); pump.set('Diesel tank farm · pumping 150 m³/h', `${fmt(U.diesel)} of ${U.dieselCap} m³ · +${fmt(U.diesel - d0)} m³`); }
-  U.diesel = Math.min(U.dieselCap, d0 + 300); pump.set('Diesel tank farm · full load in', `${fmt(U.diesel)} m³ · ${(U.diesel / U.dayBurn).toFixed(0)} days`); logDelivery('Diesel 300 m³', 'TK-1 tanker', 'Tank farm', 255000);
+  U.diesel = Math.min(U.dieselCap, d0 + 300); pump.set('Diesel tank farm · full load in', `${fmt(U.diesel)} m³ · ${(U.diesel / U.dayBurn).toFixed(0)} days`); logDelivery('Diesel 300 m³', 'TK-1 tanker', 'Tank farm', 255000); suEnd(pump, 6);
   for (const ln of SU.fx) { scene.remove(ln); ln.geometry.dispose(); } SU.fx = [];
   suMul(8); tk.task = 'Empty · Service dock → mainland'; move(tk, seaLegs([A.cargoBerth, A.cargoSea]), 14).then(() => { if (actors[tk.id]) { scene.remove(tk.mesh); delete actors[tk.id]; } });
-  // H. back to the overview; the dashboard and the cards stay live
+  // H. the loop is closed; the dashboard and the cards stay live
   await suBeat(3); chk(); suMul(1);
-  suView(SU_INF.map(r => r[2]).concat(SU_OUT.map(k => SU_OP[k]).filter(Boolean)), GT_TOP, 0, 40);
   gtBanner('<b>Supply loop closed</b> · food, linen and fuel in · water, power and sewage run on their own · press Supply to leave');
 }
 const suMul = m => gtMul(m);
 const suDur = min => { const m = Math.round(min); return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
 function suClear() {
-  SU.beats = []; SU.sims = []; SU.cam = { fn: null, D: null, dmin: 0, frame: false }; SU.items = {}; SU.calls = [];
+  SU.beats = []; SU.sims = []; SU.view = false; SU.items = {}; SU.calls = [];
   suVesselBack();
   for (const k of Object.keys(actors)) if (k.startsWith('SU-')) { const a = actors[k]; scene.remove(a.mesh); a.path = null; a.onDone = null; delete actors[k]; }
   for (const ln of SU.fx) { scene.remove(ln); ln.geometry.dispose(); } SU.fx = [];
-  if (SU.root) SU.root.remove(); if (SU.dash) SU.dash.remove(); SU.root = SU.dash = null; SU.labels = []; SU.cards = [];
+  if (SU.root) SU.root.remove(); if (SU.dash) SU.dash.remove(); SU.root = SU.dash = SU.lead = null; SU.labels = []; SU.whs = []; SU.cards = [];
 }
 const suBtn = () => document.querySelector('#scenSw button[data-scen="supply"]');
 function suStart() {
   gtStop(); if (typeof opStop === 'function') opStop(); suClear(); SU.tok = ++SU.runs; stage.classList.add('supply'); const b = suBtn(); if (b) b.classList.add('on');
   playing = true; $('bPlay').textContent = 'Pause'; $('bPlay').classList.add('on'); setAutoCam(false);
-  suBuild(); suDraw();
+  castOn(f => f.type === 'W2' || f.type === 'L4');                             // supply actors only: vessels and trucks; crowd, pods, carts, robots, boats, yachts hidden
+  suLedger(); SU_LOG.head = supply.log[0] || null; suWsReset();
+  suBuild(); suDraw(); suOverview();
   suStory(SU.tok).catch(e => { if (e !== SU_STOP) console.error(e); });
 }
 function suStop() {
   if (!SU.tok && !stage.classList.contains('supply')) return;
-  SU.tok = 0; suClear(); stage.classList.remove('supply'); const b = suBtn(); if (b) b.classList.remove('on'); gtMul(1); gtBanner('');
+  SU.tok = 0; suClear(); castOff(); stage.classList.remove('supply'); const b = suBtn(); if (b) b.classList.remove('on'); gtMul(1); gtBanner('');
 }
 { const b = suBtn(); if (b) b.onclick = () => (SU.tok ? suStop() : suStart()); }
 $('scenSw').addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.dataset.scen !== 'supply' && SU.tok) suStop(); }, true);   // another scenario ends this one; capture: before that button starts its own
-window.__supply = { start: suStart, stop: suStop, state: SU, util: SU_U };
+window.__supply = { start: suStart, stop: suStop, state: SU, util: SU_U, ledger: SU_OS, stores: SU_WS };
 // ===== Operations scenario, part 1 (2026-10-22): the island's own robots at work, in one run (founder: «много не надо», «не пересложняй»).
-// A fleet dashboard top-left (counts by type and state: the live fleet `ambient` + the units below), robot mowers on the lawns, patrol drones over the beaches,
-// the lifebuoy drone beat, marina service at the berths (smart pedestal + pump-out cart; YS_RATE / ysLog from 32). The story is in 58. The island's base loop runs on underneath.
-// Register types (rubiqos-site-src/proforma-data.js ROBOTS): mower, dronePatrol, droneRescue, pedestal, pumpout. The fleet GLB has no mower or drone model:
+// Founder 2026-10-22, rule for every scenario: show only the actors of the scenario (here: no guests, no guest pods / shuttles / boats); no camera moves — one static overview
+// of the whole masterplan, and a steady stream of pop-ups over the places where things happen. A fleet dashboard top-left (counts by type and state: the live L3 service carts + the units below),
+// robot mowers on the lawns, patrol drones over the beaches (a shark alert on one of them), marina service at the berths (smart pedestal + pump-out cart; YS_RATE / ysLog from 32). The story is in 58.
+// Register types (rubiqos-site-src/proforma-data.js ROBOTS): mower, dronePatrol, pedestal, pumpout. The fleet GLB has no mower or drone model:
 // massing boxes at true size here (open item: no Model Register entry). Full working in vault 2. Architecture/Operations Scenario — 2026-10-22.md.
 const opCss = document.createElement('style');
 opCss.textContent = `
@@ -3373,63 +3498,78 @@ opCss.textContent = `
   #opDash table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
   #opDash th { font-size: 10px; font-weight: 600; color: #5b6676; text-align: right; padding: 0 0 3px 4px; } #opDash th:first-child, #opDash td:first-child { text-align: left; padding-left: 0; }
   #opDash td { padding: 2px 0 2px 4px; text-align: right; border-top: 1px solid rgba(10, 18, 32, 0.07); } #opDash td.z { color: #c3cad4; }
-  #opDash tr.op td:first-child { font-weight: 600; } #opDash tr.sep td { border-top: 1px solid rgba(10, 18, 32, 0.25); }
+  #opDash tr.op td:first-child { font-weight: 600; }
   #opDash small { display: block; margin-top: 5px; color: #5b6676; font-variant-numeric: tabular-nums; }
-  .gcall.alert svg { background: #d93b2b; }`;
+  .ops .gcall { transition: opacity .5s; } .ops .gcall.out { opacity: 0; }
+  .gcall.alert svg { background: #d93b2b; } .gcall.alert { box-shadow: 0 0 0 2px #d93b2b, 0 6px 18px rgba(10, 18, 32, 0.2); }`;
 document.head.appendChild(opCss);
-const OP_ICON = { lifebuoy: 'M12 2a10 10 0 1 0 0 20 10 10 0 1 0 0-20zM12 8a4 4 0 1 0 0 8 4 4 0 1 0 0-8zM4.93 4.93l4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24' };   // Lucide (ISC), as ICON in 24
+const OP_ICON = {                                                                // Lucide (ISC), as ICON in 24
+  flag: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7',
+  phone: 'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM12 18h.01',
+  alert: 'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01' };
 const opIcon = k => `<svg viewBox="0 0 24 24"><path d="${OP_ICON[k] || ICON[k] || ICON.star}"/></svg>`;
-// --- dashboard rows: the live fleet by type (30, 31) and the scenario's own units; states: moving (empty / repositioning), on a job, charging, idle
-const OP_FLEET = [['L1', 'L1 pods'], ['L2', 'L2 shuttles'], ['L3', 'L3 service carts'], ['L4', 'L4 trucks'], ['L5', 'L5 delivery robots'], ['W1', 'W1 shuttle boats'], ['W2', 'W2 supply vessels'], ['W3', 'W3 excursion boat'], ['A1', 'A1 helicopter']];
-const OP_OWN = [['mower', 'Robot mowers'], ['dronePatrol', 'Patrol drones'], ['droneRescue', 'Lifebuoy drone'], ['pumpout', 'Pump-out cart']];
-const OP_COL = { mower: 0x4f9a4a, dronePatrol: 0x2457e6, droneRescue: 0xd93b2b, pumpout: 0x9fcb7c, lifeguard: 0xf2c230 };
-const OP_SPEED = { mow: 18, drive: 40, drone: 100, rescue: 300, swim: 60 };      // m per motion-minute (60: ×2 = m per sim-minute): mower 0.6 m/s mowing, drones 3.3 / 10 m/s, lifeguard 2 m/s
-const OP_ALT = { patrol: 35, rescue: 18 };                                       // flight height, m over the ground / sea
+// --- actors on the map: fleet types that belong to operations; every other ambient type (guest pods L1, shuttles L2, trucks L4, robots L5, boats W1–W3, helicopter A1),
+// the crowd and the yachts under way are hidden while the scenario runs (re-asserted every frame: 33 re-shows a vehicle on each new trip, 32 a yacht on departure)
+const OP_SHOW = new Set(['L3']);
+const OP_FLEET = [['L3', 'L3 service carts']];
+const OP_OWN = [['mower', 'Robot mowers'], ['dronePatrol', 'Patrol drones'], ['pumpout', 'Pump-out cart']];
+const OP_COL = { mower: 0x4f9a4a, dronePatrol: 0x2457e6, pumpout: 0x9fcb7c };
+const OP_SPEED = { mow: 18, drive: 40, drone: 100, shark: 6 };                    // m per motion-minute (60: ×2 = m per sim-minute): mower 0.6 m/s mowing, drone 3.3 m/s, shark 0.2 m/s
+const OP_ALT = { patrol: 35, watch: 25 };                                        // flight height, m over the ground / sea: patrol loop, hover over a sighting
 const opState = f => f.charging > 0 || f.toCharge ? 'ch' : f.path ? (/^(Empty|Return|Back)/i.test(f.task || '') ? 'mv' : 'job') : 'idle';
 // --- state; beats run on real seconds (paused with the clock)
-const OP = { tok: 0, runs: 0, clock: 0, beats: [], units: [], calls: [], fx: [], bands: [], berths: [], dash: null, now: '', t: 0, cam: { fn: null, D: null, dmin: 0, frame: false }, mul: 1, n: { mowed: 0, patrolKm: 0, water: 0, pump: 0 } };
+const OP = { tok: 0, runs: 0, clock: 0, beats: [], units: [], calls: [], fx: [], bands: [], berths: [], dash: null, now: '', t: 0, mul: 1, l3Next: 0,
+  n: { mowed: 0, patrolKm: 0, water: 0, pump: 0, events: 0 } };
 const OP_STOP = new Error('operations scenario stopped');
 const opChk = tok => { if (tok !== OP.tok) throw OP_STOP; };
 const opBeat = sec => new Promise(res => OP.beats.push({ until: OP.clock + sec, res }));
 function opSpeed(m) { OP.mul = m; speedMul = m; $('bSpeed').textContent = `Speed ${m}×`; }
+const OP_KEEP = f => OP_SHOW.has(f.type);                                        // shared cast helper (55): meshes of everything else, yachts under way included, hidden by castApply each frame
+function opHide() { if (CAST.keep !== OP_KEEP) castOn(OP_KEEP); }                // markers are children of the meshes (30:31): hidden with them
+function opShow() {                                                              // as before the run (castOff restores people and meshes)
+  if (CAST.keep === OP_KEEP) castOff();
+  for (const f of ambient) delete f._opTask;
+}
 function opBuild() {
   const d = OP.dash = document.createElement('div'); d.id = 'opDash';
   const tr = ([k, t], cls = '') => `<tr class="${cls}" data-k="${k}"><td>${t}</td><td></td><td></td><td></td><td></td><td></td></tr>`;
   d.innerHTML = `<h4>Fleet operations · live</h4><div class="now"></div><table><tr><th></th><th>Moving</th><th>On job</th><th>Charging</th><th>Idle</th><th>All</th></tr>
-    ${OP_FLEET.map(r => tr(r)).join('')}${OP_OWN.map((r, i) => tr(r, i ? 'op' : 'op sep')).join('')}</table><small data-v="foot"></small>`;
+    ${OP_FLEET.map(r => tr(r)).join('')}${OP_OWN.map(r => tr(r, 'op')).join('')}</table><small data-v="foot"></small>`;
   stage.appendChild(d);
 }
 function opDraw() {
   const c = {}; const add = (k, st) => { const r = c[k] ||= { mv: 0, job: 0, ch: 0, idle: 0, n: 0 }; r[st]++; r.n++; };
-  for (const f of ambient) add(f.type, opState(f));
-  for (const u of OP.units) add(u.type, u.st || 'idle');
+  for (const f of ambient) if (OP_SHOW.has(f.type)) add(f.type, opState(f));
+  for (const u of OP.units) if (u.type in OP_COL) add(u.type, u.st || 'idle');
   for (const tr of OP.dash.querySelectorAll('tr[data-k]')) { const r = c[tr.dataset.k] || { mv: 0, job: 0, ch: 0, idle: 0, n: 0 }, td = tr.children;
     ['mv', 'job', 'ch', 'idle', 'n'].forEach((k, i) => { td[i + 1].textContent = r[k]; td[i + 1].className = r[k] ? '' : 'z'; }); }
   OP.dash.querySelector('.now').textContent = OP.now;
   const ped = OP.berths.length, n = OP.n;
-  OP.dash.querySelector('[data-v="foot"]').textContent = `Lawn mowed ${(n.mowed / 1000).toFixed(2)} km of stripe · patrol ${n.patrolKm.toFixed(1)} km · pedestals live ${ped} · water ${n.water.toFixed(1)} m³ · pump-out ${n.pump.toFixed(1)} m³`;
+  OP.dash.querySelector('[data-v="foot"]').textContent = `Events ${n.events} · lawn mowed ${(n.mowed / 1000).toFixed(2)} km of stripe · patrol ${n.patrolKm.toFixed(1)} km · pedestals live ${ped} · water ${n.water.toFixed(1)} m³ · pump-out ${n.pump.toFixed(1)} m³`;
 }
-// --- units: massing at true size (assumptions: mower 1.2 × 0.9 × 0.5 m large-area class; patrol drone 1.2 m span; lifebuoy drone 1.8 m span) + a beacon in the type colour
+// --- units: massing at true size (assumptions: mower 1.2 × 0.9 × 0.5 m large-area class; patrol drone 1.2 m span) + a beacon in the type colour
 function opModel(type) {
   const g = new THREE.Group();
   if (type === 'mower') g.add(box(1.2, 0.4, 0.9, 0x4f9a4a, 0, 0.3), box(0.4, 0.12, 0.6, 0x2b3440, -0.2, 0.56));
   else if (type === 'pumpout') return fleetModel('L3');
-  else if (type === 'lifeguard') return personModel(OP_COL.lifeguard);
-  else { const s = type === 'droneRescue' ? 1.5 : 1, col = OP_COL[type];
-    g.add(box(0.5 * s, 0.22 * s, 0.5 * s, col), box(1.2 * s, 0.06, 0.08, 0x2b3440), box(0.08, 0.06, 1.2 * s, 0x2b3440));
-    for (const [x, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) g.add(box(0.4 * s, 0.03, 0.4 * s, 0x2b3440, x * 0.6 * s, 0.06, z * 0.6 * s));
-    if (type === 'droneRescue') { const r = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.11, 8, 20), mat(0xf07a1a)); r.rotation.x = Math.PI / 2; r.position.y = -0.35; r.name = 'opBuoy'; g.add(r); } }
+  else { const col = OP_COL[type];
+    g.add(box(0.5, 0.22, 0.5, col), box(1.2, 0.06, 0.08, 0x2b3440), box(0.08, 0.06, 1.2, 0x2b3440));
+    for (const [x, z] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) g.add(box(0.4, 0.03, 0.4, 0x2b3440, x * 0.6, 0.06, z * 0.6)); }
   return g;
 }
 function opUnit(id, type, p, medium, task = '') {
   const mesh = opModel(type), mk = beacon(OP_COL[type]); mk.scale.set(0.016, 0.016, 1); mk.position.y = (type === 'pumpout' && FM.L3 ? FM.L3.height_m : 1) + 4; mesh.add(mk);
   scene.add(mesh); const a = { id: 'OP-' + id, type, mesh, medium, heading: 0, task, st: 'idle' }; actors[a.id] = a; OP.units.push(a); placeAt(a, p); return a;
 }
-// --- callouts (the .gcall look of the guest tour, 52): at most three on the map; kind '', ok, live, alert
-function opCall(p, icon, title, sub = '', kind = 'live', lift = 10) {
+// --- pop-ups (the .gcall look of the guest tour, 52) over the place of an event: at most five on the map, each fades after ttl seconds (Infinity = until set / cleared);
+// kind '', ok, live, alert. Overlapping pop-ups are stacked upwards in stepOps.
+const OP_CALLS = 5;
+function opCall(p, icon, title, sub = '', kind = 'live', lift = 10, ttl = 5) {
   const el = document.createElement('div'); el.className = 'gcall ' + kind; el.innerHTML = `${opIcon(icon)}<div><b>${title}</b>${sub ? `<span>${sub}</span>` : ''}</div>`; stage.appendChild(el);
-  const c = { el, p, lift, set: (t, s, k) => { el.querySelector('b').textContent = t; const sp = el.querySelector('span'); if (sp && s !== undefined) sp.textContent = s; if (k !== undefined) el.className = 'gcall ' + k; } }; OP.calls.push(c);
-  while (OP.calls.length > 3) OP.calls.shift().el.remove();
+  const c = { el, p, lift, ttl, t: 0, kind, set: (t, s, k, ttl2) => { el.querySelector('b').textContent = t; const sp = el.querySelector('span'); if (sp && s !== undefined) sp.textContent = s;
+    if (k !== undefined) { c.kind = k; el.className = 'gcall ' + k; } if (ttl2 !== undefined) { c.ttl = ttl2; c.t = 0; } } };
+  OP.calls.push(c); OP.n.events++;
+  while (OP.calls.length > OP_CALLS) { const i = OP.calls.findIndex(q => q.ttl !== Infinity); OP.calls.splice(i < 0 ? 0 : i, 1)[0].el.remove(); }
   return c;
 }
 // --- effects: a ring that spreads (once, or looping until cleared) and the mowed band behind a mower
@@ -3468,8 +3608,8 @@ function opLawnRows(name, step = 6, max = 6, from = null) {
   }
   return rows;
 }
-// --- camera: opView fits points at the 60° tilt of the tour (gtFitCalc, 52); opFollow keeps live points in the frame; a drag detaches it until the next step
-// opFit: gtFitCalc over the whole width, then pulled back and shifted so the points sit right of the dashboard card (top-left)
+// --- camera: one static overview of the whole island for the whole run (founder 2026-10-22: no camera moves in Supply and Operations).
+// gtFitCalc (52) at the 60° tilt of the tour, then pulled back and shifted so the island sits right of the dashboard card (top-left). The viewer may still drag / zoom by hand.
 const _opR = new THREE.Vector3(), _opUP = new THREE.Vector3(0, 1, 0);
 function opFit(pts, D, dmin) {
   const f = gtFitCalc(pts, D, dmin, 30), W = stage.clientWidth, dash = $('opDash');
@@ -3480,150 +3620,185 @@ function opFit(pts, D, dmin) {
   const target = f.target.clone().addScaledVector(_opR, -th * d * wd / W);   // centre moves left by wd/2 px → the points move right of the card
   return { target, pos: target.clone().addScaledVector(D, d), d };
 }
-function opView(pts, dmin = 0, D = GT_TOP) { OP.cam.fn = null; const f = opFit(pts, D, dmin); flyTo(f.target, f.pos, 2.2); }
-function opFollow(fn, dmin = 160, D = GT_OFF) { OP.cam = { fn, D, dmin, frame: true }; fly = null; }
-controls.addEventListener('start', () => { if (OP.tok) OP.cam.frame = false; });
+function opOverview() {
+  OP.ov = false; if (!stage.clientWidth || !stage.clientHeight) return;        // hidden pane: no size to fit to; stepOps tries again
+  const a = islandBox.min, b = islandBox.max, f = opFit([[a.x, a.z], [a.x, b.z], [b.x, a.z], [b.x, b.z]].map(([x, z]) => new THREE.Vector3(x, 0, z)), GT_TOP, 0);
+  if (!Number.isFinite(f.pos.x + f.pos.y + f.pos.z + f.target.x + f.target.z)) return;
+  stopFollow(); flyTo(f.target, f.pos, 1.6); OP.ov = true;
+}
+// --- the live service carts (30): a pop-up when one takes a new job, one every 4 s at most
+function opWatch() {
+  for (const f of ambient) { if (f.type !== 'L3') continue; const t = f.task || '';
+    if (f._opTask === undefined) { f._opTask = t; continue; } if (t === f._opTask) continue; f._opTask = t;
+    if (OP.clock < OP.l3Next || !f.path || !t) continue; OP.l3Next = OP.clock + 4;
+    opCall(f.mesh.position, 'wrench', `Service cart ${f.id}`, t.replace(/\s*\(.*\)\s*$/, ''), 'live', 6, 5); }
+}
 const _opv = new THREE.Vector3();
 function stepOps(rdt, dt) {
   if (!OP.tok) return;
+  opHide(); if (!OP.ov) opOverview();
   if (playing) OP.clock += rdt;
   for (let i = OP.beats.length - 1; i >= 0; i--) if (OP.clock >= OP.beats[i].until) { OP.beats[i].res(); OP.beats.splice(i, 1); }
   for (let i = OP.fx.length - 1; i >= 0; i--) { const f = OP.fx[i]; f.t += rdt; f.step(f.t); if (f.t > f.life) { scene.remove(f.g); OP.fx.splice(i, 1); } }
   for (const b of OP.bands) if (b.live) opBandStep(b);
-  const C = OP.cam; if (C.fn && C.frame && !fly) { const f = opFit(C.fn(), C.D, C.dmin), k =1 - Math.exp(-rdt * 2.5); controls.target.lerp(f.target, k); camera.position.lerp(f.pos, k); }
-  for (const c of OP.calls) { const s = toScreen(_opv.copy(c.p).setY((c.p.y || 0) + c.lift)); c.el.style.display = s ? '' : 'none'; if (s) { c.el.style.left = s[0] + 'px'; c.el.style.top = s[1] + 'px'; } }
+  opWatch();
+  // pop-ups: age (fade 0.5 s before the end), place over their point, then stack the ones that overlap upwards (newest on top)
+  const placed = [];
+  for (let i = OP.calls.length - 1; i >= 0; i--) { const c = OP.calls[i]; if (playing) c.t += rdt;
+    if (c.t > c.ttl) { c.el.remove(); OP.calls.splice(i, 1); continue; } c.el.classList.toggle('out', c.t > c.ttl - 0.5); }
+  for (const c of OP.calls) { const s = toScreen(_opv.copy(c.p).setY((c.p.y || 0) + c.lift)); c.el.style.display = s ? '' : 'none'; if (!s) continue;
+    const w = c.el.offsetWidth, h = c.el.offsetHeight + 12; let x = s[0], y = s[1];
+    for (let k = 0; k < placed.length; k++) { const q = placed[k]; if (Math.abs(x - q.x) < (w + q.w) / 2 && y > q.y - q.h && y < q.y + h) { y = q.y - q.h; k = -1; } }
+    placed.push({ x, y, w, h }); c.el.style.left = x + 'px'; c.el.style.top = y + 'px'; }
   const btn = document.querySelector('#scenSw button[data-scen="ops"]'); if (btn && !btn.classList.contains('on')) btn.classList.add('on');   // 51 clears every Scenarios button on a style change
   OP.t += rdt; if (OP.t > 0.5) { OP.t = 0; opDraw(); }
 }
 // ===== Operations scenario, part 2 (2026-10-22): the story, start / stop, the Scenarios button.
-// Order: dashboard on → 3 robot mowers leave the Fleet Hub by road, mow their lawns, drive back and charge → 2 patrol drones loop over the north and south beaches →
-// marina round (smart pedestals live, one pump-out cart from Marina Support to two berths) → a swimmer in trouble: the lifebuoy drone drops a ring, the lifeguards are alerted.
-// Mowers and drones keep working after the story ends; a second click on the button ends the scenario.
+// One static overview of the whole island; the events come as pop-ups over their places (founder 2026-10-22). Order: 3 robot mowers leave the Fleet Hub by road, mow their lawns,
+// drive back and charge → 2 patrol drones loop over the north and south beaches → marina round (smart pedestals live, one pump-out cart from Marina Support to two berths) →
+// a shark off the north beach: patrol drone 1 sees it and tracks it, the lifeguards close the beach (red flag), the guest app warns the people on that beach; all clear when it leaves.
+// The live service carts (L3) add a pop-up on each new job (opWatch, 57). Mowers and drones keep working after the story ends; a second click on the button ends the scenario.
 const OP_LAWNS = ['Lawn.005', 'Lawn.004', 'Lawn.003'];                           // the resort lawns nearest the Fleet Hub (GLB group 'landscape')
 const opP = (p, y) => new THREE.Vector3(p.x, y, p.z);
 const opPoi = (cat, re) => (POI[cat] || []).filter(q => re.test(q.name));
+const opRun = (pr) => pr.catch(e => { if (e !== OP_STOP) console.error(e); });
 async function opMower(i, lawn, tok) {
-  const u = opUnit('Mower' + (i + 1), 'mower', A.fleet, 'walk', `Robot mower ${i + 1} · to ${lawn.replace('Lawn.0', 'lawn ')}`);
+  const nm = lawn.replace('Lawn.0', 'lawn '), u = opUnit('Mower' + (i + 1), 'mower', A.fleet, 'walk', `Robot mower ${i + 1} · to ${nm}`);
   const rows = opLawnRows(lawn, 6, 6, A.fleet); if (!rows || !rows.length) { u.st = 'idle'; return; }
   const gate = roadR.posOf(...roadR.nearest(rows[0][0])), out = road(A.fleet, gate);
+  opCall(A.fleet, 'bot', `Robot mower ${i + 1} · leaves the Fleet Hub`, `to ${nm} · by the service road`, 'live', 6, 4);
   u.st = 'mv'; if (out) await move(u, out, OP_SPEED.drive); else placeAt(u, gate); opChk(tok);
-  u.st = 'job'; u.task = `Robot mower ${i + 1} · mowing ${lawn.replace('Lawn.0', 'lawn ')}`;
+  u.st = 'job'; u.task = `Robot mower ${i + 1} · mowing ${nm}`;
   await move(u, [gate, rows[0][0]], OP_SPEED.drive); opChk(tok);              // off the road onto its lawn: the mower's job area
+  opCall(rows[0][0].clone(), 'leaf', `Robot mower ${i + 1} · mowing ${nm}`, `${rows.length} stripes, 6 m apart · 0.6 m/s`, 'ok', 6, 5);
+  let len = 0;
   for (let r = 0; r < rows.length; r++) {
     const [a, b] = rows[r], band = opBand(a, u); band.live = true;
-    await move(u, [a, b], OP_SPEED.mow); opChk(tok); opBandStep(band); band.live = false; OP.n.mowed += band.len;
+    await move(u, [a, b], OP_SPEED.mow); opChk(tok); opBandStep(band); band.live = false; OP.n.mowed += band.len; len += band.len;
     if (rows[r + 1]) { await move(u, [b, rows[r + 1][0]], OP_SPEED.mow); opChk(tok); }
   }
+  opCall(u.pos.clone(), 'leaf', `${nm[0].toUpperCase() + nm.slice(1)} mowed`, `${Math.round(len)} m of stripe · mower ${i + 1} back to charge`, 'ok', 6, 5);
   u.st = 'mv'; u.task = `Robot mower ${i + 1} · back to the Fleet Hub`;
   const end = u.pos.clone(), g2 = roadR.posOf(...roadR.nearest(end)), back = road(g2, A.fleet);
   await move(u, [end, g2], OP_SPEED.drive); opChk(tok); if (back) { await move(u, back, OP_SPEED.drive); opChk(tok); }
   placeAt(u, u.pos.clone().add(new THREE.Vector3((i - 1) * 2.5, 0, 0)));   // three bays side by side, not one point
   u.st = 'ch'; u.task = `Robot mower ${i + 1} · charging at the Fleet Hub`;
+  opCall(A.fleet, 'zap', `Robot mower ${i + 1} · charging`, `Fleet Hub, bay ${i + 1} · next run tonight`, 'ok', 6, 4);
 }
-async function opPatrol(id, pts, sea, dock, tok) {                               // a loop: along the beach line, back 60 m out over the water; take-off from its dock
+async function opPatrol(id, name, pts, sea, dock, tok) {                         // a loop: along the beach line, back 60 m out over the water; take-off from its dock
   const u = opUnit('Drone' + id, 'dronePatrol', opP(dock, dock.y + 4), 'air', `Patrol drone ${id} · take-off`);
   const air = pts.map(p => opP(p, OP_ALT.patrol)), back = [...pts].reverse().map(p => new THREE.Vector3(p.x, OP_ALT.patrol, p.z + sea));
+  opCall(dock.clone(), 'radiotower', `Patrol drone ${id} · take-off`, `${name} loop · ${OP_ALT.patrol} m up · camera to the lifeguards`, 'live', 8, 5);
   u.st = 'mv'; await move(u, [u.pos.clone(), opP(dock, OP_ALT.patrol), air[0]], OP_SPEED.drone); opChk(tok);
-  u.st = 'job'; u.task = `Patrol drone ${id} · beach loop · camera on`;
-  const loop = [...air, ...back, air[0]]; let L = 0; for (let k = 1; k < loop.length; k++) L += loop[k].distanceTo(loop[k - 1]);
-  for (;;) { await move(u, loop, OP_SPEED.drone); opChk(tok); OP.n.patrolKm += L / 1000; }
+  u.st = 'job'; u.task = `Patrol drone ${id} · ${name} loop · camera on`;
+  const loop = [...air, ...back, air[0]]; let L = 0, lap = 0; for (let k = 1; k < loop.length; k++) L += loop[k].distanceTo(loop[k - 1]);
+  for (;;) {
+    u.cut = false; await move(u, u.pos.distanceTo(loop[0]) > 1 ? [u.pos.clone(), ...loop] : loop, OP_SPEED.drone); opChk(tok);   // a lap starts where the drone is (after a sighting too)
+    if (u.cut) continue; OP.n.patrolKm += L / 1000; lap++;
+    if (lap % 3 === 1) opCall(u.mesh.position, 'radiotower', `Patrol drone ${id} · lap ${lap} done`, `${name} · ${(L / 1000).toFixed(1)} km · ${u.alerts || 0} alerts`, 'ok', 8, 4);
+  }
 }
 async function opMarina(tok) {
   const ms = gtPoi('crewlounge', 'Crew lounge'), bp = b => (POI.marina || []).find(q => q.name === `Berth ${b.berth_id}`);
   const pick = berths.filter(b => b.occupied && !b.busy && bp(b)).sort((a, b) => ms ? a.pos.distanceTo(ms.p) - b.pos.distanceTo(ms.p) : 0).slice(0, 2);
   if (!pick.length || !ms) { console.warn('operations: no berth to serve'); return; }
   for (const b of pick) { b.busy = true; b.opHeld = true; } OP.berths = pick;                        // busy: the marina traffic (32) leaves these boats at their berths while they are served
-  opView([ms.p, ...pick.map(b => b.pos)], 260);
   for (const b of pick) { const w = YS_RATE.water[b.cls];
-    opPing(b.pos, 0x3f8f6e, true, 10); ysLog('power', b, 0); ys.water += w; ysLog('water', b, w); OP.n.water += w;
-    opCall(b.pos, 'zap', `Smart pedestal · berth ${b.berth_id}`, `shore power on · water ${w} m³ · metered`, 'ok', 6); await opBeat(1.2); opChk(tok); }
+    opPing(b.pos, 0x3f8f6e, false, 10); ysLog('power', b, 0); ys.water += w; ysLog('water', b, w); OP.n.water += w;
+    opCall(b.pos, 'zap', `Smart pedestal · berth ${b.berth_id}`, `shore power on · water ${w} m³ · metered`, 'ok', 6, 5); await opBeat(1.2); opChk(tok); }
   const cart = opUnit('Pump', 'pumpout', ms.p, 'walk', 'Pump-out cart · dock hand'); let at = ms.p;
-  const cc = opCall(cart.mesh.position, 'wrench', 'Pump-out cart', `Marina Support → ${pick.length} berths`, 'live', 6);
-  opFollow(() => [cart.mesh.position, ...pick.map(b => b.pos)], 200);
+  opCall(ms.p.clone(), 'wrench', 'Pump-out cart · leaves Marina Support', `${pick.length} berths · towed by a dock hand`, 'live', 6, 4);
   for (const b of pick) {
-    const to = bp(b).p, q = YS_RATE.pump[b.cls]; cart.st = 'job'; cart.task = `Pump-out cart · to berth ${b.berth_id}`; cc.set('Pump-out cart', `to berth ${b.berth_id}`);
+    const to = bp(b).p, q = YS_RATE.pump[b.cls]; cart.st = 'job'; cart.task = `Pump-out cart · to berth ${b.berth_id}`;
     const pts = walk(at, to); if (pts) await move(cart, pts, OP_SPEED.drive); else placeAt(cart, to); opChk(tok); at = to;
-    cc.set(`Pump-out · berth ${b.berth_id}`, `≈ ${q} m³ · logged`, 'ok'); ys.pump += q; ysLog('pumpout', b, q); OP.n.pump += q; await opBeat(1.6); opChk(tok);
+    opCall(to.clone(), 'wrench', `Pump-out · berth ${b.berth_id}`, `≈ ${q} m³ · logged to the boat's bill`, 'ok', 6, 5); ys.pump += q; ysLog('pumpout', b, q); OP.n.pump += q; await opBeat(1.6); opChk(tok);
   }
-  cart.st = 'mv'; cart.task = 'Pump-out cart · back to Marina Support'; cc.set('Pump-out cart', 'jobs done · back to Marina Support', 'live');
+  cart.st = 'mv'; cart.task = 'Pump-out cart · back to Marina Support';
   const home = walk(at, ms.p); (home ? move(cart, home, OP_SPEED.drive) : Promise.resolve()).then(() => { if (OP.tok === tok) { cart.st = 'idle'; cart.task = 'Pump-out cart · parked'; } });
   for (const b of pick) { b.busy = false; b.opHeld = false; }
 }
-async function opRescue(tok) {
-  const wa = gtPoi('beach', 'Water activities'), club = gtPoi('beach', 'Beach Club'); if (!wa || !club) { console.warn('operations: no beach POI'); return; }
-  const sw = waterPoint(wa.p, [180, 200, 160, 220, 140], 400, 45); if (!sw) { console.warn('operations: no water off the beach'); return; }
-  sw.y = waterY; const tower = opPoi('beach', /^South beach/).sort((a, b) => a.p.distanceTo(sw) - b.p.distanceTo(sw))[0] || wa;
-  const prevMul = OP.mul; opSpeed(0.2);                                          // the beat is seconds long: slow the clock so it can be seen
-  // 1 · flagged: the beach camera / patrol drone video sees a swimmer in distress
-  const man = personModel(0xd93b2b); man.position.copy(sw).setY(waterY - 1.6); scene.add(man);
-  OP.fx.push({ g: man, t: 0, life: Infinity, step(t) { man.position.y = waterY - 1.6 + Math.sin(t * 5) * 0.25; } });
-  const ping = opPing(sw, 0xd93b2b, true, 16);
-  opView([sw, club.p, tower.p], 220);
-  const c1 = opCall(sw, 'users', 'Swimmer in trouble', `flagged by the beach camera · ${Math.round(sw.distanceTo(tower.p))} m out`, 'alert', 6);
-  await opBeat(2.2); opChk(tok);
-  // 2 · the lifebuoy drone flies out from its dock on the Beach Club and drops the ring
-  const d = opUnit('Rescue', 'droneRescue', opP(club.p, club.p.y + 6), 'air', 'Lifebuoy drone · launch'); d.st = 'job';
-  const over = opP(sw, waterY + OP_ALT.rescue), path = [d.pos.clone(), opP(club.p, OP_ALT.rescue + 10), over], t0 = simT;
-  const c2 = opCall(d.mesh.position, 'lifebuoy', 'Lifebuoy drone', 'launched from the Beach Club dock', 'live', 6);
-  await move(d, path, OP_SPEED.rescue); opChk(tok);
-  const sec = Math.round((simT - t0) * 60), m =Math.round(path.reduce((s, p, k) => k ? s + p.distanceTo(path[k - 1]) : 0, 0));   // simT is in sim minutes
-  const buoy = d.mesh.getObjectByName('opBuoy'), ring = buoy.clone(); buoy.visible = false; ring.position.copy(over).setY(over.y - 0.4); ring.scale.setScalar(1.5); scene.add(ring);
-  OP.fx.push({ g: ring, t: 0, life: Infinity, step(t) { const k = Math.min(1, t / 1.1); ring.position.y = over.y - 0.4 - (over.y - 0.4 - waterY - 0.2) * k * k + (k >= 1 ? Math.sin(t * 5) * 0.15 : 0); } });
-  c2.set('Lifebuoy dropped', `on scene ${sec} s after launch · ${m} m flown`, 'ok');
-  await opBeat(1.6); opChk(tok); c1.set('Swimmer holds the lifebuoy', 'drone camera on him · live to the lifeguards', 'live');
-  // 3 · the lifeguards: the nearest tower is alerted (security team, 8 lifeguards); one swims out
-  opPing(tower.p, 0xd93b2b, false, 20);
-  const c3 = opCall(tower.p, 'radiotower', 'Lifeguards alerted', `${tower.name} tower · team of 8 · one swims out`, 'alert', 8);
-  const lg = opUnit('Lifeguard', 'lifeguard', tower.p, 'air', 'Lifeguard · swims out'); lg.st = 'job';
-  await move(lg, [tower.p.clone(), opP(sw, waterY - 1.2).add(new THREE.Vector3(0, 0, -3))], OP_SPEED.swim); opChk(tok);
-  ping.life = 0; c1.set('Swimmer safe', 'lifeguard with him · back to the beach', 'ok'); c3.set('Rescue closed', `${tower.name} · logged with the drone video`, 'ok');
-  d.st = 'mv'; d.task = 'Lifebuoy drone · back to the Beach Club dock'; move(d,[d.pos.clone(), opP(club.p, OP_ALT.rescue + 10), opP(club.p, club.p.y + 6)], OP_SPEED.rescue).then(() => { if (OP.tok === tok) { d.st = 'ch'; d.task = 'Lifebuoy drone · docked, new ring loaded'; } });
-  await opBeat(2.5); opChk(tok); opSpeed(prevMul);
+// --- shark: a fin on the water off a north-beach point, out from the island centre; the nearest patrol drone leaves its loop and holds over it
+function opSharkSpot(beach) {
+  const d = new THREE.Vector3(beach.x - islandC.x, 0, beach.z - islandC.z).normalize();
+  for (const r of [120, 140, 100, 160, 180]) { const q = beach.clone().addScaledVector(d, r); if (isWater(q.x, q.z) && isWater(q.x - d.x * 40, q.z - d.z * 40)) return q.setY(waterY); }
+  return null;
+}
+function opFin(at) {                                                             // massing: dorsal fin 0.9 m over the water + the dark body under it (≈ 3 m)
+  const g = new THREE.Group(), fin = box(0.12, 0.9, 0.7, 0x3d4652, 0, 0.45);
+  const body = new THREE.Mesh(new THREE.CircleGeometry(1, 20), new THREE.MeshBasicMaterial({ color: 0x1f3448, transparent: true, opacity: 0.45, depthWrite: false }));
+  body.rotation.x = -Math.PI / 2; body.scale.set(1.6, 0.5, 1); body.position.y = 0.05; g.add(fin, body); g.position.copy(at); scene.add(g); return g;
+}
+async function opShark(tok) {
+  const N = opPoi('beach', /^North beach/), d = actors['OP-Drone1'];
+  if (!N.length || !d) { console.warn('operations: no north beach or no patrol drone 1'); return; }
+  const beach = N[Math.floor(N.length / 2)], spot = opSharkSpot(beach.p); if (!spot) { console.warn('operations: no water off', beach.name); return; }
+  const fin = opFin(spot), c0 = spot.clone(); let mode = 'circle', away = null;
+  OP.fx.push({ g: fin, t: 0, life: Infinity, step(t) {                          // circles 15 m around the spot; then swims out to sea
+    if (mode === 'circle') { fin.position.set(c0.x + Math.cos(t * 0.35) * 15, waterY, c0.z + Math.sin(t * 0.35) * 15); fin.rotation.y = -t * 0.35; }
+    else { if (away.t0 === undefined) { away.t0 = t; away.p0 = fin.position.clone(); } fin.position.copy(away.p0).addScaledVector(away.dir, (t - away.t0) * 50); } } });   // 50 m per real s = 0.8 m/s at 1×
+  // 1 · patrol drone 1 sees it: leaves the loop, flies over, holds 25 m up and tracks it
+  OP.now = 'Shark sighted · north beach'; const t0 = simT;
+  const resume = d.onDone; d.onDone = null; d.path = null; d.cut = true; d.alerts = (d.alerts || 0) + 1;
+  d.st = 'job'; d.task = 'Patrol drone 1 · object in the water · closer look';
+  const c1 = opCall(fin.position, 'alert', 'Patrol drone 1 · object in the water', `${Math.round(spot.distanceTo(beach.p))} m off ${beach.name} · camera zoom`, 'alert', OP_ALT.watch + 6, Infinity);
+  await move(d, [d.pos.clone(), opP(fin.position, OP_ALT.watch)], OP_SPEED.drone); opChk(tok);
+  const hold = { g: new THREE.Group(), t: 0, life: Infinity, step() { if (!d.path) placeAt(d, opP(fin.position, OP_ALT.watch)); } }; OP.fx.push(hold);
+  const ping = opPing(spot, 0xd93b2b, true, 40);
+  d.task = 'Patrol drone 1 · tracking a shark'; c1.set('Shark sighted · ≈ 3 m', `${Math.round(spot.distanceTo(beach.p))} m off ${beach.name} · drone 1 tracks it`); await opBeat(2); opChk(tok);
+  // 2 · lifeguards: the nearest tower closes the water; red flag
+  const tower = N.slice().sort((a, b) => a.p.distanceTo(spot) - b.p.distanceTo(spot))[0];
+  const flag = new THREE.Group(); flag.add(box(0.12, 6, 0.12, 0xf2efe6, 0, 3), box(1.6, 1, 0.05, 0xd93b2b, 0.8, 5.4)); flag.position.copy(tower.p); scene.add(flag);
+  OP.fx.push({ g: flag, t: 0, life: Infinity, step() {} });
+  opPing(tower.p, 0xd93b2b, false, 30);
+  const c2 = opCall(tower.p.clone(), 'flag', `Red flag · ${tower.name}`, 'lifeguards call swimmers out · water closed', 'alert', 10, Infinity); await opBeat(2); opChk(tok);
+  // 3 · guest app: a push to everyone on the north beach (people within 300 m of its points, from the live crowd)
+  const near = people.filter(f => f.pos && !f.indoor && f.type !== 'staff' && f.type !== 'crew' && N.some(q => q.p.distanceTo(f.pos) < 300)).length;
+  opCall(N[0].p.clone(), 'phone', `Guest app alert · ${near} guests`, 'North beach: shark seen, stay out of the water', 'alert', 10, 6); await opBeat(6); opChk(tok);
+  // 4 · it swims out; the drone follows it 300 m, then all clear
+  mode = 'away'; away = { dir: new THREE.Vector3(spot.x - beach.p.x, 0, spot.z - beach.p.z).normalize() };
+  c1.set('Shark heading out to sea', 'drone 1 follows it', 'live'); await opBeat(4); opChk(tok);
+  const min = Math.round(simT - t0);
+  ping.life = 0; c1.set('All clear', `shark out of the area · tracked ${min} min`, 'ok', 5);
+  c2.set(`Green flag · ${tower.name}`, 'beach open again · logged with the drone video', 'ok', 5); flag.children[1].material = mat(0x3f8f6e);
+  opCall(N[0].p.clone(), 'phone', 'Guest app · all clear', 'North beach open for swimming', 'ok', 10, 5);
+  hold.life = 0; fin.visible = false; d.task = 'Patrol drone 1 · back to the beach loop'; if (resume) resume();
+  await opBeat(4); opChk(tok); flag.visible = false;
 }
 async function opStory(tok) {
-  OP.now = 'Fleet on duty · live counts by state'; opDraw();
-  const lawnC = OP_LAWNS.map(n => { const m = byName.get(n); return m ? new THREE.Box3().setFromObject(m).getCenter(new THREE.Vector3()) : null; }).filter(Boolean);
-  opView([A.fleet, ...lawnC], 300); await opBeat(2.5); opChk(tok);
-  // 1 · mowers
+  OP.now = 'Fleet on duty · live counts by state'; opDraw(); opOverview(); await opBeat(1.5); opChk(tok);
+  // 1 · mowers, 1.5 s apart
   OP.now = 'Robot mowers · Fleet Hub → lawns';
-  OP_LAWNS.forEach((n, i) => opMower(i, n, tok).catch(e => { if (e !== OP_STOP) console.error(e); }));
-  opCall(A.fleet, 'bot', 'Robot mowers · 3 sent', 'Fleet Hub → lawns 3, 4 and 5 · by road', 'live', 10);
-  await opBeat(4); opChk(tok);
-  opFollow(() => OP.units.filter(u => u.type === 'mower').map(u => u.mesh.position), 220); await opBeat(6); opChk(tok);
-  const m1 = actors['OP-Mower1']; if (m1) opCall(m1.mesh.position, 'leaf', 'Mowing · lawn 5', 'stripes 6 m apart · 0.6 m/s · back to the hub to charge', 'ok', 6);
+  for (let i = 0; i < OP_LAWNS.length; i++) { opRun(opMower(i, OP_LAWNS[i], tok)); await opBeat(1.5); opChk(tok); }
   await opBeat(4); opChk(tok);
   // 2 · patrol drones
   OP.now = 'Beach patrol · 2 drones';
   const N = opPoi('beach', /^North beach/).map(q => q.p), S = opPoi('beach', /^South beach/).map(q => q.p);
   const club = gtPoi('beach', 'Beach Club'), mc = gtPoi('club', 'Members Club') || gtPoi('beach', 'Members Club beach');
-  if (N.length > 1) opPatrol(1, N, -60, (mc || { p: N[0] }).p, tok).catch(e => { if (e !== OP_STOP) console.error(e); });
-  if (S.length > 1) opPatrol(2, S, 60, (club || { p: S[0] }).p, tok).catch(e => { if (e !== OP_STOP) console.error(e); });
-  opView([...N, ...S], 300);
-  if (N.length) opCall(N[2] || N[0], 'radiotower', 'Patrol drone 1 · north beach', `loop ${OP_ALT.patrol} m up · camera to the lifeguards`, 'live', OP_ALT.patrol + 6);
-  if (S.length) opCall(S[2] || S[0], 'radiotower', 'Patrol drone 2 · south beach', `loop ${OP_ALT.patrol} m up · camera to the lifeguards`, 'live', OP_ALT.patrol + 6);
-  await opBeat(7); opChk(tok);
+  if (N.length > 1) opRun(opPatrol(1, 'north beach', N, -60, (mc || { p: N[0] }).p, tok));
+  await opBeat(1.5); opChk(tok);
+  if (S.length > 1) opRun(opPatrol(2, 'south beach', S, 60, (club || { p: S[0] }).p, tok));
+  await opBeat(6); opChk(tok);
   // 3 · marina service
   OP.now = 'Marina service · pedestals and pump-out';
-  await opMarina(tok); opChk(tok); await opBeat(1.5); opChk(tok);
-  // 4 · rescue
-  OP.now = 'Swimmer in trouble · lifebuoy drone';
-  await opRescue(tok); opChk(tok);
+  await opMarina(tok); opChk(tok); await opBeat(3); opChk(tok);
+  // 4 · shark off the north beach
+  await opShark(tok); opChk(tok);
   // 5 · the island runs on
   OP.now = 'All units on duty · the island runs on';
-  opView([A.fleet, ...lawnC, ...N, ...S], 400);
 }
 function opClear() {
-  OP.tok = 0; for (const b of OP.beats) b.res(); OP.beats = []; OP.cam.fn = null; OP.now = '';
+  OP.tok = 0; for (const b of OP.beats) b.res(); OP.beats = []; OP.now = '';
   for (const u of OP.units) { scene.remove(u.mesh); u.path = null; u.onDone = null; delete actors[u.id]; } OP.units = [];
   for (const f of OP.fx) scene.remove(f.g); OP.fx = []; for (const b of OP.bands) scene.remove(b.m); OP.bands = [];
   for (const c of OP.calls) c.el.remove(); OP.calls = []; for (const b of OP.berths) if (b.opHeld) { b.busy = false; b.opHeld = false; } OP.berths = [];
-  if (OP.dash) { OP.dash.remove(); OP.dash = null; } OP.n = { mowed: 0, patrolKm: 0, water: 0, pump: 0 };
+  if (OP.dash) { OP.dash.remove(); OP.dash = null; } OP.n = { mowed: 0, patrolKm: 0, water: 0, pump: 0, events: 0 }; OP.l3Next = 0;
+  opShow();
 }
 function opStart() {
   if (stage.classList.contains('gtour') && window.__guestTour) window.__guestTour.stop();
   if (window.__supply && window.__supply.stop && stage.classList.contains('supply')) window.__supply.stop();
-  opClear(); stage.classList.add('ops'); opBuild(); opSpeed(1); OP.clock = 0; const tok = OP.tok = ++OP.runs;
-  opStory(tok).catch(e => { if (e !== OP_STOP) console.error(e); });
+  opClear(); stage.classList.add('ops'); opBuild(); opSpeed(1); OP.clock = 0; const tok = OP.tok = ++OP.runs; opHide();
+  opRun(opStory(tok));
 }
 function opStop() { if (!OP.tok && !stage.classList.contains('ops')) return; opClear(); stage.classList.remove('ops'); opSpeed(1); const b = document.querySelector('#scenSw button[data-scen="ops"]'); if (b) b.classList.remove('on'); }
 { const b = document.createElement('button'); b.dataset.scen = 'ops'; b.textContent = 'Operations'; $('scenSw').appendChild(b);
@@ -3662,7 +3837,7 @@ function tick(rdt, draw = true) {
   simT += dt; window.SIM_T = simT;
   const dtm = dt * MOTION;                                                  // movement runs faster than the clock-driven timers
   for (const a of Object.values(actors)) stepMover(a, dtm);
-  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE); stepGuest(rdt, dt); stepSupply(rdt, dt); stepOps(rdt, dt);
+  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE); stepGuest(rdt, dt); stepSupply(rdt, dt); stepOps(rdt, dt); castApply();
   for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].until) { waiters[i].res(); waiters.splice(i, 1); }
   directCamera(rdt); controls.update();
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }   // the snapshot, drawn or not (headless frame)
