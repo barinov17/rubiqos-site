@@ -65,6 +65,9 @@
   #styleSw .lab, #scenSw .lab { font: 600 10px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0 6px 0 4px; }
   #styleSw button, #scenSw button { font: 500 11px var(--body); color: var(--navy); background: transparent; border: 1px solid var(--line); border-radius: 7px; padding: 4px 8px; cursor: pointer; }
   #styleSw button.on, #scenSw button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  #tagsSw { display: none; align-items: center; gap: 4px; font: 500 11px var(--body); color: var(--navy); padding: 0 6px 0 8px; margin-left: 3px; border-left: 1px solid var(--line); cursor: pointer; white-space: nowrap; }
+  #tagsSw input { margin: 0; accent-color: var(--navy); cursor: pointer; } .mapSchem #tagsSw { display: flex; }   /* schematic only (founder 2026-10-30) */
+  .notags .gpin { display: none !important; }   /* the checkbox off: no place pins (updatePins sets an inline display) */
   #controls button { font-size: 11px; padding: 4px 8px; border-radius: 7px; text-align: center; }
   #bPlay { min-width: 50px; } #bSpeed { min-width: 72px; }   /* fixed widths (founder 2026-10-21): Pause / Play and Speed 1.5× / 2× must not move the panels to their right */
 
@@ -198,7 +201,7 @@
   <button id="bOverview" class="on">Overview</button>
   <span style="display:none"><button id="bFleet">Fleet</button><button id="bPeople" class="on">People</button><button id="bLayersToggle">Layers</button><button id="bZonesToggle">Zones</button><button id="bZoneOverlay">Overlay</button><button id="bFilterOff">Clear filter</button></span>
 </div>
-<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button><button data-style="functional">Functional</button></div>
+<div id="styleSw" class="panel" role="group" aria-label="Map style"><span class="lab">Style</span><button data-style="schematic" class="on">Schematic</button><button data-style="standard">Standard</button><button data-style="functional">Functional</button><label id="tagsSw" title="Show or hide the place pins and the vehicle icons"><input type="checkbox" id="cbTags" checked>Geotags &amp; icons</label></div>
 <div id="scenSw" class="panel" role="group" aria-label="Scenarios"><span class="lab">Scenarios</span><button data-scen="guest">Guest Journey</button><button data-scen="supply">Supply</button></div>
 </div>
 <div id="tip" class="panel"></div>
@@ -2464,10 +2467,16 @@ function applyMapStyle(style) {
   for (const y of yachtMovers) y.mesh.traverse(o => { if (!o.isMesh) return; if (!o.userData.baseMat) o.userData.baseMat = o.material; const gl = /glass/i.test(o.userData.baseMat.name);
     o.material = sch ? (gl ? flatMat(SCHEMATIC.yachtGlass, 0.5) : flatMat(0xffffff)) : o.userData.baseMat; });   // moving yachts match the moored ones
   { for (const im of crowdAll) im.visible = true; peopleDots.visible = true; peopleHalo.visible = name !== 'schematic'; refreshDotColours(name); } renderLegend(name); shadowDirty();   // pawns and the dots above their heads in every style   // pawns always; the dots above their heads (schematic, functional) are the click targets (founder 2026-10-19)   // schematic: dots (guests blue, staff navy); standard: pawns in the type colour
-  document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name));
+  document.querySelectorAll('#styleSw button').forEach(b => b.classList.toggle('on', b.dataset.style === name)); stage.classList.toggle('mapSchem', sch); applyTags();
   document.querySelectorAll('#scenSw button').forEach(b => b.classList.toggle('on', b.dataset.scen === 'supply' ? stage.classList.contains('supply') : style === 'guest' && b.dataset.scen === 'guest'));   // Guest Journey is a scenario, not a style (founder 2026-10-21): it runs on Standard
   try { localStorage.setItem('mapStyle3', name); } catch (e) {}
 }
+// founder 2026-10-30: on the schematic map one checkbox hides the place pins (geotags) and the vehicle icons; the choice is remembered
+let tagsOn = true; try { tagsOn = localStorage.getItem('tagsOn') !== '0'; } catch (e) {}
+const tagsHidden = () => mapStyle === 'schematic' && !tagsOn;
+function applyTags() { $('cbTags').checked = tagsOn; stage.classList.toggle('notags', tagsHidden()); }
+function hideIconsIfOff() { if (!tagsHidden()) return; for (const f of [...ambient, ...yachtMovers]) if (f.marker) f.marker.visible = false; }   // after the steps, which set the markers every frame
+$('cbTags').onchange = e => { tagsOn = e.target.checked; try { localStorage.setItem('tagsOn', tagsOn ? '1' : '0'); } catch (err) {} applyTags(); };
 document.querySelectorAll('#styleSw button').forEach(b => { b.onclick = () => applyMapStyle(b.dataset.style); });
 { let saved = 'schematic'; try { saved = localStorage.getItem('mapStyle3') || 'schematic'; } catch (e) {} applyMapStyle(saved === 'standard' || saved === 'functional' ? saved : 'schematic'); }   // schematic by default (founder 2026-10-19); the key changed so old choices do not stick
 
@@ -3102,16 +3111,16 @@ function gtFxClear() {
 //   water: potable tank 666 m³ (model: 10.3 m dia × 8 m), RO 3 trains × 15 m³/h, use 900 m³/day on a daily profile; trains on: 3 under 60 % stock, 2 under 85 %, else 1
 //   energy: peak 9 MW, load profile below (≈ 98 MWh/day), solar 2.2 MWp; gen sets 12 × 0.8 MW, ceil((load − solar) / 0.8) run; diesel 0.27 L/kWh
 //   fuel: 6 tanks 4 m dia × 11 m, 829 m³ gross, 746 m³ usable (90 %); sewage inflow 0.78 × water use, 64 % reclaimed (proforma 450 / 700 m³/day)
-// ---------- scenario cast (founder 2026-10-22, every scenario): while a scenario runs only its actors are drawn; the base loop runs on underneath, hidden.
-// castOn(keep): keep(mover) → true for the ambient fleet units and yachts the scenario uses; crowd off. castApply runs each frame (60). castOff restores what was drawn.
-const CAST = { keep: null, people: true, snap: null };
-function castOn(keep) { if (!CAST.keep) { CAST.people = peopleOn; CAST.snap = new Map(ambient.map(f => [f, f.mesh.visible])); } CAST.keep = keep; peopleOn = false; castApply(); }
+// ---------- scenario cast (founder 2026-10-30, every scenario, as in the Guest Journey): the crowd, the fleet and the boats stay drawn; only the scenario's actors keep their icons.
+// castOn(keep): keep(mover) → true for the ambient fleet units and yachts the scenario uses. castApply runs each frame (60), after the steps that set the icons. castOff gives the icons back.
+const CAST = { keep: null };
+function castOn(keep) { CAST.keep = keep; castApply(); }
 function castOff() {
-  if (!CAST.keep) return; CAST.keep = null; peopleOn = CAST.people;
-  for (const f of ambient) f.mesh.visible = fleetOn && (f.type === 'A1' ? !!f.path || f.landedAt !== undefined : !!f.path || CAST.snap.get(f));
-  for (const y of yachtMovers) y.mesh.visible = y.busy; CAST.snap = null;
+  if (!CAST.keep) return; CAST.keep = null;
+  for (const f of ambient) if (f.marker) f.marker.visible = !!f.path;
+  for (const y of yachtMovers) if (y.marker) y.marker.visible = y.busy;
 }
-function castApply() { const k = CAST.keep; if (!k) return; for (const f of ambient) if (!k(f)) f.mesh.visible = false; for (const y of yachtMovers) if (!k(y)) y.mesh.visible = false; }
+function castApply() { const k = CAST.keep; if (!k) return; for (const f of [...ambient, ...yachtMovers]) if (f.marker && !k(f)) f.marker.visible = false; }
 const suCss = document.createElement('style');
 suCss.textContent = `
   .supply #layersPanel { display: none; } .supply .gpin { opacity: 0.35; }
@@ -3470,7 +3479,7 @@ const suBtn = () => document.querySelector('#scenSw button[data-scen="supply"]')
 function suStart() {
   gtStop(); if (typeof opStop === 'function') opStop(); suClear(); SU.tok = ++SU.runs; stage.classList.add('supply'); const b = suBtn(); if (b) b.classList.add('on');
   playing = true; $('bPlay').textContent = 'Pause'; $('bPlay').classList.add('on'); setAutoCam(false);
-  castOn(f => f.type === 'W2' || f.type === 'L4');                             // supply actors only: vessels and trucks; crowd, pods, carts, robots, boats, yachts hidden
+  castOn(f => f.type === 'W2' || f.type === 'L4');                             // icons for the supply actors only (vessels and trucks); crowd, pods, carts, robots, boats, yachts drawn without icons
   suLedger(); SU_LOG.head = supply.log[0] || null; suWsReset();
   suBuild(); suDraw(); suOverview();
   suStory(SU.tok).catch(e => { if (e !== SU_STOP) console.error(e); });
@@ -3524,9 +3533,9 @@ const OP_STOP = new Error('operations scenario stopped');
 const opChk = tok => { if (tok !== OP.tok) throw OP_STOP; };
 const opBeat = sec => new Promise(res => OP.beats.push({ until: OP.clock + sec, res }));
 function opSpeed(m) { OP.mul = m; speedMul = m; $('bSpeed').textContent = `Speed ${m}×`; }
-const OP_KEEP = f => OP_SHOW.has(f.type);                                        // shared cast helper (55): meshes of everything else, yachts under way included, hidden by castApply each frame
-function opHide() { if (CAST.keep !== OP_KEEP) castOn(OP_KEEP); }                // markers are children of the meshes (30:31): hidden with them
-function opShow() {                                                              // as before the run (castOff restores people and meshes)
+const OP_KEEP = f => OP_SHOW.has(f.type);                                        // shared cast helper (55): everything stays drawn; icons of everything else, yachts under way included, hidden by castApply each frame
+function opHide() { if (CAST.keep !== OP_KEEP) castOn(OP_KEEP); }
+function opShow() {                                                              // as before the run (castOff gives the icons back)
   if (CAST.keep === OP_KEEP) castOff();
   for (const f of ambient) delete f._opTask;
 }
@@ -3837,7 +3846,7 @@ function tick(rdt, draw = true) {
   simT += dt; window.SIM_T = simT;
   const dtm = dt * MOTION;                                                  // movement runs faster than the clock-driven timers
   for (const a of Object.values(actors)) stepMover(a, dtm);
-  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE); stepGuest(rdt, dt); stepSupply(rdt, dt); stepOps(rdt, dt); castApply();
+  stepAmbient(dtm); stepYachts(dtm); stepPeople(dt * MOTION_PEOPLE); stepGuest(rdt, dt); stepSupply(rdt, dt); stepOps(rdt, dt); castApply(); hideIconsIfOff();
   for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].until) { waiters[i].res(); waiters.splice(i, 1); }
   directCamera(rdt); controls.update();
   if (!tick.lastDash || performance.now() - tick.lastDash > 1000) { tick.lastDash = performance.now(); updateDash(); }   // the snapshot, drawn or not (headless frame)
