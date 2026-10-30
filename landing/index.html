@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>RubiqOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
+<style>
+/* Landing experiment (2026-10-30): the whole screen is a mosaic of small Rubik's cubes.
+   Each cube rolls 90° in 3D under the pointer, holds, then rolls back: the picture re-assembles.
+   Palette = site palette (site.css): navy #0A1220, accent #2457E6, light bg #F3F5F8, panel #E4E9F0, orange #E07A2F. */
+:root { --bg: #CDD6E2; --line: rgba(255,255,255,.85); }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+body { background-image:
+  linear-gradient(var(--line) 1px, transparent 1px),
+  linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: var(--cell, 16px) var(--cell, 16px); background-position: -0.5px -0.5px; }
+canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ---- settings (tune here)
+const CELL = innerWidth < 700 ? 13 : 16;   // grid cell, CSS px
+const GAP = 0.12;                           // part of the cell left free: shows the white grid line
+const HOLD = [1400, 2600];                  // ms a rolled cube waits before rolling back
+const ROLL_MS = 520;
+const WORD = 'RubiqOS';
+// sticker palette, dark -> light; ORANGE is a rare accent
+const PAL = ['#0A1220', '#2457E6', '#7F9CDB', '#C3D0E6', '#F3F5F8'];
+const ORANGE = '#E07A2F';
+const BODY = '#8D9DB4';                     // cube plastic between stickers: soft grey-blue
+
+document.body.style.setProperty('--cell', CELL + 'px');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(0, 1, 0, -1, -2000, 2000);
+
+let mesh, cols, rows, N, cubes = [], active = new Set();
+const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3(1, 1, 1);
+const AX = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0) };
+
+// ---- the picture the front faces show: soft gradient + the wordmark, 3x3 stickers per cube
+function pictureMap(w, h) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const g = cv.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, w, h);
+  gr.addColorStop(0, '#f4f6fa'); gr.addColorStop(0.55, '#b9c7e0'); gr.addColorStop(1, '#5d7fcf');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  let fs = h * 0.34; g.font = `600 ${fs}px "Cormorant Garamond", serif`;
+  const tw = g.measureText(WORD).width; if (tw > w * 0.82) { fs *= w * 0.82 / tw; g.font = `600 ${fs}px "Cormorant Garamond", serif`; }
+  g.fillStyle = '#0A1220'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(WORD, w / 2, h * 0.5);
+  return g.getImageData(0, 0, w, h).data;
+}
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => v / 16 - 0.5);
+
+function build() {
+  const W = innerWidth, H = innerHeight;
+  renderer.setSize(W, H, false);
+  camera.right = W; camera.bottom = -H; camera.updateProjectionMatrix();
+  if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.uniforms.uColors.value.dispose(); }
+
+  cols = Math.ceil(W / CELL); rows = Math.ceil(H / CELL); N = cols * rows;
+  const s = CELL * (1 - GAP);
+  const geo = new THREE.BoxGeometry(s, s, s);
+  const face = new Float32Array(24); for (let i = 0; i < 24; i++) face[i] = Math.floor(i / 4);   // px nx py ny pz nz
+  geo.setAttribute('aFace', new THREE.BufferAttribute(face, 1));
+  const inst = new Float32Array(N); for (let i = 0; i < N; i++) inst[i] = i;
+  geo.setAttribute('aInst', new THREE.InstancedBufferAttribute(inst, 1));
+
+  // colours: 54 stickers (6 faces x 9) per cube, one texture row per cube
+  const img = pictureMap(cols * 3, rows * 3), data = new Uint8Array(54 * N * 4);
+  const palRGB = PAL.map(hex), orRGB = hex(ORANGE);
+  const put = (i, k, c) => { const o = (i * 54 + k) * 4; data[o] = c[0]; data[o + 1] = c[1]; data[o + 2] = c[2]; data[o + 3] = 255; };
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const i = r * cols + c;
+    for (let f = 0; f < 6; f++) for (let k = 0; k < 9; k++) {
+      let col;
+      if (f === 4) {                                        // front (+z): sample the picture, ordered dither into the palette
+        const sr = r * 3 + Math.floor(k / 3), sc = c * 3 + (k % 3), o = (sr * cols * 3 + sc) * 4;
+        const L = (0.299 * img[o] + 0.587 * img[o + 1] + 0.114 * img[o + 2]) / 255;
+        const d = BAYER[(sr % 4) * 4 + (sc % 4)] * 1.3 + (Math.random() - 0.5) * 0.5;
+        const idx = Math.max(0, Math.min(PAL.length - 1, Math.round(L * (PAL.length - 1) + d)));
+        col = (idx > 0 && idx < 4 && Math.random() < 0.018) ? orRGB : palRGB[idx];
+      } else col = Math.random() < 0.04 ? orRGB : palRGB[Math.floor(Math.random() * PAL.length)];
+      // BoxGeometry +z face: u left->right, v bottom->top; sticker k counts from the top-left
+      put(i, f === 4 ? (f * 9 + (2 - Math.floor(k / 3)) * 3 + (k % 3)) : f * 9 + k, col);
+    }
+  }
+  const tex = new THREE.DataTexture(data, 54, N, THREE.RGBAFormat);
+  tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.needsUpdate = true;
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uColors: { value: tex }, uN: { value: N }, uBody: { value: new THREE.Color(BODY) } },
+    vertexShader: `
+      attribute float aFace; attribute float aInst;
+      varying vec2 vUv; varying vec3 vN; varying float vFace; varying float vInst;
+      void main() {
+        vUv = uv; vFace = aFace; vInst = aInst;
+        vN = normalize(mat3(instanceMatrix) * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      uniform sampler2D uColors; uniform float uN; uniform vec3 uBody;
+      varying vec2 vUv; varying vec3 vN; varying float vFace; varying float vInst;
+      void main() {
+        vec2 g = vUv * 3.0, cell = min(floor(g), 2.0), l = fract(g) - 0.5;
+        float k = vFace * 9.0 + (2.0 - cell.y) * 3.0 + cell.x;
+        vec3 sticker = texture2D(uColors, vec2((k + 0.5) / 54.0, (vInst + 0.5) / uN)).rgb;
+        vec2 q = abs(l) - 0.34; float d = length(max(q, 0.0)) - 0.07;          // rounded sticker
+        float m = 1.0 - smoothstep(-0.02, 0.02, d);
+        vec3 col = mix(uBody, sticker, m);
+        float lit = max(dot(normalize(vN), normalize(vec3(0.35, 0.45, 0.82))), 0.0);
+        col *= mix(0.62, 1.0, lit) / mix(0.62, 1.0, 0.82);                      // front face keeps its true colour
+        gl_FragColor = vec4(min(col, 1.0), 1.0);
+      }`
+  });
+
+  mesh = new THREE.InstancedMesh(geo, mat, N);
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(mesh);
+
+  cubes = []; active.clear();
+  const now = performance.now(), cx = cols / 2, cy = rows / 2, maxD = Math.hypot(cx, cy);
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const cube = { idx: r * cols + c, x: c * CELL + CELL / 2, y: -(r * CELL + CELL / 2), q: new THREE.Quaternion(), from: new THREE.Quaternion(), to: new THREE.Quaternion(), t0: 0, dur: ROLL_MS, back: 0, lift: 0 };
+    if (!reduce) {                                          // intro: start scrambled, assemble outward from the centre
+      cube.q.setFromEuler(new THREE.Euler((Math.floor(Math.random() * 4)) * Math.PI / 2, (Math.floor(Math.random() * 4)) * Math.PI / 2, 0));
+      cube.from.copy(cube.q); cube.to.identity();
+      cube.t0 = now + 200 + Math.hypot(c - cx, r - cy) / maxD * 1600 + Math.random() * 250; cube.dur = 700; cube.lift = 1;
+      active.add(cube);
+    }
+    cubes.push(cube); setMatrix(cube.idx, cube, 0);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+}
+
+function setMatrix(i, cube, lift) {
+  tmpP.set(cube.x, cube.y, lift * CELL * 0.9);
+  tmpM.compose(tmpP, cube.q, tmpS); mesh.setMatrixAt(i, tmpM);
+}
+const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+// ---- pointer: the cube under the pointer rolls in the direction of travel
+let px = null, py = null;
+function roll(cube, dx, dy, now) {
+  if (cube.t0 && now < cube.t0 + cube.dur) return;          // still moving
+  const horiz = Math.abs(dx) >= Math.abs(dy);
+  tmpQ.setFromAxisAngle(horiz ? AX.y : AX.x, horiz ? Math.sign(dx || 1) * Math.PI / 2 : Math.sign(dy || 1) * Math.PI / 2);
+  cube.from.copy(cube.q); cube.to.copy(tmpQ).multiply(cube.q);
+  cube.t0 = now; cube.dur = ROLL_MS; cube.lift = 1;
+  cube.back = now + ROLL_MS + HOLD[0] + Math.random() * (HOLD[1] - HOLD[0]);
+  active.add(cube);
+}
+addEventListener('pointermove', e => {
+  const x = e.clientX, y = e.clientY;
+  if (px !== null) {
+    const dx = x - px, dy = y - py, steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / (CELL * 0.5))), now = performance.now();
+    for (let s = 1; s <= steps; s++) {                      // walk the segment: fast moves do not skip cubes
+      const c = Math.floor((px + dx * s / steps) / CELL), r = Math.floor((py + dy * s / steps) / CELL);
+      if (c >= 0 && c < cols && r >= 0 && r < rows) roll(cubes[r * cols + c], dx, dy, now);
+    }
+  }
+  px = x; py = y;
+}, { passive: true });
+addEventListener('pointerleave', () => { px = py = null; });
+addEventListener('pointerdown', e => { px = e.clientX; py = e.clientY; });
+
+function frame(now) {
+  if (active.size) {
+    for (const cube of active) {
+      let t = (now - cube.t0) / cube.dur;
+      if (t < 0) continue;
+      if (t >= 1) {
+        cube.q.copy(cube.to); setMatrix(cube.idx, cube, 0);
+        if (cube.back && now >= cube.back) {                // roll back to the solved face
+          cube.back = 0; cube.from.copy(cube.q); cube.to.identity(); cube.t0 = now; cube.dur = ROLL_MS * 1.2;
+        } else if (!cube.back) active.delete(cube);
+        continue;
+      }
+      const e = ease(t);
+      THREE.Quaternion.slerp(cube.from, cube.to, cube.q, e);
+      setMatrix(cube.idx, cube, Math.sin(Math.PI * t) * cube.lift);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(build, 200); });
+(document.fonts ? document.fonts.load('600 40px "Cormorant Garamond"') : Promise.resolve()).catch(() => {}).then(() => {
+  build(); requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>
