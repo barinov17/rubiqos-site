@@ -7,6 +7,9 @@
 <meta name="description" content="RubiqOS runs robots and staff on one system across every operator on a resort. Lower operating costs, the same guest experience.">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/site.css?v=20261031c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
 /* Landing page (home.html → /home/), v3 2026-10-31: full-screen hero, outcome, what exists today, problem + fleet + why now,
    how it works (3 layers), business model, two audiences, FAQ, founder line + email-only form.
@@ -14,18 +17,20 @@
 body.site.home { background: var(--bg); -webkit-font-smoothing: antialiased; }
 body.site.home .wrap { max-width: 1120px; }
 
-/* hero: the deck cover render under a navy veil, logo and button on top of it */
-body.site.home .hero { position: relative; padding: 0; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; color: #fff; background: var(--navy) url(hero.jpg) center / cover no-repeat; isolation: isolate; }
-body.site.home .hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(10,18,32,.72) 0%, rgba(10,18,32,.42) 50%, rgba(10,18,32,.10) 100%), linear-gradient(180deg, rgba(10,18,32,.30), rgba(10,18,32,0) 28%, rgba(10,18,32,.20) 100%); }
+/* hero v4 (2026-10-31): light hero on the founder's render of the arrival court (empty floor top-left carries the text);
+   headline in Inter Tight 800 as on the render — that font is loaded only on this page, site.css is untouched */
+body.site.home .hero { position: relative; padding: 0; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; color: var(--navy); background: #F4F6FA url(hero.jpg) center top / cover no-repeat; }
 body.site.home .bar { height: 64px; display: flex; align-items: center; justify-content: space-between; }
-body.site.home .bar .brand { font: 700 18px var(--body); color: #fff; text-decoration: none; letter-spacing: -0.02em; }
-body.site.home .bar a.req { font: 500 13.5px var(--body); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.5); border-radius: 9px; padding: 8px 14px; }
-body.site.home .bar a.req:hover { border-color: #fff; background: rgba(255,255,255,.08); }
+body.site.home .bar .brand { font: 700 19px var(--body); color: var(--navy); text-decoration: none; letter-spacing: -0.02em; }
+body.site.home .bar a.req { font: 600 13.5px var(--body); color: #fff; background: var(--accent); text-decoration: none; border-radius: 9px; padding: 9px 16px; }
+body.site.home .bar a.req:hover { background: #1B47C9; }
 body.site.home .hero > .wrap { width: 100%; }
-body.site.home .hero .copy { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 16px 88px; }
-body.site.home .hero h1 { font-family: var(--display); font-weight: 500; font-size: clamp(38px, 4.3vw, 60px); line-height: 1.08; letter-spacing: -0.01em; color: #fff; margin: 0 0 18px; max-width: 17ch; }
+body.site.home .hero .copy { display: flex; flex-direction: column; align-items: flex-start; padding: clamp(20px, 4.5vh, 48px) 16px 48px; }
+body.site.home .hero .eyebrow { display: flex; align-items: center; gap: 10px; font: 600 12.5px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin: 0 0 20px; }
+body.site.home .hero .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--accent); }
+body.site.home .hero h1 { font-family: "Inter Tight", var(--body); font-weight: 800; font-size: clamp(44px, 5.2vw, 76px); line-height: 0.98; letter-spacing: -0.035em; color: var(--navy); margin: 0 0 22px; }
+body.site.home .hero p { font-size: clamp(16px, 1.3vw, 19px); color: var(--text); max-width: 58ch; margin: 0 0 30px; line-height: 1.45; }
 body.site.home .hero .btn.primary { align-self: flex-start; }
-body.site.home .hero p { font-size: clamp(16px, 1.25vw, 18px); color: rgba(255,255,255,.88); max-width: 46ch; margin: 0 0 28px; line-height: 1.5; }
 body.site.home .btn.primary { font-size: 14.5px; padding: 12px 22px; border-radius: 10px; }
 
 /* sections */
@@ -113,7 +118,9 @@ body.site.home footer a:hover { color: var(--accent); }
 @media (max-width: 900px) { .home .pf { grid-template-columns: 1fr 1fr; } .home .pf .problem { grid-column: 1 / -1; margin-bottom: 24px; } }
 @media (max-width: 720px) {
   body.site.home section { padding: 52px 0; }
-  body.site.home .hero .copy { padding: 24px 16px 56px; }
+  body.site.home .hero { min-height: 0; background-size: 100% auto; background-position: center bottom; padding-bottom: 62vw; }
+  body.site.home .hero .copy { padding: 20px 16px 24px; }
+  body.site.home .hero h1 { font-size: clamp(40px, 11.5vw, 48px); }
   body.site.home .pf { grid-template-columns: 1fr; gap: 0; }
   body.site.home .pf .fleet-note { grid-column: auto; }
   body.site.home .fleet + .fleet { border-top: 0; }
@@ -126,8 +133,9 @@ body.site.home footer a:hover { color: var(--accent); }
 <header class="hero">
   <div class="wrap bar"><a class="brand" href="/home/">RubiqOS</a><a class="req" href="#demo">Request a demo</a></div>
   <div class="wrap copy">
-    <h1>The physical AI platform for resort operations.</h1>
-    <p>Robots and staff on one system, across every operator on the property. Lower operating costs, the same guest experience.</p>
+    <div class="eyebrow">Physical AI for resorts</div>
+    <h1>One fleet.<br>Every operator.</h1>
+    <p>Robots handle routine work. Your people focus on guests.</p>
     <a class="btn primary" href="#demo">Request a demo</a>
   </div>
 </header>
