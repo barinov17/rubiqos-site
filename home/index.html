@@ -15,67 +15,67 @@ body.site.home .wrap { max-width: 1120px; }
 
 /* hero: the deck cover render under a navy veil, logo and button on top of it */
 body.site.home .hero { position: relative; padding: 0; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; color: #fff; background: var(--navy) url(hero.jpg) center / cover no-repeat; isolation: isolate; }
-body.site.home .hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(10,18,32,.86) 0%, rgba(10,18,32,.62) 45%, rgba(10,18,32,.28) 100%), linear-gradient(180deg, rgba(10,18,32,.35), rgba(10,18,32,0) 30%, rgba(10,18,32,.25) 100%); }
-body.site.home .bar { height: 72px; display: flex; align-items: center; justify-content: space-between; }
-body.site.home .bar .brand { font: 700 20px var(--body); color: #fff; text-decoration: none; letter-spacing: -0.02em; }
-body.site.home .bar a.req { font: 500 14px var(--body); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.45); border-radius: 10px; padding: 9px 16px; }
+body.site.home .hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(10,18,32,.72) 0%, rgba(10,18,32,.42) 50%, rgba(10,18,32,.10) 100%), linear-gradient(180deg, rgba(10,18,32,.30), rgba(10,18,32,0) 28%, rgba(10,18,32,.20) 100%); }
+body.site.home .bar { height: 64px; display: flex; align-items: center; justify-content: space-between; }
+body.site.home .bar .brand { font: 700 18px var(--body); color: #fff; text-decoration: none; letter-spacing: -0.02em; }
+body.site.home .bar a.req { font: 500 13.5px var(--body); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.5); border-radius: 9px; padding: 8px 14px; }
 body.site.home .bar a.req:hover { border-color: #fff; background: rgba(255,255,255,.08); }
 body.site.home .hero > .wrap { width: 100%; }
-body.site.home .hero .copy { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 48px 16px 96px; }
-body.site.home .hero h1 { font-family: var(--display); font-weight: 500; font-size: clamp(44px, 6.4vw, 86px); line-height: 1.0; letter-spacing: -0.01em; color: #fff; margin: 0 0 24px; max-width: 13ch; }
+body.site.home .hero .copy { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 16px 88px; }
+body.site.home .hero h1 { font-family: var(--display); font-weight: 500; font-size: clamp(38px, 4.3vw, 60px); line-height: 1.08; letter-spacing: -0.01em; color: #fff; margin: 0 0 18px; max-width: 17ch; }
 body.site.home .hero .btn.primary { align-self: flex-start; }
-body.site.home .hero p { font-size: clamp(17px, 1.4vw, 21px); color: rgba(255,255,255,.86); max-width: 50ch; margin: 0 0 34px; line-height: 1.45; }
-body.site.home .btn.primary { font-size: 15px; padding: 13px 24px; border-radius: 12px; }
+body.site.home .hero p { font-size: clamp(16px, 1.25vw, 18px); color: rgba(255,255,255,.88); max-width: 46ch; margin: 0 0 28px; line-height: 1.5; }
+body.site.home .btn.primary { font-size: 14.5px; padding: 12px 22px; border-radius: 10px; }
 
 /* sections */
-body.site.home section { padding: 96px 0; border-top: 1px solid var(--line); }
-body.site.home section > h2 { font-family: var(--display); font-weight: 500; font-size: clamp(34px, 3.8vw, 50px); line-height: 1.05; color: var(--navy); margin: 0 auto 18px; max-width: 24ch; text-align: center; letter-spacing: -0.005em; }
-body.site.home section > .lead { font-size: 17px; color: var(--text); max-width: 62ch; margin: 0 auto 48px; line-height: 1.5; text-align: center; }
+body.site.home section { padding: 72px 0; border-top: 1px solid var(--line); }
+body.site.home section > h2 { font-family: var(--display); font-weight: 500; font-size: clamp(30px, 2.9vw, 40px); line-height: 1.1; color: var(--navy); margin: 0 auto 14px; max-width: 26ch; text-align: center; letter-spacing: -0.005em; }
+body.site.home section > .lead { font-size: 16px; color: var(--text); max-width: 60ch; margin: 0 auto 36px; line-height: 1.5; text-align: center; }
 
 /* outcome: three cards with centred headings */
-body.site.home .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
-body.site.home .card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 36px 28px 32px; text-align: center; }
-body.site.home .card .v { font: 500 clamp(52px, 5.6vw, 72px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-bottom: 14px; }
-body.site.home .card h3 { font: 500 21px var(--body); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.01em; }
-body.site.home .card p { font-size: 15px; color: var(--text); margin: 0 auto; line-height: 1.5; max-width: 30ch; }
-body.site.home .outcome-line { margin: 40px auto 0; padding: 22px 28px; background: var(--panel); border-radius: 14px; font-size: 17px; color: var(--navy); max-width: 62ch; line-height: 1.5; text-align: center; }
+body.site.home .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 36px; }
+body.site.home .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px 26px; text-align: center; }
+body.site.home .card .v { font: 500 clamp(40px, 3.6vw, 48px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+body.site.home .card h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
+body.site.home .card p { font-size: 14.5px; color: var(--text); margin: 0 auto; line-height: 1.5; max-width: 30ch; }
+body.site.home .outcome-line { margin: 28px auto 0; padding: 18px 24px; background: var(--panel); border-radius: 12px; font-size: 16px; color: var(--navy); max-width: 62ch; line-height: 1.5; text-align: center; }
 
 /* problem + fleet: three columns across the block, the problem left, the domains in the other two */
 body.site.home .pf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 48px; }
-body.site.home .pf .col h3 { font: 500 21px var(--body); color: var(--navy); margin: 0 0 14px; letter-spacing: -0.01em; }
-body.site.home .pf .col > p { font-size: 15px; color: var(--text); line-height: 1.5; margin: 0 0 28px; }
-body.site.home .num { margin-bottom: 26px; }
-body.site.home .num .v { font: 500 clamp(44px, 4.6vw, 60px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
-body.site.home .num .k { font: 500 16px var(--body); color: var(--navy); }
+body.site.home .pf .col h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 12px; letter-spacing: -0.01em; }
+body.site.home .pf .col > p { font-size: 14.5px; color: var(--text); line-height: 1.5; margin: 0 0 22px; }
+body.site.home .num { margin-bottom: 20px; }
+body.site.home .num .v { font: 500 clamp(36px, 3.2vw, 44px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+body.site.home .num .k { font: 500 15px var(--body); color: var(--navy); }
 body.site.home .fleet { border-top: 1px solid var(--line); }
-body.site.home .fleet div { padding: 20px 0; border-bottom: 1px solid var(--line); }
-body.site.home .fleet b { display: block; font: 500 17px var(--body); color: var(--navy); margin-bottom: 4px; }
-body.site.home .fleet span { font-size: 14px; color: var(--muted); }
-body.site.home .pf .fleet-note { grid-column: 2 / -1; font-size: 14px; color: var(--muted); margin: 18px 0 0; line-height: 1.5; }
+body.site.home .fleet div { padding: 16px 0; border-bottom: 1px solid var(--line); }
+body.site.home .fleet b { display: block; font: 500 16px var(--body); color: var(--navy); margin-bottom: 4px; }
+body.site.home .fleet span { font-size: 13.5px; color: var(--muted); }
+body.site.home .pf .fleet-note { grid-column: 2 / -1; font-size: 13.5px; color: var(--muted); margin: 16px 0 0; line-height: 1.5; }
 
 /* how it works */
-body.site.home .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
-body.site.home .how div { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 28px 26px 26px; }
-body.site.home .how h3 { font: 500 21px var(--body); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.01em; }
-body.site.home .how p { font-size: 15px; color: var(--text); margin: 0; line-height: 1.5; }
+body.site.home .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+body.site.home .how div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
+body.site.home .how h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
+body.site.home .how p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
 
 /* request a demo: one field */
-body.site.home form { display: flex; gap: 12px; max-width: 560px; margin: 0 auto; }
-body.site.home input { flex: 1; min-width: 0; font: 400 16px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 13px 16px; outline: none; }
+body.site.home form { display: flex; gap: 10px; max-width: 520px; margin: 0 auto; }
+body.site.home input { flex: 1; min-width: 0; font: 400 15px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; }
 body.site.home input:focus { border-color: var(--accent); }
 body.site.home form .btn.primary { border: 0; cursor: pointer; white-space: nowrap; }
-body.site.home .alt { font-size: 14px; color: var(--muted); margin: 18px 0 0; text-align: center; }
+body.site.home .alt { font-size: 13.5px; color: var(--muted); margin: 16px 0 0; text-align: center; }
 body.site.home .alt a { color: var(--accent); text-decoration: none; }
 
-body.site.home footer { border-top: 1px solid var(--line); padding: 36px 0 56px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline; justify-content: space-between; font-size: 14px; color: var(--muted); }
-body.site.home footer .brand { font: 700 17px var(--body); color: var(--navy); letter-spacing: -0.02em; }
+body.site.home footer { border-top: 1px solid var(--line); padding: 28px 0 48px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline; justify-content: space-between; font-size: 14px; color: var(--muted); }
+body.site.home footer .brand { font: 700 16px var(--body); color: var(--navy); letter-spacing: -0.02em; }
 body.site.home footer a { color: var(--navy); text-decoration: none; }
 body.site.home footer a:hover { color: var(--accent); }
 
 @media (max-width: 900px) { .home .pf { grid-template-columns: 1fr 1fr; } .home .pf .problem { grid-column: 1 / -1; margin-bottom: 24px; } }
 @media (max-width: 720px) {
-  body.site.home section { padding: 60px 0; }
-  body.site.home .hero .copy { padding: 32px 16px 64px; }
+  body.site.home section { padding: 52px 0; }
+  body.site.home .hero .copy { padding: 24px 16px 56px; }
   body.site.home .pf { grid-template-columns: 1fr; gap: 0; }
   body.site.home .pf .fleet-note { grid-column: auto; }
   body.site.home .fleet + .fleet { border-top: 0; }
@@ -109,7 +109,7 @@ body.site.home footer a:hover { color: var(--accent); }
     <h2>High operating costs, one shared fleet.</h2>
     <div class="pf">
       <div class="col problem">
-        <h3>High operating costs</h3>
+        <h3>Where the money goes</h3>
         <div class="num"><div class="v">63%</div><div class="k">of revenue goes to operations</div></div>
         <div class="num"><div class="v">45%</div><div class="k">of operating cost is payroll</div></div>
         <p>A large resort spends most of its revenue on running itself, and the biggest line is people: imported, housed and transported. A general manager spends half the day putting out fires.</p>
