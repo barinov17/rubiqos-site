@@ -11,7 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /home/), v3 2026-10-31: full-screen hero, outcome, what exists today, problem + fleet + why now,
+/* Landing page (home.html → /), v6.2 2026-10-31: hero, market opportunity, what exists today, problem + fleet + why now, outcome,
+   how it works, business model, two audiences, founder line + email-only form (FAQ removed for now, see home-faq.snippet.html).
+   v3 2026-10-31 was: hero, outcome, what exists today, problem + fleet + why now,
    how it works (3 layers), business model, two audiences, FAQ, founder line + email-only form.
    Palette and fonts come from site.css; only the layout lives here. */
 body.site.home { background: var(--bg); -webkit-font-smoothing: antialiased; }
@@ -49,6 +51,13 @@ body.site.home .outcome-line, body.site.home .why { margin: 28px 0 0; padding: 1
 body.site.home .why { grid-column: 1 / -1; max-width: none; margin-top: 32px; }
 body.site.home .why b { font-weight: 500; }
 
+/* market opportunity (v6.2): three numbers left, the founder's globe render right; the picture's own background is #F1F4F8 ≈ var(--bg) */
+body.site.home .market { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 48px; align-items: center; }
+body.site.home .market .num { margin-bottom: 30px; }
+body.site.home .market .num:last-child { margin-bottom: 0; }
+body.site.home .market .t { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+body.site.home .market .k { max-width: 40ch; line-height: 1.4; }
+body.site.home .market img { width: 100%; max-width: 480px; height: auto; display: block; justify-self: end; }
 /* what exists today: three cards */
 body.site.home .card a.more { display: inline-block; margin-top: 12px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
 body.site.home .card a.more:hover { text-decoration: underline; }
@@ -123,6 +132,8 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
   body.site.home .hero { height: auto; background-position: center bottom; padding-bottom: 54vw; }
   body.site.home .hero .copy { padding: 20px 16px 24px; }
   body.site.home .hero h1 { font-size: clamp(34px, 9.6vw, 44px); }
+  body.site.home .market { grid-template-columns: 1fr; }
+  body.site.home .market img { max-width: 320px; justify-self: center; }
   body.site.home .pf { grid-template-columns: 1fr; gap: 0; }
   body.site.home .pf .fleet-note { grid-column: auto; }
   body.site.home .fleet + .fleet { border-top: 0; }
@@ -141,14 +152,17 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
 </header>
 
 <div class="wrap">
-  <section id="outcome">
-    <h2>Outcome for resorts.</h2>
-    <div class="cards">
-      <div class="card"><div class="v">−39%</div><h3>Payroll</h3><p>Physical AI: robots take over the physical work they already do well.</p></div>
-      <div class="card"><div class="v">−20%</div><h3>Time per task</h3><p>Orchestration: one system plans and dispatches staff and robots.</p></div>
-      <div class="card"><div class="v">+25%</div><h3>Spend per guest</h3><p>Guest interface: one seamless channel for every request and direct sales.</p></div>
+  <section id="market">
+    <h2>Market opportunity.</h2>
+    <p class="lead">About 450 large resorts, operating today or opening by 2031, spend $51B a year running themselves. Most of it is people.</p>
+    <div class="market">
+      <div class="nums">
+        <div class="num"><div class="t">TAM</div><div class="v">$51B</div><div class="k">Operating costs a year across ~450 destinations: 203 operating, ~250 in the pipeline.</div></div>
+        <div class="num"><div class="t">SAM</div><div class="v">$12B</div><div class="k">Payroll on the tasks physical AI already does: about half of the $23B resort payroll.</div></div>
+        <div class="num"><div class="t">SOM</div><div class="v">$4B</div><div class="k">Our fee at about a third of the human cost of those tasks.</div></div>
+      </div>
+      <img src="market-globe.jpg" width="1000" height="1000" alt="Globe with resort destinations marked" loading="lazy">
     </div>
-    <div class="outcome-line">On a resort with about $150M of operating costs a year, this is about $35M saved every year.</div>
   </section>
 
   <section id="today">
@@ -185,6 +199,16 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
     </div>
   </section>
 
+  <section id="outcome">
+    <h2>Outcome for resorts.</h2>
+    <div class="cards">
+      <div class="card"><div class="v">−39%</div><h3>Payroll</h3><p>Physical AI: robots take over the physical work they already do well.</p></div>
+      <div class="card"><div class="v">−20%</div><h3>Time per task</h3><p>Orchestration: one system plans and dispatches staff and robots.</p></div>
+      <div class="card"><div class="v">+25%</div><h3>Spend per guest</h3><p>Guest interface: one seamless channel for every request and direct sales.</p></div>
+    </div>
+    <div class="outcome-line">On a resort with about $150M of operating costs a year, this is about $35M saved every year.</div>
+  </section>
+
   <section id="how">
     <h2>How RubiqOS works.</h2>
     <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
@@ -211,18 +235,6 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
     <div class="for">
       <div><h3>For resort developers</h3><p>Resorts in design or with a new phase ahead. We specify the platform into the master plan while spatial decisions are still free, then run the shared fleet with your operators.</p><a href="#demo">Request a demo</a></div>
       <div><h3>For robot makers</h3><p>Your robots, our fleet. RubiqOS dispatches, supervises and bills by the job: a destination-scale deployment without building the operations layer. The register lists 26 robot types.</p><a href="mailto:hello@rubiqos.com?subject=Partnership">Write to us about a partnership</a></div>
-    </div>
-  </section>
-
-  <section id="faq">
-    <h2>Questions we get.</h2>
-    <div class="faq">
-      <details><summary>Is it safe to run robots among guests?</summary><p>Most work is back of house and at night. On guest paths robots move at walking speed on fixed routes under remote supervision; every route runs in the simulation first.</p></details>
-      <details><summary>What happens when a robot fails?</summary><p>The task returns to the queue, to a person or another robot; a shared fleet has spare capacity by design. Service and spares are the hardware partner’s duty under the lease.</p></details>
-      <details><summary>How long does deployment take?</summary><p>In a resort in design, with the master plan, so nothing is retrofitted. On an operating resort, one domain first, then more season by season.</p></details>
-      <details><summary>Who pays, and when?</summary><p>The developer, from payroll it no longer carries: a design-phase fee, a platform fee and outcome fees per job done. Robots are leased, so no fleet sits on the balance sheet.</p></details>
-      <details><summary>Which robots are supported?</summary><p>Any robot with an open interface. The register has 26 types, from guest pods and shuttle boats to mowers and patrol drones. We build the middleware, not the robots.</p></details>
-      <details><summary>What data leaves the resort?</summary><p>Operational data stays with the resort; the platform keeps task, route and telemetry logs to plan and to bill. Guest data follows the operator’s own policy.</p></details>
     </div>
   </section>
 
