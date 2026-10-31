@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.4 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
-   what exists today ($1B resort · 2,000 robots · 46 platforms), problem (63% + opex donut 200 px, one-line legend) + why now,
+/* Landing page (home.html → /), v6.5 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+   how it works moved after solution with the founder's platform render + three small cards,
+   what exists today ($1B resort · 2,000 robots · 46 platforms), problem (63% + opex donut 200 px, one-line legend; why now removed), who we work with (Lucide icons + arrows), demo = heading + field + button,
    solution for resorts (six domains, Lucide icons), outcome,
    how it works, business model, two audiences, founder line + email-only form (FAQ removed for now, see home-faq.snippet.html).
    v3 2026-10-31 was: hero, outcome, what exists today, problem + fleet + why now,
@@ -49,23 +50,22 @@ body.site.home .card { background: #fff; border: 1px solid var(--line); border-r
 body.site.home .card .v { font: 700 clamp(36px, 3.2vw, 44px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
 body.site.home .card h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
 body.site.home .card p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .outcome-line, body.site.home .why { margin: 28px 0 0; padding: 18px 24px; background: var(--panel); border-radius: 12px; font-size: 16px; color: var(--navy); max-width: 62ch; line-height: 1.5; }
-body.site.home .why { grid-column: 1 / -1; max-width: none; margin-top: 32px; }
-body.site.home .why b { font-weight: 500; }
+body.site.home .outcome-line { margin: 28px 0 0; padding: 18px 24px; background: var(--panel); border-radius: 12px; font-size: 16px; color: var(--navy); max-width: 62ch; line-height: 1.5; }
 
 /* market opportunity (v6.2; v6.3 = the deck's Market slide numbers 450+ / $51B / $113M; v6.4 = rows, smaller globe): three number rows left, the founder's globe render right; the picture's own background is #F1F4F8 ≈ var(--bg) */
 body.site.home .market { display: grid; grid-template-columns: 1fr 340px; gap: 24px 56px; align-items: center; }
-body.site.home .market .num { display: grid; grid-template-columns: 150px 1fr; gap: 0 20px; align-items: center; margin-bottom: 22px; }
-body.site.home .market .num:last-child { margin-bottom: 0; }
-body.site.home .market .num .v { font-size: clamp(40px, 3.4vw, 48px); margin: 0; }
-body.site.home .market .k { font: 500 15px/1.45 var(--body); color: var(--navy); max-width: 46ch; }
+body.site.home .market .num { display: grid; grid-template-columns: 148px 1fr; gap: 0 24px; align-items: baseline; margin: 0; padding: 18px 0; border-top: 1px solid var(--line); }
+body.site.home .market .num:first-child { border-top: 0; padding-top: 0; }
+body.site.home .market .num:last-child { padding-bottom: 0; }
+body.site.home .market .num .v { font-size: clamp(38px, 3.1vw, 44px); letter-spacing: -0.02em; font-variant-numeric: proportional-nums lining-nums; margin: 0; }
+body.site.home .market .k { font: 400 15px/1.5 var(--body); color: var(--text); max-width: 44ch; }
 body.site.home .market img { width: 100%; max-width: 340px; height: auto; display: block; justify-self: end; }
 /* what exists today: three cards; v6.4 = number + unit on the big line */
 body.site.home .card .v small { font: 600 19px var(--body); color: var(--navy); letter-spacing: -0.01em; margin-left: 4px; }
 body.site.home .card a.more { display: inline-block; margin-top: 12px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
 body.site.home .card a.more:hover { text-decoration: underline; }
 
-/* problem (v6.3 = deck slide 02): ~63% + description left, the opex donut (28 / 19 / 16 / 37 % of revenue) right, Why now across */
+/* problem (v6.3 = deck slide 02): ~63% + description left, the opex donut (28 / 19 / 16 / 37 % of revenue) right (v6.5: Why now removed) */
 body.site.home .pd { display: grid; grid-template-columns: 1fr 1.15fr; gap: 24px 48px; align-items: center; }
 body.site.home .pd .col > p { font-size: 15.5px; color: var(--text); line-height: 1.5; margin: 0; max-width: 46ch; }
 body.site.home .pd .num.big .v { font-size: clamp(52px, 5vw, 72px); }
@@ -91,11 +91,15 @@ body.site.home .dom b { display: block; font: 600 17px var(--body); color: var(-
 body.site.home .dom span { font-size: 13.5px; color: var(--muted); }
 
 /* how it works */
-body.site.home .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-body.site.home .how > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
-body.site.home .how h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
-body.site.home .how p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
+/* how it works (v6.5): the founder's platform render in a white panel, three small cards under its three parts (app · core · resort) */
+body.site.home .how-pic { margin: 0 0 16px; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+body.site.home .how-pic img { display: block; width: 100%; height: auto; }
+body.site.home .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+body.site.home .how > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px 18px; }
+body.site.home .how h3 { font: 600 16px var(--body); color: var(--navy); margin: 0 0 6px; letter-spacing: -0.01em; }
+body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
 body.site.home .how .n, body.site.home .model .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+body.site.home .how .n { margin-bottom: 10px; }
 body.site.home .how-cta { margin-top: 32px; }
 
 /* business model: three fee rows */
@@ -110,8 +114,11 @@ body.site.home .for { display: grid; grid-template-columns: repeat(auto-fit, min
 body.site.home .for > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
 body.site.home .for h3 { font: 700 22px/1.15 var(--head); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.025em; }
 body.site.home .for p { font-size: 14.5px; color: var(--text); margin: 0 0 16px; line-height: 1.5; }
-body.site.home .for a { font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
+body.site.home .for .ic { display: block; width: 28px; height: 28px; color: var(--accent); margin-bottom: 16px; }
+body.site.home .for a { display: inline-flex; align-items: center; gap: 8px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
+body.site.home .for a .arr { width: 16px; height: 16px; flex: 0 0 16px; transition: transform .15s; }
 body.site.home .for a:hover { text-decoration: underline; }
+body.site.home .for a:hover .arr { transform: translateX(3px); }
 
 /* faq */
 body.site.home .faq { max-width: 760px; margin: 0; border-bottom: 1px solid var(--line); }
@@ -122,16 +129,11 @@ body.site.home .faq summary::after { content: "+"; color: var(--accent); font-si
 body.site.home .faq details[open] summary::after { content: "–"; }
 body.site.home .faq details p { font-size: 14.5px; color: var(--text); margin: 10px 0 0; max-width: 70ch; line-height: 1.5; }
 
-/* founder line above the form */
-body.site.home .founder { font-size: 16px; color: var(--navy); max-width: 62ch; margin: 0 0 36px; line-height: 1.5; padding: 18px 24px; background: var(--panel); border-radius: 12px; }
-
-/* request a demo: one field */
-body.site.home form { display: flex; gap: 10px; max-width: 520px; margin: 0; }
+/* request a demo (v6.5: heading + one field + button, nothing else) */
+body.site.home form { display: flex; gap: 10px; max-width: 520px; margin: 8px 0 0; }
 body.site.home input { flex: 1; min-width: 0; font: 400 15px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; }
 body.site.home input:focus { border-color: var(--accent); }
 body.site.home form .btn.primary { border: 0; cursor: pointer; white-space: nowrap; }
-body.site.home .alt { font-size: 13.5px; color: var(--muted); margin: 16px 0 0; }
-body.site.home .alt a { color: var(--accent); text-decoration: none; }
 
 body.site.home footer { border-top: 1px solid var(--line); padding: 28px 0 48px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline; justify-content: space-between; font-size: 14px; color: var(--muted); }
 body.site.home footer .brand { font: 700 16px var(--body); color: var(--accent); letter-spacing: -0.02em; }
@@ -140,8 +142,8 @@ body.site.home footer a:hover { color: var(--accent); }
 body.site.home footer a.access { font: 500 13px var(--body); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 6px 12px; }
 body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
 
-@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .domains { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 560px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .market .num { grid-template-columns: 1fr; gap: 6px; } }
+@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .domains { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .market .num { grid-template-columns: 1fr; gap: 4px; padding: 14px 0; } }
 @media (max-width: 720px) {
   body.site.home .hero p br.d { display: none; }
   body.site.home section { padding: 52px 0; }
@@ -206,7 +208,6 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
           <div><i style="background:#E4E9F0"></i><b>Gross operating profit</b><span>Before fees, taxes, insurance, FF&amp;E</span></div>
         </figcaption>
       </figure>
-      <p class="why"><b>Why now.</b> Since 2015 hospitality wages are up about 60% and the price of a physical-AI unit is down about 80%. Hotel robotics closed new rounds in 2025–26, one robot at a time. Nobody yet runs one fleet across a whole resort.</p>
     </div>
   </section>
 
@@ -224,6 +225,18 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
     </div>
   </section>
 
+  <section id="how">
+    <h2>How RubiqOS works.</h2>
+    <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
+    <figure class="how-pic"><img src="how-platform.jpg" width="1942" height="809" alt="One guest and staff app on the left, the RubiqOS orchestration core in the centre, a robot and a staff member at work on the resort on the right" loading="lazy"></figure>
+    <div class="how">
+      <div><div class="n">01 · One app</div><h3>Staff, operators, guests</h3><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside.</p></div>
+      <div><div class="n">02 · Orchestration</div><h3>Every task coded and costed</h3><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line.</p></div>
+      <div><div class="n">03 · Shared fleet</div><h3>Robots that already ship</h3><p>Leased through hardware partners across the six domains. One fleet serves every operator on the property.</p></div>
+    </div>
+    <div class="how-cta"><a class="btn primary" href="/demo/">See it run in the live demo</a></div>
+  </section>
+
   <section id="outcome">
     <h2>Outcome for resorts.</h2>
     <div class="cards">
@@ -232,17 +245,6 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
       <div class="card"><div class="v">+25%</div><h3>Spend per guest</h3><p>Guest interface: one seamless channel for every request and direct sales.</p></div>
     </div>
     <div class="outcome-line">On a resort with about $150M of operating costs a year, this is about $35M saved every year.</div>
-  </section>
-
-  <section id="how">
-    <h2>How RubiqOS works.</h2>
-    <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
-    <div class="how">
-      <div><div class="n">01 · Shared fleet</div><h3>Robots that already ship</h3><p>Leased through hardware partners across the six domains. One fleet serves every operator on the property.</p></div>
-      <div><div class="n">02 · Orchestration</div><h3>Every task coded and costed</h3><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line.</p></div>
-      <div><div class="n">03 · People</div><h3>Staff, operators, guests</h3><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside.</p></div>
-    </div>
-    <div class="how-cta"><a class="btn primary" href="/demo/">See it run in the live demo</a></div>
   </section>
 
   <section id="model">
@@ -258,20 +260,17 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
   <section id="for">
     <h2>Who we work with.</h2>
     <div class="for">
-      <div><h3>For resort developers</h3><p>Resorts in design or with a new phase ahead. We specify the platform into the master plan while spatial decisions are still free, then run the shared fleet with your operators.</p><a href="#demo">Request a demo</a></div>
-      <div><h3>For robot makers</h3><p>Your robots, our fleet. RubiqOS dispatches, supervises and bills by the job: a destination-scale deployment without building the operations layer. The register lists 26 robot types.</p><a href="mailto:hello@rubiqos.com?subject=Partnership">Write to us about a partnership</a></div>
+      <div><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3><p>Resorts in design or with a new phase ahead. We specify the platform into the master plan while spatial decisions are still free, then run the shared fleet with your operators.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
+      <div><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3><p>Your robots, our fleet. RubiqOS dispatches, supervises and bills by the job: a destination-scale deployment without building the operations layer. The register lists 26 robot types.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us about a partnership</a></div>
     </div>
   </section>
 
   <section id="demo">
     <h2>Request a demo.</h2>
-    <p class="founder">RubiqOS is built by a team from resort development and master-planning, hands-on hotel operations and software at scale. We build the middleware, not the robots, and know every layer it connects.</p>
-    <p class="lead">Leave your email. We reply within two working days.</p>
     <form id="demoForm" novalidate>
       <input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required>
       <button class="btn primary" type="submit">Request a demo</button>
     </form>
-    <p class="alt">Or write to <a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a>.</p>
   </section>
 
   <footer>
