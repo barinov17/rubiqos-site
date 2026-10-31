@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.14 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.15 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.15: Outcome −21% time per task, +24% spend per guest (was −20% / +25%); What we offer 02 «An operational plan built around physical AI capabilities» (analyse + optimise the current plan), 03 «Work done by our robot fleet» (robots on lease or by subscription doing specific work); Who we work with texts: developers = design phase + retrofit, robot makers = real use in resorts → integration; footer: Company/Contact right-aligned at the right edge, Partner access a text link under the tagline, 22px line pitch,
    v6.14: What we offer picture = the founder's render (square 1000 px JPEG, cropped to content and padded to a square),
    v6.13: Market lead gap 40px + rows lowered to the globe top; Solution 05 «Maintenance»; How cards 40px under the render; What we offer frameless, text left + square picture right; footer one block,
    v6.12: What we offer — label «02 · Operational plan»; Who we work with — «Write to us»; demo form card — plain h3 «Request a demo» instead of the label; footer — EIN removed, tagline «Physical AI for resort operations.»,
@@ -170,22 +171,24 @@ body.site.home form small { font-size: 13px; color: var(--muted); }
 body.site.home form small a { color: var(--navy); text-decoration: none; }
 body.site.home form small a:hover { color: var(--accent); }
 
-/* footer (v6.10: brand + tagline · company details · contact, then a bottom bar) */
-body.site.home footer { border-top: 1px solid var(--line); padding: 36px 0 40px; font-size: 14px; color: var(--muted); }
-body.site.home footer .cols { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 24px 32px; align-items: start; }
-body.site.home footer .brand { display: block; font: 700 18px var(--body); color: var(--accent); letter-spacing: -0.02em; margin-bottom: 8px; }
-body.site.home footer .tag { margin: 0; max-width: 32ch; line-height: 1.5; }
-body.site.home footer .lbl { font: 600 12px/1 var(--body); color: var(--navy); letter-spacing: .08em; text-transform: uppercase; margin: 4px 0 12px; }
-body.site.home footer address { font-style: normal; line-height: 1.6; color: var(--text); }
-body.site.home footer .links { display: grid; gap: 8px; justify-items: start; }
+/* footer (v6.10: brand + tagline · company details · contact; v6.15: Company and Contact right-aligned at the right edge, Partner access a text link
+   under the tagline, every line on a 22px pitch so the brand column (tagline · link · copyright) matches the three address lines) */
+body.site.home footer { border-top: 1px solid var(--line); padding: 36px 0 40px; font-size: 14px; line-height: 22px; color: var(--muted); }
+body.site.home footer .cols { display: grid; grid-template-columns: 1fr auto auto; gap: 24px 64px; align-items: start; }
+body.site.home footer .cols > div:nth-child(n+2) { text-align: right; }
+body.site.home footer .brand { display: block; font: 700 18px/22px var(--body); color: var(--accent); letter-spacing: -0.02em; margin-bottom: 10px; }
+body.site.home footer .tag { margin: 0; max-width: 32ch; }
+body.site.home footer .lbl { font: 600 12px/22px var(--body); color: var(--navy); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; }
+body.site.home footer address { font-style: normal; color: var(--text); }
+body.site.home footer .links { display: grid; justify-items: end; }
 body.site.home footer a { color: var(--navy); text-decoration: none; }
 body.site.home footer a:hover { color: var(--accent); }
-body.site.home footer a.access { font: 500 13px var(--body); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 6px 12px; margin-top: 6px; }
-body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
-body.site.home footer .copy { margin: 14px 0 0; font-size: 13px; } /* v6.13: founder — one footer block, the copyright line joins the brand column (bottom bar removed) */
+body.site.home footer a.access { display: inline-block; font-weight: 500; color: var(--accent); } /* v6.15: founder — a blue link under the tagline, not a button */
+body.site.home footer a.access:hover { text-decoration: underline; }
+body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder — one footer block, the copyright line joins the brand column (bottom bar removed) */
 
 @media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model { grid-template-columns: 1fr; gap: 24px; } body.site.home .model-pic { max-width: 400px; order: -1; } body.site.home .demo { grid-template-columns: 1fr; gap: 22px; } body.site.home form { max-width: 520px; } }
-@media (max-width: 720px) { body.site.home footer .cols { grid-template-columns: 1fr; gap: 22px; } }
+@media (max-width: 720px) { body.site.home footer .cols { grid-template-columns: 1fr; gap: 22px; } body.site.home footer .cols > div:nth-child(n+2) { text-align: left; } body.site.home footer .links { justify-items: start; } }
 @media (max-width: 560px) { body.site.home .market .num { grid-template-columns: 1fr; gap: 4px; padding: 14px 0; } }
 @media (max-width: 720px) {
   body.site.home .hero p br.d { display: none; }
@@ -320,8 +323,8 @@ body.site.home footer .copy { margin: 14px 0 0; font-size: 13px; } /* v6.13: fou
     <h2>Outcome for resorts.</h2>
     <div class="cards">
       <div class="card"><div class="v">−39%</div><h3>Payroll</h3><p>Physical AI: robots take over the physical work they already do well.</p></div>
-      <div class="card"><div class="v">−20%</div><h3>Time per task</h3><p>Orchestration: one system plans and dispatches staff and robots.</p></div>
-      <div class="card"><div class="v">+25%</div><h3>Spend per guest</h3><p>Guest interface: one seamless channel for every request and direct sales.</p></div>
+      <div class="card"><div class="v">−21%</div><h3>Time per task</h3><p>Orchestration: one system plans and dispatches staff and robots.</p></div>
+      <div class="card"><div class="v">+24%</div><h3>Spend per guest</h3><p>Guest interface: one seamless channel for every request and direct sales.</p></div>
     </div>
   </section>
 
@@ -330,8 +333,8 @@ body.site.home footer .copy { margin: 14px 0 0; font-size: 13px; } /* v6.13: fou
     <div class="model">
       <div class="model-list">
         <div><div class="k">01 · Design</div><h3>Physical AI in the master plan</h3><p>We design the physical-AI solutions for the destination and build them into the master plan while spatial decisions are still free: docks, charging, service corridors, edge compute.</p></div>
-        <div><div class="k">02 · Operational plan</div><h3>An operating model built on the platform</h3><p>An operational plan for the resort that counts on physical AI and the platform: which tasks robots take, which stay with people, staffing and budget lines for each.</p></div>
-        <div><div class="k">03 · Execution</div><h3>Tasks done by our robot fleet</h3><p>Deliveries, cleaning, mowing, patrols, transfers: done by our shared fleet, leased from hardware partners and supervised remotely by us. Paid per job done.</p></div>
+        <div><div class="k">02 · Operational plan</div><h3>An operational plan built around physical AI capabilities</h3><p>We analyse the resort’s current operational plan and optimise it around what physical AI can do: which work moves to robots, which stays with people, and the staffing and budget lines for each.</p></div>
+        <div><div class="k">03 · Execution</div><h3>Work done by our robot fleet</h3><p>We provide the robots on lease or by subscription, and they do specific work on the resort: deliveries, cleaning, mowing, patrols, transfers.</p></div>
       </div>
       <figure class="model-pic"><img src="offer.jpg" width="1000" height="1000" alt="Isometric model of a resort fragment: villas, palms, a pool, a marina with a yacht, a shuttle, delivery robots and staff on the service route" loading="lazy"></figure>
     </div>
@@ -340,8 +343,8 @@ body.site.home footer .copy { margin: 14px 0 0; font-size: 13px; } /* v6.13: fou
   <section id="for">
     <h2>Who we work with.</h2>
     <div class="for">
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3></div><p>Resorts in design or with a new phase ahead. We specify the platform into the master plan while spatial decisions are still free, then run the shared fleet with your operators.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3></div><p>Your robots, our fleet. RubiqOS dispatches, supervises and bills by the job: a destination-scale deployment without building the operations layer. The register lists 26 robot types.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us</a></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3></div><p>Resort destinations with a design phase ahead: we specify physical AI into the master plan while spatial decisions are still free. For existing resorts we provide retrofit solutions that fit the built property.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3></div><p>Robotics platforms with real, practical use in resorts: deliveries, cleaning, grounds, patrols, transfers. If your robots do that work reliably, we can consider integrating them into our fleet and dispatching them by the job.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us</a></div>
     </div>
   </section>
 
@@ -368,9 +371,9 @@ body.site.home footer .copy { margin: 14px 0 0; font-size: 13px; } /* v6.13: fou
 
   <footer>
     <div class="cols">
-      <div><span class="brand">RubiqOS</span><p class="tag">Physical AI for resort operations.</p><p class="copy">© 2026 RUBIQ development, LLC. All rights reserved.</p></div>
+      <div><span class="brand">RubiqOS</span><p class="tag">Physical AI for resort operations.</p><a class="access" href="/access/">Partner access</a><p class="copy">© 2026 RUBIQ development, LLC. All rights reserved.</p></div>
       <div><p class="lbl">Company</p><address>RUBIQ development, LLC<br>131 Continental Dr, Suite 305<br>Newark, DE 19713</address></div>
-      <div><p class="lbl">Contact</p><div class="links"><a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a><a href="https://rubiqos.com">rubiqos.com</a><a class="access" href="/access/">Partner access</a></div></div>
+      <div><p class="lbl">Contact</p><div class="links"><a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a><a href="https://rubiqos.com">rubiqos.com</a></div></div>
     </div>
   </footer>
 </div>
