@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
 /* rubiqos.com — shared styles for the site pages (the market matrix and the live demo keep their own styles and only take the nav).
    Palette = the pitch deck (Figma variables "Pitch colors", 2026-10-18): navy #0A1220, accent #2457E6, light #F3F5F8, panel #E4E9F0;
-   Cormorant Garamond for the big headings, DM Sans for everything else — the same pair as the slides. */
+   Inter Tight 700/800 for the big headings and the H1, DM Sans for everything else (founder 2026-10-31: no serif anywhere on the site; the slides keep their own pair). */
 :root {
   --navy: #0a1220; --accent: #2457e6; --panel: #e4e9f0; --sand: var(--panel); --ink: #0a1220; --text: #46505e; --muted: #5b6676; --line: rgba(10, 18, 32, 0.12);
-  --bg: #f3f5f8; --card: #ffffff; --navh: 48px; --display: "Cormorant Garamond", "Times New Roman", serif; --body: "DM Sans", "Inter", system-ui, sans-serif;
+  --bg: #f3f5f8; --card: #ffffff; --navh: 48px; --display: "Inter Tight", "DM Sans", system-ui, sans-serif; --body: "DM Sans", "Inter", system-ui, sans-serif;
   --ok: #2e9e6b; --warn: #e07a2f; --bad: #c0504d;
 }
 * { box-sizing: border-box; }
@@ -24,14 +24,14 @@ body.site a { color: var(--accent); }
 /* --- page scaffold */
 body.site .wrap { max-width: 1280px; margin: 0 auto; padding: 0 16px; }
 body.site .hero { padding: 56px 0 28px; }
-body.site .hero h1 { font-family: var(--display); font-weight: 500; font-size: clamp(38px, 5.2vw, 62px); line-height: 1.02; letter-spacing: -0.005em; color: var(--navy); margin: 0 0 14px; max-width: 18ch; }
+body.site .hero h1 { font-family: var(--display); font-weight: 800; font-size: clamp(36px, 4.6vw, 56px); line-height: 1.0; letter-spacing: -0.035em; color: var(--navy); margin: 0 0 14px; max-width: 18ch; }
 body.site .hero p { font-size: 17px; color: var(--text); max-width: 62ch; margin: 0 0 18px; }
 body.site .hero .cta { display: flex; gap: 10px; flex-wrap: wrap; }
 body.site .btn { display: inline-block; font: 500 13.5px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; text-decoration: none; }
 body.site .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 body.site .btn:hover { filter: brightness(0.97); }
 body.site section { padding: 26px 0; }
-body.site section > h2 { font-family: var(--display); font-weight: 500; font-size: 34px; line-height: 1.1; color: var(--navy); margin: 0 0 6px; letter-spacing: 0; }
+body.site section > h2 { font-family: var(--display); font-weight: 700; font-size: 30px; line-height: 1.08; color: var(--navy); margin: 0 0 6px; letter-spacing: -0.03em; }
 body.site section > .lead { color: var(--muted); font-size: 14px; margin: 0 0 16px; max-width: 70ch; }
 body.site .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 14px; }
 body.site .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
