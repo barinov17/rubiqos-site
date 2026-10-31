@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.7 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.8 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.8: How — render without a frame, labels removed, headings One platform · Orchestration engine · Shared fleet,
    v6.7: «Paid per job done» → «What we offer» (generated render left, 01 Design · 02 Operations plan · 03 Execution right),
    v6.6: market text centred on the numbers + market-growth lead, today unit blue, outcome $35M line removed, who-we-work-with icon beside the heading,
    what exists today ($1B resort · 2,000 robots · 46 platforms), problem (63% + opex donut 200 px, one-line legend; why now removed), who we work with (Lucide icons + arrows), demo = heading + field + button,
@@ -93,17 +94,16 @@ body.site.home .dom span { font-size: 13.5px; color: var(--muted); }
 
 /* how it works */
 /* how it works (v6.5): the founder's platform render in a white panel, three small cards under its three parts (app · core · resort) */
-body.site.home .how-pic { margin: 0 0 16px; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
-body.site.home .how-pic img { display: block; width: 100%; height: auto; }
+body.site.home .how-pic { margin: 0 0 16px; }
+body.site.home .how-pic img { display: block; width: 100%; height: auto; mix-blend-mode: darken; } /* the render's light background merges into the page */
 body.site.home .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 body.site.home .how > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px 18px; }
 body.site.home #how h2 .hl { color: var(--accent); }
-body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
 body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(--accent); }
-body.site.home .how h3 { font: 600 16px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
+body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .how .n, body.site.home .model .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
-body.site.home .how .n { margin-bottom: 10px; }
+body.site.home .model .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
 
 /* business model: three fee rows */
 /* what we offer (v6.7): picture left, three items right */
@@ -237,9 +237,9 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
     <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
     <figure class="how-pic"><img src="how-platform.jpg" width="1522" height="551" alt="One guest and staff app on the left, the RubiqOS orchestration core in the centre, a robot and a staff member at work on the resort on the right" loading="lazy"></figure>
     <div class="how">
-      <div><div class="n">01 · One platform</div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg><h3>Staff, operators, guests</h3></div><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside.</p></div>
-      <div><div class="n">02 · Orchestration engine</div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg><h3>Every task coded and costed</h3></div><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line.</p></div>
-      <div><div class="n">03 · Shared fleet</div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>Robots that already ship</h3></div><p>Leased through hardware partners across the six domains. One fleet serves every operator on the property.</p></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg><h3>One platform</h3></div><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside.</p></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg><h3>Orchestration engine</h3></div><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line.</p></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>Shared fleet</h3></div><p>Leased through hardware partners across the six domains. One fleet serves every operator on the property.</p></div>
     </div>
   </section>
 
