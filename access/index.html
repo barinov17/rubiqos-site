@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>RubiqOS · Partner access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css?v=20261031e">
+<style>
+body.site.access { min-height: 100vh; display: flex; flex-direction: column; }
+body.site.access .top { display: flex; align-items: center; justify-content: space-between; padding: 22px 28px; }
+body.site.access .top .brand { font: 700 18px var(--body); color: var(--accent); text-decoration: none; letter-spacing: -0.02em; }
+body.site.access .top a.back { font: 500 13.5px var(--body); color: var(--navy); text-decoration: none; }
+body.site.access main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 16px 80px; }
+body.site.access .box { width: 100%; max-width: 420px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 32px 28px 28px; }
+body.site.access h1 { font: 800 30px/1.05 var(--display); letter-spacing: -0.03em; color: var(--navy); margin: 0 0 10px; }
+body.site.access p { font-size: 15px; color: var(--text); margin: 0 0 22px; line-height: 1.5; }
+body.site.access label { display: block; font: 600 13px var(--body); color: var(--navy); margin-bottom: 6px; }
+body.site.access .row { display: flex; gap: 10px; }
+body.site.access input { flex: 1; min-width: 0; font: 500 16px var(--body); color: var(--navy); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; letter-spacing: 0.08em; }
+body.site.access input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+body.site.access button { font: 600 14.5px var(--body); color: #fff; background: var(--accent); border: 0; border-radius: 10px; padding: 11px 20px; cursor: pointer; white-space: nowrap; }
+body.site.access button:hover { background: #1B47C9; }
+body.site.access .err { display: none; color: #B42318; font-size: 13.5px; margin: 10px 0 0; }
+body.site.access .err.on { display: block; }
+body.site.access .alt { font-size: 13.5px; color: var(--muted); margin: 22px 0 0; }
+body.site.access .alt a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body class="site access">
+<div class="top"><a class="brand" href="/">RubiqOS</a><a class="back" href="/">← Back to the site</a></div>
+<main>
+  <form class="box" id="gate" autocomplete="off">
+    <h1>Partner access</h1>
+    <p>The live demo, proforma, simulation and market pages are open to partners and investors. Enter your access code.</p>
+    <label for="code">Access code</label>
+    <div class="row"><input id="code" type="password" inputmode="numeric" autocomplete="one-time-code" required autofocus><button type="submit">Enter</button></div>
+    <p class="err" id="err">That code is not right. Try again.</p>
+    <p class="alt">No code yet? Write to <a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a>.</p>
+  </form>
+</main>
+<script>
+(function () {
+  var H = 'b6e96f84258c1746306bd9e8f4cd9adbccfb35696c7cd4cc4212ff3eac574ff2', KEY = 'rq.access';
+  var to = new URLSearchParams(location.search).get('to') || '/demo/';
+  if (!/^\/(?!\/)/.test(to)) to = '/demo/';
+  function go() { location.replace(to); }
+  try { if (localStorage.getItem(KEY) === H) { go(); return; } } catch (e) {}
+  async function sha256(s) {
+    var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(b)).map(function (x) { return x.toString(16).padStart(2, '0'); }).join('');
+  }
+  document.getElementById('gate').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    var v = document.getElementById('code').value.trim();
+    var ok = (await sha256(v)) === H;
+    document.getElementById('err').classList.toggle('on', !ok);
+    if (!ok) { document.getElementById('code').select(); return; }
+    try { localStorage.setItem(KEY, H); } catch (e) {}
+    go();
+  });
+})();
+</script>
+</body>
+</html>
