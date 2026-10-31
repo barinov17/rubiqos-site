@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.15 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.16 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.16: demo section heading «Request a demo.» as a section > h2 above the grid (was a default h2 «Start with your property.» inside the left column); left column = one lead «If RubiqOS has caught your interest, we have something to show you …» (list about master plans removed); form card «See it live»,
    v6.15: Outcome −21% time per task, +24% spend per guest (was −20% / +25%); What we offer 02 «An operational plan built around physical AI capabilities» (analyse + optimise the current plan), 03 «Work done by our robot fleet» (robots on lease or by subscription doing specific work); Who we work with texts: developers = design phase + retrofit, robot makers = real use in resorts → integration; footer: Company/Contact right-aligned at the right edge, Partner access a text link under the tagline, 22px line pitch,
    v6.14: What we offer picture = the founder's render (square 1000 px JPEG, cropped to content and padded to a square),
    v6.13: Market lead gap 40px + rows lowered to the globe top; Solution 05 «Maintenance»; How cards 40px under the render; What we offer frameless, text left + square picture right; footer one block,
@@ -156,11 +157,7 @@ body.site.home .faq details p { font-size: 14.5px; color: var(--text); margin: 1
 
 /* request a demo (v6.10: two columns — heading, lead and what-you-get list left; form card right) */
 body.site.home .demo { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
-body.site.home .demo h2 { margin-bottom: 10px; }
-body.site.home .demo .lead { color: var(--muted); font-size: 14px; margin: 0 0 18px; max-width: 48ch; }
-body.site.home .demo .gets { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-body.site.home .demo .gets li { display: flex; align-items: center; gap: 10px; font: 500 14.5px var(--body); color: var(--navy); }
-body.site.home .demo .gets .si { width: 18px; height: 18px; flex: 0 0 18px; color: var(--accent); }
+body.site.home .demo .lead { color: var(--text); font-size: 16px; line-height: 1.55; margin: 0; max-width: 46ch; } /* v6.16: one paragraph, no list (founder: nothing about master plans here) */
 body.site.home form { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px; display: grid; gap: 12px; margin: 0; }
 body.site.home form h3 { font: 600 20px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home form p { margin: 0 0 4px; font-size: 14px; color: var(--muted); line-height: 1.5; }
@@ -349,19 +346,14 @@ body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder �
   </section>
 
   <section id="demo">
+    <h2>Request a demo.</h2>
     <div class="demo">
       <div>
-        <h2>Start with your property.</h2>
-        <p class="lead">Send us the master plan or the operating brief. We map where physical AI fits, which robots do the work and how the first phase runs.</p>
-        <ul class="gets">
-          <li><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg><span>Design review of the master plan</span></li>
-          <li><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg><span>Operating model built on the platform</span></li>
-          <li><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg><span>First-phase fleet and task plan</span></li>
-        </ul>
+        <p class="lead">If RubiqOS has caught your interest, we have something to show you: the platform at work, the robots it runs and the way one system plans, dispatches and tracks every task on a resort. A live walk-through, built around your questions.</p>
       </div>
       <form id="demoForm" novalidate>
-        <h3>Request a demo</h3>
-        <p>A walk-through of the platform, then the first steps for your property.</p>
+        <h3>See it live</h3>
+        <p>Leave your email and we will set up a walk-through of the platform.</p>
         <input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required>
         <button class="btn primary" type="submit">Request a demo</button>
         <small>Or write to <a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a></small>
