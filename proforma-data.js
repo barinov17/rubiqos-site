@@ -440,7 +440,7 @@ const opTip = (eid, [, m, rid]) => { if (!rid) return m === 'A' ? 'Software: boo
 // Operations (founder 2026-10-31): a plain list; a quiet letter on the left (R robot, A fixed automation, H human), the type on the right
 const opsHtml = id => { const o = OPS[id]; if (!o) return ''; const n = k => o.filter(x => x[1] === k).length;
   const plat = ([, m, rid]) => !rid ? (m === 'A' ? 'Software' : '') : m === 'H' ? `<span class="detail">${isEarly(rid) ? 'robot later' : 'tool'}: ${SHORT[rid] || rid}</span>` : SHORT[rid] || robotOf(rid).name;
-  return `<div class="sec ops"><div class="cap">Operations · ${o.length}<span class="mk-sum">R ${n('R')} · A ${n('A')} · H ${n('H')}</span></div><ul>${o.map(x => `<li title="${esc(opTip(id, x))}"><b>${x[1]}</b><span>${x[0]}</span><i>${plat(x)}</i></li>`).join('')}</ul></div>`; };
+  return `<div class="sec ops"><div class="cap">Operations · ${o.length}<span class="mk-sum"><b class="mk R">R</b> ${n('R')} <b class="mk A">A</b> ${n('A')} <b class="mk H">H</b> ${n('H')}</span></div><ul>${o.map(x => `<li title="${esc(opTip(id, x))}"><b class="mk ${x[1]}">${x[1]}</b><span>${x[0]}</span><i>${plat(x)}</i></li>`).join('')}</ul></div>`; };
 // Robots and automation an owner runs (Detailed view; was the Physical AI page): type, count, who asked for it, what it does, where it works
 const robotsHtml = id => { const o = OWNED[id]; if (!o) return ''; const list = Object.entries(o).sort((a, b) => (robotOf(a[0]).scope === 'auto') - (robotOf(b[0]).scope === 'auto') || b[1].n - a[1].n);
   const item = ([rid, { n, at }]) => { const r = robotOf(rid), g = ORIGIN[rid] || { by: 'claude', note: 'No origin recorded.' }, where = Object.keys(at).filter(e => e !== id).map(e => entityOf(e)?.name || e);
