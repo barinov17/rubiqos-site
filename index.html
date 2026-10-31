@@ -11,7 +11,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.2 2026-10-31: hero, market opportunity, what exists today, problem + fleet + why now, outcome,
+/* Landing page (home.html → /), v6.3 2026-10-31: hero, market opportunity, what exists today, problem (63% + opex donut) + why now,
+   solution for resorts (six domains, Lucide icons), outcome,
    how it works, business model, two audiences, founder line + email-only form (FAQ removed for now, see home-faq.snippet.html).
    v3 2026-10-31 was: hero, outcome, what exists today, problem + fleet + why now,
    how it works (3 layers), business model, two audiences, FAQ, founder line + email-only form.
@@ -51,29 +52,42 @@ body.site.home .outcome-line, body.site.home .why { margin: 28px 0 0; padding: 1
 body.site.home .why { grid-column: 1 / -1; max-width: none; margin-top: 32px; }
 body.site.home .why b { font-weight: 500; }
 
-/* market opportunity (v6.2): three numbers left, the founder's globe render right; the picture's own background is #F1F4F8 ≈ var(--bg) */
+/* market opportunity (v6.2; v6.3 = the deck's Market slide numbers 450+ / $51B / $113M): three numbers left, the founder's globe render right; the picture's own background is #F1F4F8 ≈ var(--bg) */
 body.site.home .market { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 48px; align-items: center; }
-body.site.home .market .num { margin-bottom: 30px; }
-body.site.home .market .num:last-child { margin-bottom: 0; }
-body.site.home .market .t { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+body.site.home .market .num { margin-bottom: 28px; }
+body.site.home .market .num .v { font-size: clamp(44px, 4vw, 56px); }
 body.site.home .market .k { max-width: 40ch; line-height: 1.4; }
+body.site.home .market .src { font-size: 13.5px; color: var(--muted); margin: -8px 0 0; }
 body.site.home .market img { width: 100%; max-width: 480px; height: auto; display: block; justify-self: end; }
 /* what exists today: three cards */
 body.site.home .card a.more { display: inline-block; margin-top: 12px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
 body.site.home .card a.more:hover { text-decoration: underline; }
 
-/* problem + fleet: three columns across the block, the problem left, the domains in the other two */
-body.site.home .pf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 48px; }
-body.site.home .pf .col h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 12px; letter-spacing: -0.01em; }
-body.site.home .pf .col > p { font-size: 14.5px; color: var(--text); line-height: 1.5; margin: 0 0 22px; }
+/* problem (v6.3 = deck slide 02): ~63% + description left, the opex donut (28 / 19 / 16 / 37 % of revenue) right, Why now across */
+body.site.home .pd { display: grid; grid-template-columns: 1fr 1.15fr; gap: 24px 48px; align-items: center; }
+body.site.home .pd .col > p { font-size: 15.5px; color: var(--text); line-height: 1.5; margin: 0; max-width: 46ch; }
+body.site.home .pd .num.big .v { font-size: clamp(52px, 5vw, 72px); }
+body.site.home .pd .num.big .k { font: 500 17px/1.4 var(--body); color: var(--navy); max-width: 34ch; }
+body.site.home .donut { display: flex; gap: 28px; align-items: center; margin: 0; }
+body.site.home .donut .pie { width: 240px; flex: 0 0 240px; height: auto; }
+body.site.home .donut .pie text { font: 600 13px var(--body); text-anchor: middle; dominant-baseline: central; }
+body.site.home .donut .pie text.c { font: 500 11.5px var(--body); fill: var(--text); }
+body.site.home .legend { font-size: 13px; color: var(--text); line-height: 1.45; }
+body.site.home .legend .lh { color: var(--muted); margin-bottom: 12px; }
+body.site.home .legend div { position: relative; padding-left: 24px; margin-bottom: 12px; }
+body.site.home .legend div:last-child { margin-bottom: 0; }
+body.site.home .legend i { position: absolute; left: 0; top: 3px; width: 13px; height: 13px; border-radius: 3px; }
+body.site.home .legend b { display: block; font: 600 14.5px var(--body); color: var(--navy); margin-bottom: 2px; }
+body.site.home .legend b.acc { color: var(--accent); }
 body.site.home .num { margin-bottom: 20px; }
 body.site.home .num .v { font: 700 clamp(36px, 3.2vw, 44px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
 body.site.home .num .k { font: 500 15px var(--body); color: var(--navy); }
-body.site.home .fleet { border-top: 1px solid var(--line); }
-body.site.home .fleet div { padding: 16px 0; border-bottom: 1px solid var(--line); }
-body.site.home .fleet b { display: block; font: 600 16px var(--body); color: var(--navy); margin-bottom: 4px; }
-body.site.home .fleet span { font-size: 13.5px; color: var(--muted); }
-body.site.home .pf .fleet-note { grid-column: 2 / -1; font-size: 13.5px; color: var(--muted); margin: 16px 0 0; line-height: 1.5; }
+/* solution (v6.3): the six domains as cards across the block, Lucide icons */
+body.site.home .domains { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+body.site.home .dom { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 22px 22px 20px; }
+body.site.home .dom .ic { display: block; width: 28px; height: 28px; color: var(--accent); margin-bottom: 16px; }
+body.site.home .dom b { display: block; font: 600 17px var(--body); color: var(--navy); margin-bottom: 4px; letter-spacing: -0.01em; }
+body.site.home .dom span { font-size: 13.5px; color: var(--muted); }
 
 /* how it works */
 body.site.home .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
@@ -125,7 +139,8 @@ body.site.home footer a:hover { color: var(--accent); }
 body.site.home footer a.access { font: 500 13px var(--body); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 6px 12px; }
 body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
 
-@media (max-width: 900px) { .home .pf { grid-template-columns: 1fr 1fr; } .home .pf .problem { grid-column: 1 / -1; margin-bottom: 24px; } }
+@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .domains { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { body.site.home .domains { grid-template-columns: 1fr; } }
 @media (max-width: 720px) {
   body.site.home .hero p br.d { display: none; }
   body.site.home section { padding: 52px 0; }
@@ -134,9 +149,8 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
   body.site.home .hero h1 { font-size: clamp(34px, 9.6vw, 44px); }
   body.site.home .market { grid-template-columns: 1fr; }
   body.site.home .market img { max-width: 320px; justify-self: center; }
-  body.site.home .pf { grid-template-columns: 1fr; gap: 0; }
-  body.site.home .pf .fleet-note { grid-column: auto; }
-  body.site.home .fleet + .fleet { border-top: 0; }
+  body.site.home .donut { flex-wrap: wrap; gap: 20px; }
+  body.site.home .donut .pie { width: 220px; flex-basis: 220px; }
   body.site.home form { flex-direction: column; }
 }
 </style>
@@ -157,9 +171,10 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
     <p class="lead">About 450 large resorts, operating today or opening by 2031, spend $51B a year running themselves. Most of it is people.</p>
     <div class="market">
       <div class="nums">
-        <div class="num"><div class="t">TAM</div><div class="v">$51B</div><div class="k">Operating costs a year across ~450 destinations: 203 operating, ~250 in the pipeline.</div></div>
-        <div class="num"><div class="t">SAM</div><div class="v">$12B</div><div class="k">Payroll on the tasks physical AI already does: about half of the $23B resort payroll.</div></div>
-        <div class="num"><div class="t">SOM</div><div class="v">$4B</div><div class="k">Our fee at about a third of the human cost of those tasks.</div></div>
+        <div class="num"><div class="v">450+</div><div class="k">resorts in the market</div></div>
+        <div class="num"><div class="v">$51B</div><div class="k">total opex of these resorts, a year</div></div>
+        <div class="num"><div class="v">$113M</div><div class="k">average opex per resort, a year</div></div>
+        <p class="src">~450 = 201 operating + ~250 pipeline (~90 in design phase).</p>
       </div>
       <img src="market-globe.jpg" width="1000" height="1000" alt="Globe with resort destinations marked" loading="lazy">
     </div>
@@ -176,26 +191,37 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
   </section>
 
   <section id="problem">
-    <h2>High operating costs, one shared fleet.</h2>
-    <div class="pf">
+    <h2>High operating cost.</h2>
+    <div class="pd">
       <div class="col problem">
-        <h3>Where the money goes</h3>
-        <div class="num"><div class="v">63%</div><div class="k">of revenue goes to operations</div></div>
-        <div class="num"><div class="v">45%</div><div class="k">of operating cost is payroll</div></div>
-        <p>A large resort spends most of its revenue on running itself, and the biggest line is people: imported, housed and transported. A general manager spends half the day putting out fires.</p>
+        <div class="num big"><div class="v">~63%</div><div class="k">of a resort’s revenue goes to operating costs.</div></div>
+        <p>A resort needs a large imported staff plus the housing, transport, utilities and logistics to support it. Payroll is the largest line.</p>
       </div>
-      <div class="col fleet">
-        <div><b>Mobility</b><span>Shuttles · Carts · Boats</span></div>
-        <div><b>Logistics</b><span>Warehouse · Port &amp; cargo · Delivery</span></div>
-        <div><b>Kitchen &amp; F&amp;B</b><span>Cooking · Bar · Dishwashing · Runners</span></div>
-      </div>
-      <div class="col fleet">
-        <div><b>Housekeeping</b><span>Rooms · Public areas · Laundry</span></div>
-        <div><b>Grounds &amp; waste</b><span>Lawn · Pool · Waste collection</span></div>
-        <div><b>Safety &amp; Security</b><span>Drones · Patrol · Cameras</span></div>
-      </div>
-      <p class="fleet-note">The domains we automate. Robots are leased through hardware partners, dispatched by RubiqOS and shared by every operator on the property, so no operator runs a fleet of its own.</p>
+      <figure class="donut">
+        <svg class="pie" viewBox="0 0 220 220" role="img" aria-label="Share of a resort’s revenue: payroll 28%, cost of sales and supplies 19%, admin, maintenance and utilities 16%, gross operating profit 37%"><g transform="rotate(-90 110 110)"><circle r="80" cx="110" cy="110" fill="none" stroke="#2457E6" stroke-width="60" stroke-dasharray="138.74 363.91" stroke-dashoffset="-0.00"><title>Payroll · 28%</title></circle><circle r="80" cx="110" cy="110" fill="none" stroke="#9AA7B9" stroke-width="60" stroke-dasharray="93.50 409.15" stroke-dashoffset="-140.74"><title>Cost of sales &amp; supplies · 19%</title></circle><circle r="80" cx="110" cy="110" fill="none" stroke="#0A1220" stroke-width="60" stroke-dasharray="78.42 424.23" stroke-dashoffset="-236.25"><title>Admin, maintenance &amp; utilities · 16%</title></circle><circle r="80" cx="110" cy="110" fill="none" stroke="#E4E9F0" stroke-width="60" stroke-dasharray="183.98 318.67" stroke-dashoffset="-316.67"><title>Gross operating profit · 37%</title></circle></g><text x="171.6" y="59.0" fill="#fff">28%</text><text x="166.6" y="166.6" fill="#fff">19%</text><text x="85.3" y="186.1" fill="#fff">16%</text><text x="36.6" y="78.2" fill="#4A5568">37%</text><text class="c" x="110" y="104">Resort</text><text class="c" x="110" y="120">revenue</text></svg>
+        <figcaption class="legend">
+          <div class="lh">Share of revenue · opex = 63%</div>
+          <div><i style="background:#2457E6"></i><b class="acc">Payroll</b><span>Wages, benefits, staff housing and travel</span></div>
+          <div><i style="background:#9AA7B9"></i><b>Cost of sales &amp; supplies</b><span>Food, beverage and retail cost, guest and cleaning supplies, laundry</span></div>
+          <div><i style="background:#0A1220"></i><b>Admin, maintenance &amp; utilities</b><span>Admin, sales &amp; marketing, repairs, energy, water, IT</span></div>
+          <div><i style="background:#E4E9F0"></i><b>Gross operating profit</b><span>37% of revenue, before fees, taxes, insurance, FF&amp;E</span></div>
+        </figcaption>
+      </figure>
       <p class="why"><b>Why now.</b> Since 2015 hospitality wages are up about 60% and the price of a physical-AI unit is down about 80%. Hotel robotics closed new rounds in 2025–26, one robot at a time. Nobody yet runs one fleet across a whole resort.</p>
+    </div>
+  </section>
+
+  <!-- icons: Lucide (lucide.dev), ISC licence -->
+  <section id="solution">
+    <h2>Solution for resorts.</h2>
+    <p class="lead">Six domains of resort work, one shared fleet. Robots are leased through hardware partners, dispatched by RubiqOS and shared by every operator on the property, so no operator runs a fleet of its own.</p>
+    <div class="domains">
+      <div class="dom"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6v6" /><path d="M15 6v6" /><path d="M2 12h19.6" /><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3" /><circle cx="7" cy="18" r="2" /><path d="M9 18h5" /><circle cx="16" cy="18" r="2" /></svg><b>Mobility</b><span>Shuttles · Carts · Boats</span></div>
+      <div class="dom"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /><path d="M12 22V12" /><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7" /><path d="m7.5 4.27 9 5.15" /></svg><b>Logistics</b><span>Warehouse · Port &amp; cargo · Delivery</span></div>
+      <div class="dom"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z" /><path d="M6 17h12" /></svg><b>Kitchen &amp; F&amp;B</b><span>Cooking · Bar · Dishwashing · Runners</span></div>
+      <div class="dom"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8" /><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" /><path d="M12 4v6" /><path d="M2 18h20" /></svg><b>Housekeeping</b><span>Rooms · Public areas · Laundry</span></div>
+      <div class="dom"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z" /><path d="M7 16v6" /><path d="M13 19v3" /><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5" /></svg><b>Grounds &amp; waste</b><span>Lawn · Pool · Waste collection</span></div>
+      <div class="dom"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></svg><b>Safety &amp; Security</b><span>Drones · Patrol · Cameras</span></div>
     </div>
   </section>
 
