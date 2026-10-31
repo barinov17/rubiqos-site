@@ -17,32 +17,36 @@
 body.site.home { background: var(--bg); -webkit-font-smoothing: antialiased; }
 body.site.home .wrap { max-width: 1120px; }
 
+/* type (2026-10-31, v5): one family pair on this page — Inter Tight 700/800 for every heading and number,
+   DM Sans for everything else; the serif of site.css is not used here. Everything is left-aligned like the hero. */
+body.site.home { --head: "Inter Tight", "DM Sans", system-ui, sans-serif; }
+
 /* hero v4 (2026-10-31): light hero on the founder's render of the arrival court (empty floor top-left carries the text);
    headline in Inter Tight 800 as on the render — that font is loaded only on this page, site.css is untouched */
 body.site.home .hero { position: relative; padding: 0; min-height: 0; height: min(47vw, 88vh); display: flex; flex-direction: column; color: var(--navy); background: #F4F6FA url(hero.jpg) center top / 100% auto no-repeat; }
 body.site.home .bar { height: 64px; display: flex; align-items: center; justify-content: space-between; }
-body.site.home .bar .brand { font: 700 19px var(--body); color: var(--navy); text-decoration: none; letter-spacing: -0.02em; }
+body.site.home .bar .brand { font: 700 19px var(--body); color: var(--accent); text-decoration: none; letter-spacing: -0.02em; }
 body.site.home .bar a.req { font: 600 13.5px var(--body); color: #fff; background: var(--accent); text-decoration: none; border-radius: 9px; padding: 9px 16px; }
 body.site.home .bar a.req:hover { background: #1B47C9; }
 body.site.home .hero > .wrap { width: 100%; }
 body.site.home .hero .copy { display: flex; flex-direction: column; align-items: flex-start; padding: clamp(20px, 4.5vh, 48px) 16px 48px; }
-body.site.home .hero h1 { font-family: "Inter Tight", var(--body); font-weight: 800; font-size: clamp(40px, 4.5vw, 66px); line-height: 1.0; letter-spacing: -0.035em; color: var(--navy); margin: 0 0 22px; }
-body.site.home .hero p { font-size: clamp(16px, 1.3vw, 19px); color: var(--text); max-width: 58ch; margin: 0; line-height: 1.45; }
+body.site.home .hero h1 { font-family: var(--head); font-weight: 800; font-size: clamp(40px, 4.5vw, 66px); line-height: 1.0; letter-spacing: -0.035em; color: var(--navy); margin: 0 0 22px; }
+body.site.home .hero p { font-size: clamp(16px, 1.3vw, 19px); color: var(--text); max-width: 52ch; margin: 0; line-height: 1.45; }
 body.site.home .btn.primary { font-size: 14.5px; padding: 12px 22px; border-radius: 10px; }
 
 /* sections */
 body.site.home section { padding: 72px 0; border-top: 1px solid var(--line); }
-body.site.home section > h2 { font-family: var(--display); font-weight: 500; font-size: clamp(30px, 2.9vw, 40px); line-height: 1.1; color: var(--navy); margin: 0 auto 14px; max-width: 26ch; text-align: center; letter-spacing: -0.005em; }
-body.site.home section > .lead { font-size: 16px; color: var(--text); max-width: 60ch; margin: 0 auto 36px; line-height: 1.5; text-align: center; }
+body.site.home section > h2 { font-family: var(--head); font-weight: 700; font-size: clamp(28px, 2.6vw, 36px); line-height: 1.08; color: var(--navy); margin: 0 0 14px; max-width: 26ch; letter-spacing: -0.03em; }
+body.site.home section > .lead { font-size: 16px; color: var(--text); max-width: 60ch; margin: 0 0 36px; line-height: 1.5; }
 
-/* outcome: three cards with centred headings */
+/* outcome: three cards */
 body.site.home .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 36px; }
-body.site.home .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px 26px; text-align: center; }
-body.site.home .card .v { font: 500 clamp(40px, 3.6vw, 48px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
-body.site.home .card h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
-body.site.home .card p { font-size: 14.5px; color: var(--text); margin: 0 auto; line-height: 1.5; max-width: 30ch; }
-body.site.home .outcome-line, body.site.home .why { margin: 28px auto 0; padding: 18px 24px; background: var(--panel); border-radius: 12px; font-size: 16px; color: var(--navy); max-width: 62ch; line-height: 1.5; text-align: center; }
-body.site.home .why { grid-column: 1 / -1; max-width: none; text-align: left; margin-top: 32px; }
+body.site.home .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
+body.site.home .card .v { font: 700 clamp(36px, 3.2vw, 44px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+body.site.home .card h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
+body.site.home .card p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
+body.site.home .outcome-line, body.site.home .why { margin: 28px 0 0; padding: 18px 24px; background: var(--panel); border-radius: 12px; font-size: 16px; color: var(--navy); max-width: 62ch; line-height: 1.5; }
+body.site.home .why { grid-column: 1 / -1; max-width: none; margin-top: 32px; }
 body.site.home .why b { font-weight: 500; }
 
 /* what exists today: four cards with a link each */
@@ -52,63 +56,62 @@ body.site.home .card a.more:hover { text-decoration: underline; }
 
 /* problem + fleet: three columns across the block, the problem left, the domains in the other two */
 body.site.home .pf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 48px; }
-body.site.home .pf .col h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 12px; letter-spacing: -0.01em; }
+body.site.home .pf .col h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 12px; letter-spacing: -0.01em; }
 body.site.home .pf .col > p { font-size: 14.5px; color: var(--text); line-height: 1.5; margin: 0 0 22px; }
 body.site.home .num { margin-bottom: 20px; }
-body.site.home .num .v { font: 500 clamp(36px, 3.2vw, 44px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+body.site.home .num .v { font: 700 clamp(36px, 3.2vw, 44px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
 body.site.home .num .k { font: 500 15px var(--body); color: var(--navy); }
 body.site.home .fleet { border-top: 1px solid var(--line); }
 body.site.home .fleet div { padding: 16px 0; border-bottom: 1px solid var(--line); }
-body.site.home .fleet b { display: block; font: 500 16px var(--body); color: var(--navy); margin-bottom: 4px; }
+body.site.home .fleet b { display: block; font: 600 16px var(--body); color: var(--navy); margin-bottom: 4px; }
 body.site.home .fleet span { font-size: 13.5px; color: var(--muted); }
 body.site.home .pf .fleet-note { grid-column: 2 / -1; font-size: 13.5px; color: var(--muted); margin: 16px 0 0; line-height: 1.5; }
 
 /* how it works */
 body.site.home .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
 body.site.home .how > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
-body.site.home .how h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
+body.site.home .how h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .how .n { font: 500 13.5px var(--body); color: var(--accent); letter-spacing: .02em; margin-bottom: 10px; }
-body.site.home .how-cta { text-align: center; margin-top: 32px; }
+body.site.home .how .n, body.site.home .model .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+body.site.home .how-cta { margin-top: 32px; }
 
 /* business model: three fee rows */
 body.site.home .model { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
 body.site.home .model > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
-body.site.home .model .k { font: 500 13.5px var(--body); color: var(--muted); letter-spacing: .02em; margin-bottom: 8px; }
-body.site.home .model h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
+body.site.home .model h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
 body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .model-line { font-size: 14.5px; color: var(--muted); text-align: center; margin: 24px auto 0; max-width: 62ch; line-height: 1.5; }
+body.site.home .model-line { font-size: 14.5px; color: var(--muted); margin: 24px 0 0; max-width: 62ch; line-height: 1.5; }
 
 /* two audiences */
 body.site.home .for { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-body.site.home .for > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px 26px 26px; }
-body.site.home .for h3 { font-family: var(--display); font-weight: 500; font-size: 26px; color: var(--navy); margin: 0 0 10px; line-height: 1.15; }
+body.site.home .for > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
+body.site.home .for h3 { font: 700 22px/1.15 var(--head); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.025em; }
 body.site.home .for p { font-size: 14.5px; color: var(--text); margin: 0 0 16px; line-height: 1.5; }
 body.site.home .for a { font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
 body.site.home .for a:hover { text-decoration: underline; }
 
 /* faq */
-body.site.home .faq { max-width: 760px; margin: 0 auto; border-bottom: 1px solid var(--line); }
+body.site.home .faq { max-width: 760px; margin: 0; border-bottom: 1px solid var(--line); }
 body.site.home .faq details { border-top: 1px solid var(--line); padding: 16px 0; }
-body.site.home .faq summary { font: 500 17px var(--body); color: var(--navy); cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+body.site.home .faq summary { font: 600 17px var(--body); color: var(--navy); cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
 body.site.home .faq summary::-webkit-details-marker { display: none; }
 body.site.home .faq summary::after { content: "+"; color: var(--accent); font-size: 22px; line-height: 1; flex: none; }
 body.site.home .faq details[open] summary::after { content: "–"; }
 body.site.home .faq details p { font-size: 14.5px; color: var(--text); margin: 10px 0 0; max-width: 70ch; line-height: 1.5; }
 
 /* founder line above the form */
-body.site.home .founder { font-size: 16px; color: var(--navy); max-width: 62ch; margin: 0 auto 36px; line-height: 1.5; text-align: center; padding: 18px 24px; background: var(--panel); border-radius: 12px; }
+body.site.home .founder { font-size: 16px; color: var(--navy); max-width: 62ch; margin: 0 0 36px; line-height: 1.5; padding: 18px 24px; background: var(--panel); border-radius: 12px; }
 
 /* request a demo: one field */
-body.site.home form { display: flex; gap: 10px; max-width: 520px; margin: 0 auto; }
+body.site.home form { display: flex; gap: 10px; max-width: 520px; margin: 0; }
 body.site.home input { flex: 1; min-width: 0; font: 400 15px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; }
 body.site.home input:focus { border-color: var(--accent); }
 body.site.home form .btn.primary { border: 0; cursor: pointer; white-space: nowrap; }
-body.site.home .alt { font-size: 13.5px; color: var(--muted); margin: 16px 0 0; text-align: center; }
+body.site.home .alt { font-size: 13.5px; color: var(--muted); margin: 16px 0 0; }
 body.site.home .alt a { color: var(--accent); text-decoration: none; }
 
 body.site.home footer { border-top: 1px solid var(--line); padding: 28px 0 48px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline; justify-content: space-between; font-size: 14px; color: var(--muted); }
-body.site.home footer .brand { font: 700 16px var(--body); color: var(--navy); letter-spacing: -0.02em; }
+body.site.home footer .brand { font: 700 16px var(--body); color: var(--accent); letter-spacing: -0.02em; }
 body.site.home footer a { color: var(--navy); text-decoration: none; }
 body.site.home footer a:hover { color: var(--accent); }
 
@@ -131,7 +134,7 @@ body.site.home footer a:hover { color: var(--accent); }
   <div class="wrap bar"><a class="brand" href="/home/">RubiqOS</a><a class="req" href="#demo">Request a demo</a></div>
   <div class="wrap copy">
     <h1>Physical AI for<br>resort operations.</h1>
-    <p>Robots handle routine work. Your people focus on guests.</p>
+    <p>An AI operating platform for resorts, integrated with physical AI. Automation for hospitality without losing the human touch.</p>
   </div>
 </header>
 
