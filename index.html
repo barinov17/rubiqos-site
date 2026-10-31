@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.11 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.12 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.12: What we offer — label «02 · Operational plan»; Who we work with — «Write to us»; demo form card — plain h3 «Request a demo» instead of the label; footer — EIN removed, tagline «Physical AI for resort operations.»,
    v6.11: no divider after the hero; Market rows + globe raised (lead 28px, grid top-aligned); Solution card number + heading on one line,
    v6.10: Solution — sub-domains reordered and renamed (Vessels, Port, F&B Outlets, Lawn/Pool maintenance, Waste management,
           Patrol + Access control + Surveillance), every description one line; demo block = heading «Start with your property.» + lead +
@@ -115,7 +116,7 @@ body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin:
 body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(--accent); }
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .model .k, body.site.home .dom .k, body.site.home form .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
 
 /* business model: three fee rows */
 /* what we offer (v6.7): picture left, three items right */
@@ -156,6 +157,7 @@ body.site.home .demo .gets { list-style: none; margin: 0; padding: 0; display: g
 body.site.home .demo .gets li { display: flex; align-items: center; gap: 10px; font: 500 14.5px var(--body); color: var(--navy); }
 body.site.home .demo .gets .si { width: 18px; height: 18px; flex: 0 0 18px; color: var(--accent); }
 body.site.home form { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px; display: grid; gap: 12px; margin: 0; }
+body.site.home form h3 { font: 600 20px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home form p { margin: 0 0 4px; font-size: 14px; color: var(--muted); line-height: 1.5; }
 body.site.home input { width: 100%; box-sizing: border-box; font: 400 15px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; }
 body.site.home input:focus { border-color: var(--accent); }
@@ -324,7 +326,7 @@ body.site.home footer .bottom { margin-top: 28px; padding-top: 16px; border-top:
       <figure class="model-pic"><img src="offer.jpg" width="949" height="1066" alt="Isometric model of a resort fragment on a white plinth: villas, palms, a pool, delivery robots and charging docks on the service corridor, a tablet with the plan in front" loading="lazy"></figure>
       <div class="model-list">
         <div><div class="k">01 · Design</div><h3>Physical AI in the master plan</h3><p>We design the physical-AI solutions for the destination and build them into the master plan while spatial decisions are still free: docks, charging, service corridors, edge compute.</p></div>
-        <div><div class="k">02 · Operations plan</div><h3>An operating model built on the platform</h3><p>An operational plan for the resort that counts on physical AI and the platform: which tasks robots take, which stay with people, staffing and budget lines for each.</p></div>
+        <div><div class="k">02 · Operational plan</div><h3>An operating model built on the platform</h3><p>An operational plan for the resort that counts on physical AI and the platform: which tasks robots take, which stay with people, staffing and budget lines for each.</p></div>
         <div><div class="k">03 · Execution</div><h3>Tasks done by our robot fleet</h3><p>Deliveries, cleaning, mowing, patrols, transfers: done by our shared fleet, leased from hardware partners and supervised remotely by us. Paid per job done.</p></div>
       </div>
     </div>
@@ -334,7 +336,7 @@ body.site.home footer .bottom { margin-top: 28px; padding-top: 16px; border-top:
     <h2>Who we work with.</h2>
     <div class="for">
       <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3></div><p>Resorts in design or with a new phase ahead. We specify the platform into the master plan while spatial decisions are still free, then run the shared fleet with your operators.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3></div><p>Your robots, our fleet. RubiqOS dispatches, supervises and bills by the job: a destination-scale deployment without building the operations layer. The register lists 26 robot types.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us about a partnership</a></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3></div><p>Your robots, our fleet. RubiqOS dispatches, supervises and bills by the job: a destination-scale deployment without building the operations layer. The register lists 26 robot types.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us</a></div>
     </div>
   </section>
 
@@ -350,7 +352,7 @@ body.site.home footer .bottom { margin-top: 28px; padding-top: 16px; border-top:
         </ul>
       </div>
       <form id="demoForm" novalidate>
-        <div class="k">Request a demo</div>
+        <h3>Request a demo</h3>
         <p>A walk-through of the platform, then the first steps for your property.</p>
         <input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required>
         <button class="btn primary" type="submit">Request a demo</button>
@@ -361,8 +363,8 @@ body.site.home footer .bottom { margin-top: 28px; padding-top: 16px; border-top:
 
   <footer>
     <div class="cols">
-      <div><span class="brand">RubiqOS</span><p class="tag">The physical AI platform for resort operations.</p></div>
-      <div><p class="lbl">Company</p><address>RUBIQ development, LLC<br>EIN 37-2242216<br>131 Continental Dr, Suite 305<br>Newark, DE 19713</address></div>
+      <div><span class="brand">RubiqOS</span><p class="tag">Physical AI for resort operations.</p></div>
+      <div><p class="lbl">Company</p><address>RUBIQ development, LLC<br>131 Continental Dr, Suite 305<br>Newark, DE 19713</address></div>
       <div><p class="lbl">Contact</p><div class="links"><a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a><a href="https://rubiqos.com">rubiqos.com</a><a class="access" href="/access/">Partner access</a></div></div>
     </div>
     <div class="bottom"><span>© 2026 RUBIQ development, LLC</span><span>All rights reserved.</span></div>
