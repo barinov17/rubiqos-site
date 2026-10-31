@@ -6,9 +6,10 @@
 <title>RubiqOS · The physical AI platform for resort operations</title>
 <meta name="description" content="RubiqOS runs robots and staff on one system across every operator on a resort. Lower operating costs, the same guest experience.">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/site.css?v=20261031b">
+<link rel="stylesheet" href="/site.css?v=20261031c">
 <style>
-/* Landing page (home.html → /home/), v2 2026-10-31: full-screen hero, outcome first, problem + fleet in one block, email-only form.
+/* Landing page (home.html → /home/), v3 2026-10-31: full-screen hero, outcome, what exists today, problem + fleet + why now,
+   how it works (3 layers), business model, two audiences, FAQ, founder line + email-only form.
    Palette and fonts come from site.css; only the layout lives here. */
 body.site.home { background: var(--bg); -webkit-font-smoothing: antialiased; }
 body.site.home .wrap { max-width: 1120px; }
@@ -38,7 +39,14 @@ body.site.home .card { background: #fff; border: 1px solid var(--line); border-r
 body.site.home .card .v { font: 500 clamp(40px, 3.6vw, 48px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
 body.site.home .card h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
 body.site.home .card p { font-size: 14.5px; color: var(--text); margin: 0 auto; line-height: 1.5; max-width: 30ch; }
-body.site.home .outcome-line { margin: 28px auto 0; padding: 18px 24px; background: var(--panel); border-radius: 12px; font-size: 16px; color: var(--navy); max-width: 62ch; line-height: 1.5; text-align: center; }
+body.site.home .outcome-line, body.site.home .why { margin: 28px auto 0; padding: 18px 24px; background: var(--panel); border-radius: 12px; font-size: 16px; color: var(--navy); max-width: 62ch; line-height: 1.5; text-align: center; }
+body.site.home .why { grid-column: 1 / -1; max-width: none; text-align: left; margin-top: 32px; }
+body.site.home .why b { font-weight: 500; }
+
+/* what exists today: four cards with a link each */
+body.site.home .cards.four { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+body.site.home .card a.more { display: inline-block; margin-top: 12px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
+body.site.home .card a.more:hover { text-decoration: underline; }
 
 /* problem + fleet: three columns across the block, the problem left, the domains in the other two */
 body.site.home .pf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 48px; }
@@ -55,9 +63,39 @@ body.site.home .pf .fleet-note { grid-column: 2 / -1; font-size: 13.5px; color: 
 
 /* how it works */
 body.site.home .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-body.site.home .how div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
+body.site.home .how > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
 body.site.home .how h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
+body.site.home .how .n { font: 500 13.5px var(--body); color: var(--accent); letter-spacing: .02em; margin-bottom: 10px; }
+body.site.home .how-cta { text-align: center; margin-top: 32px; }
+
+/* business model: three fee rows */
+body.site.home .model { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+body.site.home .model > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
+body.site.home .model .k { font: 500 13.5px var(--body); color: var(--muted); letter-spacing: .02em; margin-bottom: 8px; }
+body.site.home .model h3 { font: 500 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
+body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
+body.site.home .model-line { font-size: 14.5px; color: var(--muted); text-align: center; margin: 24px auto 0; max-width: 62ch; line-height: 1.5; }
+
+/* two audiences */
+body.site.home .for { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+body.site.home .for > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px 26px 26px; }
+body.site.home .for h3 { font-family: var(--display); font-weight: 500; font-size: 26px; color: var(--navy); margin: 0 0 10px; line-height: 1.15; }
+body.site.home .for p { font-size: 14.5px; color: var(--text); margin: 0 0 16px; line-height: 1.5; }
+body.site.home .for a { font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
+body.site.home .for a:hover { text-decoration: underline; }
+
+/* faq */
+body.site.home .faq { max-width: 760px; margin: 0 auto; border-bottom: 1px solid var(--line); }
+body.site.home .faq details { border-top: 1px solid var(--line); padding: 16px 0; }
+body.site.home .faq summary { font: 500 17px var(--body); color: var(--navy); cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+body.site.home .faq summary::-webkit-details-marker { display: none; }
+body.site.home .faq summary::after { content: "+"; color: var(--accent); font-size: 22px; line-height: 1; flex: none; }
+body.site.home .faq details[open] summary::after { content: "–"; }
+body.site.home .faq details p { font-size: 14.5px; color: var(--text); margin: 10px 0 0; max-width: 70ch; line-height: 1.5; }
+
+/* founder line above the form */
+body.site.home .founder { font-size: 16px; color: var(--navy); max-width: 62ch; margin: 0 auto 36px; line-height: 1.5; text-align: center; padding: 18px 24px; background: var(--panel); border-radius: 12px; }
 
 /* request a demo: one field */
 body.site.home form { display: flex; gap: 10px; max-width: 520px; margin: 0 auto; }
@@ -105,6 +143,17 @@ body.site.home footer a:hover { color: var(--accent); }
     <div class="outcome-line">On a resort with about $150M of operating costs a year, this is about $35M saved every year.</div>
   </section>
 
+  <section id="today">
+    <h2>What exists today.</h2>
+    <p class="lead">Not a deck: the resort, its fleet and its economics are modelled end to end, and every model is open.</p>
+    <div class="cards four">
+      <div class="card"><div class="v">1,000</div><h3>Guests a day</h3><p>A complete island resort in 3D: every building, dock, road and service, with the fleet moving through it.</p><a class="more" href="/">Open the live demo</a></div>
+      <div class="card"><div class="v">194</div><h3>Robots, 26 types</h3><p>Each assigned to an object and a task; 97 run as one shared fleet.</p><a class="more" href="/proforma/">Open the proforma</a></div>
+      <div class="card"><div class="v">24 h</div><h3>One day simulated</h3><p>Guests, events, boats and vehicles dispatched minute by minute, from the first shuttle to the night waste run.</p><a class="more" href="/simulation/">Open the simulation</a></div>
+      <div class="card"><div class="v">$1B</div><h3>Anchor resort</h3><p>A private resort in design with over $150M of operating costs a year. RubiqOS is specified into its master plan.</p></div>
+    </div>
+  </section>
+
   <section id="problem">
     <h2>High operating costs, one shared fleet.</h2>
     <div class="pf">
@@ -125,21 +174,54 @@ body.site.home footer a:hover { color: var(--accent); }
         <div><b>Safety &amp; Security</b><span>Drones · Patrol · Cameras</span></div>
       </div>
       <p class="fleet-note">The domains we automate. Robots are leased through hardware partners, dispatched by RubiqOS and shared by every operator on the property, so no operator runs a fleet of its own.</p>
+      <p class="why"><b>Why now.</b> Since 2015 hospitality wages are up about 60% and the price of a physical-AI unit is down about 80%. Hotel robotics closed new rounds in 2025–26, one robot at a time. Nobody yet runs one fleet across a whole resort.</p>
     </div>
   </section>
 
   <section id="how">
-    <h2>One system for the whole resort.</h2>
-    <p class="lead">RubiqOS seamlessly connects every operation inside the resort: the developer’s infrastructure and shared services, a seamless guest experience, and orchestration of operations across multiple operators. Every request goes to the right person or robot.</p>
+    <h2>How RubiqOS works.</h2>
+    <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
     <div class="how">
-      <div><h3>Developer</h3><p>Carries the largest share of operating cost: the infrastructure and shared services every operator and guest depends on. RubiqOS runs them with one shared fleet of robots and staff.</p></div>
-      <div><h3>Operators</h3><p>Hotels, spa, marina and restaurants keep their own systems and their own way of working. The platform takes most of the operational load without interfering.</p></div>
-      <div><h3>Guest</h3><p>One app for the whole property, with the room key inside. Every request reaches the right person or robot through one seamless channel.</p></div>
+      <div><div class="n">01 · Shared fleet</div><h3>Robots that already ship</h3><p>Leased through hardware partners across the six domains. One fleet serves every operator on the property.</p></div>
+      <div><div class="n">02 · Orchestration</div><h3>Every task coded and costed</h3><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line.</p></div>
+      <div><div class="n">03 · People</div><h3>Staff, operators, guests</h3><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside.</p></div>
+    </div>
+    <div class="how-cta"><a class="btn primary" href="/">See it run in the live demo</a></div>
+  </section>
+
+  <section id="model">
+    <h2>Paid per job done.</h2>
+    <div class="model">
+      <div><div class="k">BUILD</div><h3>Design-phase fee</h3><p>Physical AI specified into the master plan: docks, charging, service corridors, edge compute. One-off.</p></div>
+      <div><div class="k">RUN</div><h3>Platform fee</h3><p>Guest app, operator console and orchestration. Priced by the scale of the destination, not by seats.</p></div>
+      <div><div class="k">AUTOMATE</div><h3>30–35% of the human cost</h3><p>Per delivery, square metre cleaned, hectare mowed, patrol hour, transfer. Robots leased from partners, supervised remotely by us.</p></div>
+    </div>
+    <p class="model-line">The developer pays from payroll it no longer carries. No fleet on the balance sheet.</p>
+  </section>
+
+  <section id="for">
+    <h2>Who we work with.</h2>
+    <div class="for">
+      <div><h3>For resort developers</h3><p>Resorts in design or with a new phase ahead. We specify the platform into the master plan while spatial decisions are still free, then run the shared fleet with your operators.</p><a href="#demo">Request a demo</a></div>
+      <div><h3>For robot makers</h3><p>Your robots, our fleet. RubiqOS dispatches, supervises and bills by the job: a destination-scale deployment without building the operations layer. The register lists 26 robot types.</p><a href="mailto:hello@rubiqos.com?subject=Partnership">Write to us about a partnership</a></div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2>Questions we get.</h2>
+    <div class="faq">
+      <details><summary>Is it safe to run robots among guests?</summary><p>Most work is back of house and at night. On guest paths robots move at walking speed on fixed routes under remote supervision; every route runs in the simulation first.</p></details>
+      <details><summary>What happens when a robot fails?</summary><p>The task returns to the queue, to a person or another robot; a shared fleet has spare capacity by design. Service and spares are the hardware partner’s duty under the lease.</p></details>
+      <details><summary>How long does deployment take?</summary><p>In a resort in design, with the master plan, so nothing is retrofitted. On an operating resort, one domain first, then more season by season.</p></details>
+      <details><summary>Who pays, and when?</summary><p>The developer, from payroll it no longer carries: a design-phase fee, a platform fee and outcome fees per job done. Robots are leased, so no fleet sits on the balance sheet.</p></details>
+      <details><summary>Which robots are supported?</summary><p>Any robot with an open interface. The register has 26 types, from guest pods and shuttle boats to mowers and patrol drones. We build the middleware, not the robots.</p></details>
+      <details><summary>What data leaves the resort?</summary><p>Operational data stays with the resort; the platform keeps task, route and telemetry logs to plan and to bill. Guest data follows the operator’s own policy.</p></details>
     </div>
   </section>
 
   <section id="demo">
     <h2>Request a demo.</h2>
+    <p class="founder">RubiqOS is built by a team from resort development and master-planning, hands-on hotel operations and software at scale. We build the middleware, not the robots, and know every layer it connects.</p>
     <p class="lead">Leave your email. We reply within two working days.</p>
     <form id="demoForm" novalidate>
       <input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required>
