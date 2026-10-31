@@ -492,10 +492,10 @@ const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c
     <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
     <div class="sec detail"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
   <div class="col">${opsBlock('marina')}</div>
-  <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div>
+  <div class="col span2"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div>
   <div class="col"><div class="cap">Yacht services · this month</div><div class="kv" data-live="ys-month"><span>Fresh water</span><span>—</span></div>
     <div class="cap" style="margin-top:10px">Log</div><table class="t mini ys"><tbody id="ysLog"><tr><td class="muted">—</td></tr></tbody></table>
-    ${opsBlock('yacht-services')}</div></div>`; };   // yacht services as the fifth column (founder 2026-10-20)
+    ${opsBlock('yacht-services')}</div></div>`; };   // yacht services as the fifth column (founder 2026-10-20); in the 3-column rhythm (2026-10-31) movements take two columns, so both operation lists sit in the third
 const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
@@ -508,7 +508,7 @@ const fleetCard = (link = true) => `<div class="con wide cols" id="fleetCard">
     <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
     <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div></div>
   <div class="col">${opsBlock('fleet')}</div>
-  <div class="col span2"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;   // the same vertical blocks as the marina (founder 2026-10-19); the fleet table takes two columns
+  <div class="col full"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;   // the same vertical blocks as the marina (founder 2026-10-19); the fleet table takes the full row (3-column rhythm, 2026-10-31)
 // operations and the robots the object runs, in one row of the card (the robots: Detailed view only)
 const opsBlock = id => `<div class="opsbox">${opsHtml(id)}${robotsHtml(id)}</div>`;
 // warehouse as a wide block (founder 2026-10-31): the card, stock by store, outlets against par, the truck deliveries
@@ -521,13 +521,15 @@ const storesBlock = (link = true) => { const c = entityOf('stores'); return `<di
   <div class="col">${opsBlock('stores')}</div>
   <div class="col"><div class="cap">Outlets · stock against par, kg</div><table class="t mini"><thead><tr><th>Outlet</th><th class="num">Stock</th><th class="num">Par</th><th style="width:30%"></th></tr></thead><tbody id="storesOutlets"><tr><td colspan="4" class="muted">—</td></tr></tbody></table></div>
   <div class="col span2"><div class="cap">Deliveries today · latest first</div><div class="scroll"><table class="t mini"><thead><tr><th>Time</th><th>Goods</th><th>From → to</th><th class="num">Load</th></tr></thead><tbody id="storesLog"><tr><td colspan="4" class="muted">—</td></tr></tbody></table></div></div></div>`; };
-// infrastructure as one wide block (founder 2026-10-31): power, water, sewage, network side by side, each with its live, produces, consumes, operations
+// infrastructure as one wide block (founder 2026-10-31): power, water, sewage, network, each with its live, produces, consumes, operations.
+// 3-column rhythm (same day): the first three side by side; the fourth (network) is a strip below: card | produces, consumes | operations
 const INFRA = ['power', 'desal', 'sewage', 'network'];
-const infraBlock = (link = true) => `<div class="con wide infra" id="infra">${INFRA.map(id => { const c = entityOf(id); return `<div class="col" id="${id}">${hdHtml(c, link)}<p>${c.what}</p>
-    <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${id}"><span>Load</span><span>—</span></div></div>
-    <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
-    <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
-    ${opsBlock(id)}</div>`; }).join('')}</div>`;
+const infraBlock = (link = true) => `<div class="con wide infra" id="infra">${INFRA.map((id, i) => { const c = entityOf(id), strip = i === 3,
+    head = `${hdHtml(c, link)}<p>${c.what}</p>
+    <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${id}"><span>Load</span><span>—</span></div></div>`,
+    flows = `<div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
+    <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>`;
+  return strip ? `<div class="col strip" id="${id}"><div>${head}</div><div>${flows}</div><div>${opsBlock(id)}</div></div>` : `<div class="col" id="${id}">${head}${flows}${opsBlock(id)}</div>`; }).join('')}</div>`;
 // --- the event programme as a schedule (founder 2026-10-19): the event, its time, its venue, its bookings against capacity. Nothing else.
 EVENTS.forEach((e, i) => { e.i = i; const [a, b] = e.time.split('–').map(t => { const [h, m] = t.split(':').map(Number); return h + m / 60; }); e.start = a; e.end = b; });
 const SCHED = { h0: 6, h1: 24 };
