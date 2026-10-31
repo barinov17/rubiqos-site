@@ -106,13 +106,28 @@ body.site .con .kv .sub.rb { color: #0f8a7a; } body.site .con .kv .rb { color: #
 /* yacht services log: arrivals green down-arrow, departures red up-arrow (founder 2026-10-20) */
 body.site table.t.ys td { padding: 4px 8px; } body.site .ys-in { color: #1f9e4a; } body.site .ys-out { color: #d43d32; } body.site .ys-svc { color: var(--muted); }
 
-/* operations list on a card (founder 2026-10-21: replaces Workforce) */
-body.site .con .sec.ops ol { margin: 2px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.45; }
-body.site .con .sec.ops li::marker { color: var(--muted); }
-/* R / A / H mark per operation (founder 2026-10-21): robot teal, fixed automation slate blue, human amber */
-body.site .con .sec.ops .mk { display: inline-block; min-width: 74px; margin-right: 6px; padding: 0 5px; border-radius: 3px; font-size: 10.5px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; color: #fff; text-align: center; }
-body.site .con .sec.ops .mk.R { background: #0f8a7a; }
-body.site .con .sec.ops .mk.A { background: #4a6a93; }
-body.site .con .sec.ops .mk.H { background: #b2641a; }
-body.site .con .sec.ops .mk-sum { margin-left: 8px; }
-body.site .con .sec.ops .mk-sum .mk { min-width: 0; margin-right: 3px; }
+
+/* operations (founder 2026-10-31): a plain list, a quiet letter on the left (R robot, A automation, H human), the type on the right */
+body.site .opsbox { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+body.site .con .sec.ops ul { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+body.site .con .sec.ops li { display: grid; grid-template-columns: 14px 1fr auto; gap: 0 8px; align-items: baseline; font-size: 13px; line-height: 1.4; }
+body.site .con .sec.ops li b { font: 600 11px var(--body); color: var(--muted); }
+body.site .con .sec.ops li i { font-style: normal; font-size: 11.5px; color: var(--muted); text-align: right; white-space: nowrap; }
+body.site .con .sec.ops .mk-sum { margin-left: 8px; font-weight: 400; color: var(--muted); letter-spacing: 0; text-transform: none; }
+/* robots and automation an object runs (Detailed view; was the Physical AI page) */
+body.site .con .rbx ul { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+body.site .con .rbx li { display: grid; grid-template-columns: 17px 1fr auto; gap: 0 0; font-size: 13px; }
+body.site .con .rbx li b { font-weight: 600; color: var(--navy); } body.site .con .rbx li b small { font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-left: 4px; }
+body.site .con .rbx li .n { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; text-align: right; }
+body.site .con .rbx li .d { grid-column: 2 / -1; font-size: 12px; color: var(--muted); line-height: 1.35; } body.site .con .rbx li .d em { font-style: normal; color: var(--navy); }
+body.site .org { position: relative; display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; cursor: help; outline: none; } body.site .org.founder { background: var(--ok); } body.site .org.claude { background: var(--bad); }
+body.site .org[data-tip]:hover::after, body.site .org[data-tip]:focus::after { content: attr(data-tip); position: absolute; left: -4px; top: 16px; z-index: 20; width: 320px; max-width: 70vw; background: var(--navy); color: #fff; font: 400 12.5px/1.45 var(--body); padding: 9px 11px; border-radius: 8px; box-shadow: 0 6px 20px rgba(10, 18, 32, 0.25); white-space: normal; }
+body.site .legend { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; } body.site .legend .org { margin: 0 4px 0 0; vertical-align: 0; }
+body.site .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 0 0 10px; }
+body.site .kpis .k { background: var(--panel); border-radius: 10px; padding: 12px 14px; } body.site .kpis .k b { display: block; font: 600 26px var(--body); color: var(--navy); } body.site .kpis .k span { font-size: 12.5px; color: var(--muted); }
+body.site.view-std .detail { display: none; }
+/* infrastructure: four services side by side in one wide card (founder 2026-10-31); 2 columns on a tablet, 1 on a phone */
+body.site .con.wide.infra { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-row: auto; column-gap: 22px; row-gap: 22px; }
+body.site .con.wide.infra > .col + .col { border-left: 1px solid var(--line); padding-left: 22px; }
+@media (max-width: 1100px) { body.site .con.wide.infra { grid-template-columns: repeat(2, minmax(0, 1fr)); } body.site .con.wide.infra > .col:nth-child(odd) { border-left: 0; padding-left: 0; } }
+@media (max-width: 660px) { body.site .con.wide.infra { grid-template-columns: 1fr; } body.site .con.wide.infra > .col + .col { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 18px; } }

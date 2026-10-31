@@ -85,8 +85,7 @@ const SERVICES = [
   { id: 'stores', name: 'Warehouse and cold chain', zone: 'Z09', op: 'stores', what: 'Warehouse bar: prep kitchen, cold and dry stores; receives the vessel.',
     produces: { 'Food throughput a day': '4.5 t', 'Meals prepared a day': '4,100', 'Dry store': '30 t · 14 days of cover', 'Cold store': '12 t · 3–4 days of cover', 'Beverage store': '15 t · 10 days of cover' }, consumes: { 'Supply calls a week': '4 (two vessels)', 'Energy (cold rooms)': '≈ 1,800 kWh a day' }, key: 'food', capacity: 4.5,
     liveFn: L => { const S = L.supply ? L.supply.store : null; if (!S) return []; const t = k => (S[k].stock / 1000).toFixed(1) + ' t'; const pc = k => Math.round(100 * S[k].stock / S[k].cap);
-      return [['Dry store', `${t('dry')} <small style="color:var(--muted)">of 30 t</small>`], ['bar', bar(pc('dry'))], ['Cold store', `${t('cold')} <small style="color:var(--muted)">of 12 t</small>`], ['bar', bar(pc('cold'))], ['Beverages', `${t('bev')} <small style="color:var(--muted)">of 15 t</small>`], ['bar', bar(pc('bev'))], ['Sent to outlets today', (L.supply.truckKg / 1000).toFixed(1) + ' t'], ['Covers served today', fmt(L.supply.meals)],
-        ...(L.supply.log || []).slice(0, 5).map(e => [`${e.t} · ${e.from.split(' ')[0]} → ${e.to}`, `${fmt(e.kg)} kg <small style="color:var(--muted)">${e.what.split(' · ')[0]}</small>`])]; } },   /* the latest truck deliveries (2026-10-20) */
+      return [['Dry store', `${t('dry')} <small style="color:var(--muted)">of 30 t</small>`], ['bar', bar(pc('dry'))], ['Cold store', `${t('cold')} <small style="color:var(--muted)">of 12 t</small>`], ['bar', bar(pc('cold'))], ['Beverages', `${t('bev')} <small style="color:var(--muted)">of 15 t</small>`], ['bar', bar(pc('bev'))], ['Landed today', (L.supply.inKg / 1000).toFixed(1) + ' t'], ['Sent to outlets today', (L.supply.truckKg / 1000).toFixed(1) + ' t'], ['Covers served today', fmt(L.supply.meals)]]; } },   /* deliveries: their own column in the warehouse block (2026-10-31) */
   { id: 'darkstore', name: 'Dark Store', zone: 'Z03', op: 'stores', what: 'The convenience store in Marina Village is the dark store: guest-app orders are picked here and delivery robots leave from it.',
     produces: { 'Orders a day (plan)': '≈ 600', 'SKUs': '1,200', 'Pick to door': '≤ 30 min' }, consumes: { 'Stock': 'from the warehouse, daily', 'Energy': '≈ 600 kWh a day' }, loadBase: 70,
     liveFn: L => { const o = L.supply && L.supply.outlets['Dark Store']; return o ? [['Orders out today', fmt(o.orders)], ['Stock', `${Math.round(o.stock)} kg <small style="color:var(--muted)">of ${o.par} par</small>`], ['bar', bar(Math.round(100 * o.stock / o.par), 101)], ['Robot deliveries today (all kitchens)', L.ops.deliveries]] : [['Orders fulfilled today', L.ops.deliveries]]; } },
@@ -153,8 +152,8 @@ const PRODUCT_GROUPS = [
   { title: 'Venues: events, wellness, sport', ids: ['events', 'spa', 'sport'] },
 ];
 const SERVICE_GROUPS = [
-  { title: 'Utilities', ids: ['power', 'desal', 'sewage', 'network'] },
-  { title: 'Back of house', ids: ['office', 'stores', 'darkstore', 'laundry', 'cleaning', 'landscaping', 'waste', 'dock', 'staffacc', 'canteen'] },
+  { title: 'Infrastructure', wide: 'infra', ids: ['power', 'desal', 'sewage', 'network'] },   /* one wide card (founder 2026-10-31) */
+  { title: 'Back of house', wide: 'stores', ids: ['office', 'stores', 'darkstore', 'laundry', 'cleaning', 'landscaping', 'waste', 'dock', 'staffacc', 'canteen'] },
   { title: 'Guest care', ids: ['guestservices', 'medical', 'security'] },
 ];
 // Fleet Hub: its own block (founder 2026-10-19): the vehicles belong to no other card
@@ -209,7 +208,10 @@ const kv = o => Object.entries(o).map(([k, v]) => `<span>${k}</span><span>${v}</
 const NO_MODEL = new Set([   /* guest services, medical and security sit in the administration building (founder 2026-10-20) */ 'landscaping', 'cleaning', 'yacht-services']);   // no physical object on the master plan yet (founder 2026-10-19: red marker)
 const hdHtml = (c, link = true) => `<div class="hd"><h3>${link ? `<a href="${ENTITY_URL(c.id)}">${c.name}</a>` : c.name}</h3>${NO_MODEL.has(c.id) ? '<span class="nomodel" title="No physical object on the master plan yet"></span>' : ''}</div>`;   // no zone id and no colour dot (founder 2026-10-19)
 const cardOf = c => (PRODUCTS.includes(c) ? productCard(c) : serviceCard(c));
-const groupsHtml = groups => groups.map(g => `<h3 class="grp">${g.title}</h3>${g.wide === 'marina' ? marinaBlock() + '<div style="height:14px"></div>' : ''}<div class="cards">${g.ids.map(id => cardOf(entityOf(id))).join('')}</div>`).join('');
+// wide blocks (founder 2026-10-19 marina, 2026-10-31 warehouse and infrastructure): the block, then the group's other cards
+const WIDE = { marina: [() => marinaBlock(), []], stores: [() => storesBlock(), ['stores']], infra: [() => infraBlock(), ['power', 'desal', 'sewage', 'network']] };
+const groupsHtml = groups => groups.map(g => { const [blk, own] = WIDE[g.wide] || [null, []], ids = g.ids.filter(id => !own.includes(id));
+  return `<h3 class="grp">${g.title}</h3>${blk ? blk() + (ids.length ? '<div style="height:14px"></div>' : '') : ''}${ids.length ? `<div class="cards">${ids.map(id => cardOf(entityOf(id))).join('')}</div>` : ''}`; }).join('');
 function productInner(c, link = true) {
   const d = needs(c, OCC); const objs = c.units ? c.objects : c.objects;   // the marina's berths by class live in its table, not in the list
   return `${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
@@ -218,7 +220,7 @@ function productInner(c, link = true) {
   <div class="sec"><div class="cap">Produces</div>${c.rooms ? roomRows(c) : `<p>${c.produces}</p><div class="kv">${kv(objs)}</div>`}</div>
   <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
   <div class="sec detail"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div>
-  ${opsHtml(c.id)}`;
+  ${opsBlock(c.id)}`;
 }
 // Physical AI register (founder 2026-10-19): ONE list of robot types. Every robot row in TEAM is an id from here, so a card, the
 // Fleet Hub and the Physical AI page always say the same thing. Add a type here first; never type a robot name into TEAM.
@@ -320,31 +322,32 @@ const robotOf = id => ROBOTS[id] || { name: id, scope: 'object', does: '' };
 // Rule: a robot inside a service object works for that service (a picker in the Dark Store → Dark Store). Inside a product it works for
 // the service below; null = the product's own operation (table service, bar, courts, stage), no proforma service.
 const ROBOT_SERVICE = { scrubber: 'cleaning', window: 'cleaning', pool: 'cleaning', luggage: 'guestservices', kiosk: 'guestservices', lockers: 'darkstore',
-  mower: 'landscaping', hedge: 'landscaping', irrigation: 'landscaping', raker: 'landscaping', dronePatrol: 'security', droneRescue: 'security', sensors: 'security',
-  buoy: 'security', pedestal: 'yacht-services', pumpout: 'yacht-services', fuel: 'yacht-services', hull: 'yacht-services', agv: 'laundry', solar: 'power',
+  mower: 'landscaping', hedge: 'landscaping', irrigation: 'landscaping', raker: 'landscaping', dronePatrol: 'security', droneRescue: 'medical', sensors: 'security',
+  buoy: null, pedestal: 'yacht-services', pumpout: 'yacht-services', fuel: 'yacht-services', hull: 'yacht-services', agv: 'laundry', solar: 'power',
   pipe: 'sewage', crane: 'dock', picker: 'darkstore', folder: 'laundry', washline: 'laundry', sorter: 'waste', compactor: 'waste', racking: 'stores',
   kitchen: 'canteen', charger: 'fleet', table: null, cocktail: null, dishline: null, court: null, stage: null };
 const serviceOfRobot = (eid, rid) => (SERVICES.some(s => s.id === eid) || eid === 'fleet' ? eid : ROBOT_SERVICE[rid] ?? null);
 // People and robots (founder 2026-10-19): every entity names who works there and which robots do a specific job. Numbers at the plan's scale;
 // the product rows sum to the card's staff positions. Robot rows are ROBOTS ids; fleet-scope robots live only in the Fleet Hub (founder 2026-10-19).
 const OUTLET_OF = { 'beach-hotel': 'Beach Hotel', 'hill-hotel': 'Hill Hotel', restaurant: 'Restaurant', village: 'Marina Village', 'beach-club': 'Beach Club', 'members-club': 'Members Club' };
+// Kiosk and dish-line counts on hotels, residences, village, club, rotunda and security: added 2026-10-31 (Claude, assumption) — their operations named the type but nothing counted it.
 const TEAM = {
-  'beach-hotel': { people: { 'Front office and concierge': 24, 'Housekeeping': 70, 'F&B service': 60, 'Kitchen (chefs and cooks)': 44, 'Butlers': 12, 'Engineering': 14, 'Pool and beach attendants': 20, 'Management and admin': 26 }, robots: { scrubber: 6, luggage: 2, pool: 2 } },
-  'apart-hotel': { people: { 'Reception and concierge': 6, 'Housekeeping': 14, 'Maintenance': 4, 'Management': 6 }, robots: { scrubber: 2, lockers: 1 } },
-  'hill-hotel': { people: { 'Front office and concierge': 12, 'Housekeeping': 38, 'F&B service': 28, 'Kitchen (chefs and cooks)': 22, 'Butlers': 6, 'Engineering': 8, 'Attendants': 8, 'Management and admin': 13 }, robots: { scrubber: 3, luggage: 1, pool: 1 } },
+  'beach-hotel': { people: { 'Front office and concierge': 24, 'Housekeeping': 70, 'F&B service': 60, 'Kitchen (chefs and cooks)': 44, 'Butlers': 12, 'Engineering': 14, 'Pool and beach attendants': 20, 'Management and admin': 26 }, robots: { scrubber: 6, luggage: 2, pool: 2, kiosk: 2 } },
+  'apart-hotel': { people: { 'Reception and concierge': 6, 'Housekeeping': 14, 'Maintenance': 4, 'Management': 6 }, robots: { scrubber: 2, lockers: 1, kiosk: 1 } },
+  'hill-hotel': { people: { 'Front office and concierge': 12, 'Housekeeping': 38, 'F&B service': 28, 'Kitchen (chefs and cooks)': 22, 'Butlers': 6, 'Engineering': 8, 'Attendants': 8, 'Management and admin': 13 }, robots: { scrubber: 3, luggage: 1, pool: 1, kiosk: 1 } },
   villas: { people: { 'Butlers': 18, 'Housekeeping': 12, 'Villa chefs': 6, 'Maintenance': 4 }, robots: { pool: 6, mower: 3 } },
-  residences: { people: { 'Concierge': 12, 'Housekeeping': 46, 'Maintenance': 14, 'Owner services': 8, 'Management and admin': 15 }, robots: { scrubber: 4, lockers: 2 } },
-  village: { people: { 'F&B service': 36, 'Kitchen (chefs and cooks)': 24, 'Retail': 16, 'Market': 5, 'Management': 4 }, robots: { table: 6, scrubber: 3 } },
+  residences: { people: { 'Concierge': 12, 'Housekeeping': 46, 'Maintenance': 14, 'Owner services': 8, 'Management and admin': 15 }, robots: { scrubber: 4, lockers: 2, kiosk: 1 } },
+  village: { people: { 'F&B service': 36, 'Kitchen (chefs and cooks)': 24, 'Retail': 16, 'Market': 5, 'Management': 4 }, robots: { table: 6, scrubber: 3, kiosk: 1, dishline: 1 } },
   restaurant: { people: { 'Head chef and brigade': 22, 'Service': 28, 'Sommeliers': 3, 'Stewards': 5, 'Management': 2 }, robots: { cocktail: 1, dishline: 1 } },
   'beach-club': { people: { 'Service': 18, 'Kitchen': 10, 'Beach attendants': 8, 'Management': 4 }, robots: { raker: 1, cocktail: 1 } },
-  'members-club': { people: { 'Service': 14, 'Kitchen': 8, 'Membership and events': 4, 'Management': 4 }, robots: { scrubber: 1 } },
+  'members-club': { people: { 'Service': 14, 'Kitchen': 8, 'Membership and events': 4, 'Management': 4 }, robots: { scrubber: 1, kiosk: 1 } },
   'hotel-beach': { people: { 'Beach attendants': 8, 'Kiosk and bar': 6 }, robots: { raker: 1, kiosk: 1 } },
   'club-beach': { people: { 'Beach attendants': 6, 'Beach service': 4 }, robots: { raker: 1 } },
   'water-sports': { people: { 'Instructors': 6, 'Dive master and boat crew': 3, 'Desk and equipment': 3 }, robots: { droneRescue: 1, buoy: 2 } },
   spa: { people: { 'Therapists': 18, 'Reception': 6, 'Attendants': 6, 'Longevity doctors': 2 }, robots: { pool: 2, agv: 1 } },
   sport: { people: { 'Trainers': 8, 'Reception': 3, 'Court staff': 4 }, robots: { court: 2 } },
-  marina: { people: { 'Harbour master and office': 6, 'Dock hands': 14, 'Technical': 6, 'Fuel dock': 2 }, robots: { dronePatrol: 1, pedestal: 90, pumpout: 2 } },
-  events: { people: { 'Event managers': 4, 'Technicians (sound, light)': 4, 'Set-up crew': 2 }, robots: { scrubber: 2, stage: 1 } },
+  marina: { people: { 'Harbour master and office': 6, 'Dock hands': 14, 'Technical': 6, 'Fuel dock': 2 }, robots: { dronePatrol: 1, pedestal: 90 } },   /* pump-out cart = a tool the dock hands tow, not counted (founder 2026-10-31) */
+  events: { people: { 'Event managers': 4, 'Technicians (sound, light)': 4, 'Set-up crew': 2 }, robots: { scrubber: 2, stage: 1, kiosk: 2 } },
   power: { people: { 'Plant engineers (3 shifts)': 8 }, robots: { solar: 2 } },
   desal: { people: { 'Operators': 4 }, robots: {} },
   sewage: { people: { 'Operators': 3 }, robots: { pipe: 1 } },
@@ -352,21 +355,21 @@ const TEAM = {
   stores: { people: { 'Receiving and storekeepers': 12, 'Prep-kitchen cooks': 20 }, robots: { agv: 4, kitchen: 2, racking: 1 } },
   darkstore: { people: { 'Pickers and packers': 10 }, robots: { picker: 4 } },
   laundry: { people: { 'Loaders and finishers': 18 }, robots: { folder: 2, agv: 2, washline: 1 } },
-  staffacc: { people: { 'Reception': 4, 'Housekeeping': 8 }, robots: { scrubber: 2 } },
+  staffacc: { people: { 'Reception': 4, 'Housekeeping': 8 }, robots: { scrubber: 2, kiosk: 1 } },
   office: { people: { 'Management': 14, 'Finance and HR': 12, 'Operator console': 8, 'Sales and revenue': 10, 'IT': 6 }, robots: { kiosk: 2 } },
   canteen: { people: { 'Service and loading': 6 }, robots: { kitchen: 1, dishline: 1, kiosk: 4 } },
   cleaning: { people: { 'Housekeepers': 120, 'Public-area cleaners': 30, 'Supervisors': 10 }, robots: { window: 2 } },
-  landscaping: { people: { 'Gardeners': 24, 'Irrigation technicians': 2, 'Arborist': 1 }, robots: { mower: 12, hedge: 2, irrigation: 1 } },
+  landscaping: { people: { 'Gardeners': 24, 'Irrigation technicians': 2, 'Arborist': 1 }, robots: { mower: 12, irrigation: 1 } },   /* hedge robot: not a product yet, gardeners trim (founder 2026-10-31) */
   waste: { people: { 'Sorters': 8, 'Drivers': 2 }, robots: { sorter: 1, compactor: 4 } },
   dock: { people: { 'Dock crew': 4, 'Vessel operator (remote, both vessels)': 1 }, robots: { crane: 1 } },
   guestservices: { people: { 'Butlers': 24, 'Concierge': 9, 'Guest-app operators': 6 }, robots: {} },
   medical: { people: { 'Doctors': 3, 'Nurses': 6 }, robots: { droneRescue: 1, kiosk: 2 } },
-  security: { people: { 'Control room': 6, 'Patrol': 12, 'Lifeguards': 8, 'Fire crew': 6 }, robots: { dronePatrol: 2, sensors: 400 } },
+  security: { people: { 'Control room': 6, 'Patrol': 12, 'Lifeguards': 8, 'Fire crew': 6 }, robots: { dronePatrol: 2, sensors: 400, kiosk: 6 } },
   'marina-support': { people: { 'Harbour office': 6, 'Technicians': 4, 'Crew lounge attendants': 3 }, robots: { kiosk: 1 } },   /* + the crew lounge (founder 2026-10-20) */
   'yacht-services': { people: { 'Dock hands': 8, 'Fuel attendants': 2 }, robots: { hull: 1, fuel: 1 } },
   'guest-dock': { people: { 'Dock staff': 6, 'Shuttle operator (remote, all boats)': 1, 'Porters': 4 }, robots: { luggage: 4, kiosk: 3 } },
   'excursion-terminal': { people: { 'Guides': 4, 'Desk': 2, 'Skippers (guests aboard)': 3 }, robots: {} },
-  fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: Object.assign({ charger: 2 }, ...['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2'].map(k => ({ [k]: FLEET_PLAN[k] }))) },
+  fleet: { people: { 'Dispatchers': 4, 'Technicians': 10, 'Remote supervisors (pods, boats)': 4 }, robots: Object.assign({}, ...['L1', 'L2', 'L3', 'L4', 'L5', 'W1', 'W2'].map(k => ({ [k]: FLEET_PLAN[k] }))) },
 };
 
 // Operations (founder 2026-10-21): the card shows the key operations of each object, not its workforce. At most 10 per object, each one
@@ -416,12 +419,39 @@ const OPS = {
   fleet: [['Job dispatch', 'A'], ['Guest trips (pods, shuttles, boats)', 'R', 'L1'], ['Goods trips (trucks, robots, vessels)', 'R', 'L4'], ['Remote supervision', 'H'], ['Charging', 'H', 'charger'], ['Vehicle washing', 'A'], ['Maintenance and repairs', 'H'], ['Fleet planning', 'H']],
 };
 const MARK = { R: 'Robot', A: 'Automation', H: 'Human' };
-const opTip = ([, m, rid]) => { if (!rid) return m === 'A' ? 'Software: booking, guest app or plant control' : '';
-  const r = robotOf(rid), early = ORIGIN[rid] && /prototype|invented|Pilots only/.test(ORIGIN[rid].note);
-  return `${r.name}: ${r.does}${m === 'H' ? (early ? ' Not a product yet: a person does it today.' : ' A person runs it.') : ''}`; };
+// Owner of a robot (founder 2026-10-31, "в сервисе"): a service runs all its robots across the island and counts them; the object where a
+// robot works shows the operation only. TEAM stays the list of where robots stand; OWNED adds them up by owner. Fleet types: the Fleet Hub.
+const ownerOf = (eid, rid) => (ROBOTS[rid]?.scope === 'fleet' ? 'fleet' : serviceOfRobot(eid, rid) ?? eid);
+const OWNED = {};
+for (const [eid, t] of Object.entries(TEAM)) for (const [rid, n] of Object.entries(t.robots || {})) { if (!n) continue;
+  const o = (OWNED[ownerOf(eid, rid)] ??= {}), r = (o[rid] ??= { n: 0, at: {} }); r.n += n; r.at[eid] = (r.at[eid] || 0) + n; }
+// short type name for the third column of an operation; the platform (product) names go here later
+const SHORT = { L1: 'Guest pod', L2: 'Guest shuttle', L3: 'Service cart', L4: 'Service truck', L5: 'Delivery robot', W1: 'Shuttle boat', W2: 'Supply vessel',
+  scrubber: 'Floor scrubber', pool: 'Pool robot', luggage: 'Luggage robot', table: 'Service robot', cocktail: 'Cocktail robot', raker: 'Beach raker', mower: 'Robot mower',
+  hedge: 'Hedge robot', window: 'Façade robot', solar: 'Panel cleaner', pipe: 'Pipe crawler', hull: 'Hull robot', court: 'Court robot', agv: 'AGV', picker: 'Picking robot',
+  kitchen: 'Kitchen robot', folder: 'Folding robot', sorter: 'Sorting robot', dronePatrol: 'Patrol drone', droneRescue: 'Rescue drone', charger: 'Charging robot',
+  lockers: 'Lockers', dishline: 'Dish line', washline: 'Tunnel washer', racking: 'Auto racking', compactor: 'Compactor', crane: 'Remote crane', pedestal: 'Smart pedestal',
+  fuel: 'Fuel dock', pumpout: 'Pump-out cart', kiosk: 'Kiosk', stage: 'Stage automation', irrigation: 'Smart irrigation', sensors: 'Sensors', buoy: 'Smart buoy' };
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const isEarly = rid => !!(ORIGIN[rid] && /prototype|invented|Pilots only/.test(ORIGIN[rid].note));
+const opTip = (eid, [, m, rid]) => { if (!rid) return m === 'A' ? 'Software: booking, guest app or plant control.' : 'A person does it.';
+  const r = robotOf(rid), own = ownerOf(eid, rid), by = own !== eid && entityOf(own) ? ` Run by ${entityOf(own).name}.` : '';
+  return `${r.name}: ${r.does}${m === 'H' ? (isEarly(rid) ? ' Not a product yet: a person does it today.' : ' A tool: a person runs it.') : by}`; };
+// Operations (founder 2026-10-31): a plain list; a quiet letter on the left (R robot, A fixed automation, H human), the type on the right
 const opsHtml = id => { const o = OPS[id]; if (!o) return ''; const n = k => o.filter(x => x[1] === k).length;
-  return `<div class="sec ops"><div class="cap">Operations · ${o.length}<span class="mk-sum"><b class="mk R">R ${n('R')}</b><b class="mk A">A ${n('A')}</b><b class="mk H">H ${n('H')}</b></span></div><ol>${o.map(x => `<li title="${opTip(x).replace(/"/g, '&quot;')}"><b class="mk ${x[1]}">${MARK[x[1]]}</b>${x[0]}</li>`).join('')}</ol></div>`; };
-// Register check (run in the console): unknown ids, a robot marked A or an automation marked R, a TEAM robot no operation links.
+  const plat = ([, m, rid]) => !rid ? (m === 'A' ? 'Software' : '') : m === 'H' ? `<span class="detail">${isEarly(rid) ? 'robot later' : 'tool'}: ${SHORT[rid] || rid}</span>` : SHORT[rid] || robotOf(rid).name;
+  return `<div class="sec ops"><div class="cap">Operations · ${o.length}<span class="mk-sum">R ${n('R')} · A ${n('A')} · H ${n('H')}</span></div><ul>${o.map(x => `<li title="${esc(opTip(id, x))}"><b>${x[1]}</b><span>${x[0]}</span><i>${plat(x)}</i></li>`).join('')}</ul></div>`; };
+// Robots and automation an owner runs (Detailed view; was the Physical AI page): type, count, who asked for it, what it does, where it works
+const robotsHtml = id => { const o = OWNED[id]; if (!o) return ''; const list = Object.entries(o).sort((a, b) => (robotOf(a[0]).scope === 'auto') - (robotOf(b[0]).scope === 'auto') || b[1].n - a[1].n);
+  const item = ([rid, { n, at }]) => { const r = robotOf(rid), g = ORIGIN[rid] || { by: 'claude', note: 'No origin recorded.' }, where = Object.keys(at).filter(e => e !== id).map(e => entityOf(e)?.name || e);
+    return `<li><span class="org ${g.by}" tabindex="0" data-tip="${esc((g.by === 'founder' ? 'Asked for by the founder. ' : 'Added by Claude. ') + g.note)}"></span><b>${esc(r.name)}${r.scope === 'auto' ? ' <small>fixed</small>' : ''}</b><span class="n">${fmt(n)}</span><span class="d">${esc(r.does)}${where.length ? ` <em>At: ${esc(where.join(', '))}.</em>` : ''}</span></li>`; };
+  return `<div class="sec detail rbx"><div class="cap">Robots and automation it runs</div><ul>${list.map(item).join('')}</ul></div>`; };
+// totals for the strip above the cards (Detailed view)
+const robotTotals = () => { let robots = 0, auto = 0, fleet = 0; const types = new Set(), owners = new Set();
+  for (const [own, o] of Object.entries(OWNED)) for (const [rid, { n }] of Object.entries(o)) { owners.add(own); const s = robotOf(rid).scope; if (s === 'auto') auto += n; else { robots += n; types.add(rid); if (s === 'fleet') fleet += n; } }
+  return [[owners.size, 'objects that run robots or automation'], [robots, `robots (${types.size} types)`], [fleet, 'of them shared fleet, in the Fleet Hub'], [auto, 'fixed automation units']]; };
+// Register check (run in the console): unknown ids, a robot marked A or an automation marked R, a TEAM robot no operation links,
+// a robot an owner runs that no operation of the owner names.
 const opsCheck = () => { const err = [];
   for (const [eid, o] of Object.entries(OPS)) { if (o.length > 10) err.push(`${eid}: ${o.length} ops`);
     for (const [name, m, rid] of o) { if (!MARK[m]) err.push(`${eid}/${name}: mark ${m}`);
@@ -430,6 +460,10 @@ const opsCheck = () => { const err = [];
       if (m === 'R' && r.scope === 'auto') err.push(`${eid}/${name}: R on fixed ${rid}`); if (m === 'A' && r.scope !== 'auto') err.push(`${eid}/${name}: A on moving ${rid}`); }
     const linked = new Set(o.map(x => x[2]));
     for (const rid of Object.keys((TEAM[eid] || {}).robots || {})) if (!linked.has(rid) && !(eid === 'fleet' && ROBOTS[rid]?.scope === 'fleet')) err.push(`${eid}: TEAM robot ${rid} not linked`); }
+  for (const [own, o] of Object.entries(OWNED)) { const named = new Set((OPS[own] || []).map(x => x[2]));
+    for (const rid of Object.keys(o)) if (!named.has(rid) && !(own === 'fleet' && ROBOTS[rid]?.scope === 'fleet')) err.push(`${own}: runs ${rid}, no operation names it`); }
+  for (const [eid, o] of Object.entries(OPS)) for (const [name, m, rid] of o) { if (!rid || m === 'H' || ROBOTS[rid]?.scope === 'fleet') continue;   // a robot or machine an operation names is counted somewhere
+    if (!(TEAM[eid]?.robots?.[rid] || OWNED[eid]?.[rid] || TEAM[ownerOf(eid, rid)]?.robots?.[rid])) err.push(`${eid}/${name}: ${rid} not counted`); }
   return err; };
 // 30-day occupancy (founder 2026-10-19): today is day 5; days 1–4 are actuals, today is live, days 6–30 are the forecast.
 // The month runs from low to high season (base 48 % → 78 %), Friday and Saturday nights +12, Sunday +4, product factor, deterministic noise.
@@ -457,23 +491,43 @@ const marinaBlock = (link = true) => { const c = entityOf('marina'), d = needs(c
     <div class="sec"><div class="cap">Produces</div><p>${c.produces}</p></div>
     <div class="sec detail"><div class="cap">Consumes a day</div><div class="kv"><span>Water</span><span>${fmt(d.water)} m³</span><span>Energy</span><span>${fmt(d.energy)} kWh</span><span>Food and beverage</span><span>${fmt(d.food, 2)} t</span><span>Clean linen</span><span>${fmt(d.laundry)} kg</span></div></div>
     <div class="sec detail"><div class="cap">Returns a day</div><div class="kv"><span>Sewage</span><span>${fmt(d.sewage)} m³</span><span>Waste</span><span>${fmt(d.waste, 2)} t</span><span>Used linen</span><span>${fmt(d.laundry)} kg</span></div></div></div>
-  <div class="col">${opsHtml('marina')}</div>
+  <div class="col">${opsBlock('marina')}</div>
   <div class="col"><div class="cap">Next movements</div><table class="t mini"><thead><tr><th>Time</th><th>Movement</th><th>Class</th></tr></thead><tbody id="marinaNext"><tr><td colspan="3" class="muted">—</td></tr></tbody></table><div class="kv" data-live="marina-moves" style="margin-top:8px"><span>Under way</span><span>—</span></div></div>
   <div class="col"><div class="cap">Yacht services · this month</div><div class="kv" data-live="ys-month"><span>Fresh water</span><span>—</span></div>
-    <div class="cap" style="margin-top:10px">Log</div><table class="t mini ys"><tbody id="ysLog"><tr><td class="muted">—</td></tr></tbody></table></div></div>`; };   // yacht services as the fifth column (founder 2026-10-20)
+    <div class="cap" style="margin-top:10px">Log</div><table class="t mini ys"><tbody id="ysLog"><tr><td class="muted">—</td></tr></tbody></table>
+    ${opsBlock('yacht-services')}</div></div>`; };   // yacht services as the fifth column (founder 2026-10-20)
 const serviceCard = (c, link = true) => `<div class="con svc" id="${c.id}">${hdHtml(c, link)}${opTag(c.op)}<p>${c.what}</p>
   <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${c.id}"><span>Load</span><span>—</span></div></div>
   <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
   <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
-  ${opsHtml(c.id)}</div>`;
+  ${opsBlock(c.id)}</div>`;
 const fleetCard = (link = true) => `<div class="con wide cols" id="fleetCard">
   <div class="col">${hdHtml(FLEET_HUB, link)}${opTag(FLEET_HUB.op)}<p>${FLEET_HUB.what}</p>
     <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="fleet"><span>Load</span><span>—</span></div></div></div>
   <div class="col">
     <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(FLEET_HUB.produces)}</div></div>
     <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(FLEET_HUB.consumes)}</div></div></div>
-  <div class="col">${opsHtml('fleet')}</div>
+  <div class="col">${opsBlock('fleet')}</div>
   <div class="col span2"><div class="cap">Fleet · plan vs demo, live</div><div class="scroll"><table class="t"><thead><tr><th>Type</th><th class="num">Plan</th><th class="num">Demo</th><th class="num">Moving</th><th class="num">Charging</th><th class="num">Battery</th></tr></thead><tbody id="fleetRows"></tbody></table></div></div></div>`;   // the same vertical blocks as the marina (founder 2026-10-19); the fleet table takes two columns
+// operations and the robots the object runs, in one row of the card (the robots: Detailed view only)
+const opsBlock = id => `<div class="opsbox">${opsHtml(id)}${robotsHtml(id)}</div>`;
+// warehouse as a wide block (founder 2026-10-31): the card, stock by store, outlets against par, the truck deliveries
+const storesBlock = (link = true) => { const c = entityOf('stores'); return `<div class="con wide cols" id="stores">
+  <div class="col">${hdHtml(c, link)}<p>${c.what}</p>
+    <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="stores"><span>Load</span><span>—</span></div></div></div>
+  <div class="col">
+    <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
+    <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div></div>
+  <div class="col">${opsBlock('stores')}</div>
+  <div class="col"><div class="cap">Outlets · stock against par, kg</div><table class="t mini"><thead><tr><th>Outlet</th><th class="num">Stock</th><th class="num">Par</th><th style="width:30%"></th></tr></thead><tbody id="storesOutlets"><tr><td colspan="4" class="muted">—</td></tr></tbody></table></div>
+  <div class="col span2"><div class="cap">Deliveries today · latest first</div><div class="scroll"><table class="t mini"><thead><tr><th>Time</th><th>Goods</th><th>From → to</th><th class="num">Load</th></tr></thead><tbody id="storesLog"><tr><td colspan="4" class="muted">—</td></tr></tbody></table></div></div></div>`; };
+// infrastructure as one wide block (founder 2026-10-31): power, water, sewage, network side by side, each with its live, produces, consumes, operations
+const INFRA = ['power', 'desal', 'sewage', 'network'];
+const infraBlock = (link = true) => `<div class="con wide infra" id="infra">${INFRA.map(id => { const c = entityOf(id); return `<div class="col" id="${id}">${hdHtml(c, link)}<p>${c.what}</p>
+    <div class="live"><div class="cap"><i></i>Now</div><div class="kv" data-live="${id}"><span>Load</span><span>—</span></div></div>
+    <div class="sec"><div class="cap">Produces</div><div class="kv">${kv(c.produces)}</div></div>
+    <div class="sec"><div class="cap">Consumes</div><div class="kv">${kv(c.consumes)}</div></div>
+    ${opsBlock(id)}</div>`; }).join('')}</div>`;
 // --- the event programme as a schedule (founder 2026-10-19): the event, its time, its venue, its bookings against capacity. Nothing else.
 EVENTS.forEach((e, i) => { e.i = i; const [a, b] = e.time.split('–').map(t => { const [h, m] = t.split(':').map(Number); return h + m / 60; }); e.start = a; e.end = b; });
 const SCHED = { h0: 6, h1: 24 };
@@ -551,5 +605,8 @@ function refreshLive() {
   { const F = L.fleet; const land = ['L1', 'L2', 'L3', 'L4', 'L5'].map(k => F[k] || { n: 0, mv: 0, ch: 0 }); const n = land.reduce((a, r) => a + r.n, 0), mv = land.reduce((a, r) => a + r.mv, 0), ch = land.reduce((a, r) => a + r.ch, 0), p = Math.round(100 * mv / Math.max(1, n));
     setLive('fleet', [['Load now', p + ' %'], ['bar', bar(p)], ['Land fleet moving', `${mv} of ${n}`], ['Charging', ch], ['Pod trips today', L.ops.buggyTrips], ['Deliveries today', L.ops.deliveries], ['Truck runs today', L.ops.truckRuns], ['Riders waiting · aboard', `${L.reception.podsWaiting} · ${L.reception.podsAboard}`]]);
     const fr = document.getElementById('fleetRows'); if (fr) fr.innerHTML = Object.keys(FLEET_PLAN).map(k => { const r = F[k] || { n: 0, mv: 0, ch: 0, bat: null }; return `<tr><td>${FLEET_TITLES[k]}</td><td class="num">${FLEET_PLAN[k]}</td><td class="num">${r.n}</td><td class="num">${r.mv}</td><td class="num">${r.ch}</td><td class="num">${r.bat === null ? '—' : r.bat + ' %'}</td></tr>`; }).join(''); }
+  { const S = L.supply; if (S) {                                            // warehouse block: outlet stock against par, the delivery log
+    const so = document.getElementById('storesOutlets'); if (so) so.innerHTML = Object.entries(S.outlets).map(([k, o]) => { const p = Math.round(100 * o.stock / Math.max(1, o.par)); return `<tr><td>${k}</td><td class="num">${fmt(Math.round(o.stock))}</td><td class="num">${fmt(o.par)}</td><td class="bar-td">${bar(p, 101)}</td></tr>`; }).join('');
+    const sl = document.getElementById('storesLog'); if (sl) sl.innerHTML = (S.log || []).length ? S.log.slice(0, 10).map(e => `<tr><td>${e.t}</td><td>${e.what.split(' · ')[0]}</td><td>${e.from} → ${e.to}</td><td class="num">${fmt(e.kg)} kg</td></tr>`).join('') : '<tr><td colspan="4" class="muted">nothing yet today</td></tr>'; } }
 }
 setInterval(refreshLive, 1000);
