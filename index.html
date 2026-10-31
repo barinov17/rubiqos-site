@@ -11,8 +11,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.17 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.18 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.18: reveal-on-scroll (founder: «легкие анимации появления… прям чутка, как поперчить сверху») — headings, leads, cards, pictures and footer columns
+          fade up 14px over 0.6s when 12% of them enters the viewport, siblings in a group staggered 70ms (max 350ms); hero h1 + paragraph fade up on load.
+          The script adds .rv, so without JS nothing is hidden; prefers-reduced-motion switches it all off. No layout change;
    v6.17: Who we work with — white card frames back (1px --line, 16px radius, 24/22/22 padding, 16px gap, as v6.5–v6.9); the v6.15 paragraphs kept in full;
           demo block — grid top-aligned (the lead no longer hangs centred against the card) and the lead cut to «… the platform at work and the robots it runs.»;
           market: the globe image 24px higher (margin-top −24px at > 900px), rows and lead untouched;
@@ -205,6 +208,16 @@ body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder �
   body.site.home .donut .pie { width: 220px; flex-basis: 220px; }
   body.site.home form { flex-direction: column; }
 }
+/* v6.18: reveal-on-scroll — a pinch of motion. .rv is added by the script below (no JS → nothing hidden); .in = in view. */
+body.site.home .rv { opacity: 0; transform: translateY(14px); transition: opacity .6s cubic-bezier(.2, .6, .2, 1), transform .6s cubic-bezier(.2, .6, .2, 1); transition-delay: var(--rd, 0s); }
+body.site.home .rv.in { opacity: 1; transform: none; }
+body.site.home .hero .copy > h1, body.site.home .hero .copy > p { animation: rv-hero .7s cubic-bezier(.2, .6, .2, 1) both; }
+body.site.home .hero .copy > p { animation-delay: .12s; }
+@keyframes rv-hero { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  body.site.home .rv { opacity: 1; transform: none; transition: none; }
+  body.site.home .hero .copy > h1, body.site.home .hero .copy > p { animation: none; }
+}
 </style>
 </head>
 <body class="site home">
@@ -382,6 +395,20 @@ document.getElementById('demoForm').addEventListener('submit', function (e) {
   if (!email || email.indexOf('@') < 1) { el.focus(); return; }
   location.href = 'mailto:hello@rubiqos.com?subject=' + encodeURIComponent('Demo request') + '&body=' + encodeURIComponent('Please contact me about a RubiqOS demo.\nEmail: ' + email + '\n');
 });
+// v6.18: reveal-on-scroll. Single targets and the children of group containers get .rv (hidden, 14px low) and .in once 12% of them is in view;
+// children of a group are staggered 70ms each (max 350ms). One pass per element. Skipped when the browser has no IntersectionObserver or asks for reduced motion.
+(function () {
+  if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var els = [];
+  document.querySelectorAll('section > h2, section > .lead, .how-pic, .market > img, .model-pic, .pd > *, .demo > *').forEach(function (el) { el.classList.add('rv'); els.push(el); });
+  document.querySelectorAll('.cards, .domains, .how, .for, .market .nums, .model-list, footer .cols').forEach(function (g) {
+    Array.prototype.forEach.call(g.children, function (el, i) { el.classList.add('rv'); el.style.setProperty('--rd', Math.min(i, 5) * 70 + 'ms'); els.push(el); });
+  });
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+  els.forEach(function (el) { io.observe(el); });
+})();
 </script>
 </body>
 </html>
