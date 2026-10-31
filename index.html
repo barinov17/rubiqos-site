@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.6 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.7 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.7: «Paid per job done» → «What we offer» (generated render left, 01 Design · 02 Operations plan · 03 Execution right),
    v6.6: market text centred on the numbers + market-growth lead, today unit blue, outcome $35M line removed, who-we-work-with icon beside the heading,
    what exists today ($1B resort · 2,000 robots · 46 platforms), problem (63% + opex donut 200 px, one-line legend; why now removed), who we work with (Lucide icons + arrows), demo = heading + field + button,
    solution for resorts (six domains, Lucide icons), outcome,
@@ -105,11 +106,14 @@ body.site.home .how .n, body.site.home .model .k { font: 600 12.5px/1 var(--body
 body.site.home .how .n { margin-bottom: 10px; }
 
 /* business model: three fee rows */
-body.site.home .model { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-body.site.home .model > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; }
+/* what we offer (v6.7): picture left, three items right */
+body.site.home .model { display: grid; grid-template-columns: 400px 1fr; gap: 32px; align-items: center; }
+body.site.home .model-pic { margin: 0; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+body.site.home .model-pic img { display: block; width: 100%; height: auto; }
+body.site.home .model-list { display: grid; gap: 12px; }
+body.site.home .model-list > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 22px 22px 20px; }
 body.site.home .model h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
 body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .model-line { font-size: 14.5px; color: var(--muted); margin: 24px 0 0; max-width: 62ch; line-height: 1.5; }
 
 /* two audiences */
 body.site.home .for { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
@@ -145,7 +149,7 @@ body.site.home footer a:hover { color: var(--accent); }
 body.site.home footer a.access { font: 500 13px var(--body); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 6px 12px; }
 body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
 
-@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .domains { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model { grid-template-columns: 1fr; gap: 16px; } body.site.home .model-pic { max-width: 400px; } body.site.home .domains { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .market .num { grid-template-columns: 1fr; gap: 4px; padding: 14px 0; } }
 @media (max-width: 720px) {
   body.site.home .hero p br.d { display: none; }
@@ -249,13 +253,15 @@ body.site.home footer a.access:hover { background: var(--accent); color: #fff; }
   </section>
 
   <section id="model">
-    <h2>Paid per job done.</h2>
+    <h2>What we offer.</h2>
     <div class="model">
-      <div><div class="k">BUILD</div><h3>Design-phase fee</h3><p>Physical AI specified into the master plan: docks, charging, service corridors, edge compute. One-off.</p></div>
-      <div><div class="k">RUN</div><h3>Platform fee</h3><p>Guest app, operator console and orchestration. Priced by the scale of the destination, not by seats.</p></div>
-      <div><div class="k">AUTOMATE</div><h3>30–35% of the human cost</h3><p>Per delivery, square metre cleaned, hectare mowed, patrol hour, transfer. Robots leased from partners, supervised remotely by us.</p></div>
+      <figure class="model-pic"><img src="offer.jpg" width="949" height="1066" alt="Isometric model of a resort fragment on a white plinth: villas, palms, a pool, delivery robots and charging docks on the service corridor, a tablet with the plan in front" loading="lazy"></figure>
+      <div class="model-list">
+        <div><div class="k">01 · Design</div><h3>Physical AI in the master plan</h3><p>We design the physical-AI solutions for the destination and build them into the master plan while spatial decisions are still free: docks, charging, service corridors, edge compute.</p></div>
+        <div><div class="k">02 · Operations plan</div><h3>An operating model built on the platform</h3><p>An operational plan for the resort that counts on physical AI and the platform: which tasks robots take, which stay with people, staffing and budget lines for each.</p></div>
+        <div><div class="k">03 · Execution</div><h3>Tasks done by our robot fleet</h3><p>Deliveries, cleaning, mowing, patrols, transfers: done by our shared fleet, leased from hardware partners and supervised remotely by us. Paid per job done.</p></div>
+      </div>
     </div>
-    <p class="model-line">The developer pays from payroll it no longer carries. No fleet on the balance sheet.</p>
   </section>
 
   <section id="for">
