@@ -6,131 +6,144 @@
 <title>RubiqOS · The physical AI platform for resort operations</title>
 <meta name="description" content="RubiqOS runs robots and staff on one system across every operator on a resort. Lower operating costs, the same guest experience.">
 <link rel="icon" href="data:,">
-<link rel="stylesheet" href="/site.css?v=20261031a">
+<link rel="stylesheet" href="/site.css?v=20261031b">
 <style>
-/* Landing page (home.html → /home/), 2026-10-31. Palette and fonts come from site.css; only the layout lives here. */
+/* Landing page (home.html → /home/), v2 2026-10-31: full-screen hero, outcome first, problem + fleet in one block, email-only form.
+   Palette and fonts come from site.css; only the layout lives here. */
 body.site.home { background: var(--bg); -webkit-font-smoothing: antialiased; }
-.home .wrap { max-width: 1120px; }
-.home .bar { height: 64px; display: flex; align-items: center; justify-content: space-between; }
-.home .bar .brand { font: 700 19px var(--body); color: var(--navy); text-decoration: none; letter-spacing: -0.02em; }
-.home .bar a.req { font: 500 14px var(--body); color: var(--navy); text-decoration: none; border: 1px solid var(--line); border-radius: 10px; padding: 9px 14px; background: #fff; }
-.home .bar a.req:hover { border-color: var(--navy); }
+body.site.home .wrap { max-width: 1120px; }
 
-.home .hero { padding: 72px 0 40px; }
-.home .hero h1 { font-family: var(--display); font-weight: 500; font-size: clamp(42px, 6.2vw, 78px); line-height: 1.0; letter-spacing: -0.01em; color: var(--navy); margin: 0 0 22px; max-width: 14ch; }
-.home .hero p { font-size: clamp(17px, 1.4vw, 20px); color: var(--text); max-width: 52ch; margin: 0 0 30px; line-height: 1.45; }
-.home .btn.primary { font-size: 15px; padding: 13px 22px; border-radius: 12px; }
-.home .photo { margin: 24px 0 0; border-radius: 18px; overflow: hidden; aspect-ratio: 16 / 7; background: var(--panel); }
-.home .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.home .credit { font-size: 11px; color: var(--muted); margin-top: 8px; text-align: right; }
-.home .credit a { color: var(--muted); }
+/* hero: the deck cover render under a navy veil, logo and button on top of it */
+body.site.home .hero { position: relative; padding: 0; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; color: #fff; background: var(--navy) url(hero.jpg) center / cover no-repeat; isolation: isolate; }
+body.site.home .hero::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(10,18,32,.86) 0%, rgba(10,18,32,.62) 45%, rgba(10,18,32,.28) 100%), linear-gradient(180deg, rgba(10,18,32,.35), rgba(10,18,32,0) 30%, rgba(10,18,32,.25) 100%); }
+body.site.home .bar { height: 72px; display: flex; align-items: center; justify-content: space-between; }
+body.site.home .bar .brand { font: 700 20px var(--body); color: #fff; text-decoration: none; letter-spacing: -0.02em; }
+body.site.home .bar a.req { font: 500 14px var(--body); color: #fff; text-decoration: none; border: 1px solid rgba(255,255,255,.45); border-radius: 10px; padding: 9px 16px; }
+body.site.home .bar a.req:hover { border-color: #fff; background: rgba(255,255,255,.08); }
+body.site.home .hero > .wrap { width: 100%; }
+body.site.home .hero .copy { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 48px 16px 96px; }
+body.site.home .hero h1 { font-family: var(--display); font-weight: 500; font-size: clamp(44px, 6.4vw, 86px); line-height: 1.0; letter-spacing: -0.01em; color: #fff; margin: 0 0 24px; max-width: 13ch; }
+body.site.home .hero .btn.primary { align-self: flex-start; }
+body.site.home .hero p { font-size: clamp(17px, 1.4vw, 21px); color: rgba(255,255,255,.86); max-width: 50ch; margin: 0 0 34px; line-height: 1.45; }
+body.site.home .btn.primary { font-size: 15px; padding: 13px 24px; border-radius: 12px; }
 
-.home section { padding: 88px 0; border-top: 1px solid var(--line); }
-.home section > h2 { font-family: var(--display); font-weight: 500; font-size: clamp(32px, 3.6vw, 46px); line-height: 1.05; color: var(--navy); margin: 0 0 18px; max-width: 20ch; letter-spacing: -0.005em; }
-.home section > .lead { font-size: 17px; color: var(--text); max-width: 60ch; margin: 0 0 40px; line-height: 1.5; }
+/* sections */
+body.site.home section { padding: 96px 0; border-top: 1px solid var(--line); }
+body.site.home section > h2 { font-family: var(--display); font-weight: 500; font-size: clamp(34px, 3.8vw, 50px); line-height: 1.05; color: var(--navy); margin: 0 auto 18px; max-width: 24ch; text-align: center; letter-spacing: -0.005em; }
+body.site.home section > .lead { font-size: 17px; color: var(--text); max-width: 62ch; margin: 0 auto 48px; line-height: 1.5; text-align: center; }
 
-.home .nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 32px 40px; }
-.home .num .v { font: 500 clamp(44px, 5vw, 64px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
-.home .num .k { font: 500 17px var(--body); color: var(--navy); margin-bottom: 6px; }
-.home .num .d { font-size: 14px; color: var(--muted); line-height: 1.45; max-width: 34ch; }
+/* outcome: three cards with centred headings */
+body.site.home .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+body.site.home .card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 36px 28px 32px; text-align: center; }
+body.site.home .card .v { font: 500 clamp(52px, 5.6vw, 72px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; margin-bottom: 14px; }
+body.site.home .card h3 { font: 500 21px var(--body); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.01em; }
+body.site.home .card p { font-size: 15px; color: var(--text); margin: 0 auto; line-height: 1.5; max-width: 30ch; }
+body.site.home .outcome-line { margin: 40px auto 0; padding: 22px 28px; background: var(--panel); border-radius: 14px; font-size: 17px; color: var(--navy); max-width: 62ch; line-height: 1.5; text-align: center; }
 
-.home .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
-.home .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 26px 26px 24px; }
-.home .card h3 { font: 500 21px var(--body); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.01em; }
-.home .card p { font-size: 15px; color: var(--text); margin: 0; line-height: 1.5; }
+/* problem + fleet: three columns across the block, the problem left, the domains in the other two */
+body.site.home .pf { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 48px; }
+body.site.home .pf .col h3 { font: 500 21px var(--body); color: var(--navy); margin: 0 0 14px; letter-spacing: -0.01em; }
+body.site.home .pf .col > p { font-size: 15px; color: var(--text); line-height: 1.5; margin: 0 0 28px; }
+body.site.home .num { margin-bottom: 26px; }
+body.site.home .num .v { font: 500 clamp(44px, 4.6vw, 60px)/1 var(--body); color: var(--accent); letter-spacing: -0.03em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+body.site.home .num .k { font: 500 16px var(--body); color: var(--navy); }
+body.site.home .fleet { border-top: 1px solid var(--line); }
+body.site.home .fleet div { padding: 20px 0; border-bottom: 1px solid var(--line); }
+body.site.home .fleet b { display: block; font: 500 17px var(--body); color: var(--navy); margin-bottom: 4px; }
+body.site.home .fleet span { font-size: 14px; color: var(--muted); }
+body.site.home .pf .fleet-note { grid-column: 2 / -1; font-size: 14px; color: var(--muted); margin: 18px 0 0; line-height: 1.5; }
 
-.home .fleet { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 40px; border-top: 1px solid var(--line); }
-.home .fleet div { padding: 20px 0; border-bottom: 1px solid var(--line); }
-.home .fleet b { display: block; font: 500 17px var(--body); color: var(--navy); margin-bottom: 4px; }
-.home .fleet span { font-size: 14px; color: var(--muted); }
+/* how it works */
+body.site.home .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+body.site.home .how div { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 28px 26px 26px; }
+body.site.home .how h3 { font: 500 21px var(--body); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.01em; }
+body.site.home .how p { font-size: 15px; color: var(--text); margin: 0; line-height: 1.5; }
 
-.home .outcome-line { margin: 48px 0 0; padding: 24px 28px; background: var(--panel); border-radius: 14px; font-size: 17px; color: var(--navy); max-width: 62ch; line-height: 1.5; }
+/* request a demo: one field */
+body.site.home form { display: flex; gap: 12px; max-width: 560px; margin: 0 auto; }
+body.site.home input { flex: 1; min-width: 0; font: 400 16px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 13px 16px; outline: none; }
+body.site.home input:focus { border-color: var(--accent); }
+body.site.home form .btn.primary { border: 0; cursor: pointer; white-space: nowrap; }
+body.site.home .alt { font-size: 14px; color: var(--muted); margin: 18px 0 0; text-align: center; }
+body.site.home .alt a { color: var(--accent); text-decoration: none; }
 
-.home form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 720px; }
-.home form .full { grid-column: 1 / -1; }
-.home label { display: block; font: 500 13px var(--body); color: var(--muted); margin-bottom: 6px; }
-.home input, .home textarea { width: 100%; font: 400 15px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; }
-.home input:focus, .home textarea:focus { border-color: var(--accent); }
-.home textarea { min-height: 110px; resize: vertical; }
-.home form .btn.primary { justify-self: start; border: 0; cursor: pointer; }
-.home .alt { font-size: 14px; color: var(--muted); margin: 18px 0 0; }
-.home .alt a { color: var(--accent); text-decoration: none; }
+body.site.home footer { border-top: 1px solid var(--line); padding: 36px 0 56px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline; justify-content: space-between; font-size: 14px; color: var(--muted); }
+body.site.home footer .brand { font: 700 17px var(--body); color: var(--navy); letter-spacing: -0.02em; }
+body.site.home footer a { color: var(--navy); text-decoration: none; }
+body.site.home footer a:hover { color: var(--accent); }
 
-.home footer { border-top: 1px solid var(--line); padding: 36px 0 56px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: baseline; justify-content: space-between; font-size: 14px; color: var(--muted); }
-.home footer .brand { font: 700 17px var(--body); color: var(--navy); letter-spacing: -0.02em; }
-.home footer a { color: var(--navy); text-decoration: none; }
-.home footer a:hover { color: var(--accent); }
+@media (max-width: 900px) { .home .pf { grid-template-columns: 1fr 1fr; } .home .pf .problem { grid-column: 1 / -1; margin-bottom: 24px; } }
 @media (max-width: 720px) {
-  .home .hero { padding: 40px 0 28px; }
-  .home section { padding: 56px 0; }
-  .home form { grid-template-columns: 1fr; }
-  .home .photo { aspect-ratio: 4 / 3; }
+  body.site.home section { padding: 60px 0; }
+  body.site.home .hero .copy { padding: 32px 16px 64px; }
+  body.site.home .pf { grid-template-columns: 1fr; gap: 0; }
+  body.site.home .pf .fleet-note { grid-column: auto; }
+  body.site.home .fleet + .fleet { border-top: 0; }
+  body.site.home form { flex-direction: column; }
 }
 </style>
 </head>
 <body class="site home">
-<div class="wrap">
-  <div class="bar"><a class="brand" href="/">RubiqOS</a><a class="req" href="#demo">Request a demo</a></div>
 
-  <div class="hero">
+<header class="hero">
+  <div class="wrap bar"><a class="brand" href="/home/">RubiqOS</a><a class="req" href="#demo">Request a demo</a></div>
+  <div class="wrap copy">
     <h1>The physical AI platform for resort operations.</h1>
     <p>Robots and staff on one system, across every operator on the property. Lower operating costs, the same guest experience.</p>
     <a class="btn primary" href="#demo">Request a demo</a>
-    <div class="photo"><img src="https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=2000&q=75&auto=format&fit=crop" alt="Aerial view of an island resort" loading="eager"></div>
-    <div class="credit">Photo: <a href="https://unsplash.com/photos/be1999ff37cd" rel="noopener">Unsplash</a></div>
   </div>
+</header>
+
+<div class="wrap">
+  <section id="outcome">
+    <h2>Outcome for resorts.</h2>
+    <div class="cards">
+      <div class="card"><div class="v">−39%</div><h3>Payroll</h3><p>Physical AI: robots take over the physical work they already do well.</p></div>
+      <div class="card"><div class="v">−20%</div><h3>Time per task</h3><p>Orchestration: one system plans and dispatches staff and robots.</p></div>
+      <div class="card"><div class="v">+25%</div><h3>Spend per guest</h3><p>Guest interface: one seamless channel for every request and direct sales.</p></div>
+    </div>
+    <div class="outcome-line">On a resort with about $150M of operating costs a year, this is about $35M saved every year.</div>
+  </section>
 
   <section id="problem">
-    <h2>High operating costs.</h2>
-    <p class="lead">A large resort spends most of its revenue on running itself, and the biggest line is people. Staff are imported, housed and transported; a general manager spends half the day putting out fires.</p>
-    <div class="nums">
-      <div class="num"><div class="v">63%</div><div class="k">of revenue goes to operations</div><div class="d">Operating expenses of a large resort as a share of revenue.</div></div>
-      <div class="num"><div class="v">45%</div><div class="k">of operating cost is payroll</div><div class="d">The single largest line, before supplies, infrastructure and overhead.</div></div>
+    <h2>High operating costs, one shared fleet.</h2>
+    <div class="pf">
+      <div class="col problem">
+        <h3>High operating costs</h3>
+        <div class="num"><div class="v">63%</div><div class="k">of revenue goes to operations</div></div>
+        <div class="num"><div class="v">45%</div><div class="k">of operating cost is payroll</div></div>
+        <p>A large resort spends most of its revenue on running itself, and the biggest line is people: imported, housed and transported. A general manager spends half the day putting out fires.</p>
+      </div>
+      <div class="col fleet">
+        <div><b>Mobility</b><span>Shuttles · Carts · Boats</span></div>
+        <div><b>Logistics</b><span>Warehouse · Port &amp; cargo · Delivery</span></div>
+        <div><b>Kitchen &amp; F&amp;B</b><span>Cooking · Bar · Dishwashing · Runners</span></div>
+      </div>
+      <div class="col fleet">
+        <div><b>Housekeeping</b><span>Rooms · Public areas · Laundry</span></div>
+        <div><b>Grounds &amp; waste</b><span>Lawn · Pool · Waste collection</span></div>
+        <div><b>Safety &amp; Security</b><span>Drones · Patrol · Cameras</span></div>
+      </div>
+      <p class="fleet-note">The domains we automate. Robots are leased through hardware partners, dispatched by RubiqOS and shared by every operator on the property, so no operator runs a fleet of its own.</p>
     </div>
   </section>
 
   <section id="how">
     <h2>One system for the whole resort.</h2>
     <p class="lead">RubiqOS seamlessly connects every operation inside the resort: the developer’s infrastructure and shared services, a seamless guest experience, and orchestration of operations across multiple operators. Every request goes to the right person or robot.</p>
-    <div class="cards">
-      <div class="card"><h3>Developer</h3><p>Carries the largest share of operating cost: the infrastructure and shared services every operator and guest depends on. RubiqOS runs them with one shared fleet of robots and staff.</p></div>
-      <div class="card"><h3>Operators</h3><p>Hotels, spa, marina and restaurants keep their own systems and their own way of working. The platform takes most of the operational load without interfering.</p></div>
-      <div class="card"><h3>Guest</h3><p>One app for the whole property, with the room key inside. Every request reaches the right person or robot through one seamless channel.</p></div>
+    <div class="how">
+      <div><h3>Developer</h3><p>Carries the largest share of operating cost: the infrastructure and shared services every operator and guest depends on. RubiqOS runs them with one shared fleet of robots and staff.</p></div>
+      <div><h3>Operators</h3><p>Hotels, spa, marina and restaurants keep their own systems and their own way of working. The platform takes most of the operational load without interfering.</p></div>
+      <div><h3>Guest</h3><p>One app for the whole property, with the room key inside. Every request reaches the right person or robot through one seamless channel.</p></div>
     </div>
-  </section>
-
-  <section id="fleet">
-    <h2>One shared robot fleet. Every operator.</h2>
-    <p class="lead">Robots do the physical work that repeats every day. They are leased through hardware partners, dispatched by RubiqOS and shared by every operator on the property, so no operator runs a fleet of its own.</p>
-    <div class="fleet">
-      <div><b>Mobility</b><span>Shuttles · Carts · Boats</span></div>
-      <div><b>Logistics</b><span>Warehouse · Port &amp; cargo · Delivery</span></div>
-      <div><b>Kitchen &amp; F&amp;B</b><span>Cooking · Bar · Dishwashing · Runners</span></div>
-      <div><b>Housekeeping</b><span>Rooms · Public areas · Laundry</span></div>
-      <div><b>Grounds &amp; waste</b><span>Lawn · Pool · Waste collection</span></div>
-      <div><b>Safety &amp; Security</b><span>Drones · Patrol · Cameras</span></div>
-    </div>
-  </section>
-
-  <section id="outcome">
-    <h2>Outcome.</h2>
-    <div class="nums">
-      <div class="num"><div class="v">−39%</div><div class="k">payroll</div><div class="d">Physical AI: direct replacement of physical labor on the work robots already do.</div></div>
-      <div class="num"><div class="v">−20%</div><div class="k">time per task</div><div class="d">Orchestration platform: optimized workforce management for staff and robots.</div></div>
-      <div class="num"><div class="v">+25%</div><div class="k">spend per guest</div><div class="d">Guest interface: seamless guest experience and direct sales.</div></div>
-    </div>
-    <div class="outcome-line">On a resort with about $150M of operating costs a year, this is about $35M saved every year.</div>
   </section>
 
   <section id="demo">
     <h2>Request a demo.</h2>
-    <p class="lead">Tell us about your resort or project. We reply within two working days.</p>
+    <p class="lead">Leave your email. We reply within two working days.</p>
     <form id="demoForm" novalidate>
-      <div><label for="f-name">Name</label><input id="f-name" name="name" autocomplete="name" required></div>
-      <div><label for="f-company">Company</label><input id="f-company" name="company" autocomplete="organization"></div>
-      <div class="full"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
-      <div class="full"><label for="f-about">About your project</label><textarea id="f-about" name="about" placeholder="Resort, location, stage: in design, adding a phase, or operating"></textarea></div>
-      <button class="btn primary" type="submit">Send request</button>
+      <input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required>
+      <button class="btn primary" type="submit">Request a demo</button>
     </form>
     <p class="alt">Or write to <a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a>.</p>
   </section>
@@ -146,11 +159,9 @@ body.site.home { background: var(--bg); -webkit-font-smoothing: antialiased; }
 // Static site (GitHub Pages): the form opens the visitor's mail client with the request prefilled. Swap for a form backend when one exists.
 document.getElementById('demoForm').addEventListener('submit', function (e) {
   e.preventDefault();
-  var f = e.target, v = function (n) { return (f.elements[n].value || '').trim(); };
-  if (!v('name') || !v('email')) { (v('name') ? f.elements.email : f.elements.name).focus(); return; }
-  var subject = 'Demo request' + (v('company') ? ' — ' + v('company') : '');
-  var body = 'Name: ' + v('name') + '\nCompany: ' + v('company') + '\nEmail: ' + v('email') + '\n\nAbout the project:\n' + v('about') + '\n';
-  location.href = 'mailto:hello@rubiqos.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  var el = e.target.elements.email, email = (el.value || '').trim();
+  if (!email || email.indexOf('@') < 1) { el.focus(); return; }
+  location.href = 'mailto:hello@rubiqos.com?subject=' + encodeURIComponent('Demo request') + '&body=' + encodeURIComponent('Please contact me about a RubiqOS demo.\nEmail: ' + email + '\n');
 });
 </script>
 </body>
