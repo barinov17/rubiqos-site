@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.24 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.25 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.25: demo block recomposed — h2 + lead, then one full-width card (text left, email + button row right); was lead left + form card right (founder: «композиция прям кривая»);
    v6.24: one accent-blue word per heading (.hl): Physical AI · opportunity · exists · costs · resorts · RubiqOS · resorts · offer · work · demo (founder 2026-11-01);
    v6.23: text brand «RubiqOS» again in the header bar, the footer and the site nav (founder: «верни лого как был — просто текст»); logo.png, favicon, touch icon removed;
    v6.22: Solution = six categories («Solutions for resorts.», lead «One platform. Shared fleets. Every operator.») in a 3x2 grid between thin lines: founder's PNG icon
@@ -172,18 +173,18 @@ body.site.home .faq summary::after { content: "+"; color: var(--accent); font-si
 body.site.home .faq details[open] summary::after { content: "–"; }
 body.site.home .faq details p { font-size: 14.5px; color: var(--text); margin: 10px 0 0; max-width: 70ch; line-height: 1.5; }
 
-/* request a demo (v6.10: two columns — heading, lead and what-you-get list left; form card right) */
-body.site.home .demo { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: start; } /* v6.17: top-aligned (was center: the lead hung far below the heading) */
-body.site.home .demo .lead { color: var(--text); font-size: 16px; line-height: 1.55; margin: 0; max-width: 46ch; } /* v6.16: one paragraph, no list (founder: nothing about master plans here) */
-body.site.home form { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px; display: grid; gap: 12px; margin: 0; }
-body.site.home form h3 { font: 600 20px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
-body.site.home form p { margin: 0 0 4px; font-size: 14px; color: var(--muted); line-height: 1.5; }
-body.site.home input { width: 100%; box-sizing: border-box; font: 400 15px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; }
+/* request a demo (v6.25: h2 + lead like every section, then one full-width card — text left, email field + button in a row right, centred;
+   v6.10–6.24 was a 2-column grid with a lonely lead left and a tall form card right — founder: «композиция прям кривая») */
+body.site.home .demo { display: grid; grid-template-columns: 1fr 1fr; gap: 24px 48px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px 32px; margin: 0; }
+body.site.home .demo h3 { font: 600 20px var(--body); color: var(--navy); margin: 0 0 6px; letter-spacing: -0.01em; }
+body.site.home .demo .dtx p { margin: 0; font-size: 14.5px; color: var(--muted); line-height: 1.5; max-width: 42ch; }
+body.site.home .demo .row { display: flex; gap: 10px; }
+body.site.home input { flex: 1 1 auto; min-width: 0; box-sizing: border-box; font: 400 15px var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; outline: none; }
 body.site.home input:focus { border-color: var(--accent); }
-body.site.home form .btn.primary { border: 0; cursor: pointer; white-space: nowrap; padding: 12px 14px; font-size: 14.5px; }
-body.site.home form small { font-size: 13px; color: var(--muted); }
-body.site.home form small a { color: var(--navy); text-decoration: none; }
-body.site.home form small a:hover { color: var(--accent); }
+body.site.home .demo .btn.primary { flex: 0 0 auto; border: 0; cursor: pointer; white-space: nowrap; padding: 12px 18px; font-size: 14.5px; }
+body.site.home .demo small { display: block; margin-top: 10px; font-size: 13px; color: var(--muted); }
+body.site.home .demo small a { color: var(--navy); text-decoration: none; }
+body.site.home .demo small a:hover { color: var(--accent); }
 
 /* footer (v6.10: brand + tagline · company details · contact; v6.15: Company and Contact right-aligned at the right edge, Partner access a text link
    under the tagline, every line on a 22px pitch so the brand column (tagline · link · copyright) matches the three address lines) */
@@ -201,9 +202,9 @@ body.site.home footer a.access { display: inline-block; font-weight: 500; color:
 body.site.home footer a.access:hover { text-decoration: underline; }
 body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder — one footer block, the copyright line joins the brand column (bottom bar removed) */
 
-@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model { grid-template-columns: 1fr; gap: 24px; } body.site.home .model-pic { max-width: 400px; order: -1; } body.site.home .demo { grid-template-columns: 1fr; gap: 22px; } body.site.home form { max-width: 520px; } }
+@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model { grid-template-columns: 1fr; gap: 24px; } body.site.home .model-pic { max-width: 400px; order: -1; } body.site.home .demo { grid-template-columns: 1fr; gap: 18px; padding: 24px; } }
 @media (max-width: 720px) { body.site.home footer .cols { grid-template-columns: 1fr; gap: 22px; } body.site.home footer .cols > div:nth-child(n+2) { text-align: left; } body.site.home footer .links { justify-items: start; } }
-@media (max-width: 560px) { body.site.home .market .num { grid-template-columns: 1fr; gap: 4px; padding: 14px 0; } }
+@media (max-width: 560px) { body.site.home .market .num { grid-template-columns: 1fr; gap: 4px; padding: 14px 0; } body.site.home .demo .row { flex-direction: column; } }
 @media (max-width: 1080px) { body.site.home .domains { grid-template-columns: 1fr 1fr; } body.site.home .dom { padding-right: 20px; } } /* v6.22: 2 columns (3 only on real desktops, so the list lines stay single) */
 @media (max-width: 600px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .dom { grid-template-columns: 80px 1fr; gap: 16px; padding: 22px 0 24px; } body.site.home .dom .di { width: 80px; height: 80px; } } /* v6.22: 1 column */
 @media (max-width: 720px) {
@@ -217,7 +218,6 @@ body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder �
   body.site.home .market img { max-width: 260px; justify-self: center; margin-top: 0; }
   body.site.home .donut { flex-wrap: wrap; gap: 20px; }
   body.site.home .donut .pie { width: 220px; flex-basis: 220px; }
-  body.site.home form { flex-direction: column; }
 }
 /* v6.18: reveal-on-scroll — a pinch of motion. .rv is added by the script below (no JS → nothing hidden); .in = in view. */
 body.site.home .rv { opacity: 0; transform: translateY(14px); transition: opacity .6s cubic-bezier(.2, .6, .2, 1), transform .6s cubic-bezier(.2, .6, .2, 1); transition-delay: var(--rd, 0s); }
@@ -340,18 +340,17 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
 
   <section id="demo">
     <h2>Request a <span class="hl">demo</span>.</h2>
-    <div class="demo">
-      <div>
-        <p class="lead">If RubiqOS has caught your interest, we have something to show you: the platform at work and the robots it runs.</p>
-      </div>
-      <form id="demoForm" novalidate>
+    <p class="lead">If RubiqOS has caught your interest, we have something to show you: the platform at work and the robots it runs.</p>
+    <form id="demoForm" class="demo" novalidate>
+      <div class="dtx">
         <h3>See it live</h3>
         <p>Leave your email and we will set up a walk-through of the platform.</p>
-        <input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required>
-        <button class="btn primary" type="submit">Request a demo</button>
+      </div>
+      <div class="dfm">
+        <div class="row"><input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required><button class="btn primary" type="submit">Request a demo</button></div>
         <small>Or write to <a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a></small>
-      </form>
-    </div>
+      </div>
+    </form>
   </section>
 
   <footer>
