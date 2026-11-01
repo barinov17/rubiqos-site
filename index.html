@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.30 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.31 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.31: demo form posts to hello@rubiqos.com via FormSubmit AJAX (honeypot _honey, mailto fallback, status line); section h2 clamp(32px, 3vw, 42px) (was 28/2.6vw/36) — founder 2026-11-01 «заголовки кроме hero чуть увеличить»; hero h1 unchanged;
    v6.30: Solution icons replaced with the founder's neutral-v6 set (01–06), same equal-area normalisation as v6.26/v6.28; markup/CSS unchanged;
    v6.29: 05 «Equipment inspection» (no «rounds»), 06 «Fire & smoke detection» and «Emergency equipment» (no «support» / «delivery») — founder 2026-11-01;
    v6.28: Solution icons replaced with the founder's warm-v5 set (01–06), same equal-area normalisation as v6.26; Food & Beverage bullets without «Selected»; markup/CSS unchanged;
@@ -79,7 +80,7 @@ body.site.home .btn.primary { font-size: 14.5px; padding: 12px 22px; border-radi
 
 /* sections */
 body.site.home section { padding: 72px 0; border-top: 1px solid var(--line); }
-body.site.home section > h2 { font-family: var(--head); font-weight: 700; font-size: clamp(28px, 2.6vw, 36px); line-height: 1.08; color: var(--navy); margin: 0 0 14px; max-width: 26ch; letter-spacing: -0.03em; }
+body.site.home section > h2 { font-family: var(--head); font-weight: 700; font-size: clamp(32px, 3vw, 42px); line-height: 1.08; color: var(--navy); margin: 0 0 14px; max-width: 26ch; letter-spacing: -0.03em; }
 body.site.home section > .lead { font-size: 16px; color: var(--text); max-width: 60ch; margin: 0 0 36px; line-height: 1.5; }
 body.site.home #market { border-top: 0; } /* v6.11: no divider line between the hero and the first section */
 
@@ -233,6 +234,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   body.site.home .rv { opacity: 1; transform: none; transition: none; }
   body.site.home .hero .copy > h1, body.site.home .hero .copy > p { animation: none; }
 }
+body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--muted); } /* v6.31: form status line */
 </style>
 </head>
 <body class="site home">
@@ -353,6 +355,8 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
       </div>
       <div class="dfm">
         <div class="row"><input id="f-email" name="email" type="email" autocomplete="email" placeholder="Your email" aria-label="Your email" required><button class="btn primary" type="submit">Request a demo</button></div>
+        <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="display:none">
+        <p class="msg" id="f-msg" hidden></p>
       </div>
     </form>
   </section>
@@ -366,12 +370,21 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </footer>
 </div>
 <script>
-// Static site (GitHub Pages): the form opens the visitor's mail client with the request prefilled. Swap for a form backend when one exists.
+// v6.31: requests go to hello@rubiqos.com through FormSubmit (formsubmit.co — no account; the first request sends an activation e-mail to hello@rubiqos.com, click Activate once).
+// Fallback: if the request fails (offline, blocked, not yet activated), the visitor's mail client opens with the request prefilled, as before v6.31.
 document.getElementById('demoForm').addEventListener('submit', function (e) {
   e.preventDefault();
-  var el = e.target.elements.email, email = (el.value || '').trim();
+  var f = e.target, el = f.elements.email, email = (el.value || '').trim(), msg = document.getElementById('f-msg'), btn = f.querySelector('button');
   if (!email || email.indexOf('@') < 1) { el.focus(); return; }
-  location.href = 'mailto:hello@rubiqos.com?subject=' + encodeURIComponent('Demo request') + '&body=' + encodeURIComponent('Please contact me about a RubiqOS demo.\nEmail: ' + email + '\n');
+  if (f.elements._honey && f.elements._honey.value) return;
+  var mailto = 'mailto:hello@rubiqos.com?subject=' + encodeURIComponent('Demo request') + '&body=' + encodeURIComponent('Please contact me about a RubiqOS demo.\nEmail: ' + email + '\n');
+  btn.disabled = true; msg.hidden = false; msg.textContent = 'Sending…';
+  fetch('https://formsubmit.co/ajax/hello@rubiqos.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ email: email, _replyto: email, _subject: 'Demo request — rubiqos.com', _template: 'table', _captcha: 'false', page: location.href }) })
+  .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(function (d) { if (d && String(d.success) === 'false') throw new Error(d.message || 'rejected'); msg.textContent = 'Thank you. We will write to ' + email + ' shortly.'; f.reset(); })
+  .catch(function () { msg.textContent = 'Could not send from the page — opening your mail client instead.'; location.href = mailto; })
+  .then(function () { btn.disabled = false; });
 });
 // v6.18: reveal-on-scroll. Single targets and the children of group containers get .rv (hidden, 14px low) and .in once 12% of them is in view;
 // children of a group are staggered 70ms each (max 350ms). One pass per element. Skipped when the browser has no IntersectionObserver or asks for reduced motion.
