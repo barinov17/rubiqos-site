@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.31 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.32 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.32: Solutions lists get blue dot bullets (li::before, 5 px, var(--accent)); dividers removed in Market (.num border-top) and Solutions (.domains border-top, .dom border-bottom); footer labels Contact/Company in var(--accent) — founder 2026-11-01;
    v6.31: demo form posts to hello@rubiqos.com via FormSubmit AJAX (honeypot _honey, mailto fallback, status line); section h2 clamp(32px, 3vw, 42px) (was 28/2.6vw/36) — founder 2026-11-01 «заголовки кроме hero чуть увеличить»; hero h1 unchanged;
    v6.30: Solution icons replaced with the founder's neutral-v6 set (01–06), same equal-area normalisation as v6.26/v6.28; markup/CSS unchanged;
    v6.29: 05 «Equipment inspection» (no «rounds»), 06 «Fire & smoke detection» and «Emergency equipment» (no «support» / «delivery») — founder 2026-11-01;
@@ -95,8 +96,8 @@ body.site.home .card p { font-size: 14.5px; color: var(--text); margin: 0; line-
 body.site.home #market > .lead { margin-bottom: 40px; } /* v6.13: founder — bigger gap under the lead (v6.11: 28px) */
 body.site.home .market .nums { padding-top: 22px; } /* v6.13: rows lowered to the visible top of the globe (image content starts 27px below its box) */
 body.site.home .market { display: grid; grid-template-columns: 1fr 340px; gap: 24px 56px; align-items: start; }
-body.site.home .market .num { display: grid; grid-template-columns: 148px 1fr; gap: 0 24px; align-items: center; margin: 0; padding: 18px 0; border-top: 1px solid var(--line); }
-body.site.home .market .num:first-child { border-top: 0; padding-top: 0; }
+body.site.home .market .num { display: grid; grid-template-columns: 148px 1fr; gap: 0 24px; align-items: center; margin: 0; padding: 18px 0; } /* v6.32: no divider */
+body.site.home .market .num:first-child { padding-top: 0; }
 body.site.home .market .num:last-child { padding-bottom: 0; }
 body.site.home .market .num .v { font-size: clamp(38px, 3.1vw, 44px); letter-spacing: -0.02em; font-variant-numeric: proportional-nums lining-nums; margin: 0; }
 body.site.home .market .k { font: 400 15px/1.5 var(--body); color: var(--text); max-width: 44ch; }
@@ -126,13 +127,14 @@ body.site.home .num .v { font: 700 clamp(36px, 3.2vw, 44px)/1 var(--head); color
 body.site.home .num .k { font: 500 15px var(--body); color: var(--navy); }
 /* solution (v6.3; rebuilt v6.19/v6.20; v6.22 = six categories): 3 x 2 grid between thin lines — founder's PNG icon left (96 px),
    blue number + name + plain one-line bullet list right. No cards, frames or shadows. 2 columns ≤ 1080px, 1 column ≤ 600px. */
-body.site.home .domains { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
-body.site.home .dom { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: start; padding: 30px 28px 32px 0; border-bottom: 1px solid var(--line); }
+body.site.home .domains { display: grid; grid-template-columns: repeat(3, 1fr); } /* v6.32: no divider */
+body.site.home .dom { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: start; padding: 30px 28px 32px 0; } /* v6.32: no divider */
 body.site.home .dom .di { width: 96px; height: 96px; display: block; margin-top: 2px; }
 body.site.home .dom .k { display: block; margin-bottom: 8px; }
 body.site.home .dom h3 { font: 600 18px/1.25 var(--body); color: var(--navy); margin: 0 0 10px; letter-spacing: -0.01em; }
 body.site.home .dom ul { list-style: none; margin: 0; padding: 0; }
-body.site.home .dom li { font: 400 14px/1.45 var(--body); color: var(--text); padding: 3px 0; }
+body.site.home .dom li { font: 400 14px/1.45 var(--body); color: var(--text); padding: 3px 0 3px 14px; position: relative; }
+body.site.home .dom li::before { content: ''; position: absolute; left: 0; top: 10.5px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); } /* v6.32: blue bullet */
 
 /* how it works */
 /* how it works (v6.5): the founder's platform render in a white panel, three small cards under its three parts (app · core · resort) */
@@ -198,7 +200,7 @@ body.site.home footer .cols { display: grid; grid-template-columns: 1fr auto aut
 body.site.home footer .cols > div:nth-child(n+2) { text-align: right; }
 body.site.home footer .brand { display: block; font: 700 18px/22px var(--body); color: var(--accent); letter-spacing: -0.02em; margin-bottom: 10px; }
 body.site.home footer .tag { margin: 0; max-width: 32ch; }
-body.site.home footer .lbl { font: 600 12px/22px var(--body); color: var(--navy); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; }
+body.site.home footer .lbl { font: 600 12px/22px var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; } /* v6.32: blue, like the section labels */
 body.site.home footer address { font-style: normal; color: var(--text); }
 body.site.home footer .links { display: grid; justify-items: end; }
 body.site.home footer a { color: var(--navy); text-decoration: none; }
