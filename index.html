@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.32 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.33 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.33: eyebrow label (.eb, 12.5 px uppercase accent, like the «01 · Design» labels) above every section h2: Market · Traction · Problem · Solution · Platform · Impact · Business model · Partners · Next step — founder 2026-11-01 «погоны к блокам над заголовками, одно-два слова»;
    v6.32: Solutions lists get blue dot bullets (li::before, 5 px, var(--accent)); dividers removed in Market (.num border-top) and Solutions (.domains border-top, .dom border-bottom); footer labels Contact/Company in var(--accent) — founder 2026-11-01;
    v6.31: demo form posts to hello@rubiqos.com via FormSubmit AJAX (honeypot _honey, mailto fallback, status line); section h2 clamp(32px, 3vw, 42px) (was 28/2.6vw/36) — founder 2026-11-01 «заголовки кроме hero чуть увеличить»; hero h1 unchanged;
    v6.30: Solution icons replaced with the founder's neutral-v6 set (01–06), same equal-area normalisation as v6.26/v6.28; markup/CSS unchanged;
@@ -81,6 +82,7 @@ body.site.home .btn.primary { font-size: 14.5px; padding: 12px 22px; border-radi
 
 /* sections */
 body.site.home section { padding: 72px 0; border-top: 1px solid var(--line); }
+body.site.home section > .eb { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 16px; } /* v6.33: eyebrow */
 body.site.home section > h2 { font-family: var(--head); font-weight: 700; font-size: clamp(32px, 3vw, 42px); line-height: 1.08; color: var(--navy); margin: 0 0 14px; max-width: 26ch; letter-spacing: -0.03em; }
 body.site.home section > .lead { font-size: 16px; color: var(--text); max-width: 60ch; margin: 0 0 36px; line-height: 1.5; }
 body.site.home #market { border-top: 0; } /* v6.11: no divider line between the hero and the first section */
@@ -251,6 +253,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
 
 <div class="wrap">
   <section id="market">
+    <p class="eb">Market</p>
     <h2>Market <span class="hl">opportunity</span>.</h2>
     <p class="lead">The resort market is growing as never before: more multi-operator mega-resorts, each with operating costs in the hundreds of millions a year, and all of them still run by hand.</p>
     <div class="market">
@@ -264,6 +267,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="today">
+    <p class="eb">Traction</p>
     <h2>What <span class="hl">exists</span> today.</h2>
     <p class="lead">Our solutions already run in real projects and real conditions: a resort in design, a fleet in operation and the robot platforms to run it.</p>
     <div class="cards">
@@ -274,6 +278,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="problem">
+    <p class="eb">Problem</p>
     <h2>High operating <span class="hl">costs</span>.</h2>
     <div class="pd">
       <div class="col problem">
@@ -294,6 +299,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
 
   <!-- icons: Lucide (lucide.dev), ISC licence -->
   <section id="solution">
+    <p class="eb">Solution</p>
     <h2>Solutions for <span class="hl">resorts</span>.</h2>
     <p class="lead">One platform. Shared fleets. Every operator.</p>
     <div class="domains">
@@ -307,6 +313,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="how">
+    <p class="eb">Platform</p>
     <h2>How <span class="hl">RubiqOS</span> works.</h2>
     <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
     <figure class="how-pic"><img src="how-platform.jpg" width="1522" height="551" alt="One guest and staff app on the left, the RubiqOS orchestration core in the centre, a robot and a staff member at work on the resort on the right" loading="lazy"></figure>
@@ -318,6 +325,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="outcome">
+    <p class="eb">Impact</p>
     <h2>Outcome for <span class="hl">resorts</span>.</h2>
     <div class="cards">
       <div class="card"><div class="v">−39%</div><h3>Payroll</h3><p>Physical AI: robots take over the physical work they already do well.</p></div>
@@ -327,6 +335,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="model">
+    <p class="eb">Business model</p>
     <h2>What we <span class="hl">offer</span>.</h2>
     <div class="model">
       <div class="model-list">
@@ -339,6 +348,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="for">
+    <p class="eb">Partners</p>
     <h2>Who we <span class="hl">work</span> with.</h2>
     <div class="for">
       <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3></div><p>Resort destinations with a design phase ahead: we specify physical AI into the master plan while spatial decisions are still free. For existing resorts we provide retrofit solutions that fit the built property.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
@@ -347,6 +357,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="demo">
+    <p class="eb">Next step</p>
     <h2>Request a <span class="hl">demo</span>.</h2>
     <p class="lead">If RubiqOS has caught your interest, we have something to show you: the platform at work and the robots it runs.</p>
     <form id="demoForm" class="demo" novalidate>
@@ -393,7 +404,7 @@ document.getElementById('demoForm').addEventListener('submit', function (e) {
 (function () {
   if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var els = [];
-  document.querySelectorAll('section > h2, section > .lead, .how-pic, .market > img, .model-pic, .pd > *, .demo > *').forEach(function (el) { el.classList.add('rv'); els.push(el); });
+  document.querySelectorAll('section > .eb, section > h2, section > .lead, .how-pic, .market > img, .model-pic, .pd > *, .demo > *').forEach(function (el) { el.classList.add('rv'); els.push(el); });
   document.querySelectorAll('.cards, .domains, .how, .for, .market .nums, .model-list, footer .cols').forEach(function (g) {
     Array.prototype.forEach.call(g.children, function (el, i) { el.classList.add('rv'); el.style.setProperty('--rd', Math.min(i, 5) * 70 + 'ms'); els.push(el); });
   });
