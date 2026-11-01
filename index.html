@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RubiqOS · The physical AI platform for resort operations</title>
 <meta name="description" content="RubiqOS runs robots and staff on one system across every operator on a resort. Lower operating costs, the same guest experience.">
-<link rel="icon" href="data:,">
-<link rel="stylesheet" href="/site.css?v=20261031e">
+<link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/site.css?v=20261031f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.20 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.21 2026-10-31: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.21: founder's logo (logo.png: blue # mark + RubiqOS wordmark, transparent) in the header bar and the footer instead of the text wordmark; favicon from the mark;
    v6.20: Solution — no cards (founder: «перегружено, как таблица Excel»): four rows between thin lines, heading + sub line in a 260px left column,
           six chips (icon + name, pill, white) on the right; the one-line description is the chip's title (tooltip). One column ≤ 720px;
    v6.19: Solution — four full-width bands × six items instead of six cards × three (founder: «перегрузили… шесть пунктов горизонтально на всю ширину»):
@@ -57,7 +58,8 @@ body.site.home { --head: "Inter Tight", "DM Sans", system-ui, sans-serif; }
    headline in Inter Tight 800 as on the render — that font is loaded only on this page, site.css is untouched */
 body.site.home .hero { position: relative; padding: 0; min-height: 0; height: min(47vw, 88vh); display: flex; flex-direction: column; color: var(--navy); background: #F4F6FA url(hero.jpg) center top / 100% auto no-repeat; }
 body.site.home .bar { height: 64px; display: flex; align-items: center; justify-content: space-between; }
-body.site.home .bar .brand { font: 700 19px var(--body); color: var(--accent); text-decoration: none; letter-spacing: -0.02em; }
+body.site.home .bar .brand { display: block; line-height: 0; } /* v6.21: logo image */
+body.site.home .bar .brand img { height: 30px; width: auto; display: block; }
 body.site.home .bar a.req { font: 600 13.5px var(--body); color: #fff; background: var(--accent); text-decoration: none; border-radius: 9px; padding: 9px 16px; }
 body.site.home .bar a.req:hover { background: #1B47C9; }
 body.site.home .hero > .wrap { width: 100%; }
@@ -188,7 +190,7 @@ body.site.home form small a:hover { color: var(--accent); }
 body.site.home footer { border-top: 1px solid var(--line); padding: 36px 0 40px; font-size: 14px; line-height: 22px; color: var(--muted); }
 body.site.home footer .cols { display: grid; grid-template-columns: 1fr auto auto; gap: 24px 64px; align-items: start; }
 body.site.home footer .cols > div:nth-child(n+2) { text-align: right; }
-body.site.home footer .brand { display: block; font: 700 18px/22px var(--body); color: var(--accent); letter-spacing: -0.02em; margin-bottom: 10px; }
+body.site.home footer .brand { display: block; height: 26px; width: auto; margin-bottom: 12px; } /* v6.21: logo image */
 body.site.home footer .tag { margin: 0; max-width: 32ch; }
 body.site.home footer .lbl { font: 600 12px/22px var(--body); color: var(--navy); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; }
 body.site.home footer address { font-style: normal; color: var(--text); }
@@ -227,11 +229,12 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   body.site.home .hero .copy > h1, body.site.home .hero .copy > p { animation: none; }
 }
 </style>
+<link rel="icon" type="image/png" href="/favicon.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 </head>
 <body class="site home">
 
 <header class="hero">
-  <div class="wrap bar"><a class="brand" href="/">RubiqOS</a><a class="req" href="#demo">Request a demo</a></div>
+  <div class="wrap bar"><a class="brand" href="/"><img src="logo.png" alt="RubiqOS" width="345" height="96"></a><a class="req" href="#demo">Request a demo</a></div>
   <div class="wrap copy">
     <h1>Physical AI for<br>resort operations.</h1>
     <p>An AI operating platform for resorts, integrated with physical AI.<br class="d">Automation for hospitality without losing the human touch.</p>
@@ -387,7 +390,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
 
   <footer>
     <div class="cols">
-      <div><span class="brand">RubiqOS</span><p class="tag">Physical AI for resort operations.</p><a class="access" href="/access/">Partner access</a><p class="copy">© 2026 RUBIQ development, LLC. All rights reserved.</p></div>
+      <div><img class="brand" src="logo.png" alt="RubiqOS" width="345" height="96"><p class="tag">Physical AI for resort operations.</p><a class="access" href="/access/">Partner access</a><p class="copy">© 2026 RUBIQ development, LLC. All rights reserved.</p></div>
       <div><p class="lbl">Contact</p><div class="links"><a href="mailto:hello@rubiqos.com">hello@rubiqos.com</a><a href="https://rubiqos.com">rubiqos.com</a></div></div>
       <div><p class="lbl">Company</p><address>RUBIQ development, LLC<br>131 Continental Dr, Suite 305<br>Newark, DE 19713</address></div>
     </div>

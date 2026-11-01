@@ -14,7 +14,8 @@ body.site a { color: var(--accent); }
 /* --- site nav (also injected into the market matrix and the demo) */
 .sitenav { position: sticky; top: 0; z-index: 50; background: rgba(243, 245, 248, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .sitenav .in { padding: 0 16px; height: 48px; display: flex; align-items: center; gap: 28px; }   /* logo, then the tabs right next to it (founder 2026-10-18) */
-.sitenav .brand { font: 700 18px "DM Sans", "Inter", system-ui, sans-serif; color: var(--navy); text-decoration: none; letter-spacing: -0.02em; white-space: nowrap; justify-self: start; }
+.sitenav .brand { display: block; line-height: 0; white-space: nowrap; justify-self: start; } /* 2026-10-31: logo image (home/logo.png) instead of the text wordmark */
+.sitenav .brand img { height: 24px; width: auto; display: block; }
 .sitenav nav { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
 .sitenav nav::-webkit-scrollbar { display: none; }
 .sitenav nav a { font: 500 13px "DM Sans", "Inter", system-ui, sans-serif; color: var(--navy); text-decoration: none; padding: 6px 12px; border-radius: 8px; white-space: nowrap; }
