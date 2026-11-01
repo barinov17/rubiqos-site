@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.23 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.24 2026-11-01: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.24: one accent-blue word per heading (.hl): Physical AI · opportunity · exists · costs · resorts · RubiqOS · resorts · offer · work · demo (founder 2026-11-01);
    v6.23: text brand «RubiqOS» again in the header bar, the footer and the site nav (founder: «верни лого как был — просто текст»); logo.png, favicon, touch icon removed;
    v6.22: Solution = six categories («Solutions for resorts.», lead «One platform. Shared fleets. Every operator.») in a 3x2 grid between thin lines: founder's PNG icon
           (home/icons/0N-*.png, 192 px, shown 96 px) left, blue number + name + plain bullet list right; no cards. Logo updated (new # mark, 461x96).
@@ -132,7 +133,7 @@ body.site.home .how-pic { margin: 0 0 40px; } /* v6.13: founder — cards furthe
 body.site.home .how-pic img { display: block; width: 100%; height: auto; mix-blend-mode: darken; } /* the render's light background merges into the page */
 body.site.home .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
 body.site.home .how > div { padding: 0; } /* v6.10: no card frame — plain columns under the frameless render */
-body.site.home #how h2 .hl { color: var(--accent); }
+body.site.home .hero h1 .hl, body.site.home section > h2 .hl { color: var(--accent); } /* v6.24: the blue word in every heading (was #how only) */
 body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
 body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(--accent); }
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
@@ -235,14 +236,14 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
 <header class="hero">
   <div class="wrap bar"><a class="brand" href="/">RubiqOS</a><a class="req" href="#demo">Request a demo</a></div>
   <div class="wrap copy">
-    <h1>Physical AI for<br>resort operations.</h1>
+    <h1><span class="hl">Physical AI</span> for<br>resort operations.</h1>
     <p>An AI operating platform for resorts, integrated with physical AI.<br class="d">Automation for hospitality without losing the human touch.</p>
   </div>
 </header>
 
 <div class="wrap">
   <section id="market">
-    <h2>Market opportunity.</h2>
+    <h2>Market <span class="hl">opportunity</span>.</h2>
     <p class="lead">The resort market is growing as never before: more multi-operator mega-resorts, each with operating costs in the hundreds of millions a year, and all of them still run by hand.</p>
     <div class="market">
       <div class="nums">
@@ -255,7 +256,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="today">
-    <h2>What exists today.</h2>
+    <h2>What <span class="hl">exists</span> today.</h2>
     <p class="lead">Our solutions already run in real projects and real conditions: a resort in design, a fleet in operation and the robot platforms to run it.</p>
     <div class="cards">
       <div class="card"><div class="v">$1B <small>resort</small></div><h3>Anchor client</h3><p>A resort with a $1B budget and over $150M of operating costs a year. RubiqOS saves it up to $35M a year.</p></div>
@@ -265,7 +266,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="problem">
-    <h2>High operating costs.</h2>
+    <h2>High operating <span class="hl">costs</span>.</h2>
     <div class="pd">
       <div class="col problem">
         <div class="num big"><div class="v">~63%</div><div class="k">of a resort’s revenue goes to operating costs.</div></div>
@@ -285,7 +286,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
 
   <!-- icons: Lucide (lucide.dev), ISC licence -->
   <section id="solution">
-    <h2>Solutions for resorts.</h2>
+    <h2>Solutions for <span class="hl">resorts</span>.</h2>
     <p class="lead">One platform. Shared fleets. Every operator.</p>
     <div class="domains">
       <div class="dom"><img class="di" src="icons/01-mobility.png" alt="" width="192" height="192" loading="lazy"><div><span class="k">01</span><h3>Mobility</h3><ul><li>Guest &amp; staff transfers</li><li>Baggage transport</li><li>Scheduled shuttle routes</li><li>Water transfers</li></ul></div></div>
@@ -309,7 +310,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="outcome">
-    <h2>Outcome for resorts.</h2>
+    <h2>Outcome for <span class="hl">resorts</span>.</h2>
     <div class="cards">
       <div class="card"><div class="v">−39%</div><h3>Payroll</h3><p>Physical AI: robots take over the physical work they already do well.</p></div>
       <div class="card"><div class="v">−21%</div><h3>Time per task</h3><p>Orchestration: one system plans and dispatches staff and robots.</p></div>
@@ -318,7 +319,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="model">
-    <h2>What we offer.</h2>
+    <h2>What we <span class="hl">offer</span>.</h2>
     <div class="model">
       <div class="model-list">
         <div><div class="k">01 · Design</div><h3>Physical AI in the master plan</h3><p>We design the physical-AI solutions for the destination and build them into the master plan while spatial decisions are still free: docks, charging, service corridors, edge compute.</p></div>
@@ -330,7 +331,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="for">
-    <h2>Who we work with.</h2>
+    <h2>Who we <span class="hl">work</span> with.</h2>
     <div class="for">
       <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3></div><p>Resort destinations with a design phase ahead: we specify physical AI into the master plan while spatial decisions are still free. For existing resorts we provide retrofit solutions that fit the built property.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
       <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3></div><p>Robotics platforms with real, practical use in resorts: deliveries, cleaning, grounds, patrols, transfers. If your robots do that work reliably, we can consider integrating them into our fleet and dispatching them by the job.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us</a></div>
@@ -338,7 +339,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="demo">
-    <h2>Request a demo.</h2>
+    <h2>Request a <span class="hl">demo</span>.</h2>
     <div class="demo">
       <div>
         <p class="lead">If RubiqOS has caught your interest, we have something to show you: the platform at work and the robots it runs.</p>
