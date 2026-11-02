@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.43 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.44 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.44: the catalogue button (v6.42) is now an arrow text link in the Partners-card style (.for a), left-aligned under the domains — founder 2026-11-02 «лучше просто как текст со стрелочкой, как Request the deck, к левому краю»; Partners section h2 «Who we work with.» → «For Partners.» (eyebrow «Partners» → «Who we work with») — founder «Заменить заголовок на For Partners»; the three card texts cut by ~25 % (210→150, 225→166, 179→131 chars) — founder «сократить тексты в карточках процентов на 25»;
    v6.43: Solutions 05 «Technical Inspection» (drones, meters, roofs) → «Marina Operations»: «Robots deliver supplies to berths, support refuelling and help keep the marina clean.», founder's icon 07-marina-refueling-neutral-v7 → icons/05-marina-operations.png (192 px, content 152 px like the rest); founder 2026-11-02 «техническую инспекцию заменить на Marina Operations»;
    v6.42: Solutions — a blue button under the six domains: «Request the full solutions catalogue» (mailto, subject «Full solutions catalogue»), centred, 28 px above; founder 2026-11-02 «в конце нужна кнопка запросить полный каталог решений»; Who we work with — third card «For investors» (Lucide trending-up, link «Request the deck» → mailto subject «Investor enquiry»), founder «тут еще надо for investors»;
    v6.41: footer text one grey — tagline, copyright, address and the contact links all var(--muted) (address was var(--text), links var(--navy)); brand, labels and Partner access stay blue — founder 2026-11-02 «текст в футере одинаково серый надо»;
@@ -145,7 +146,7 @@ body.site.home .dom .di { width: 112px; height: 112px; display: block; margin: 0
 body.site.home .dom .k { display: block; margin-bottom: 6px; }
 body.site.home .dom p { font: 400 15px/1.5 var(--body); color: var(--text); margin: 0; } /* v6.35 offer texts ≤ 84 chars; v6.36: 3–4 lines beside the icon */
 body.site.home .dom h3 { font: 600 18px/1.25 var(--body); color: var(--navy); margin: 0 0 6px; letter-spacing: -0.01em; }
-body.site.home #solution .more { margin: 28px 0 0; text-align: center; } /* v6.42: catalogue button under the domains */
+body.site.home #solution .more { margin: 24px 0 0; } /* v6.42: catalogue button under the domains; v6.44: arrow text link, left */
 
 /* how it works */
 /* how it works (v6.5): the founder's platform render in a white panel, three small cards under its three parts (app · core · resort) */
@@ -181,10 +182,10 @@ body.site.home .for .hd { display: flex; align-items: center; gap: 12px; margin:
 body.site.home .for h3 { font: 700 22px/1.15 var(--head); color: var(--navy); margin: 0; letter-spacing: -0.025em; }
 body.site.home .for p { font-size: 14.5px; color: var(--text); margin: 0 0 16px; line-height: 1.5; }
 body.site.home .for .ic { width: 28px; height: 28px; flex: 0 0 28px; color: var(--accent); }
-body.site.home .for a { display: inline-flex; align-items: center; gap: 8px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
-body.site.home .for a .arr { width: 16px; height: 16px; flex: 0 0 16px; transition: transform .15s; }
-body.site.home .for a:hover { text-decoration: underline; }
-body.site.home .for a:hover .arr { transform: translateX(3px); }
+body.site.home .for a, body.site.home #solution .more a { display: inline-flex; align-items: center; gap: 8px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
+body.site.home .for a .arr, body.site.home #solution .more a .arr { width: 16px; height: 16px; flex: 0 0 16px; transition: transform .15s; }
+body.site.home .for a:hover, body.site.home #solution .more a:hover { text-decoration: underline; }
+body.site.home .for a:hover .arr, body.site.home #solution .more a:hover .arr { transform: translateX(3px); }
 
 /* faq */
 body.site.home .faq { max-width: 760px; margin: 0; border-bottom: 1px solid var(--line); }
@@ -322,7 +323,7 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
       <div class="dom"><img class="di" src="icons/05-marina-operations.png" alt="" width="192" height="192" loading="lazy"><div><span class="k">05</span><h3>Marina Operations</h3><p>Robots deliver supplies to berths, support refuelling and help keep the marina clean.</p></div></div>
       <div class="dom"><img class="di" src="icons/06-safety-security.png" alt="" width="192" height="192" loading="lazy"><div><span class="k">06</span><h3>Safety &amp; Security</h3><p>Patrol robots and drones watch the perimeter and detect fire, smoke and water risks.</p></div></div>
     </div>
-    <p class="more"><a class="btn primary" href="mailto:hello@rubiqos.com?subject=Full%20solutions%20catalogue&amp;body=Please%20send%20me%20the%20full%20RubiqOS%20solutions%20catalogue.">Request the full solutions catalogue</a></p>
+    <p class="more"><a href="mailto:hello@rubiqos.com?subject=Full%20solutions%20catalogue&amp;body=Please%20send%20me%20the%20full%20RubiqOS%20solutions%20catalogue."><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request the full solutions catalogue</a></p>
   </section>
 
   <section id="how">
@@ -360,12 +361,12 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
   </section>
 
   <section id="for">
-    <p class="eb">Partners</p>
-    <h2>Who we <span class="hl">work</span> with.</h2>
+    <p class="eb">Who we work with</p>
+    <h2>For <span class="hl">Partners</span>.</h2>
     <div class="for">
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3></div><p>Resort destinations with a design phase ahead: we specify physical AI into the master plan while spatial decisions are still free. For existing resorts we provide retrofit solutions that fit the built property.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3></div><p>Robotics platforms with real, practical use in resorts: deliveries, cleaning, grounds, patrols, transfers. If your robots do that work reliably, we can consider integrating them into our fleet and dispatching them by the job.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us</a></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg><h3>For investors</h3></div><p>Investors in resort infrastructure and physical AI. We are raising to build and operate the first resort fleets. The deck covers the market, the business model and the milestones.</p><a href="mailto:hello@rubiqos.com?subject=Investor%20enquiry"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request the deck</a></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg><h3>For resort developers</h3></div><p>Resorts in the design phase: we build physical AI into the master plan while spatial decisions are still open. Existing resorts get retrofit solutions.</p><a href="#demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request a demo</a></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>For robot makers</h3></div><p>Robots with practical use in resorts: deliveries, cleaning, grounds, patrols, transfers. If they work reliably, we add them to our fleet and dispatch them by the job.</p><a href="mailto:hello@rubiqos.com?subject=Partnership"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Write to us</a></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg><h3>For investors</h3></div><p>Investors in resort infrastructure and physical AI. We are raising to launch the first fleets. The deck: market, model, milestones.</p><a href="mailto:hello@rubiqos.com?subject=Investor%20enquiry"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request the deck</a></div>
     </div>
   </section>
 
