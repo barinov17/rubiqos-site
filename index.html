@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.36 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.37 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.37: Business model = three sequential milestones (01 Design → 02 Operational plan → 03 Execution) on one thin track: a 52 px white node with a Lucide line icon (drafting compass · clipboard list · bot), the number label, name and text under it; the isometric picture offer.jpg is gone from the block (file kept in the repo); ≤ 900: vertical track on the left, node + text in a row — founder 2026-11-02 «убери картинку. сделай дизайн как последовательные майлстоуны. планировние - дизайн - исполнение. спокойный минималистичный дизайн. мб иконки»;
    v6.36: Solutions cells = icon 112 px on the left, number + name + offer on the right, text centred on the icon height (gap 24 px, padding 26/30) — founder 2026-11-02 «мне не нравится компоновка»: the 88 px icon in the corner of a 331 px cell left an empty band and split icon and text into two groups; 2 cols ≤ 1080 (icon 104), 1 col ≤ 600 (icon 80, gap 18);
    v6.35: Solutions without sub-lists — six categories, each with a two-line offer (what the robots do), icon 88 px above the text, cards of equal height in a 3 × 2 grid (2 at ≤1080, 1 at ≤600); the full category/sub-category list moved to pitch v10 slide 08b — founder 2026-11-02 «убрать подкатегории … 6 категорий и короткое описание, 2 строки … картинки и карточки сбалансированы»;
    v6.35: Traction card 2 «300 robots» — our engine runs 300 delivery robots across 2,000 locations in real city conditions (2,000 was the number of locations, not robots) — founder 2026-11-02;
@@ -155,11 +156,14 @@ body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body
 /* business model: three fee rows */
 /* what we offer (v6.7): picture left, three items right */
 /* v6.13: founder — no frames, text left, picture right fitted into a square (render background blends into the page) */
-body.site.home .model { display: grid; grid-template-columns: 1fr 400px; gap: 56px; align-items: center; }
-body.site.home .model-pic { margin: 0; width: 100%; aspect-ratio: 1 / 1; }
-body.site.home .model-pic img { display: block; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: darken; }
-body.site.home .model-list { display: grid; gap: 28px; }
-body.site.home .model-list > div { padding: 0; }
+/* v6.37: founder — no picture; three milestones in a row on one thin track, a white node with a line icon above each */
+body.site.home .model { display: block; }
+body.site.home .model-list { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 40px; }
+body.site.home .model-list > div { position: relative; padding: 76px 0 0; }
+body.site.home .model-list > div::before { content: ""; position: absolute; top: 26px; left: 64px; right: -28px; border-top: 1px solid var(--line); } /* track from the node to the next cell's node, 12 px of air at both ends */
+body.site.home .model-list > div:last-child::before { display: none; }
+body.site.home .model .ms { position: absolute; top: 0; left: 0; width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 1px solid var(--line); display: grid; place-items: center; color: var(--accent); }
+body.site.home .model .ms .ic { width: 24px; height: 24px; display: block; }
 body.site.home .model h3 { font: 600 18px var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
 body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
 
@@ -212,7 +216,7 @@ body.site.home footer a.access { display: inline-block; font-weight: 500; color:
 body.site.home footer a.access:hover { text-decoration: underline; }
 body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder — one footer block, the copyright line joins the brand column (bottom bar removed) */
 
-@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model { grid-template-columns: 1fr; gap: 24px; } body.site.home .model-pic { max-width: 400px; order: -1; } body.site.home .demo { grid-template-columns: 1fr; gap: 18px; padding: 24px; } }
+@media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model-list { grid-template-columns: 1fr; } body.site.home .model-list > div { padding: 0 0 32px 72px; min-height: 52px; } body.site.home .model-list > div:last-child { padding-bottom: 0; } body.site.home .model-list > div::before { top: 60px; bottom: 8px; left: 26px; right: auto; border-top: 0; border-left: 1px solid var(--line); } body.site.home .model-list > div:last-child::before { display: none; } body.site.home .demo { grid-template-columns: 1fr; gap: 18px; padding: 24px; } }
 @media (max-width: 720px) { body.site.home footer .cols { grid-template-columns: 1fr; gap: 22px; } body.site.home footer .cols > div:nth-child(n+2) { text-align: left; } body.site.home footer .links { justify-items: start; } }
 @media (max-width: 560px) { body.site.home .market .num { grid-template-columns: 1fr; gap: 4px; padding: 14px 0; } body.site.home .demo .row { flex-direction: column; } }
 @media (max-width: 1080px) { body.site.home .domains { grid-template-columns: 1fr 1fr; column-gap: 40px; } body.site.home .dom { grid-template-columns: 104px 1fr; } body.site.home .dom .di { width: 104px; height: 104px; } } /* v6.22: 2 columns (3 only on real desktops, so the list lines stay single) */
@@ -340,11 +344,10 @@ body.site.home .demo .msg { margin: 8px 0 0; font-size: 13.5px; color: var(--mut
     <h2>What we <span class="hl">offer</span>.</h2>
     <div class="model">
       <div class="model-list">
-        <div><div class="k">01 · Design</div><h3>Physical AI in the master plan</h3><p>We design the physical-AI solutions for the destination and build them into the master plan while spatial decisions are still free: docks, charging, service corridors, edge compute.</p></div>
-        <div><div class="k">02 · Operational plan</div><h3>An operational plan built around physical AI capabilities</h3><p>We analyse the resort’s current operational plan and optimise it around what physical AI can do: which work moves to robots, which stays with people, and the staffing and budget lines for each.</p></div>
-        <div><div class="k">03 · Execution</div><h3>Work done by our robot fleet</h3><p>We provide the robots on lease or by subscription, and they do specific work on the resort: deliveries, cleaning, mowing, patrols, transfers.</p></div>
+        <div><div class="ms"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12.99 6.74 1.93 3.44"/><path d="M19.136 12a10 10 0 0 1-14.271 0"/><path d="m21 21-2.16-3.84"/><path d="m3 21 8.02-14.26"/><circle cx="12" cy="5" r="2"/></svg></div><div class="k">01 · Design</div><h3>Physical AI in the master plan</h3><p>We design the physical-AI solutions for the destination and build them into the master plan while spatial decisions are still free: docks, charging, service corridors, edge compute.</p></div>
+        <div><div class="ms"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div><div class="k">02 · Operational plan</div><h3>An operational plan built around physical AI capabilities</h3><p>We analyse the resort’s current operational plan and optimise it around what physical AI can do: which work moves to robots, which stays with people, and the staffing and budget lines for each.</p></div>
+        <div><div class="ms"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div><div class="k">03 · Execution</div><h3>Work done by our robot fleet</h3><p>We provide the robots on lease or by subscription, and they do specific work on the resort: deliveries, cleaning, mowing, patrols, transfers.</p></div>
       </div>
-      <figure class="model-pic"><img src="offer.jpg" width="1000" height="1000" alt="Isometric model of a resort fragment: villas, palms, a pool, a marina with a yacht, a shuttle, delivery robots and staff on the service route" loading="lazy"></figure>
     </div>
   </section>
 
@@ -405,7 +408,7 @@ document.getElementById('demoForm').addEventListener('submit', function (e) {
 (function () {
   if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var els = [];
-  document.querySelectorAll('section > .eb, section > h2, section > .lead, .how-pic, .market > img, .model-pic, .pd > *, .demo > *').forEach(function (el) { el.classList.add('rv'); els.push(el); });
+  document.querySelectorAll('section > .eb, section > h2, section > .lead, .how-pic, .market > img, .pd > *, .demo > *').forEach(function (el) { el.classList.add('rv'); els.push(el); });
   document.querySelectorAll('.cards, .domains, .how, .for, .market .nums, .model-list, footer .cols').forEach(function (g) {
     Array.prototype.forEach.call(g.children, function (el, i) { el.classList.add('rv'); el.style.setProperty('--rd', Math.min(i, 5) * 70 + 'ms'); els.push(el); });
   });
