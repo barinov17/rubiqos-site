@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.40 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.41 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.41: footer text one grey — tagline, copyright, address and the contact links all var(--muted) (address was var(--text), links var(--navy)); brand, labels and Partner access stay blue — founder 2026-11-02 «текст в футере одинаково серый надо»;
    v6.40: Business model label «01 · Operational plan» → «01 · Planning» (founder 2026-11-02);
    v6.39: Business model texts cut to the point (founder 2026-11-02 «сократи тексты описания. сухо по делу»): 127 / 131 / 94 chars, 2–3 lines per cell at 1280;
    v6.38: copy — «façades» → «facades» (founder: «буква c странная»); the sentence «The same dispatch core will run resort fleets.» removed from the 300-robots card (founder: «убери»); Business model order = 01 Operational plan → 02 Design → 03 Execution (founder: «порядок: план, дизайн, экзекьюшн»); milestone h3s fit one line down to 1024 px — 01 shortened to «Operations built on physical AI» (was «An operational plan built around physical AI capabilities»); Solutions: the 1 px border-top on every .dom cell removed — no dividers inside the block (founder: «убери дивайдеры, которые находятся внутри блока Solution»);
@@ -211,9 +212,9 @@ body.site.home footer .cols > div:nth-child(n+2) { text-align: right; }
 body.site.home footer .brand { display: block; font: 700 18px/22px var(--body); color: var(--accent); letter-spacing: -0.02em; margin-bottom: 10px; }
 body.site.home footer .tag { margin: 0; max-width: 32ch; }
 body.site.home footer .lbl { font: 600 12px/22px var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin: 0 0 10px; } /* v6.32: blue, like the section labels */
-body.site.home footer address { font-style: normal; color: var(--text); }
+body.site.home footer address { font-style: normal; } /* v6.41: inherits the footer grey */
 body.site.home footer .links { display: grid; justify-items: end; }
-body.site.home footer a { color: var(--navy); text-decoration: none; }
+body.site.home footer a { color: var(--muted); text-decoration: none; } /* v6.41: same grey as the rest of the footer text */
 body.site.home footer a:hover { color: var(--accent); }
 body.site.home footer a.access { display: inline-block; font-weight: 500; color: var(--accent); } /* v6.15: founder — a blue link under the tagline, not a button */
 body.site.home footer a.access:hover { text-decoration: underline; }
