@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.35 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
+/* Landing page (home.html → /), v6.36 2026-11-02: hero (founder render 12), market opportunity (rows: number + two lines, globe 340 px),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.36: Solutions cells = icon 112 px on the left, number + name + offer on the right, text centred on the icon height (gap 24 px, padding 26/30) — founder 2026-11-02 «мне не нравится компоновка»: the 88 px icon in the corner of a 331 px cell left an empty band and split icon and text into two groups; 2 cols ≤ 1080 (icon 104), 1 col ≤ 600 (icon 80, gap 18);
    v6.35: Solutions without sub-lists — six categories, each with a two-line offer (what the robots do), icon 88 px above the text, cards of equal height in a 3 × 2 grid (2 at ≤1080, 1 at ≤600); the full category/sub-category list moved to pitch v10 slide 08b — founder 2026-11-02 «убрать подкатегории … 6 категорий и короткое описание, 2 строки … картинки и карточки сбалансированы»;
    v6.35: Traction card 2 «300 robots» — our engine runs 300 delivery robots across 2,000 locations in real city conditions (2,000 was the number of locations, not robots) — founder 2026-11-02;
    v6.34: dividers back as border-top on every row (Market .num incl. the first, Solutions .dom): a line between the heading and row 1 and between rows, none after the last row; .nums padding-top 22 → 3 px so the Market text keeps its height next to the globe — founder 2026-11-01 «верни дивайдеры … которые в конце не нужны»;
@@ -131,12 +132,12 @@ body.site.home .num .v { font: 700 clamp(36px, 3.2vw, 44px)/1 var(--head); color
 body.site.home .num .k { font: 500 15px var(--body); color: var(--navy); }
 /* solution (v6.3; rebuilt v6.19/v6.20; v6.22 = six categories): 3 x 2 grid between thin lines — founder's PNG icon left (96 px),
    blue number + name + plain one-line bullet list right. No cards, frames or shadows. 2 columns ≤ 1080px, 1 column ≤ 600px. */
-body.site.home .domains { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 48px; } /* v6.35: icon-on-top cards */
-body.site.home .dom { display: block; padding: 30px 0 40px; border-top: 1px solid var(--line); } /* v6.34: line above every cell = divider under the lead and between rows, none after the last row, at any column count; v6.35: block, icon above the text */
-body.site.home .dom .di { width: 88px; height: 88px; display: block; margin: 0 0 20px -6px; } /* v6.35: 88 px above the text, optical left edge (icon artwork has ~6 px of air) */
-body.site.home .dom .k { display: block; margin-bottom: 8px; }
-body.site.home .dom p { font: 400 15px/1.5 var(--body); color: var(--text); margin: 0; max-width: 38ch; } /* v6.35: two-line offer (texts ≤ 84 chars) */
-body.site.home .dom h3 { font: 600 18px/1.25 var(--body); color: var(--navy); margin: 0 0 8px; letter-spacing: -0.01em; }
+body.site.home .domains { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 40px; } /* v6.36: icon-left rows */
+body.site.home .dom { display: grid; grid-template-columns: 112px 1fr; column-gap: 24px; align-items: center; padding: 26px 0 30px; border-top: 1px solid var(--line); } /* v6.34: line above every cell = divider under the lead and between rows, none after the last row, at any column count; v6.36: icon left, text centred on it */
+body.site.home .dom .di { width: 112px; height: 112px; display: block; margin: 0; } /* v6.36 */
+body.site.home .dom .k { display: block; margin-bottom: 6px; }
+body.site.home .dom p { font: 400 15px/1.5 var(--body); color: var(--text); margin: 0; } /* v6.35 offer texts ≤ 84 chars; v6.36: 3–4 lines beside the icon */
+body.site.home .dom h3 { font: 600 18px/1.25 var(--body); color: var(--navy); margin: 0 0 6px; letter-spacing: -0.01em; }
 
 /* how it works */
 /* how it works (v6.5): the founder's platform render in a white panel, three small cards under its three parts (app · core · resort) */
@@ -214,8 +215,8 @@ body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder �
 @media (max-width: 900px) { body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model { grid-template-columns: 1fr; gap: 24px; } body.site.home .model-pic { max-width: 400px; order: -1; } body.site.home .demo { grid-template-columns: 1fr; gap: 18px; padding: 24px; } }
 @media (max-width: 720px) { body.site.home footer .cols { grid-template-columns: 1fr; gap: 22px; } body.site.home footer .cols > div:nth-child(n+2) { text-align: left; } body.site.home footer .links { justify-items: start; } }
 @media (max-width: 560px) { body.site.home .market .num { grid-template-columns: 1fr; gap: 4px; padding: 14px 0; } body.site.home .demo .row { flex-direction: column; } }
-@media (max-width: 1080px) { body.site.home .domains { grid-template-columns: 1fr 1fr; column-gap: 40px; } } /* v6.22: 2 columns (3 only on real desktops, so the list lines stay single) */
-@media (max-width: 600px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .dom { padding: 22px 0 28px; } body.site.home .dom .di { width: 72px; height: 72px; margin-bottom: 14px; } } /* v6.22: 1 column */
+@media (max-width: 1080px) { body.site.home .domains { grid-template-columns: 1fr 1fr; column-gap: 40px; } body.site.home .dom { grid-template-columns: 104px 1fr; } body.site.home .dom .di { width: 104px; height: 104px; } } /* v6.22: 2 columns (3 only on real desktops, so the list lines stay single) */
+@media (max-width: 600px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .dom { grid-template-columns: 80px 1fr; column-gap: 18px; padding: 20px 0 24px; } body.site.home .dom .di { width: 80px; height: 80px; } } /* v6.22: 1 column */
 @media (max-width: 720px) {
   body.site.home .hero p br.d { display: none; }
   body.site.home section { padding: 52px 0; }
