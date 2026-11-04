@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.52 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.53 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.53: founder — catalogue link «Request the full solutions catalogue» at the bottom right of the Solution block (#solution .more text-align: right).
    v6.52: founder — Partners cards as one row each: icon | heading + sub (new, from the first clause of the old text) | text | link at the right; .hd is display:contents; radius 16 → 12 px; <900px: icon + title row, text and link under the title.
    v6.51: founder — Traction (today) back before Platform (how); #model kicker "Business model" → "Services"; Partners cards (.for) one per row. Order: hero → problem → solution → today → how → outcome → model → for → footer.
    v6.50: founder — Traction (today) moved after Platform (how). Order: hero → problem → solution → how → today → outcome → model → for → footer.
@@ -145,7 +146,7 @@ body.site.home .dom .di { width: 112px; height: 112px; display: block; margin: 0
 body.site.home .dom .k { display: block; margin-bottom: 6px; }
 body.site.home .dom p { font: 400 15px/1.5 var(--body); color: var(--text); margin: 0; } /* v6.35 offer texts ≤ 84 chars; v6.36: 3–4 lines beside the icon */
 body.site.home .dom h3 { font: 600 18px/1.25 var(--body); color: var(--navy); margin: 0 0 6px; letter-spacing: -0.01em; }
-body.site.home #solution .more { margin: 24px 0 0; } /* v6.42: catalogue button under the domains; v6.44: arrow text link, left */
+body.site.home #solution .more { margin: 24px 0 0; text-align: right; } /* v6.42: catalogue button under the domains; v6.44: arrow text link, left; v6.53: bottom right of the block (founder) */
 
 /* how it works */
 /* how it works (v6.5): the founder's platform render in a white panel, three small cards under its three parts (app · core · resort) */
