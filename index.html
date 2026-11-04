@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.53 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.54 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.54: founder — Platform (how) and Impact (outcome) merged: #outcome removed; the three columns under the render carry the outcome numbers (.kpi: value + label) and read Shared fleet → Orchestration engine → One platform (founder's order). Order: hero → problem → solution → today → how → model → for.
    v6.53: founder — catalogue link «Request the full solutions catalogue» at the bottom right of the Solution block (#solution .more text-align: right).
    v6.52: founder — Partners cards as one row each: icon | heading + sub (new, from the first clause of the old text) | text | link at the right; .hd is display:contents; radius 16 → 12 px; <900px: icon + title row, text and link under the title.
    v6.51: founder — Traction (today) back before Platform (how); #model kicker "Business model" → "Services"; Partners cards (.for) one per row. Order: hero → problem → solution → today → how → outcome → model → for → footer.
@@ -159,6 +160,9 @@ body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin:
 body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(--accent); }
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
+body.site.home .how .kpi { display: flex; align-items: baseline; gap: 10px; margin-top: 16px; } /* v6.54: outcome number under each column (ex #outcome cards) */
+body.site.home .how .kpi .v { font: 700 clamp(32px, 2.8vw, 40px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
+body.site.home .how .kpi .l { font: 600 15px var(--body); color: var(--navy); letter-spacing: -0.01em; }
 body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
 
 /* business model: three fee rows */
@@ -303,19 +307,9 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
     <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
     <figure class="how-pic"><img src="how-platform.jpg" width="1522" height="551" alt="One guest and staff app on the left, the RubiqOS orchestration core in the centre, a robot and a staff member at work on the resort on the right" loading="lazy"></figure>
     <div class="how">
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg><h3>One platform</h3></div><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside.</p></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg><h3>Orchestration engine</h3></div><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line.</p></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>Shared fleet</h3></div><p>Leased through hardware partners across the six domains. One fleet serves every operator on the property.</p></div>
-    </div>
-  </section>
-
-  <section id="outcome">
-    <p class="eb">Impact</p>
-    <h2>Outcome for <span class="hl">resorts</span>.</h2>
-    <div class="cards">
-      <div class="card"><div class="v">−39%</div><h3>Payroll</h3><p>Physical AI: robots take over the physical work they already do well.</p></div>
-      <div class="card"><div class="v">−21%</div><h3>Time per task</h3><p>Orchestration: one system plans and dispatches staff and robots.</p></div>
-      <div class="card"><div class="v">+24%</div><h3>Spend per guest</h3><p>Guest interface: one seamless channel for every request and direct sales.</p></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>Shared fleet of physical AI</h3></div><p>Robots leased through hardware partners across the six domains take over the physical work they already do well. One fleet serves every operator on the property.</p><div class="kpi"><span class="v">−39%</span><span class="l">payroll</span></div></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg><h3>Orchestration engine</h3></div><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line. Distributing the work this way cuts the time each task takes.</p><div class="kpi"><span class="v">−21%</span><span class="l">time per task</span></div></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg><h3>One platform</h3></div><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside: one channel for every request and for direct sales.</p><div class="kpi"><span class="v">+24%</span><span class="l">spend per guest</span></div></div>
     </div>
   </section>
 
