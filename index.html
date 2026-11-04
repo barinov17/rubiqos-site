@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.54 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.55 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.55: founder — Partners (.for) «больше воздуха, убрать фреймы, статуснее»: no card background/border/radius; rows separated by hairlines (border-top, last row border-bottom), padding 40px 0, icon 32px, title 28px, sub 15px, text 15.5px max 46ch, link 15px; columns top-aligned.
    v6.54: founder — Platform (how) and Impact (outcome) merged: #outcome removed; the three columns under the render carry the outcome numbers (.kpi: value + label) and read Shared fleet → Orchestration engine → One platform (founder's order). Order: hero → problem → solution → today → how → model → for.
    v6.53: founder — catalogue link «Request the full solutions catalogue» at the bottom right of the Solution block (#solution .more text-align: right).
    v6.52: founder — Partners cards as one row each: icon | heading + sub (new, from the first clause of the old text) | text | link at the right; .hd is display:contents; radius 16 → 12 px; <900px: icon + title row, text and link under the title.
@@ -180,14 +181,15 @@ body.site.home .model h3 { font: 600 18px var(--body); color: var(--navy); margi
 body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
 
 /* two audiences */
-body.site.home .for { display: grid; grid-template-columns: 1fr; gap: 16px; } /* v6.51: one card per row (founder «карточки в три строки»); v6.17–v6.50: auto-fit 3 columns */
-body.site.home .for > div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px 24px; display: grid; grid-template-columns: 28px minmax(220px, 280px) 1fr auto; gap: 8px 28px; align-items: center; } /* v6.52: one row per card — icon | heading + sub | text | link right (founder); radius 16 → 12 px for the low card */ /* v6.46: flex column so the links sit on one line at the bottom */ /* v6.17: card frames back as in v6.5–v6.9 (founder); v6.10–v6.16 plain columns */
+body.site.home .for { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 12px; } /* v6.51: one card per row (founder «карточки в три строки»); v6.17–v6.50: auto-fit 3 columns */
+body.site.home .for > div { border-top: 1px solid var(--line); padding: 40px 0; display: grid; grid-template-columns: 32px minmax(260px, 320px) 1fr auto; gap: 8px 40px; align-items: start; } /* v6.55: frameless rows with hairlines, more air (founder); v6.52: one row per card — icon | heading + sub | text | link right */
+body.site.home .for > div:last-child { border-bottom: 1px solid var(--line); }
 body.site.home .for .hd { display: contents; }
-body.site.home .for .sub { display: block; font: 500 13.5px/1.35 var(--body); color: var(--text); margin-top: 4px; }
-body.site.home .for h3 { font: 700 22px/1.15 var(--head); color: var(--navy); margin: 0; letter-spacing: -0.025em; }
-body.site.home .for p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .for .ic { width: 28px; height: 28px; flex: 0 0 28px; color: var(--accent); }
-body.site.home .for a { justify-self: end; white-space: nowrap; }
+body.site.home .for .sub { display: block; font: 500 15px/1.4 var(--body); color: var(--text); margin-top: 6px; }
+body.site.home .for h3 { font: 700 28px/1.1 var(--head); color: var(--navy); margin: 0; letter-spacing: -0.03em; }
+body.site.home .for p { font-size: 15.5px; color: var(--text); margin: 0; line-height: 1.55; max-width: 46ch; }
+body.site.home .for .ic { width: 32px; height: 32px; flex: 0 0 32px; color: var(--accent); margin-top: 2px; }
+body.site.home .for a { justify-self: end; white-space: nowrap; font-size: 15px; margin-top: 6px; }
 body.site.home .for a, body.site.home #solution .more a { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
 body.site.home .for a .arr, body.site.home #solution .more a .arr { width: 16px; height: 16px; flex: 0 0 16px; transition: transform .15s; }
 body.site.home .for a:hover, body.site.home #solution .more a:hover { text-decoration: underline; }
@@ -218,7 +220,7 @@ body.site.home footer a.access { display: inline-block; font-weight: 500; color:
 body.site.home footer a.access:hover { text-decoration: underline; }
 body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder — one footer block, the copyright line joins the brand column (bottom bar removed) */
 
-@media (max-width: 900px) { body.site.home .for > div { grid-template-columns: 28px 1fr; } body.site.home .for p, body.site.home .for a { grid-column: 2; } body.site.home .for a { justify-self: start; } body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model-list { grid-template-columns: 1fr; } body.site.home .model-list > div { padding: 0 0 32px 72px; min-height: 52px; } body.site.home .model-list > div:last-child { padding-bottom: 0; } body.site.home .model-list > div::before { top: 60px; bottom: 8px; left: 26px; right: auto; border-top: 0; border-left: 1px solid var(--line); } body.site.home .model-list > div:last-child::before { display: none; } }
+@media (max-width: 900px) { body.site.home .for > div { grid-template-columns: 32px 1fr; padding: 28px 0; } body.site.home .for p, body.site.home .for a { grid-column: 2; } body.site.home .for a { justify-self: start; } body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model-list { grid-template-columns: 1fr; } body.site.home .model-list > div { padding: 0 0 32px 72px; min-height: 52px; } body.site.home .model-list > div:last-child { padding-bottom: 0; } body.site.home .model-list > div::before { top: 60px; bottom: 8px; left: 26px; right: auto; border-top: 0; border-left: 1px solid var(--line); } body.site.home .model-list > div:last-child::before { display: none; } }
 @media (max-width: 720px) { body.site.home footer .cols { grid-template-columns: 1fr; gap: 22px; } body.site.home footer .cols > div:nth-child(n+2) { text-align: left; } body.site.home footer .links { justify-items: start; } }
 @media (max-width: 1080px) { body.site.home .domains { grid-template-columns: 1fr 1fr; column-gap: 40px; } body.site.home .dom { grid-template-columns: 104px 1fr; } body.site.home .dom .di { width: 104px; height: 104px; } } /* v6.22: 2 columns (3 only on real desktops, so the list lines stay single) */
 @media (max-width: 600px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .dom { grid-template-columns: 80px 1fr; column-gap: 18px; padding: 20px 0 24px; } body.site.home .dom .di { width: 80px; height: 80px; } } /* v6.22: 1 column */
