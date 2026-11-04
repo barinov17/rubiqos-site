@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.56 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.57 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.57: founder — Platform .kpi as a row: label left («Payroll»), number flush right, hairline above; Partners text column max 38ch, link column max-content with links left-aligned to each other (justify-self: start).
    v6.56: founder — Platform column texts rewritten ~20% shorter (95 → 75 words), three lines each: fleet = existing robots built into the operating plan, engine = coordinates and splits work, platform = operators keep their systems, guest gets one seamless channel.
    v6.55: founder — Partners (.for) «больше воздуха, убрать фреймы, статуснее»: no card background/border/radius; rows separated by hairlines (border-top, last row border-bottom), padding 40px 0, icon 32px, title 28px, sub 15px, text 15.5px max 46ch, link 15px; columns top-aligned.
    v6.54: founder — Platform (how) and Impact (outcome) merged: #outcome removed; the three columns under the render carry the outcome numbers (.kpi: value + label) and read Shared fleet → Orchestration engine → One platform (founder's order). Order: hero → problem → solution → today → how → model → for.
@@ -162,7 +163,7 @@ body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin:
 body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(--accent); }
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .how .kpi { display: flex; align-items: baseline; gap: 10px; margin-top: 16px; } /* v6.54: outcome number under each column (ex #outcome cards) */
+body.site.home .how .kpi { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); } /* v6.57: label left, number right */ /* v6.54: outcome number under each column (ex #outcome cards) */
 body.site.home .how .kpi .v { font: 700 clamp(32px, 2.8vw, 40px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
 body.site.home .how .kpi .l { font: 600 15px var(--body); color: var(--navy); letter-spacing: -0.01em; }
 body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
@@ -183,14 +184,14 @@ body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line
 
 /* two audiences */
 body.site.home .for { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 12px; } /* v6.51: one card per row (founder «карточки в три строки»); v6.17–v6.50: auto-fit 3 columns */
-body.site.home .for > div { border-top: 1px solid var(--line); padding: 40px 0; display: grid; grid-template-columns: 32px minmax(260px, 320px) 1fr auto; gap: 8px 40px; align-items: start; } /* v6.55: frameless rows with hairlines, more air (founder); v6.52: one row per card — icon | heading + sub | text | link right */
+body.site.home .for > div { border-top: 1px solid var(--line); padding: 40px 0; display: grid; grid-template-columns: 32px minmax(260px, 320px) 1fr 150px; gap: 8px 40px; align-items: start; } /* v6.55: frameless rows with hairlines, more air (founder); v6.52: one row per card — icon | heading + sub | text | link right */
 body.site.home .for > div:last-child { border-bottom: 1px solid var(--line); }
 body.site.home .for .hd { display: contents; }
 body.site.home .for .sub { display: block; font: 500 15px/1.4 var(--body); color: var(--text); margin-top: 6px; }
 body.site.home .for h3 { font: 700 28px/1.1 var(--head); color: var(--navy); margin: 0; letter-spacing: -0.03em; }
-body.site.home .for p { font-size: 15.5px; color: var(--text); margin: 0; line-height: 1.55; max-width: 46ch; }
+body.site.home .for p { font-size: 15.5px; color: var(--text); margin: 0; line-height: 1.55; max-width: 38ch; }
 body.site.home .for .ic { width: 32px; height: 32px; flex: 0 0 32px; color: var(--accent); margin-top: 2px; }
-body.site.home .for a { justify-self: end; white-space: nowrap; font-size: 15px; margin-top: 6px; }
+body.site.home .for a { justify-self: start; white-space: nowrap; font-size: 15px; margin-top: 6px; } /* v6.57: links share one left edge (fixed 150px column) */
 body.site.home .for a, body.site.home #solution .more a { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
 body.site.home .for a .arr, body.site.home #solution .more a .arr { width: 16px; height: 16px; flex: 0 0 16px; transition: transform .15s; }
 body.site.home .for a:hover, body.site.home #solution .more a:hover { text-decoration: underline; }
@@ -310,9 +311,9 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
     <p class="lead">Three layers on one platform, shared by the developer, every operator and the guest.</p>
     <figure class="how-pic"><img src="how-platform.jpg" width="1522" height="551" alt="One guest and staff app on the left, the RubiqOS orchestration core in the centre, a robot and a staff member at work on the resort on the right" loading="lazy"></figure>
     <div class="how">
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>Shared fleet of physical AI</h3></div><p>We pick robots that already exist and work well, and build them into the resort's operating plan. Each does a specific job on a specific part of the property.</p><div class="kpi"><span class="v">−39%</span><span class="l">payroll</span></div></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg><h3>Orchestration engine</h3></div><p>The platform coordinates tasks and splits the work between staff and robots. The right split lowers the load on the whole team.</p><div class="kpi"><span class="v">−21%</span><span class="l">time per task</span></div></div>
-      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg><h3>One platform</h3></div><p>Operators keep working in the systems they know. For the guest it is one seamless experience: a single channel to every service and operator.</p><div class="kpi"><span class="v">+24%</span><span class="l">spend per guest</span></div></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>Shared fleet of physical AI</h3></div><p>We pick robots that already exist and work well, and build them into the resort's operating plan. Each does a specific job on a specific part of the property.</p><div class="kpi"><span class="l">Payroll</span><span class="v">−39%</span></div></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg><h3>Orchestration engine</h3></div><p>The platform coordinates tasks and splits the work between staff and robots. The right split lowers the load on the whole team.</p><div class="kpi"><span class="l">Time per task</span><span class="v">−21%</span></div></div>
+      <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg><h3>One platform</h3></div><p>Operators keep working in the systems they know. For the guest it is one seamless experience: a single channel to every service and operator.</p><div class="kpi"><span class="l">Spend per guest</span><span class="v">+24%</span></div></div>
     </div>
   </section>
 
