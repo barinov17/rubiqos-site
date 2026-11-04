@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.50 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.51 2026-11-04: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.51: founder — Traction (today) back before Platform (how); #model kicker "Business model" → "Services"; Partners cards (.for) one per row. Order: hero → problem → solution → today → how → outcome → model → for → footer.
    v6.50: founder — Traction (today) moved after Platform (how). Order: hero → problem → solution → how → today → outcome → model → for → footer.
    v6.49: founder — Solution and Traction (today) swapped. Order: hero → problem → solution → today → how → outcome → model → for → footer.
    v6.48: founder — Market opportunity section removed (450+ / $51B / $113M rows + globe; .market CSS dropped, market-globe.jpg kept on disk); Problem moved into its place as the first section after the hero (border-top 0); Request a demo section + FormSubmit form, its JS and input CSS removed; header «Request a demo» and the resort card arrow now mailto:hello@rubiqos.com?subject=Demo request. Order: hero → problem → today → solution → how → outcome → model → for → footer.
@@ -173,7 +174,7 @@ body.site.home .model h3 { font: 600 18px var(--body); color: var(--navy); margi
 body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line-height: 1.5; }
 
 /* two audiences */
-body.site.home .for { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+body.site.home .for { display: grid; grid-template-columns: 1fr; gap: 16px; } /* v6.51: one card per row (founder «карточки в три строки»); v6.17–v6.50: auto-fit 3 columns */
 body.site.home .for > div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px 22px 22px; display: flex; flex-direction: column; } /* v6.46: flex column so the links sit on one line at the bottom */ /* v6.17: card frames back as in v6.5–v6.9 (founder); v6.10–v6.16 plain columns */
 body.site.home .for .hd { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; }
 body.site.home .for h3 { font: 700 22px/1.15 var(--head); color: var(--navy); margin: 0; letter-spacing: -0.025em; }
@@ -281,6 +282,17 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
     <p class="more"><a href="mailto:hello@rubiqos.com?subject=Full%20solutions%20catalogue&amp;body=Please%20send%20me%20the%20full%20RubiqOS%20solutions%20catalogue."><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request the full solutions catalogue</a></p>
   </section>
 
+  <section id="today">
+    <p class="eb">Traction</p>
+    <h2>What <span class="hl">exists</span> today.</h2>
+    <p class="lead">Our solutions already run in real projects and real conditions: a resort in design, a fleet in operation and the robot platforms to run it.</p>
+    <div class="cards">
+      <div class="card"><div class="v">$1B <small>resort</small></div><h3>Anchor client</h3><p>A resort with a $1B budget and over $150M of operating costs a year. RubiqOS saves it up to $35M a year.</p></div>
+      <div class="card"><div class="v">300 <small>robots</small></div><h3>In live operation</h3><p>Our logistics engine runs 300 delivery robots across 2,000 locations in real city conditions today.</p></div>
+      <div class="card"><div class="v">46 <small>platforms</small></div><h3>Integration-ready</h3><p>The platform works with any robot maker, and we are in talks with many of them. 46 platforms are ready to integrate today.</p></div>
+    </div>
+  </section>
+
   <section id="how">
     <p class="eb">Platform</p>
     <h2>How <span class="hl">RubiqOS</span> works.</h2>
@@ -290,17 +302,6 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
       <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg><h3>One platform</h3></div><p>Staff get the task and the tools. Operators keep their own systems. The guest gets one app for the whole property, with the room key inside.</p></div>
       <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg><h3>Orchestration engine</h3></div><p>The platform plans each task, routes it to the right robot or person and measures the result against its budget line.</p></div>
       <div><div class="hd"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg><h3>Shared fleet</h3></div><p>Leased through hardware partners across the six domains. One fleet serves every operator on the property.</p></div>
-    </div>
-  </section>
-
-  <section id="today">
-    <p class="eb">Traction</p>
-    <h2>What <span class="hl">exists</span> today.</h2>
-    <p class="lead">Our solutions already run in real projects and real conditions: a resort in design, a fleet in operation and the robot platforms to run it.</p>
-    <div class="cards">
-      <div class="card"><div class="v">$1B <small>resort</small></div><h3>Anchor client</h3><p>A resort with a $1B budget and over $150M of operating costs a year. RubiqOS saves it up to $35M a year.</p></div>
-      <div class="card"><div class="v">300 <small>robots</small></div><h3>In live operation</h3><p>Our logistics engine runs 300 delivery robots across 2,000 locations in real city conditions today.</p></div>
-      <div class="card"><div class="v">46 <small>platforms</small></div><h3>Integration-ready</h3><p>The platform works with any robot maker, and we are in talks with many of them. 46 platforms are ready to integrate today.</p></div>
     </div>
   </section>
 
@@ -315,7 +316,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="model">
-    <p class="eb">Business model</p>
+    <p class="eb">Services</p>
     <h2>What we <span class="hl">offer</span>.</h2>
     <div class="model">
       <div class="model-list">
