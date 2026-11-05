@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.67 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.68 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.68: founder — Partners: no hairline after the heading (first row border-top) and none after the last row (border-bottom; it doubled the next section's border-top). Hairlines stay between rows.
    v6.67: founder — Partners: robot makers text (mature, practice-proven robotic solutions for resort operations); investors text drier (two reasons to talk: portfolio, or a fit with portfolio companies; the deck).
    v6.66: founder — Partners / For resort developers: text now names the three entry points (operational planning, design phase, extension of an operating resort).
    v6.65: founder — lead modal: Phone keeps its field but loses «(optional)»; new «Who I am» select (Resort developer / operator, Robot maker, Investor, Other) replaces the hidden role input and is preselected by the link that opened the modal (demo → dev).
@@ -217,7 +218,7 @@ body.site.home .model p { font-size: 14.5px; color: var(--text); margin: 0; line
 /* two audiences */
 body.site.home .for { display: grid; grid-template-columns: 1fr; gap: 0; margin-top: 12px; } /* v6.51: one card per row (founder «карточки в три строки»); v6.17–v6.50: auto-fit 3 columns */
 body.site.home .for > div { border-top: 1px solid var(--line); padding: 40px 0; display: grid; grid-template-columns: 32px minmax(260px, 320px) 1fr 150px; gap: 8px 40px; align-items: start; } /* v6.55: frameless rows with hairlines, more air (founder); v6.52: one row per card — icon | heading + sub | text | link right */
-body.site.home .for > div:last-child { border-bottom: 1px solid var(--line); }
+body.site.home .for > div:first-child { border-top: 0; } /* v6.68: no divider after the heading and after the last row (founder «дублируются») */
 body.site.home .for .hd { display: contents; }
 body.site.home .for .sub { display: block; font: 500 15px/1.4 var(--body); color: var(--text); margin-top: 6px; }
 body.site.home .for h3 { font: 700 28px/1.1 var(--head); color: var(--navy); margin: 0; letter-spacing: -0.03em; }
