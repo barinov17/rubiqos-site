@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.62 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.63 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.63: founder — Platform .kpi colours the other way round («цифры синие, текст черный»): number accent, label navy (v6.62 had it inverted).
    v6.62: founder — (1) Traction: eyebrow + h2 full-width above the two columns (like every other section); under them the lead + bullets left, the globe right, globe smaller (column 420 → 340 px, mobile 320 → 280). Lead rewritten to stress proven tech: «We build on technologies and solutions that already exist, already work and have proved themselves in practice.» (2) Platform .kpi: number bigger (32 → 42 px) and navy instead of accent; label stays accent; margin-top 18 → 22 px. (3) Today: button «Request the live demo» (.btn.primary, .ta) under the bullets; opens the lead modal with a new LEAD.demo text (subject «Live demo request»), mailto fallback; modal wiring now any a[data-lead], not only .for.
    v6.61: founder — section order: Traction «What exists today» moved after Services «What we offer» (now Problem → Solution → Platform → Services → Traction → Partners).
    v6.60: founder — (1) Traction «What exists today» rebuilt as two columns (.tg): left eyebrow + h2 + one-line lead («already run in real projects and real conditions») + three blue-dot bullets (.tl: $1B anchor client · 300 robots live · 46 platforms); right the globe market-globe.jpg (on disk since the Market section, v6.48). The three cards (.cards/.card CSS) removed. (2) Partners: the three links open a lead-capture modal #lead — email required, phone optional, per-link title/text/subject (Request a demo · Write to us · Request the deck); posts JSON to FormSubmit AJAX hello@rubiqos.com (honeypot _honey, _captcha off, _template table), mailto fallback with the data in the body; Esc / backdrop / × close, focus to email, body scroll locked; mailto hrefs kept for no-JS. FormSubmit needs a one-time activation click from the email it sends on the first submission. (3) Services «What we offer»: four cards in a 2×2 matrix instead of three in a row; new 03 · Development («A custom solution on our engine» — for a real-estate or resort developer), Execution becomes 04; the node-to-node track line removed (no straight sequence in a matrix).
@@ -190,8 +191,8 @@ body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
 body.site.home .how .kpi { display: flex; align-items: baseline; gap: 12px; margin-top: 22px; } /* v6.59: clean type, no panel */ /* v6.58: stat widget — number left, label on its baseline, tinted panel */ /* v6.57: label left, number right, hairline */ /* v6.54: outcome number under each column (ex #outcome cards) */
-body.site.home .how .kpi .v { font: 700 clamp(36px, 3vw, 42px)/1 var(--head); color: var(--navy); /* v6.62: bigger, navy */ letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-body.site.home .how .kpi .l { font: 600 13.5px/1.2 var(--body); color: var(--accent); letter-spacing: 0; }
+body.site.home .how .kpi .v { font: 700 clamp(36px, 3vw, 42px)/1 var(--head); color: var(--accent); /* v6.63: accent again; v6.62: bigger */ letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+body.site.home .how .kpi .l { font: 600 13.5px/1.2 var(--body); color: var(--navy); letter-spacing: 0; } /* v6.63: label navy */
 body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
 
 /* business model: three fee rows */
