@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.58 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.59 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.59: founder — Platform .kpi: tinted panel removed («не нравится фрейм, оставь чистую типографику»). Pure type: number left 32px accent, label 13.5px (= column text size) 600 accent on the same baseline, gap 10px, no padding/background.
    v6.58: founder — Platform .kpi as a stat widget: number LEFT (accent, 34px), label right of it on the same baseline, label accent too, 600 14px; tinted panel (accent 6 %, radius 10, padding 14/16) replaces the hairline. «цифры слева для акцента, подпись синяя, собрать виджет-блок».
    v6.57: founder — Platform .kpi as a row: label left («Payroll»), number flush right, hairline above; Partners text column max 38ch, link column max-content with links left-aligned to each other (justify-self: start).
    v6.56: founder — Platform column texts rewritten ~20% shorter (95 → 75 words), three lines each: fleet = existing robots built into the operating plan, engine = coordinates and splits work, platform = operators keep their systems, guest gets one seamless channel.
@@ -164,9 +165,9 @@ body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin:
 body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(--accent); }
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .how .kpi { display: flex; align-items: baseline; gap: 12px; margin-top: 18px; padding: 14px 16px; background: rgba(36, 87, 230, .06); border-radius: 10px; } /* v6.58: stat widget — number left, label on its baseline, tinted panel */ /* v6.57: label left, number right, hairline */ /* v6.54: outcome number under each column (ex #outcome cards) */
-body.site.home .how .kpi .v { font: 700 clamp(30px, 2.4vw, 34px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; font-variant-numeric: tabular-nums; }
-body.site.home .how .kpi .l { font: 600 14px/1.2 var(--body); color: var(--accent); letter-spacing: 0; }
+body.site.home .how .kpi { display: flex; align-items: baseline; gap: 10px; margin-top: 18px; } /* v6.59: clean type, no panel */ /* v6.58: stat widget — number left, label on its baseline, tinted panel */ /* v6.57: label left, number right, hairline */ /* v6.54: outcome number under each column (ex #outcome cards) */
+body.site.home .how .kpi .v { font: 700 clamp(28px, 2.3vw, 32px)/1 var(--head); color: var(--accent); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+body.site.home .how .kpi .l { font: 600 13.5px/1.2 var(--body); color: var(--accent); letter-spacing: 0; }
 body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
 
 /* business model: three fee rows */
