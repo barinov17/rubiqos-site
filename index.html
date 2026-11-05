@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.68 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.69 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.69: founder — How it works: KPI numbers (.how .kpi .v) bolder, weight 700 → 800 (Inter Tight 800 is already loaded).
    v6.68: founder — Partners: no hairline after the heading (first row border-top) and none after the last row (border-bottom; it doubled the next section's border-top). Hairlines stay between rows.
    v6.67: founder — Partners: robot makers text (mature, practice-proven robotic solutions for resort operations); investors text drier (two reasons to talk: portfolio, or a fit with portfolio companies; the deck).
    v6.66: founder — Partners / For resort developers: text now names the three entry points (operational planning, design phase, extension of an operating resort).
@@ -197,7 +198,7 @@ body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
 body.site.home .how .kpi { display: flex; align-items: baseline; gap: 12px; margin-top: 22px; } /* v6.59: clean type, no panel */ /* v6.58: stat widget — number left, label on its baseline, tinted panel */ /* v6.57: label left, number right, hairline */ /* v6.54: outcome number under each column (ex #outcome cards) */
-body.site.home .how .kpi .v { font: 700 clamp(36px, 3vw, 42px)/1 var(--head); color: var(--accent); /* v6.63: accent again; v6.62: bigger */ letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+body.site.home .how .kpi .v { font: 800 clamp(36px, 3vw, 42px)/1 var(--head); /* v6.69: bolder (founder) */ color: var(--accent); /* v6.63: accent again; v6.62: bigger */ letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 body.site.home .how .kpi .l { font: 600 13.5px/1.2 var(--body); color: var(--navy); letter-spacing: 0; } /* v6.63: label navy */
 body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
 
