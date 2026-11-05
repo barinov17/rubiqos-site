@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.64 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.65 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.65: founder — lead modal: Phone keeps its field but loses «(optional)»; new «Who I am» select (Resort developer / operator, Robot maker, Investor, Other) replaces the hidden role input and is preselected by the link that opened the modal (demo → dev).
    v6.64: founder — Today: «Request the live demo» is an arrow link like the Partners links (.ta a shares the .for a style), not a button.
    v6.63: founder — Platform .kpi colours the other way round («цифры синие, текст черный»): number accent, label navy (v6.62 had it inverted).
    v6.62: founder — (1) Traction: eyebrow + h2 full-width above the two columns (like every other section); under them the lead + bullets left, the globe right, globe smaller (column 420 → 340 px, mobile 320 → 280). Lead rewritten to stress proven tech: «We build on technologies and solutions that already exist, already work and have proved themselves in practice.» (2) Platform .kpi: number bigger (32 → 42 px) and navy instead of accent; label stays accent; margin-top 18 → 22 px. (3) Today: button «Request the live demo» (.btn.primary, .ta) under the bullets; opens the lead modal with a new LEAD.demo text (subject «Live demo request»), mailto fallback; modal wiring now any a[data-lead], not only .for.
@@ -142,8 +143,9 @@ body.site.home .mbox h3 { font: 700 26px/1.1 var(--head); color: var(--navy); ma
 body.site.home .mp { font-size: 15px; line-height: 1.5; color: var(--text); margin: 0 0 20px; }
 body.site.home .mf label { display: block; font: 600 13px/1.2 var(--body); color: var(--navy); margin-bottom: 14px; }
 body.site.home .mf label span { font-weight: 500; color: var(--text); }
-body.site.home .mf input { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 11px 12px; font: 400 15px/1.3 var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 8px; }
-body.site.home .mf input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(36, 87, 230, .15); }
+body.site.home .mf input, body.site.home .mf select { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 11px 12px; font: 400 15px/1.3 var(--body); color: var(--navy); background: #fff; border: 1px solid var(--line); border-radius: 8px; }
+body.site.home .mf select { appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A1220' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 16px 16px; } /* v6.65: Who I am */
+body.site.home .mf input:focus, body.site.home .mf select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(36, 87, 230, .15); }
 body.site.home .mf .hp { position: absolute; left: -9999px; }
 body.site.home .mbtn { width: 100%; margin-top: 4px; padding: 12px; font: 600 15px var(--body); color: #fff; background: var(--accent); border: 0; border-radius: 9px; cursor: pointer; }
 body.site.home .mbtn:hover { background: #1B47C9; }
@@ -405,9 +407,10 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
       <h3 id="lead-h">Request the deck</h3>
       <p class="mp">Leave your email and we will send the deck.</p>
       <form class="mf" action="https://formsubmit.co/hello@rubiqos.com" method="POST">
-        <input type="hidden" name="_subject" value="Investor enquiry"><input type="hidden" name="role" value="investor"><input type="hidden" name="_captcha" value="false"><input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off">
+        <input type="hidden" name="_subject" value="Investor enquiry"><input type="hidden" name="_captcha" value="false"><input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off">
         <label>Email<input type="email" name="email" required placeholder="name@company.com" autocomplete="email"></label>
-        <label>Phone <span>(optional)</span><input type="tel" name="phone" placeholder="+1 555 000 0000" autocomplete="tel"></label>
+        <label>Who I am<select name="role"><option value="dev">Resort developer / operator</option><option value="maker">Robot maker</option><option value="investor">Investor</option><option value="other">Other</option></select></label>
+        <label>Phone<input type="tel" name="phone" placeholder="+1 555 000 0000" autocomplete="tel"></label>
         <button class="mbtn" type="submit">Send</button>
         <p class="ms" aria-live="polite"></p>
       </form>
@@ -424,7 +427,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   };
   var m = document.getElementById('lead'); if (!m || !window.fetch) return;
   var f = m.querySelector('form'), h = m.querySelector('h3'), p = m.querySelector('.mp'), subj = f.querySelector('[name=_subject]'), role = f.querySelector('[name=role]'), st = f.querySelector('.ms'), email = f.querySelector('[name=email]'), phone = f.querySelector('[name=phone]'), btn = f.querySelector('.mbtn'), last = null;
-  function open(k) { var c = LEAD[k] || LEAD.dev; h.textContent = c.t; p.textContent = c.p; subj.value = c.s; role.value = k; f.reset(); f.classList.remove('sent'); st.textContent = ''; btn.disabled = false; m.hidden = false; document.body.style.overflow = 'hidden'; setTimeout(function () { email.focus(); }, 30); }
+  function open(k) { var c = LEAD[k] || LEAD.dev; h.textContent = c.t; p.textContent = c.p; subj.value = c.s; f.reset(); role.value = (k === 'demo') ? 'dev' : k; f.classList.remove('sent'); st.textContent = ''; btn.disabled = false; m.hidden = false; document.body.style.overflow = 'hidden'; setTimeout(function () { email.focus(); }, 30); }
   function close() { m.hidden = true; document.body.style.overflow = ''; if (last) last.focus(); }
   document.querySelectorAll('a[data-lead]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); last = a; open(a.getAttribute('data-lead')); }); });
   m.querySelector('.mx').addEventListener('click', close);
@@ -437,7 +440,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
     fetch('https://formsubmit.co/ajax/hello@rubiqos.com', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) })
       .then(function (r) { return r.json(); })
       .then(function (j) { if (!j || String(j.success) !== 'true') { throw new Error('send failed'); } f.classList.add('sent'); st.textContent = 'Thank you. We will be in touch within a day.'; })
-      .catch(function () { st.textContent = 'Opening your mail app…'; location.href = 'mailto:hello@rubiqos.com?subject=' + encodeURIComponent(subj.value) + '&body=' + encodeURIComponent('Email: ' + data.email + (data.phone ? ' / Phone: ' + data.phone : '')); btn.disabled = false; });
+      .catch(function () { st.textContent = 'Opening your mail app…'; location.href = 'mailto:hello@rubiqos.com?subject=' + encodeURIComponent(subj.value) + '&body=' + encodeURIComponent('Email: ' + data.email + ' / Who: ' + role.options[role.selectedIndex].text + (data.phone ? ' / Phone: ' + data.phone : '')); btn.disabled = false; });
   });
 })();
 </script>
