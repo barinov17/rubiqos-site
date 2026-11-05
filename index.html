@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.61 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.62 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.62: founder — (1) Traction: eyebrow + h2 full-width above the two columns (like every other section); under them the lead + bullets left, the globe right, globe smaller (column 420 → 340 px, mobile 320 → 280). Lead rewritten to stress proven tech: «We build on technologies and solutions that already exist, already work and have proved themselves in practice.» (2) Platform .kpi: number bigger (32 → 42 px) and navy instead of accent; label stays accent; margin-top 18 → 22 px. (3) Today: button «Request the live demo» (.btn.primary, .ta) under the bullets; opens the lead modal with a new LEAD.demo text (subject «Live demo request»), mailto fallback; modal wiring now any a[data-lead], not only .for.
    v6.61: founder — section order: Traction «What exists today» moved after Services «What we offer» (now Problem → Solution → Platform → Services → Traction → Partners).
    v6.60: founder — (1) Traction «What exists today» rebuilt as two columns (.tg): left eyebrow + h2 + one-line lead («already run in real projects and real conditions») + three blue-dot bullets (.tl: $1B anchor client · 300 robots live · 46 platforms); right the globe market-globe.jpg (on disk since the Market section, v6.48). The three cards (.cards/.card CSS) removed. (2) Partners: the three links open a lead-capture modal #lead — email required, phone optional, per-link title/text/subject (Request a demo · Write to us · Request the deck); posts JSON to FormSubmit AJAX hello@rubiqos.com (honeypot _honey, _captcha off, _template table), mailto fallback with the data in the body; Esc / backdrop / × close, focus to email, body scroll locked; mailto hrefs kept for no-JS. FormSubmit needs a one-time activation click from the email it sends on the first submission. (3) Services «What we offer»: four cards in a 2×2 matrix instead of three in a row; new 03 · Development («A custom solution on our engine» — for a real-estate or resort developer), Execution becomes 04; the node-to-node track line removed (no straight sequence in a matrix).
    v6.59: founder — Platform .kpi: tinted panel removed («не нравится фрейм, оставь чистую типографику»). Pure type: number left 32px accent, label 13.5px (= column text size) 600 accent on the same baseline, gap 10px, no padding/background.
@@ -118,12 +119,13 @@ body.site.home #problem { border-top: 0; } /* v6.11: no divider line between the
 
 /* outcome: three cards */
 /* what exists today (v6.60): text + three bullets left, the globe right */
-body.site.home .tg { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(260px, 420px); gap: 24px 72px; align-items: center; }
+body.site.home .tg { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(220px, 340px); gap: 24px 80px; align-items: center; margin-top: 8px; } /* v6.62: heading above the grid, globe 340 */
 body.site.home .tg .lead { margin-bottom: 26px; }
 body.site.home .tl { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; max-width: 52ch; }
 body.site.home .tl li { position: relative; padding-left: 20px; font-size: 15.5px; line-height: 1.5; color: var(--text); }
 body.site.home .tl li::before { content: ''; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 body.site.home .tl b { font-weight: 600; color: var(--navy); }
+body.site.home .ta { margin: 30px 0 0; } /* v6.62: live-demo button */
 body.site.home .tp { margin: 0; }
 body.site.home .tp img { display: block; width: 100%; height: auto; }
 
@@ -187,8 +189,8 @@ body.site.home .how .hd { display: flex; align-items: center; gap: 10px; margin:
 body.site.home .how .ic { width: 22px; height: 22px; flex: 0 0 22px; color: var(--accent); }
 body.site.home .how h3 { font: 600 17px var(--body); color: var(--navy); margin: 0; letter-spacing: -0.01em; }
 body.site.home .how p { font-size: 13.5px; color: var(--text); margin: 0; line-height: 1.5; }
-body.site.home .how .kpi { display: flex; align-items: baseline; gap: 10px; margin-top: 18px; } /* v6.59: clean type, no panel */ /* v6.58: stat widget — number left, label on its baseline, tinted panel */ /* v6.57: label left, number right, hairline */ /* v6.54: outcome number under each column (ex #outcome cards) */
-body.site.home .how .kpi .v { font: 700 clamp(28px, 2.3vw, 32px)/1 var(--head); color: var(--accent); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+body.site.home .how .kpi { display: flex; align-items: baseline; gap: 12px; margin-top: 22px; } /* v6.59: clean type, no panel */ /* v6.58: stat widget — number left, label on its baseline, tinted panel */ /* v6.57: label left, number right, hairline */ /* v6.54: outcome number under each column (ex #outcome cards) */
+body.site.home .how .kpi .v { font: 700 clamp(36px, 3vw, 42px)/1 var(--head); color: var(--navy); /* v6.62: bigger, navy */ letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 body.site.home .how .kpi .l { font: 600 13.5px/1.2 var(--body); color: var(--accent); letter-spacing: 0; }
 body.site.home .model .k, body.site.home .dom .k { font: 600 12.5px/1 var(--body); color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
 
@@ -246,7 +248,7 @@ body.site.home footer a.access { display: inline-block; font-weight: 500; color:
 body.site.home footer a.access:hover { text-decoration: underline; }
 body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder — one footer block, the copyright line joins the brand column (bottom bar removed) */
 
-@media (max-width: 900px) { body.site.home .tg { grid-template-columns: 1fr; gap: 28px; } body.site.home .tp { max-width: 320px; margin: 0 auto; } body.site.home .model-list { grid-template-columns: 1fr; row-gap: 36px; } body.site.home .for > div { grid-template-columns: 32px 1fr; padding: 28px 0; } body.site.home .for p, body.site.home .for a { grid-column: 2; } body.site.home .for a { justify-self: start; } body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model-list { grid-template-columns: 1fr; } body.site.home .model-list > div { padding: 0 0 32px 72px; min-height: 52px; } body.site.home .model-list > div:last-child { padding-bottom: 0; } body.site.home .model-list > div::before { top: 60px; bottom: 8px; left: 26px; right: auto; border-top: 0; border-left: 1px solid var(--line); } body.site.home .model-list > div:last-child::before { display: none; } }
+@media (max-width: 900px) { body.site.home .tg { grid-template-columns: 1fr; gap: 28px; } body.site.home .tp { max-width: 280px; margin: 0 auto; } body.site.home .model-list { grid-template-columns: 1fr; row-gap: 36px; } body.site.home .for > div { grid-template-columns: 32px 1fr; padding: 28px 0; } body.site.home .for p, body.site.home .for a { grid-column: 2; } body.site.home .for a { justify-self: start; } body.site.home .pd { grid-template-columns: 1fr; } body.site.home .how { grid-template-columns: 1fr; } body.site.home .model-list { grid-template-columns: 1fr; } body.site.home .model-list > div { padding: 0 0 32px 72px; min-height: 52px; } body.site.home .model-list > div:last-child { padding-bottom: 0; } body.site.home .model-list > div::before { top: 60px; bottom: 8px; left: 26px; right: auto; border-top: 0; border-left: 1px solid var(--line); } body.site.home .model-list > div:last-child::before { display: none; } }
 @media (max-width: 720px) { body.site.home footer .cols { grid-template-columns: 1fr; gap: 22px; } body.site.home footer .cols > div:nth-child(n+2) { text-align: left; } body.site.home footer .links { justify-items: start; } }
 @media (max-width: 1080px) { body.site.home .domains { grid-template-columns: 1fr 1fr; column-gap: 40px; } body.site.home .dom { grid-template-columns: 104px 1fr; } body.site.home .dom .di { width: 104px; height: 104px; } } /* v6.22: 2 columns (3 only on real desktops, so the list lines stay single) */
 @media (max-width: 600px) { body.site.home .domains { grid-template-columns: 1fr; } body.site.home .dom { grid-template-columns: 80px 1fr; column-gap: 18px; padding: 20px 0 24px; } body.site.home .dom .di { width: 80px; height: 80px; } } /* v6.22: 1 column */
@@ -345,16 +347,17 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   </section>
 
   <section id="today">
+    <p class="eb">Traction</p>
+    <h2>What <span class="hl">exists</span> today.</h2>
     <div class="tg">
       <div>
-        <p class="eb">Traction</p>
-        <h2>What <span class="hl">exists</span> today.</h2>
-        <p class="lead">Our solutions already run in real projects and real conditions.</p>
+        <p class="lead">We build on technologies and solutions that already exist, already work and have proved themselves in practice.</p>
         <ul class="tl">
           <li><b>$1B anchor client.</b> A resort with over $150M of operating costs a year. RubiqOS saves it up to $35M a year.</li>
           <li><b>300 robots in live operation.</b> Our logistics engine runs them across 2,000 locations in real city conditions.</li>
           <li><b>46 robot platforms ready to integrate.</b> The platform works with any robot maker; talks with many of them are under way.</li>
         </ul>
+        <p class="ta"><a class="btn primary" href="mailto:hello@rubiqos.com?subject=Live%20demo%20request" data-lead="demo">Request the live demo</a></p>
       </div>
       <figure class="tp"><img src="market-globe.jpg" width="1000" height="1000" alt="Globe with resort destinations marked" loading="lazy"></figure>
     </div>
@@ -414,13 +417,14 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
   var LEAD = {
     dev: { t: 'Request a demo', p: 'Leave your email and we will set up a demo of RubiqOS for your resort.', s: 'Demo request' },
     maker: { t: 'Write to us', p: 'Leave your email and we will get back to you about adding your robots to our fleet.', s: 'Robot maker enquiry' },
-    investor: { t: 'Request the deck', p: 'Leave your email and we will send the deck: market, business model, milestones.', s: 'Investor enquiry' }
+    investor: { t: 'Request the deck', p: 'Leave your email and we will send the deck: market, business model, milestones.', s: 'Investor enquiry' },
+    demo: { t: 'Request the live demo', p: 'Leave your email and we will show you RubiqOS running live: the platform, the robots and the real numbers.', s: 'Live demo request' }
   };
   var m = document.getElementById('lead'); if (!m || !window.fetch) return;
   var f = m.querySelector('form'), h = m.querySelector('h3'), p = m.querySelector('.mp'), subj = f.querySelector('[name=_subject]'), role = f.querySelector('[name=role]'), st = f.querySelector('.ms'), email = f.querySelector('[name=email]'), phone = f.querySelector('[name=phone]'), btn = f.querySelector('.mbtn'), last = null;
   function open(k) { var c = LEAD[k] || LEAD.dev; h.textContent = c.t; p.textContent = c.p; subj.value = c.s; role.value = k; f.reset(); f.classList.remove('sent'); st.textContent = ''; btn.disabled = false; m.hidden = false; document.body.style.overflow = 'hidden'; setTimeout(function () { email.focus(); }, 30); }
   function close() { m.hidden = true; document.body.style.overflow = ''; if (last) last.focus(); }
-  document.querySelectorAll('.for a[data-lead]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); last = a; open(a.getAttribute('data-lead')); }); });
+  document.querySelectorAll('a[data-lead]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); last = a; open(a.getAttribute('data-lead')); }); });
   m.querySelector('.mx').addEventListener('click', close);
   m.addEventListener('click', function (e) { if (e.target === m) close(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !m.hidden) close(); });
