@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.63 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.64 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.64: founder — Today: «Request the live demo» is an arrow link like the Partners links (.ta a shares the .for a style), not a button.
    v6.63: founder — Platform .kpi colours the other way round («цифры синие, текст черный»): number accent, label navy (v6.62 had it inverted).
    v6.62: founder — (1) Traction: eyebrow + h2 full-width above the two columns (like every other section); under them the lead + bullets left, the globe right, globe smaller (column 420 → 340 px, mobile 320 → 280). Lead rewritten to stress proven tech: «We build on technologies and solutions that already exist, already work and have proved themselves in practice.» (2) Platform .kpi: number bigger (32 → 42 px) and navy instead of accent; label stays accent; margin-top 18 → 22 px. (3) Today: button «Request the live demo» (.btn.primary, .ta) under the bullets; opens the lead modal with a new LEAD.demo text (subject «Live demo request»), mailto fallback; modal wiring now any a[data-lead], not only .for.
    v6.61: founder — section order: Traction «What exists today» moved after Services «What we offer» (now Problem → Solution → Platform → Services → Traction → Partners).
@@ -126,7 +127,7 @@ body.site.home .tl { list-style: none; margin: 0; padding: 0; display: grid; gap
 body.site.home .tl li { position: relative; padding-left: 20px; font-size: 15.5px; line-height: 1.5; color: var(--text); }
 body.site.home .tl li::before { content: ''; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 body.site.home .tl b { font-weight: 600; color: var(--navy); }
-body.site.home .ta { margin: 30px 0 0; } /* v6.62: live-demo button */
+body.site.home .ta { margin: 26px 0 0; } /* v6.64: arrow link; v6.62: button */
 body.site.home .tp { margin: 0; }
 body.site.home .tp img { display: block; width: 100%; height: auto; }
 
@@ -219,10 +220,10 @@ body.site.home .for h3 { font: 700 28px/1.1 var(--head); color: var(--navy); mar
 body.site.home .for p { font-size: 15.5px; color: var(--text); margin: 0; line-height: 1.55; max-width: 38ch; }
 body.site.home .for .ic { width: 32px; height: 32px; flex: 0 0 32px; color: var(--accent); margin-top: 2px; }
 body.site.home .for a { justify-self: start; white-space: nowrap; font-size: 15px; margin-top: 6px; } /* v6.57: links share one left edge (fixed 150px column) */
-body.site.home .for a, body.site.home #solution .more a { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
-body.site.home .for a .arr, body.site.home #solution .more a .arr { width: 16px; height: 16px; flex: 0 0 16px; transition: transform .15s; }
-body.site.home .for a:hover, body.site.home #solution .more a:hover { text-decoration: underline; }
-body.site.home .for a:hover .arr, body.site.home #solution .more a:hover .arr { transform: translateX(3px); }
+body.site.home .for a, body.site.home #solution .more a, body.site.home .ta a { display: inline-flex; align-self: flex-start; align-items: center; gap: 8px; font: 500 14px var(--body); color: var(--accent); text-decoration: none; }
+body.site.home .for a .arr, body.site.home #solution .more a .arr, body.site.home .ta a .arr { width: 16px; height: 16px; flex: 0 0 16px; transition: transform .15s; }
+body.site.home .for a:hover, body.site.home #solution .more a:hover, body.site.home .ta a:hover { text-decoration: underline; }
+body.site.home .for a:hover .arr, body.site.home #solution .more a:hover .arr, body.site.home .ta a:hover .arr { transform: translateX(3px); }
 
 /* faq */
 body.site.home .faq { max-width: 760px; margin: 0; border-bottom: 1px solid var(--line); }
@@ -358,7 +359,7 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
           <li><b>300 robots in live operation.</b> Our logistics engine runs them across 2,000 locations in real city conditions.</li>
           <li><b>46 robot platforms ready to integrate.</b> The platform works with any robot maker; talks with many of them are under way.</li>
         </ul>
-        <p class="ta"><a class="btn primary" href="mailto:hello@rubiqos.com?subject=Live%20demo%20request" data-lead="demo">Request the live demo</a></p>
+        <p class="ta"><a href="mailto:hello@rubiqos.com?subject=Live%20demo%20request" data-lead="demo"><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request the live demo</a></p>
       </div>
       <figure class="tp"><img src="market-globe.jpg" width="1000" height="1000" alt="Globe with resort destinations marked" loading="lazy"></figure>
     </div>
