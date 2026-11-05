@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.73 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.74 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.74: founder — Problem: the legend beside the donut is gone; the donut alone sits on the right with a callout per slice (leader line + name + share, drawn in the SVG so they scale), in-slice percentages removed; the legend's detail (wages/benefits/housing, F&B and retail cost, admin/marketing/repairs/energy/IT, profit before fees/taxes/insurance/FF&E) moved into two paragraphs on the left.
    v6.73: founder — Services 03 h3 «Management platform» (was «A custom solution on our engine»); 04 h3 «Robots as a service» (was «Work done by our robot fleet»; founder asked for a more general heading, e.g. «robots for execution» — RaaS chosen as the generic term for lease / subscription). Paragraphs unchanged.
    v6.72: founder — Services 01/02 without «physical AI»: 01 h3 «Operations built on robotics», text «We either rework your operational plan around the capabilities of robotics and automation, or develop it from scratch.»; 02 h3 «An integration master plan», text «We prepare the specifications and vertically integrate all automation solutions into the master plan.» Items 03/04 unchanged.
    v6.71: founder — Problem donut recoloured: profit = accent blue #2457E6 (was light grey), payroll = navy #0A1220 (was blue); admin/maintenance takes the light grey #E4E9F0 (was navy) so the three cost slices are navy + two greys and only profit is blue. Legend accent class moves to Gross operating profit; slice labels: 37% white on blue, 16% dark on light grey.
@@ -165,18 +166,17 @@ body.site.home .mf.sent .ms { color: var(--navy); font-weight: 500; margin-top: 
 /* problem (v6.3 = deck slide 02): ~63% + description left, the opex donut (28 / 19 / 16 / 37 % of revenue) right (v6.5: Why now removed) */
 body.site.home .pd { display: grid; grid-template-columns: 1fr 1.15fr; gap: 24px 48px; align-items: center; }
 body.site.home .pd .col > p { font-size: 15.5px; color: var(--text); line-height: 1.5; margin: 0; max-width: 46ch; }
+body.site.home .pd .col > p + p { margin-top: 12px; } /* v6.74: two paragraphs (legend text moved here) */
 body.site.home .pd .num.big .v { font-size: clamp(52px, 5vw, 72px); }
 body.site.home .pd .num.big .k { font: 500 17px/1.4 var(--body); color: var(--navy); max-width: 34ch; }
-body.site.home .donut { display: flex; gap: 28px; align-items: center; margin: 0; }
-body.site.home .donut .pie { width: 200px; flex: 0 0 200px; height: auto; }
-body.site.home .donut .pie text { font: 600 13px var(--body); text-anchor: middle; dominant-baseline: central; }
-body.site.home .donut .pie text.c { font: 500 11.5px var(--body); fill: var(--text); }
-body.site.home .legend { font-size: 13px; color: var(--text); line-height: 1.45; }
-body.site.home .legend div { position: relative; padding-left: 24px; margin-bottom: 12px; }
-body.site.home .legend div:last-child { margin-bottom: 0; }
-body.site.home .legend i { position: absolute; left: 0; top: 3px; width: 13px; height: 13px; border-radius: 3px; }
-body.site.home .legend b { display: block; font: 600 14.5px var(--body); color: var(--navy); margin-bottom: 2px; }
-body.site.home .legend b.acc { color: var(--accent); }
+body.site.home .donut { display: block; margin: 0; } /* v6.74: donut + callouts only, legend removed (founder) */
+body.site.home .donut .pie { display: block; width: 100%; max-width: 520px; height: auto; margin: 0 auto; overflow: visible; }
+body.site.home .donut .pie text { dominant-baseline: central; }
+body.site.home .donut .pie text.c { font: 500 11.5px var(--body); fill: var(--text); text-anchor: middle; }
+body.site.home .donut .pie .lb { font: 600 13.5px var(--body); fill: var(--navy); }
+body.site.home .donut .pie .pc { font: 700 15px var(--head); fill: var(--navy); letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+body.site.home .donut .pie .pc.acc { fill: var(--accent); }
+body.site.home .donut .pie .ld { fill: none; stroke: #9AA7B9; stroke-width: 1.25; }
 body.site.home .num { margin-bottom: 20px; }
 body.site.home .num .v { font: 700 clamp(36px, 3.2vw, 44px)/1 var(--head); color: var(--accent); letter-spacing: -0.035em; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
 body.site.home .num .k { font: 500 15px var(--body); color: var(--navy); }
@@ -270,8 +270,9 @@ body.site.home footer .copy { margin: 0; font-size: 13px; } /* v6.13: founder �
   body.site.home .hero { height: auto; background-position: center bottom; padding-bottom: 54vw; }
   body.site.home .hero .copy { padding: 20px 16px 24px; }
   body.site.home .hero h1 { font-size: clamp(34px, 9.6vw, 44px); }
-  body.site.home .donut { flex-wrap: wrap; gap: 20px; }
-  body.site.home .donut .pie { width: 220px; flex-basis: 220px; }
+  body.site.home .donut .pie .lb { font-size: 14px; } /* v6.74: the SVG scales down on phones; labels bumped (15 px clipped «Admin, maintenance» at 375 px) */
+  body.site.home .donut .pie .pc { font-size: 16px; }
+  body.site.home .donut .pie text.c { font-size: 13px; }
 }
 /* v6.18: reveal-on-scroll — a pinch of motion. .rv is added by the script below (no JS → nothing hidden); .in = in view. */
 body.site.home .rv { opacity: 0; transform: translateY(14px); transition: opacity .6s cubic-bezier(.2, .6, .2, 1), transform .6s cubic-bezier(.2, .6, .2, 1); transition-delay: var(--rd, 0s); }
@@ -302,16 +303,11 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
     <div class="pd">
       <div class="col problem">
         <div class="num big"><div class="v">~63%</div><div class="k">of a resort’s revenue goes to operating costs.</div></div>
-        <p>A resort needs a large imported staff plus the housing, transport, utilities and logistics to support it. Payroll is the largest line.</p>
+        <p>A resort needs a large imported staff plus the housing, transport, utilities and logistics to support it. Payroll, meaning wages, benefits and staff housing, is the largest line: 28% of revenue.</p>
+        <p>Another 19% goes to the cost of sales and supplies: food, beverage and retail. 16% covers admin, marketing, repairs, energy and IT. What is left, 37%, is gross operating profit before fees, taxes, insurance and FF&amp;E.</p>
       </div>
       <figure class="donut">
-        <svg class="pie" viewBox="0 0 220 220" role="img" aria-label="Share of a resort’s revenue: payroll 28%, cost of sales and supplies 19%, admin, maintenance and utilities 16%, gross operating profit 37%"><g transform="rotate(-90 110 110)"><circle r="80" cx="110" cy="110" fill="none" stroke="#0A1220" stroke-width="60" stroke-dasharray="138.74 363.91" stroke-dashoffset="-0.00"><title>Payroll · 28%</title></circle><circle r="80" cx="110" cy="110" fill="none" stroke="#9AA7B9" stroke-width="60" stroke-dasharray="93.50 409.15" stroke-dashoffset="-140.74"><title>Cost of sales &amp; supplies · 19%</title></circle><circle r="80" cx="110" cy="110" fill="none" stroke="#E4E9F0" stroke-width="60" stroke-dasharray="78.42 424.23" stroke-dashoffset="-236.25"><title>Admin, maintenance &amp; utilities · 16%</title></circle><circle r="80" cx="110" cy="110" fill="none" stroke="#2457E6" stroke-width="60" stroke-dasharray="183.98 318.67" stroke-dashoffset="-316.67"><title>Gross operating profit · 37%</title></circle></g><text x="171.6" y="59.0" fill="#fff">28%</text><text x="166.6" y="166.6" fill="#fff">19%</text><text x="85.3" y="186.1" fill="#4A5568">16%</text><text x="36.6" y="78.2" fill="#fff">37%</text><text class="c" x="110" y="104">Resort</text><text class="c" x="110" y="120">revenue</text></svg>
-        <figcaption class="legend">
-          <div><i style="background:#0A1220"></i><b>Payroll</b><span>Wages, benefits, staff housing</span></div>
-          <div><i style="background:#9AA7B9"></i><b>Cost of sales &amp; supplies</b><span>Food, beverage and retail cost, supplies</span></div>
-          <div><i style="background:#E4E9F0"></i><b>Admin, maintenance &amp; utilities</b><span>Admin, marketing, repairs, energy, IT</span></div>
-          <div><i style="background:#2457E6"></i><b class="acc">Gross operating profit</b><span>Before fees, taxes, insurance, FF&amp;E</span></div>
-        </figcaption>
+        <svg class="pie" viewBox="0 0 500 260" role="img" aria-label="Share of a resort’s revenue: payroll 28%, cost of sales and supplies 19%, admin, maintenance and utilities 16%, gross operating profit 37%"><g transform="rotate(-90 250 130)"><circle r="66" cx="250" cy="130" fill="none" stroke="#0A1220" stroke-width="48" stroke-dasharray="114.11 300.58" stroke-dashoffset="-0.00"><title>Payroll · 28%</title></circle><circle r="66" cx="250" cy="130" fill="none" stroke="#9AA7B9" stroke-width="48" stroke-dasharray="76.79 337.90" stroke-dashoffset="-116.11"><title>Cost of sales &amp; supplies · 19%</title></circle><circle r="66" cx="250" cy="130" fill="none" stroke="#E4E9F0" stroke-width="48" stroke-dasharray="64.35 350.34" stroke-dashoffset="-194.90"><title>Admin, maintenance &amp; utilities · 16%</title></circle><circle r="66" cx="250" cy="130" fill="none" stroke="#2457E6" stroke-width="48" stroke-dasharray="151.44 263.25" stroke-dashoffset="-261.25"><title>Gross operating profit · 37%</title></circle></g><polyline class="ld" points="320.9,71.4 330.1,63.7 354,63.7"/><circle cx="320.9" cy="71.4" r="2.5" fill="#9AA7B9"/><text class="lb" x="362" y="54" text-anchor="start">Payroll</text><text class="pc" x="362" y="72" text-anchor="start">28%</text><polyline class="ld" points="315.1,195.1 323.5,203.5 354,203.5"/><circle cx="315.1" cy="195.1" r="2.5" fill="#9AA7B9"/><text class="lb" x="362" y="186" text-anchor="start">Cost of sales</text><text class="lb" x="362" y="202" text-anchor="start">&amp; supplies</text><text class="pc" x="362" y="221" text-anchor="start">19%</text><polyline class="ld" points="221.6,217.5 217.9,228.9 146,228.9"/><circle cx="221.6" cy="217.5" r="2.5" fill="#9AA7B9"/><text class="lb" x="138" y="213" text-anchor="end">Admin, maintenance</text><text class="lb" x="138" y="229" text-anchor="end">&amp; utilities</text><text class="pc" x="138" y="248" text-anchor="end">16%</text><polyline class="ld" points="165.6,93.5 154.6,88.7 146,88.7"/><circle cx="165.6" cy="93.5" r="2.5" fill="#9AA7B9"/><text class="lb" x="138" y="72" text-anchor="end">Gross operating</text><text class="lb" x="138" y="88" text-anchor="end">profit</text><text class="pc acc" x="138" y="107" text-anchor="end">37%</text><text class="c" x="250" y="123">Resort</text><text class="c" x="250" y="138">revenue</text></svg>
       </figure>
     </div>
   </section>
