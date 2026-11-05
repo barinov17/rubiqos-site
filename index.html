@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.60 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.61 2026-11-05: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.61: founder — section order: Traction «What exists today» moved after Services «What we offer» (now Problem → Solution → Platform → Services → Traction → Partners).
    v6.60: founder — (1) Traction «What exists today» rebuilt as two columns (.tg): left eyebrow + h2 + one-line lead («already run in real projects and real conditions») + three blue-dot bullets (.tl: $1B anchor client · 300 robots live · 46 platforms); right the globe market-globe.jpg (on disk since the Market section, v6.48). The three cards (.cards/.card CSS) removed. (2) Partners: the three links open a lead-capture modal #lead — email required, phone optional, per-link title/text/subject (Request a demo · Write to us · Request the deck); posts JSON to FormSubmit AJAX hello@rubiqos.com (honeypot _honey, _captcha off, _template table), mailto fallback with the data in the body; Esc / backdrop / × close, focus to email, body scroll locked; mailto hrefs kept for no-JS. FormSubmit needs a one-time activation click from the email it sends on the first submission. (3) Services «What we offer»: four cards in a 2×2 matrix instead of three in a row; new 03 · Development («A custom solution on our engine» — for a real-estate or resort developer), Execution becomes 04; the node-to-node track line removed (no straight sequence in a matrix).
    v6.59: founder — Platform .kpi: tinted panel removed («не нравится фрейм, оставь чистую типографику»). Pure type: number left 32px accent, label 13.5px (= column text size) 600 accent on the same baseline, gap 10px, no padding/background.
    v6.58: founder — Platform .kpi as a stat widget: number LEFT (accent, 34px), label right of it on the same baseline, label accent too, 600 14px; tinted panel (accent 6 %, radius 10, padding 14/16) replaces the hairline. «цифры слева для акцента, подпись синяя, собрать виджет-блок».
@@ -317,21 +318,6 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
     <p class="more"><a href="mailto:hello@rubiqos.com?subject=Full%20solutions%20catalogue&amp;body=Please%20send%20me%20the%20full%20RubiqOS%20solutions%20catalogue."><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Request the full solutions catalogue</a></p>
   </section>
 
-  <section id="today">
-    <div class="tg">
-      <div>
-        <p class="eb">Traction</p>
-        <h2>What <span class="hl">exists</span> today.</h2>
-        <p class="lead">Our solutions already run in real projects and real conditions.</p>
-        <ul class="tl">
-          <li><b>$1B anchor client.</b> A resort with over $150M of operating costs a year. RubiqOS saves it up to $35M a year.</li>
-          <li><b>300 robots in live operation.</b> Our logistics engine runs them across 2,000 locations in real city conditions.</li>
-          <li><b>46 robot platforms ready to integrate.</b> The platform works with any robot maker; talks with many of them are under way.</li>
-        </ul>
-      </div>
-      <figure class="tp"><img src="market-globe.jpg" width="1000" height="1000" alt="Globe with resort destinations marked" loading="lazy"></figure>
-    </div>
-  </section>
 
   <section id="how">
     <p class="eb">Platform</p>
@@ -358,6 +344,21 @@ body.site.home .hero .copy > p { animation-delay: .12s; }
     </div>
   </section>
 
+  <section id="today">
+    <div class="tg">
+      <div>
+        <p class="eb">Traction</p>
+        <h2>What <span class="hl">exists</span> today.</h2>
+        <p class="lead">Our solutions already run in real projects and real conditions.</p>
+        <ul class="tl">
+          <li><b>$1B anchor client.</b> A resort with over $150M of operating costs a year. RubiqOS saves it up to $35M a year.</li>
+          <li><b>300 robots in live operation.</b> Our logistics engine runs them across 2,000 locations in real city conditions.</li>
+          <li><b>46 robot platforms ready to integrate.</b> The platform works with any robot maker; talks with many of them are under way.</li>
+        </ul>
+      </div>
+      <figure class="tp"><img src="market-globe.jpg" width="1000" height="1000" alt="Globe with resort destinations marked" loading="lazy"></figure>
+    </div>
+  </section>
   <section id="for">
     <p class="eb">Who we work with</p>
     <h2>For <span class="hl">Partners</span>.</h2>
