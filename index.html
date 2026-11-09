@@ -11,8 +11,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&display=swap">
 <style>
-/* Landing page (home.html → /), v6.87 2026-11-09: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
+/* Landing page (home.html → /), v6.88 2026-11-09: hero (founder render 12), problem (first section since v6.48; market opportunity removed),
    how it works moved after solution with the founder's platform render (v6.6: cropped, RubiqOS blue, no button) + three small cards with Lucide icons,
+   v6.88: founder «Request the full solutions catalogue размести слева» — #solution .more text-align right → left (the link sits at the bottom left of the Solution block, under the domains; bottom right since v6.53).
    v6.87: founder «мы можем проанализировать ваш operational plan, сделать cost-benefit анализ использования физического ИИ; также можем разработать physical AI-first operational plan» — Partners / resort developers paragraph: «We analyse your operational plan and build the cost-benefit case for physical AI in your resort. We can also develop a physical-AI-first operational plan, for a new destination or an existing one.» (35 words, same length as the robot makers paragraph)
    v6.87: founder «сделай текст ближе к лого» — gap mark → wordmark 9 → 5 px in the header bar, 8 → 5 px in the footer.
    v6.86: founder — logo mark (blue rounded-square ring, the founder's PNG of 2026-11-09, cropped to the ring, transparent) beside the wordmark in the header bar and the footer; wordmark black (navy #0A1220) instead of blue; favicon + touch icon from the mark (favicon.ico at the root covers every page). Files home/logo-mark.png 128, favicon-32/192.png, apple-touch-icon.png 180, favicon.ico 16/32/48.
@@ -204,7 +205,7 @@ body.site.home .dom .di { width: 112px; height: 112px; display: block; margin: 0
 body.site.home .dom .k { display: block; margin-bottom: 6px; }
 body.site.home .dom p { font: 400 15px/1.5 var(--body); color: var(--text); margin: 0; } /* v6.35 offer texts ≤ 84 chars; v6.36: 3–4 lines beside the icon */
 body.site.home .dom h3 { font: 600 18px/1.25 var(--body); color: var(--navy); margin: 0 0 6px; letter-spacing: -0.01em; }
-body.site.home #solution .more { margin: 24px 0 0; text-align: right; } /* v6.42: catalogue button under the domains; v6.44: arrow text link, left; v6.53: bottom right of the block (founder) */
+body.site.home #solution .more { margin: 24px 0 0; text-align: left; } /* v6.42: catalogue button under the domains; v6.44: arrow text link, left; v6.53: bottom right (founder); v6.88: left again (founder) */
 
 /* how it works */
 /* how it works (v6.5): the founder's platform render in a white panel, three small cards under its three parts (app · core · resort) */
