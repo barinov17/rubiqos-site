@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex"><script>(function(){var H='b6e96f84258c1746306bd9e8f4cd9adbccfb35696c7cd4cc4212ff3eac574ff2';try{if(localStorage.getItem('rq.access')===H)return;}catch(e){}location.replace('/access/?to='+encodeURIComponent(location.pathname+location.search+location.hash));})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RubiqOS · Al Marjan Island</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="/site.css?v=20261101a">
+<style>
+  /* One page per resort of the Resort Market Overview (2026-11-25). Source: resort.html + destination-matrix-src/resort_pages.json;
+     build_site.py writes /market/<slug>/index.html and puts the resort's data into RESORT below. */
+  body.site .crumb { font-size: 12.5px; color: var(--muted); margin: 18px 0 0; } body.site .crumb a { color: var(--muted); }
+  .rs-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin: 6px 0 14px; }
+  .rs-head h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 4.2vw, 52px); line-height: 1.0; letter-spacing: -0.035em; color: var(--navy); margin: 6px 0 8px; }
+  .rs-head .sub { font-size: 14px; color: var(--text); margin: 0; }
+  .rs-head .sum { font-size: 15.5px; color: var(--text); max-width: 78ch; margin: 10px 0 0; }
+  .rs-tag { display: inline-block; font: 600 10px var(--body); letter-spacing: 0.06em; padding: 4px 7px; border-radius: 4px; color: #fff; background: var(--tc); vertical-align: 2px; margin-right: 8px; }
+  .rs-kind { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .rs-side { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .stg { display: inline-flex; align-items: center; gap: 7px; font: 600 13px var(--body); padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px solid var(--line); color: var(--navy); }
+  .stg i { width: 9px; height: 9px; border-radius: 50%; background: var(--sc); display: inline-block; }
+  .rs-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; }
+  .rs-photo { position: relative; margin: 0; border-radius: 16px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); height: 420px; }
+  .rs-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs-photo figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 10px; font-size: 11.5px; color: #fff; background: linear-gradient(transparent, rgba(10, 18, 32, 0.72)); }
+  .rs-photo figcaption a { color: #fff; }
+  .rs-photo .none { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px; }
+  .rs-mapbox { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); height: 420px; background: var(--panel); display: flex; flex-direction: column; }
+  #map { flex: 1; min-height: 0; z-index: 1; }
+  .rs-mapbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .rs-mapbar .zb { display: flex; gap: 4px; }
+  .rs-mapbar button { font: 500 12px var(--body); border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 8px; padding: 4px 9px; cursor: pointer; }
+  .rs-mapbar button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  body.site section { padding: 22px 0 6px; }
+  body.site section > h2 { font-size: 26px; margin-bottom: 4px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; }
+  .tile .k { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .tile .v { font: 600 27px var(--body); color: var(--navy); line-height: 1.15; letter-spacing: -0.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .tile .v small { font: 500 12px var(--body); color: var(--muted); margin-left: 5px; letter-spacing: 0; }
+  .tile .v.est { font-style: italic; font-weight: 500; }
+  .tile .b { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 12px; }
+  .two .card h3 { margin-bottom: 8px; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13.5px; margin: 0; }
+  .facts dt { color: var(--muted); } .facts dd { margin: 0; color: var(--navy); font-weight: 500; }
+  .facts dd small { font-weight: 400; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { font-size: 12.5px; padding: 4px 9px; border-radius: 999px; background: var(--panel); color: var(--navy); }
+  .chips em { font-style: normal; font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); width: 100%; margin-top: 6px; }
+  .chips em:first-child { margin-top: 0; }
+  /* timeline */
+  .stages { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .stages span { font: 500 12.5px var(--body); padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: transparent; }
+  .stages span.on { background: var(--sc); border-color: var(--sc); color: #fff; font-weight: 600; }
+  .stage-note { font-size: 13px; color: var(--text); margin: 6px 0 0; max-width: 90ch; }
+  .strip { position: relative; height: 54px; margin: 18px 10px 4px; }
+  .strip .ax { position: absolute; left: 0; right: 0; top: 20px; height: 2px; background: var(--line); }
+  .strip .past { position: absolute; left: 0; top: 20px; height: 2px; background: var(--navy); }
+  .strip .pt { position: absolute; top: 14px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--navy); border: 2px solid var(--bg); cursor: default; }
+  .strip .pt.planned { background: var(--bg); border: 2px solid var(--accent); }
+  .strip .pt:hover { transform: scale(1.3); z-index: 2; }
+  .strip .now { position: absolute; top: 4px; bottom: 16px; width: 2px; margin-left: -1px; background: var(--warn); }
+  .strip .now b { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font: 600 10.5px var(--body); color: var(--warn); white-space: nowrap; }
+  .strip .yr { position: absolute; top: 34px; transform: translateX(-50%); font: 500 11px var(--body); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tl { list-style: none; margin: 10px 0 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .tl li { display: grid; grid-template-columns: 104px 18px 1fr auto; gap: 0 12px; align-items: center; padding: 9px 14px; border-bottom: 1px solid rgba(10, 18, 32, 0.06); font-size: 13.5px; }
+  .tl li:last-child { border-bottom: 0; }
+  .tl .d { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tl .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--navy); justify-self: center; }
+  .tl .planned .dot { background: #fff; border: 2px solid var(--accent); }
+  .tl .planned .d, .tl .planned .l { color: var(--accent-ink, #1a3fb0); }
+  .tl .l { color: var(--ink); }
+  .tl .s { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .tl .s a { color: var(--muted); }
+  .tl li.today { background: #fdf3ea; color: var(--warn); font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 14px; }
+  .tl li.today .dot { background: var(--warn); width: 9px; height: 9px; }
+  .pill { display: inline-block; font: 600 10.5px var(--body); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .pill.open { background: #e3f3ec; color: #1f7a51; } .pill.uc { background: #fbeadc; color: #a8551a; } .pill.ann { background: #dfe7fb; color: #1a3fb0; }
+  body.site table.t td:first-child { white-space: normal; }
+  body.site table.t td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body.site table.t th.n { text-align: right; }
+  body.site table.t td small { color: var(--muted); font-weight: 400; display: block; }
+  .tw { overflow-x: auto; }
+  details.chk { margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; font-size: 13px; }
+  details.chk summary { cursor: pointer; font-weight: 600; color: var(--navy); }
+  details.chk table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  details.chk td, details.chk th { text-align: left; padding: 5px 8px 5px 0; border-bottom: 1px solid rgba(10, 18, 32, 0.06); vertical-align: top; }
+  details.chk th { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .v-ok { color: var(--ok); font-weight: 600; } .v-differs { color: var(--warn); font-weight: 600; } .v-nv { color: var(--muted); }
+  .pager { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 26px 0 0; }
+  @media (max-width: 900px) { .rs-top, .two { grid-template-columns: 1fr; } .rs-photo, .rs-mapbox { height: 320px; } .tl li { grid-template-columns: 84px 14px 1fr; } .tl .s { grid-column: 3; } }
+</style>
+</head>
+<body class="site">
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Home</a><a href="/demo/">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/" class="on">Resort Market Overview</a><a href="/robots/">Robots</a><a href="/particles/">Particles</a></nav><span></span></div></div>
+<div class="wrap">
+  <p class="crumb"><a href="/market/">Resort Market Overview</a> · <span id="crumb"></span></p>
+  <div class="rs-head">
+    <div>
+      <h1 id="name"></h1>
+      <p class="sub" id="sub"></p>
+      <p class="sum" id="sum"></p>
+    </div>
+    <div class="rs-side" id="side"></div>
+  </div>
+  <div class="rs-top">
+    <figure class="rs-photo" id="photo"></figure>
+    <div class="rs-mapbox"><div id="map"></div><div class="rs-mapbar"><span id="coords"></span><span class="zb"><button type="button" data-z="site" aria-pressed="true">Site</button><button type="button" data-z="region" aria-pressed="false">Region</button><button type="button" data-z="world" aria-pressed="false">World</button></span></div></div>
+  </div>
+
+  <section>
+    <h2>Basic parameters</h2>
+    <p class="lead">Scale of the destination. Values in italics are model estimates from the market overview; the basis is under each value.</p>
+    <div class="tiles" id="tiles"></div>
+    <div class="two">
+      <div class="card"><h3>Published figures</h3><dl class="facts" id="facts"></dl></div>
+      <div class="card"><h3>Business mix</h3><div class="chips" id="mix"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Stage and key dates</h2>
+    <div class="stages" id="stages"></div>
+    <p class="stage-note" id="stageNote"></p>
+    <div class="strip" id="strip"></div>
+    <ol class="tl" id="tl"></ol>
+  </section>
+
+  <section>
+    <h2>Operators</h2>
+    <p class="lead" id="opLead"></p>
+    <div class="tw"><table class="t" id="ops"></table></div>
+  </section>
+
+  <details class="chk" id="chk"></details>
+  <div class="pager" id="pager"></div>
+  <p class="foot" id="foot"></p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const RESORT = {"m": {"n": "P40", "name": "Al Marjan Island (multi-operator, around Wynn)", "dev": "Marjan", "country": "UAE", "type": "New-build, archetype C", "g": "C", "status": "New-build, opening 2027+", "ops": "", "biz": "Multi-operator island; ~3,000 keys open + ~5,500 by 2030 (CBRE); 12,000 residential units planned; 15,000 keys at build-out", "q": "C", "f": [{"fam": "Lodging", "name": "Hotel", "full": "Hotel"}, {"fam": "Lodging", "name": "Multi-brand", "full": "Several hotel brands"}, {"fam": "Residential", "name": "Residences", "full": "Branded residences"}, {"fam": "Residential", "name": "Homes", "full": "Private residential"}], "p": {"area": 270.0, "area_b": "web 2026-10: 2.7M m² reclaimed island; 7.8M m² incl. wider development (Wikipedia, RAK Media Office)", "keys": 8500, "keys_b": "research", "guests": 25400, "guests_b": "estimate: keys×2×70% + residences×2.5×45%", "staff": 23000, "staff_b": "estimate: 2.0 per key + 0.5 per residence", "ops": 3.0, "ops_b": "estimate from archetype — '+' dropped — raw: 3+", "opex": 1022, "opex_b": "model: 23,000 staff × $20K (MENA) ÷ 45% labour share"}, "open_txt": "new phase: Wynn Al Marjan Island, September 2027", "stage": "Expanding", "stage_b": "operating island (hotels open since 2013-14), Wynn resort under construction", "open_y": 2027, "owner": "Marjan", "url": "https://www.marjan.ae", "url_kind": "site", "ll": [25.68, 55.75], "fit": 76, "fit_b": "weights 30/20/20/20/10 · operators 0.80 (3, data) · area 0.72 · opex 1.00 · stage 0.75 (Expanding) · labour 0.29 (MENA)"}, "r": {"name": "Al Marjan Island", "summary": "Man-made four-island archipelago off Ras Al Khaimah, master-developed by Marjan, with several branded beach resorts already open and the UAE's first integrated casino resort, Wynn Al Marjan Island, due in September 2027.", "location": "Al Jazirah Al Hamra, Ras Al Khaimah, United Arab Emirates", "coords": {"lat": 25.6811, "lon": 55.745, "what": "Island centre of the four-island archipelago (Wikipedia coordinates 25°40'52\"N 55°44'42\"E)", "source": "https://en.wikipedia.org/wiki/Al_Marjan_Island"}, "developer": {"name": "Marjan (Marjan LLC, master developer of Ras Al Khaimah)", "owner": "Shareholders not stated on Marjan's site. Wynn Al Marjan itself is a joint venture of Wynn Resorts (40%), Marjan and RAK Hospitality Holding.", "source": "https://www.marjan.ae"}, "stage_now": {"stage": "Expanding", "evidence": "At least seven resort hotels trade on the island while the Wynn integrated resort is still under construction, with opening moved to September 2027 (Wynn Q2 call, 5 Aug 2026).", "source": "https://www.khaleejtimes.com/business/wynn-al-marjan-island-pushes-opening-to-september-2027-amid-regional-conflict-fallout"}, "timeline": [{"date": "2018-09", "label": "DoubleTree by Hilton Resort & Spa opens (485 rooms)", "status": "done", "source": "https://gulfnews.com/amp/story/business%2Ftourism%2Fhilton-opens-new-hotel-in-ras-al-khaimah-1.1273231", "source2": null, "confirmed": false}, {"date": "2021-08", "label": "Hampton by Hilton opens, fourth global brand on the island", "status": "done", "source": "https://gulfnews.com/amp/story/business%2Ftourism%2Fworlds-largest-hampton-by-hilton-hotel-comes-to-uae-1.81588673", "source2": null, "confirmed": false}, {"date": "2022-01-25", "label": "Marjan, RAK Hospitality and Wynn announce integrated resort", "status": "done", "source": "https://www.hospitalitynet.org/news/4108658/marjan-to-develop-a-multibillion-dollar-integrated-resort-in-ras-al-khaimah-with-wynn-resorts", "source2": "https://agbrief.com/news/world/25/01/2022/wynn-resorts-announces-multi-billion-ir-project-in-uae/", "confirmed": true}, {"date": "2024-10-04", "label": "UAE gaming operator licence issued; Wynn says construction underway", "status": "done", "source": "https://www.newsroom.wynnresorts.com/en/wynnresorts/wynn-resorts-announces-receipt-of-gaming-operator-license-for-wynn-al-marjan-island/s/65aba4d8-7fdd-478c-ba02-d65ed827a991", "source2": null, "confirmed": false}, {"date": "2025-11", "label": "SO/ Ras Al Khaimah all-inclusive resort opens (257 rooms)", "status": "done", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "source2": "https://wow-rak.com/al-marjan-island-ras-al-khaimah-complete-guide/", "confirmed": false}, {"date": "2025-12", "label": "Wynn tower tops out; all tower structural concrete complete", "status": "done", "source": "https://en.wikipedia.org/wiki/Wynn_Al_Marjan_Island", "source2": null, "confirmed": false}, {"date": "2026-07", "label": "Janu Al Marjan Island breaks ground next to Wynn", "status": "done", "source": "https://gulfnews.com/business/tourism/ras-al-khaimah-marjan-wynn-resorts-break-ground-on-janu-al-marjan-island-opening-in-2029-1.500621265", "source2": null, "confirmed": false}, {"date": "2026-08-05", "label": "Wynn moves opening to September 2027; budget up about $600m", "status": "done", "source": "https://www.khaleejtimes.com/business/wynn-al-marjan-island-pushes-opening-to-september-2027-amid-regional-conflict-fallout", "source2": "https://agbrief.com/intel/05/08/2026/wynn-confirms-september-2027-uae-resort-opening-raises-budget-by-600m/", "confirmed": true}, {"date": "2027-09", "label": "Wynn Al Marjan Island opens (single phase, no soft opening)", "status": "planned", "source": "https://agbrief.com/intel/05/08/2026/wynn-confirms-september-2027-uae-resort-opening-raises-budget-by-600m/", "source2": "https://www.khaleejtimes.com/business/wynn-al-marjan-island-pushes-opening-to-september-2027-amid-regional-conflict-fallout", "confirmed": true}, {"date": "2027", "label": "W Al Marjan Island (Marriott) scheduled; no newer date found", "status": "planned", "source": "https://www.hospitalitynet.org/announcement/41009990.html", "source2": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": false}, {"date": "2029", "label": "Janu Al Marjan Island opening (Khaleej Times says late 2028)", "status": "planned", "source": "https://gulfnews.com/business/tourism/ras-al-khaimah-marjan-wynn-resorts-break-ground-on-janu-al-marjan-island-opening-in-2029-1.500621265", "source2": "https://www.khaleejtimes.com/uae/new-resort-janu-al-marjan-island-announced", "confirmed": false}], "operators": [{"operator": "Rixos Hotels", "parent": null, "asset": "Rixos Bab Al Bahr", "role": "Hotel", "keys": null, "status": "open", "since": null, "source": "https://wow-rak.com/al-marjan-island-ras-al-khaimah-complete-guide/", "confirmed": false}, {"operator": "Hilton (DoubleTree)", "parent": "Hilton", "asset": "DoubleTree by Hilton Resort & Spa Marjan Island", "role": "Hotel", "keys": 485, "status": "open", "since": "2018", "source": "https://gulfnews.com/amp/story/business%2Ftourism%2Fhilton-opens-new-hotel-in-ras-al-khaimah-1.1273231", "confirmed": true}, {"operator": "Hilton (Hampton)", "parent": "Hilton", "asset": "Hampton by Hilton Marjan Island (owned by MR Properties)", "role": "Hotel", "keys": null, "status": "open", "since": "2021", "source": "https://gulfnews.com/amp/story/business%2Ftourism%2Fworlds-largest-hampton-by-hilton-hotel-comes-to-uae-1.81588673", "confirmed": true}, {"operator": "Mövenpick", "parent": null, "asset": "Mövenpick Resort Al Marjan Island", "role": "Hotel", "keys": 418, "status": "open", "since": "2022", "source": "https://www.hospitalitynet.org/announcement/41008045.html", "confirmed": true}, {"operator": "Radisson", "parent": null, "asset": "Radisson Resort Ras Al Khaimah Marjan Island", "role": "Hotel", "keys": null, "status": "open", "since": null, "source": "https://wow-rak.com/al-marjan-island-ras-al-khaimah-complete-guide/", "confirmed": false}, {"operator": "Rove Hotels", "parent": null, "asset": "Rove Al Marjan Island", "role": "Hotel", "keys": 441, "status": "open", "since": "2025", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": true}, {"operator": "SO/ (Accor lifestyle brand)", "parent": null, "asset": "SO/ Ras Al Khaimah", "role": "Hotel", "keys": 257, "status": "open", "since": "2025", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": false}, {"operator": "Pullman", "parent": null, "asset": "Pullman Resort Al Marjan Island (closed for refurbishment, reopening Q1 2027)", "role": "Hotel", "keys": 300, "status": "open", "since": "2024", "source": "https://whatshotinuae.com/ras-al-khaimah-tourism-growth-2026", "confirmed": false}, {"operator": "Marjan Island Resort & Spa (operator not identified)", "parent": null, "asset": "Marjan Island Resort & Spa", "role": "Hotel", "keys": null, "status": "open", "since": null, "source": "https://www.almarjanisland.com", "confirmed": false}, {"operator": "Wynn Resorts", "parent": "Wynn Resorts (40% of JV with Marjan and RAK Hospitality Holding)", "asset": "Wynn Al Marjan Island, UAE's first casino resort", "role": "Casino", "keys": 1530, "status": "under construction", "since": "2027", "source": "https://en.wikipedia.org/wiki/Wynn_Al_Marjan_Island", "confirmed": true}, {"operator": "IGY Marinas / Marina Solutions International", "parent": null, "asset": "Wynn Marina, 98 berths up to 85 m", "role": "Marina", "keys": null, "status": "under construction", "since": "2027", "source": "https://en.wikipedia.org/wiki/Wynn_Al_Marjan_Island", "confirmed": false}, {"operator": "Marriott (W Hotels)", "parent": "Marriott International", "asset": "W Al Marjan Island", "role": "Hotel", "keys": 300, "status": "announced", "since": "2027", "source": "https://www.hospitalitynet.org/announcement/41009990.html", "confirmed": false}, {"operator": "Marriott (JW Marriott)", "parent": "Marriott International", "asset": "JW Marriott Al Marjan Island Resort (late 2026 per 2023 to 2024 sources; no confirmation of opening)", "role": "Hotel", "keys": 300, "status": "announced", "since": "2026", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": false}, {"operator": "Marriott (Le Méridien)", "parent": "Marriott International", "asset": "Le Méridien Al Marjan Island Resort & Spa (2026 target; no confirmation of opening)", "role": "Hotel", "keys": 350, "status": "announced", "since": "2026", "source": "https://www.hospitalitynet.org/announcement/41009991.html", "confirmed": false}, {"operator": "Hilton", "parent": "Hilton", "asset": "Hilton Marjan Island Beach Resort & Spa (Q4 2026 target per one listing)", "role": "Hotel", "keys": 315, "status": "announced", "since": "2026", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": false}, {"operator": "Nobu Hospitality", "parent": null, "asset": "Nobu Hotel and Residences Al Marjan Island", "role": "Branded residences", "keys": 300, "status": "announced", "since": "2027", "source": "https://www.thenationalnews.com/travel/2026/09/17/wynn-will-be-an-inflection-point-for-ras-al-khaimah-says-tourism-boss/", "confirmed": false}, {"operator": "Palladium Hotel Group", "parent": "Almal Real Estate (owner)", "asset": "The Unexpected Al Marjan Island Hotel & Residences", "role": "Hotel", "keys": 422, "status": "announced", "since": "2027", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": false}, {"operator": "Four Seasons", "parent": null, "asset": "Four Seasons (no date or keys published)", "role": "Hotel", "keys": null, "status": "announced", "since": null, "source": "https://www.thenationalnews.com/travel/2026/09/17/wynn-will-be-an-inflection-point-for-ras-al-khaimah-says-tourism-boss/", "confirmed": false}, {"operator": "Janu", "parent": "Aman group", "asset": "Janu Al Marjan Island, hotel and residences (JV of Marjan and Wynn)", "role": "Hotel", "keys": null, "status": "under construction", "since": "2029", "source": "https://gulfnews.com/business/tourism/ras-al-khaimah-marjan-wynn-resorts-break-ground-on-janu-al-marjan-island-opening-in-2029-1.500621265", "confirmed": true}, {"operator": "The Luxury Collection", "parent": "Marriott International", "asset": "The Luxury Collection Resort on Marjan", "role": "Hotel", "keys": 495, "status": "announced", "since": "2028", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": false}, {"operator": "NH Collection", "parent": null, "asset": "NH Collection Ras Al Khaimah Al Marjan Island", "role": "Hotel", "keys": null, "status": "announced", "since": "2028", "source": "https://wow-rak.com/check-out-the-new-hotels-opening-in-ras-al-khaimah-soon/", "confirmed": false}], "figures": {"area_ha": {"value": 270, "source": "https://www.almarjanisland.com", "note": "2.7 million m2 of reclaimed land, extending 4.5 km into the sea; Wikipedia gives the same figure."}, "keys_open": {"value": null, "source": "https://wow-rak.com/al-marjan-island-ras-al-khaimah-complete-guide/", "note": "No authoritative island-level total found. Named open hotels with known keys sum to about 1,600 (DoubleTree 485, Mövenpick 418, Rove 441, SO/ 257); Rixos, Hampton, Radisson and Marjan Island Resort keys not found."}, "keys_planned": {"value": 8500, "source": "https://www.marjan.ae", "note": "Marjan lists more than 8,500 hotel rooms in its pipeline and more than 8,000 delivered, but across all its masterplans (Al Marjan Island, RAK Central, Marjan Beach), not the island alone."}, "residences": {"value": null, "source": "https://www.marjan.ae", "note": "Marjan states more than 25,650 residential units in the pipeline across its masterplans; no island-only figure."}, "investment": {"value": "Wynn Al Marjan Island about US$5.7 billion after the August 2026 increase (earlier US$5.1 billion)", "source": "https://www.khaleejtimes.com/business/wynn-al-marjan-island-pushes-opening-to-september-2027-amid-regional-conflict-fallout", "note": "Increase of about US$600m confirmed; the US$5.7bn total comes from a search summary and the earlier US$5.1bn from Gulf News and Khaleej Times; Wynn equity contributed about US$1.06bn by Q2 2026."}}, "matrix_check": [{"field": "developer", "current": "Marjan", "found": "Marjan (master developer); Wynn JV with Marjan and RAK Hospitality Holding", "verdict": "ok", "source": "https://www.marjan.ae"}, {"field": "stage / opening", "current": "Design, opening 2027+", "found": "Operating: about seven resorts open; Wynn under construction (tower topped out Dec 2025), opening Sept 2027", "verdict": "differs", "source": "https://www.khaleejtimes.com/business/wynn-al-marjan-island-pushes-opening-to-september-2027-amid-regional-conflict-fallout"}, {"field": "area", "current": "270 ha (2.7M m2)", "found": "2.7 million m2 = 270 ha", "verdict": "ok", "source": "https://www.almarjanisland.com"}, {"field": "keys", "current": "8,500 (about 3,000 open + about 5,500 by 2030)", "found": "Marjan site: over 8,000 delivered and over 8,500 pipeline, emirate-wide; island open total not published (about 1,600 from four hotels with known keys)", "verdict": "not verifiable", "source": "https://www.marjan.ae"}, {"field": "operators count", "current": "3+", "found": "At least 7 open hotel brands plus about 10 announced or under construction", "verdict": "differs", "source": "https://wow-rak.com/al-marjan-island-ras-al-khaimah-complete-guide/"}, {"field": "coordinates", "current": "27.74, 55.75", "found": "25.6811, 55.7450 (latitude 27.74 is wrong, about 230 km north)", "verdict": "differs", "source": "https://en.wikipedia.org/wiki/Al_Marjan_Island"}], "photo_fallback": "https://www.almarjanisland.com", "notes": "Wynn Al Marjan is the only asset with a firm 2026 news trail (opening moved from early 2027 to Sept 2027, budget +$600m, Wynn Q2 call 4 Aug 2026). Open-hotel list rests on Marjan's site, a travel guide (wow-rak.com, not independent of the others in style) and press; Mövenpick opening year conflicts (2019 vs 2022). Pullman and Rixos Al Mairid are under refurbishment. Sources disagree on Janu opening (late 2028 vs 2029) and Wynn keys (1,530 vs 1,542). JW Marriott, Le Méridien, Hilton Beach Resort and Nobu: 2026 openings not confirmed by any source found; may have slipped. Luxury Collection keys are 466 rooms plus 29 villas (495). Conrad Marjan Island was listed in one blog with unconfirmed status and left out. Hilton Garden Inn location not confirmed on the island. Marjan ownership by the RAK government not stated in sources opened."}, "photo": {"file": "File:Sea view, Marjan island, Ras al Khaimah, UAE.jpg", "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Sea_view%2C_Marjan_island%2C_Ras_al_Khaimah%2C_UAE.jpg", "page_url": "https://commons.wikimedia.org/wiki/File:Sea_view,_Marjan_island,_Ras_al_Khaimah,_UAE.jpg", "author": "Tashmetova808", "licence": "CC BY-SA 4.0", "year": "2024", "width": 4952, "height": 3301, "shows": "Beachfront and sea view on Al Marjan Island, 2024.", "viewed": "2026-11-25", "src": "https://commons.wikimedia.org/wiki/Special:FilePath/Sea_view%2C_Marjan_island%2C_Ras_al_Khaimah%2C_UAE.jpg?width=1280"}, "tag": {"code": "MULTI", "name": "Master-planned destination", "c": "#2f4fb5"}, "stage": "Expanding", "today": "2026-11-25", "ll": [25.6811, 55.745], "zoom": 14, "prev": null, "next": {"slug": "amaala", "name": "AMAALA"}};
+const m = RESORT.m, r = RESORT.r, $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = v => v == null ? "" : (v >= 100 ? Math.round(v).toLocaleString("en-US") : v.toLocaleString("en-US", {maximumFractionDigits: 1}));
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "source"; } };
+const src = (u, u2) => [u, u2].filter(Boolean).map(x => `<a href="${esc(x)}" target="_blank" rel="noopener">${esc(host(x))}</a>`).join(" · ");
+const STAGE_C = {Design: "#2e9e6b", Construction: "#e07a2f", Expanding: "#2457e6", Operating: "#5b6676"};
+const STAGE_HELP = {
+  Design: "Masterplan or new-build that opens in 2028 or later. Design-phase entry is still open.",
+  Construction: "New-build that opens in 2026–2027, or a rebuild. Specifications are mostly fixed.",
+  Operating: "Running destination with no new phase announced.",
+  Expanding: "Operating destination with new phases in planning or construction. Entry through the new phases.",
+};
+
+// ---- header
+document.title = `RubiqOS · ${r.name || m.name}`;
+$("crumb").textContent = RESORT.tag.name;
+$("name").innerHTML = `<span class="rs-tag" style="--tc:${RESORT.tag.c}">${esc(RESORT.tag.code)}</span>${esc(r.name || m.name)}`;
+const dev = (r.developer && r.developer.name) || m.dev;
+$("sub").innerHTML = `${esc(r.location || m.country)} · Developer: <b>${esc(dev)}</b>${r.developer && r.developer.owner ? ` · Owner: ${esc(r.developer.owner)}` : ""}`;
+$("sum").textContent = r.summary || "";
+const stage = RESORT.stage;
+$("side").innerHTML = `<span class="stg" style="--sc:${STAGE_C[stage]}"><i></i>${esc(stage)}</span>`
+  + (m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">Official website ↗</a>` : "");
+
+// ---- photo
+const ph = RESORT.photo;
+$("photo").innerHTML = ph
+  ? `<img src="${esc(ph.src)}" alt="${esc(ph.shows || r.name)}" loading="eager"><figcaption>${esc(ph.shows || "")}${ph.shows ? " · " : ""}Photo: ${esc(ph.author || "unknown author")}${ph.year ? ", " + esc(ph.year) : ""} · <a href="${esc(ph.page_url)}" target="_blank" rel="noopener">${esc(ph.licence)} · Wikimedia Commons</a></figcaption>`
+  : `<div class="none"><b>No openly licensed photo found</b>${r.photo_fallback ? `<a href="${esc(r.photo_fallback)}" target="_blank" rel="noopener">Official gallery ↗</a>` : ""}</div>`;
+
+// ---- map
+const ll = RESORT.ll, ZOOM = {site: RESORT.zoom, region: 7, world: 3};
+const map = L.map("map", {scrollWheelZoom: false, zoomControl: true}).setView(ll, ZOOM.site);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+L.circleMarker(ll, {radius: 9, color: "#fff", weight: 3, fillColor: "#2457e6", fillOpacity: 1}).addTo(map).bindTooltip(r.name || m.name, {direction: "top", offset: [0, -8]});
+const dms = (v, pos, neg) => `${Math.abs(v).toFixed(4)}° ${v >= 0 ? pos : neg}`;
+$("coords").innerHTML = `${dms(ll[0], "N", "S")}, ${dms(ll[1], "E", "W")}${r.coords && r.coords.what ? " · " + esc(r.coords.what) : ""}`;
+document.querySelectorAll(".zb button").forEach(b => b.addEventListener("click", () => {
+  map.setView(ll, ZOOM[b.dataset.z]);
+  document.querySelectorAll(".zb button").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+
+// ---- basic parameters (market overview values, basis under each)
+const P = [["area", "Site area", "ha"], ["keys", "Keys", ""], ["guests", "Guests per day", ""], ["staff", "Staff", ""], ["ops", "Operators", ""], ["opex", "Operating cost", "$M / yr"]];
+const isEst = b => /estimate|comps|avg|norm|midpoint|knowledge|model|calc|ratio/i.test(b || "");
+const clean = b => String(b || "").replace(/ — stripped '~' — raw:.*$/, "").replace(/ — '\+' dropped — raw:.*$/, "").replace(/^web 2026-10: /, "").replace(/^GL_Target_List note: /, "").replace(/^research note: /, "");
+$("tiles").innerHTML = P.map(([k, label, unit]) => {
+  let v = m.p[k], b = m.p[k + "_b"];
+  if (k === "ops" && (r.operators || []).length) {   // the page lists the operators: count them instead of the overview estimate
+    const open = new Set(r.operators.filter(o => o.status === "open").map(o => o.operator)).size, more = new Set(r.operators.filter(o => o.status !== "open").map(o => o.operator)).size;
+    b = `open today, from the table below${more ? ` · ${more} more under construction or announced` : ""}${v != null && v !== open ? ` · market overview: ${v}` : ""}`; v = open;
+  }
+  return `<div class="tile"><div class="k">${label}</div><div class="v${v != null && isEst(b) ? " est" : ""}">${v == null ? "—" : fmt(v)}${v != null && unit ? `<small>${unit}</small>` : ""}</div><div class="b">${esc(v == null ? "no data" : clean(b))}</div></div>`;
+}).join("") + `<div class="tile"><div class="k">Fit score</div><div class="v">${m.fit ?? "—"}<small>of 100</small></div><div class="b">RubiqOS fit: operators, area, operating cost, stage, labour cost</div></div>`;
+
+const F = r.figures || {}, fact = (k, label, f = x => typeof x === "number" ? fmt(x) : x) => F[k] && F[k].value != null
+  ? `<dt>${label}</dt><dd>${esc(f(F[k].value))} <small>${F[k].note ? esc(F[k].note) + " · " : ""}${src(F[k].source)}</small></dd>` : "";
+$("facts").innerHTML = (fact("area_ha", "Site area", x => fmt(x) + " ha") + fact("keys_open", "Keys open") + fact("keys_planned", "Keys planned") + fact("residences", "Residences") + fact("investment", "Investment")
+  + (m.open_txt ? `<dt>Opening</dt><dd>${esc(m.open_txt)}</dd>` : "") + (m.type ? `<dt>Type</dt><dd>${esc(m.type)}</dd>` : "")) || "<dt>No published figures found</dt><dd></dd>";
+const fams = {}; m.f.forEach(c => (fams[c.fam] = fams[c.fam] || []).push(c.full || c.name));
+$("mix").innerHTML = Object.keys(fams).map(f => `<em>${esc(f)}</em>` + fams[f].map(n => `<span>${esc(n)}</span>`).join("")).join("") || '<span>no data</span>';
+
+// ---- stage and timeline
+$("stages").innerHTML = ["Design", "Construction", "Operating", "Expanding"].map(s => `<span${s === stage ? ` class="on" style="--sc:${STAGE_C[s]}"` : ""}>${s}</span>`).join("");
+$("stageNote").innerHTML = `<b>${esc(stage)}.</b> ${esc(STAGE_HELP[stage])}${r.stage_now && r.stage_now.evidence ? " " + esc(r.stage_now.evidence) + " " + `<span class="muted">(${src(r.stage_now.source)})</span>` : ""}`;
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dnum = d => { const [y, mo, da] = String(d).split("-").map(Number); return y + ((mo || 7) - 1) / 12 + ((da || 15) - 1) / 365; };
+const dtxt = d => { const [y, mo, da] = String(d).split("-"); return (da ? +da + " " : "") + (mo ? MON[+mo - 1] + " " : "") + y; };
+const T = (r.timeline || []).filter(e => e.date).sort((a, b) => dnum(a.date) - dnum(b.date));
+const TN = (r.timeline || []).filter(e => !e.date);   // planned items with no published date: listed last, not on the strip
+const now = dnum(RESORT.today), t0 = Math.floor(Math.min(now, ...T.map(e => dnum(e.date)))), t1 = Math.ceil(Math.max(now, ...T.map(e => dnum(e.date))) + 0.01);
+const pos = x => ((x - t0) / (t1 - t0) * 100).toFixed(2) + "%";
+const step = (t1 - t0) > 40 ? 10 : (t1 - t0) > 16 ? 5 : (t1 - t0) > 8 ? 2 : 1, yrs = [];
+for (let y = Math.ceil(t0 / step) * step; y <= t1; y += step) yrs.push(y);
+$("strip").innerHTML = `<div class="ax"></div><div class="past" style="width:${pos(now)}"></div>`
+  + yrs.map(y => `<span class="yr" style="left:${pos(y)}">${y}</span>`).join("")
+  + T.map(e => `<span class="pt${e.status === "planned" ? " planned" : ""}" style="left:${pos(dnum(e.date))}" title="${esc((e.date_txt || dtxt(e.date)) + " — " + e.label)}"></span>`).join("")
+  + `<span class="now" style="left:${pos(now)}"><b>Today</b></span>`;
+let todayDone = false;
+$("tl").innerHTML = T.map(e => {
+  let h = "";
+  if (!todayDone && (e.status === "planned" || dnum(e.date) > now)) { todayDone = true; h += `<li class="today"><span>${dtxt(RESORT.today.slice(0, 7))}</span><span class="dot"></span><span>Today</span></li>`; }
+  return h + `<li class="${e.status === "planned" ? "planned" : "done"}"><span class="d">${esc(e.date_txt || dtxt(e.date))}</span><span class="dot"></span><span class="l">${esc(e.label)}${e.status === "planned" ? ' <span class="pill ann">planned</span>' : ""}</span><span class="s">${src(e.source, e.source2)}</span></li>`;
+}).join("") + TN.map(e => `<li class="planned"><span class="d">No date</span><span class="dot"></span><span class="l">${esc(e.label)} <span class="pill ann">planned</span></span><span class="s">${src(e.source, e.source2)}</span></li>`).join("")
+  || '<li><span class="d"></span><span></span><span class="l muted">No dated events found</span></li>';
+
+// ---- operators
+const ST = {"open": ["open", "Open"], "under construction": ["uc", "Under construction"], "announced": ["ann", "Announced"]};
+const O = (r.operators || []).slice().sort((a, b) => (Object.keys(ST).indexOf(a.status) - Object.keys(ST).indexOf(b.status)) || (a.role === "Hotel" ? 0 : 1) - (b.role === "Hotel" ? 0 : 1) || String(a.since || "9").localeCompare(String(b.since || "9")));
+const brands = new Set(O.map(o => o.operator));
+$("opLead").textContent = O.length ? `${brands.size} operator${brands.size === 1 ? "" : "s"} and brands on ${O.length} assets: ${O.filter(o => o.status === "open").length} open, ${O.filter(o => o.status !== "open").length} under construction or announced.` : "No operator data found.";
+$("ops").innerHTML = O.length ? `<thead><tr><th>Operator</th><th>Asset</th><th>Role</th><th class="n">Keys</th><th>Status</th><th>Since</th><th>Source</th></tr></thead><tbody>`
+  + O.map(o => `<tr><td>${esc(o.operator)}${o.parent && o.parent !== o.operator ? `<small>${esc(o.parent)}</small>` : ""}</td><td>${esc(o.asset)}</td><td>${esc(o.role)}</td><td class="n">${o.keys ? fmt(o.keys) : ""}</td><td><span class="pill ${(ST[o.status] || ["ann"])[0]}">${esc((ST[o.status] || [0, o.status])[1])}</span></td><td>${esc(o.since ?? "")}</td><td class="muted">${src(o.source)}</td></tr>`).join("") + "</tbody>" : "";
+
+// ---- data check: market overview values against the sources
+const C = r.matrix_check || [], VC = {ok: "v-ok", differs: "v-differs"};
+$("chk").innerHTML = `<summary>Data check against sources (${C.filter(c => c.verdict === "differs").length} of ${C.length} values differ)</summary>`
+  + (C.length ? `<table><tr><th>Value</th><th>Market overview</th><th>Source says</th><th>Verdict</th><th>Source</th></tr>` + C.map(c => `<tr><td>${esc(c.field)}</td><td>${esc(c.current)}</td><td>${esc(c.found)}</td><td class="${VC[c.verdict] || "v-nv"}">${esc(c.verdict)}</td><td>${src(c.source)}</td></tr>`).join("") + "</table>" : "")
+  + (r.notes ? `<p class="muted" style="margin:10px 0 2px">${esc(r.notes)}</p>` : "");
+
+// ---- pager, foot
+$("pager").innerHTML = (RESORT.prev ? `<a class="btn" href="/market/${RESORT.prev.slug}/">← ${esc(RESORT.prev.name)}</a>` : "<span></span>")
+  + `<a class="btn" href="/market/">All resorts</a>` + (RESORT.next ? `<a class="btn" href="/market/${RESORT.next.slug}/">${esc(RESORT.next.name)} →</a>` : "<span></span>");
+$("foot").textContent = `RubiqOS · Resort Market Overview · sources checked ${RESORT.today}. Dates and operators come from the linked sources; values in italics are model estimates.`;
+</script>
+</body>
+</html>

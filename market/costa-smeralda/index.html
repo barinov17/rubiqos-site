@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex"><script>(function(){var H='b6e96f84258c1746306bd9e8f4cd9adbccfb35696c7cd4cc4212ff3eac574ff2';try{if(localStorage.getItem('rq.access')===H)return;}catch(e){}location.replace('/access/?to='+encodeURIComponent(location.pathname+location.search+location.hash));})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RubiqOS · Costa Smeralda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="/site.css?v=20261101a">
+<style>
+  /* One page per resort of the Resort Market Overview (2026-11-25). Source: resort.html + destination-matrix-src/resort_pages.json;
+     build_site.py writes /market/<slug>/index.html and puts the resort's data into RESORT below. */
+  body.site .crumb { font-size: 12.5px; color: var(--muted); margin: 18px 0 0; } body.site .crumb a { color: var(--muted); }
+  .rs-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin: 6px 0 14px; }
+  .rs-head h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 4.2vw, 52px); line-height: 1.0; letter-spacing: -0.035em; color: var(--navy); margin: 6px 0 8px; }
+  .rs-head .sub { font-size: 14px; color: var(--text); margin: 0; }
+  .rs-head .sum { font-size: 15.5px; color: var(--text); max-width: 78ch; margin: 10px 0 0; }
+  .rs-tag { display: inline-block; font: 600 10px var(--body); letter-spacing: 0.06em; padding: 4px 7px; border-radius: 4px; color: #fff; background: var(--tc); vertical-align: 2px; margin-right: 8px; }
+  .rs-kind { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .rs-side { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .stg { display: inline-flex; align-items: center; gap: 7px; font: 600 13px var(--body); padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px solid var(--line); color: var(--navy); }
+  .stg i { width: 9px; height: 9px; border-radius: 50%; background: var(--sc); display: inline-block; }
+  .rs-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; }
+  .rs-photo { position: relative; margin: 0; border-radius: 16px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); height: 420px; }
+  .rs-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs-photo figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 10px; font-size: 11.5px; color: #fff; background: linear-gradient(transparent, rgba(10, 18, 32, 0.72)); }
+  .rs-photo figcaption a { color: #fff; }
+  .rs-photo .none { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px; }
+  .rs-mapbox { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); height: 420px; background: var(--panel); display: flex; flex-direction: column; }
+  #map { flex: 1; min-height: 0; z-index: 1; }
+  .rs-mapbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .rs-mapbar .zb { display: flex; gap: 4px; }
+  .rs-mapbar button { font: 500 12px var(--body); border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 8px; padding: 4px 9px; cursor: pointer; }
+  .rs-mapbar button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  body.site section { padding: 22px 0 6px; }
+  body.site section > h2 { font-size: 26px; margin-bottom: 4px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; }
+  .tile .k { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .tile .v { font: 600 27px var(--body); color: var(--navy); line-height: 1.15; letter-spacing: -0.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .tile .v small { font: 500 12px var(--body); color: var(--muted); margin-left: 5px; letter-spacing: 0; }
+  .tile .v.est { font-style: italic; font-weight: 500; }
+  .tile .b { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 12px; }
+  .two .card h3 { margin-bottom: 8px; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13.5px; margin: 0; }
+  .facts dt { color: var(--muted); } .facts dd { margin: 0; color: var(--navy); font-weight: 500; }
+  .facts dd small { font-weight: 400; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { font-size: 12.5px; padding: 4px 9px; border-radius: 999px; background: var(--panel); color: var(--navy); }
+  .chips em { font-style: normal; font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); width: 100%; margin-top: 6px; }
+  .chips em:first-child { margin-top: 0; }
+  /* timeline */
+  .stages { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .stages span { font: 500 12.5px var(--body); padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: transparent; }
+  .stages span.on { background: var(--sc); border-color: var(--sc); color: #fff; font-weight: 600; }
+  .stage-note { font-size: 13px; color: var(--text); margin: 6px 0 0; max-width: 90ch; }
+  .strip { position: relative; height: 54px; margin: 18px 10px 4px; }
+  .strip .ax { position: absolute; left: 0; right: 0; top: 20px; height: 2px; background: var(--line); }
+  .strip .past { position: absolute; left: 0; top: 20px; height: 2px; background: var(--navy); }
+  .strip .pt { position: absolute; top: 14px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--navy); border: 2px solid var(--bg); cursor: default; }
+  .strip .pt.planned { background: var(--bg); border: 2px solid var(--accent); }
+  .strip .pt:hover { transform: scale(1.3); z-index: 2; }
+  .strip .now { position: absolute; top: 4px; bottom: 16px; width: 2px; margin-left: -1px; background: var(--warn); }
+  .strip .now b { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font: 600 10.5px var(--body); color: var(--warn); white-space: nowrap; }
+  .strip .yr { position: absolute; top: 34px; transform: translateX(-50%); font: 500 11px var(--body); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tl { list-style: none; margin: 10px 0 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .tl li { display: grid; grid-template-columns: 104px 18px 1fr auto; gap: 0 12px; align-items: center; padding: 9px 14px; border-bottom: 1px solid rgba(10, 18, 32, 0.06); font-size: 13.5px; }
+  .tl li:last-child { border-bottom: 0; }
+  .tl .d { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tl .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--navy); justify-self: center; }
+  .tl .planned .dot { background: #fff; border: 2px solid var(--accent); }
+  .tl .planned .d, .tl .planned .l { color: var(--accent-ink, #1a3fb0); }
+  .tl .l { color: var(--ink); }
+  .tl .s { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .tl .s a { color: var(--muted); }
+  .tl li.today { background: #fdf3ea; color: var(--warn); font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 14px; }
+  .tl li.today .dot { background: var(--warn); width: 9px; height: 9px; }
+  .pill { display: inline-block; font: 600 10.5px var(--body); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .pill.open { background: #e3f3ec; color: #1f7a51; } .pill.uc { background: #fbeadc; color: #a8551a; } .pill.ann { background: #dfe7fb; color: #1a3fb0; }
+  body.site table.t td:first-child { white-space: normal; }
+  body.site table.t td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body.site table.t th.n { text-align: right; }
+  body.site table.t td small { color: var(--muted); font-weight: 400; display: block; }
+  .tw { overflow-x: auto; }
+  details.chk { margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; font-size: 13px; }
+  details.chk summary { cursor: pointer; font-weight: 600; color: var(--navy); }
+  details.chk table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  details.chk td, details.chk th { text-align: left; padding: 5px 8px 5px 0; border-bottom: 1px solid rgba(10, 18, 32, 0.06); vertical-align: top; }
+  details.chk th { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .v-ok { color: var(--ok); font-weight: 600; } .v-differs { color: var(--warn); font-weight: 600; } .v-nv { color: var(--muted); }
+  .pager { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 26px 0 0; }
+  @media (max-width: 900px) { .rs-top, .two { grid-template-columns: 1fr; } .rs-photo, .rs-mapbox { height: 320px; } .tl li { grid-template-columns: 84px 14px 1fr; } .tl .s { grid-column: 3; } }
+</style>
+</head>
+<body class="site">
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Home</a><a href="/demo/">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/" class="on">Resort Market Overview</a><a href="/robots/">Robots</a><a href="/particles/">Particles</a></nav><span></span></div></div>
+<div class="wrap">
+  <p class="crumb"><a href="/market/">Resort Market Overview</a> · <span id="crumb"></span></p>
+  <div class="rs-head">
+    <div>
+      <h1 id="name"></h1>
+      <p class="sub" id="sub"></p>
+      <p class="sum" id="sum"></p>
+    </div>
+    <div class="rs-side" id="side"></div>
+  </div>
+  <div class="rs-top">
+    <figure class="rs-photo" id="photo"></figure>
+    <div class="rs-mapbox"><div id="map"></div><div class="rs-mapbar"><span id="coords"></span><span class="zb"><button type="button" data-z="site" aria-pressed="true">Site</button><button type="button" data-z="region" aria-pressed="false">Region</button><button type="button" data-z="world" aria-pressed="false">World</button></span></div></div>
+  </div>
+
+  <section>
+    <h2>Basic parameters</h2>
+    <p class="lead">Scale of the destination. Values in italics are model estimates from the market overview; the basis is under each value.</p>
+    <div class="tiles" id="tiles"></div>
+    <div class="two">
+      <div class="card"><h3>Published figures</h3><dl class="facts" id="facts"></dl></div>
+      <div class="card"><h3>Business mix</h3><div class="chips" id="mix"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Stage and key dates</h2>
+    <div class="stages" id="stages"></div>
+    <p class="stage-note" id="stageNote"></p>
+    <div class="strip" id="strip"></div>
+    <ol class="tl" id="tl"></ol>
+  </section>
+
+  <section>
+    <h2>Operators</h2>
+    <p class="lead" id="opLead"></p>
+    <div class="tw"><table class="t" id="ops"></table></div>
+  </section>
+
+  <details class="chk" id="chk"></details>
+  <div class="pager" id="pager"></div>
+  <p class="foot" id="foot"></p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const RESORT = {"m": {"n": "222", "name": "Costa Smeralda cluster", "dev": "Smeralda Holding", "country": "Italy", "type": "Multi-operator destination", "g": "C", "status": "Operating", "ops": "6", "biz": "4 hotels (Cala di Volpe, Pitrizza, Romazzino, Cervo), marinas, yacht club (YCCS), golf (Pevero), retail", "q": "B", "f": [{"fam": "Lodging", "name": "Hotel", "full": "Hotel"}, {"fam": "Lodging", "name": "Multi-brand", "full": "Several hotel brands"}, {"fam": "Marine", "name": "Marina", "full": "Marina"}, {"fam": "Marine", "name": "Yacht club", "full": "Yacht club"}, {"fam": "Sport", "name": "Golf", "full": "Golf"}, {"fam": "F&B, retail", "name": "Retail", "full": "Retail / boutiques"}], "p": {"area": 3300.0, "area_b": "web 2026-10: consortium perimeter 3,100–3,500 ha, midpoint (Consorzio Costa Smeralda)", "keys": 356, "keys_b": "research", "guests": 500, "guests_b": "calc: keys×2×70% + residences×2.5×45% — stripped '~' — raw: ~500", "staff": 1200, "staff_b": "estimate — stripped '~' — raw: ~1,200 in season", "ops": 6.0, "ops_b": "research", "opex": 133, "opex_b": "model: 1,200 staff × $50K (Europe / developed APAC) ÷ 45% labour share"}, "open_txt": "opened 1960s", "stage": "Operating", "stage_b": "operating", "open_y": 1960, "owner": "Smeralda Holding", "url": "https://www.costasmeralda.it", "url_kind": "site", "ll": [41.12, 9.53], "fit": 80, "fit_b": "weights 30/20/20/20/10 · operators 1.00 (6, data) · area 1.00 · opex 0.89 · stage 0.25 (Operating) · labour 0.71 (Europe / developed APAC)"}, "r": {"name": "Costa Smeralda", "summary": "Luxury resort coast of north-east Sardinia, about 20 km long, planned from 1961 under Prince Karim Aga Khan. Today Smeralda Holding, owned via Qatar Holding, runs the hotels, the Porto Cervo marina and Pevero Golf Club; Marriott, Belmond and Cheval Blanc manage hotels.", "location": "Arzachena / Porto Cervo, Sardinia, Italy", "coords": {"lat": 41.1, "lon": 9.5, "what": "Costa Smeralda area (Wikipedia / Wikidata point, 41°06'N 9°30'E). Coarse: it is a regional point, not Porto Cervo itself. No source for a finer resort-centre point was opened.", "source": "https://en.wikipedia.org/wiki/Costa_Smeralda"}, "developer": {"name": "Smeralda Holding S.r.l. (current owner of hotels, marina and golf); Consorzio Costa Smeralda (founded 1962)", "owner": "Qatar Holding Smeralda Investment S.r.l., indirectly wholly owned by Qatar Investment Authority (acquired 2012)", "source": "https://www.hospitalitynet.org/news/4114907/smeralda-holding-partners-with-lvmh-hospitality-for-romazzino-pitrizza-hotels"}, "stage_now": {"stage": "Operating", "evidence": "Cala di Volpe reopened on 16 April 2026 for the season; Romazzino (Belmond) reopened in 2024 and Cervo in March 2025, while Pitrizza is being converted to Cheval Blanc.", "source": "https://www.costasmeralda.it/en/article/the-hotel-cala-di-volpe-reopens-on-april-16-and-kicks-off-the-2026-season/"}, "timeline": [{"date": "1961", "label": "Development of the coast begins under Aga Khan-led consortium", "status": "done", "source": "https://en.wikipedia.org/wiki/Costa_Smeralda", "source2": "https://www.unionesarda.it/en/the-costa-smeralda-turns-60-ptwfgl6r", "confirmed": false}, {"date": "1962-03", "label": "Consorzio Costa Smeralda formally founded in Olbia", "status": "done", "source": "https://www.unionesarda.it/en/the-costa-smeralda-turns-60-ptwfgl6r", "source2": "https://www.costasmeralda.it/en/article/how-the-emerald-coast-was-born/", "confirmed": true}, {"date": "2003", "label": "Colony Capital buys the assets from Starwood", "status": "done", "source": "https://www.zawya.com/en/business/qatar-swf-inks-deal-to-acquire-smeralda-holding-from-colony-capital-mhzdik2c", "source2": null, "confirmed": false}, {"date": "2012-04", "label": "Qatar Holding agrees to buy Smeralda Holding from Colony Capital", "status": "done", "source": "https://www.zawya.com/en/business/qatar-swf-inks-deal-to-acquire-smeralda-holding-from-colony-capital-mhzdik2c", "source2": "https://www.hospitalitynet.org/news/4114907/smeralda-holding-partners-with-lvmh-hospitality-for-romazzino-pitrizza-hotels", "confirmed": true}, {"date": "2023-02", "label": "LVMH Hospitality to manage Romazzino and Pitrizza", "status": "done", "source": "https://www.hospitalitynet.org/news/4114907/smeralda-holding-partners-with-lvmh-hospitality-for-romazzino-pitrizza-hotels", "source2": "https://mediahub.belmond.com/?p=32367", "confirmed": true}, {"date": "2024-06", "label": "Romazzino reopens as a Belmond hotel", "status": "done", "source": "https://mediahub.belmond.com/?p=32367", "source2": "https://travelsort.com/hotel-romazzino-belmond-cheval-blanc-pitrizza-sardinia/", "confirmed": true}, {"date": "2025-03", "label": "Cervo Hotel reopens after renovation", "status": "done", "source": "https://www.costasmeralda.it/en/article/the-hotel-cala-di-volpe-reopens-on-april-16-and-kicks-off-the-2026-season/", "source2": null, "confirmed": false}, {"date": "2025-03", "label": "IGY Marinas renews Porto Cervo marina management agreement", "status": "done", "source": "https://www.boatinternational.com/boat-pro/news/igy-marinas-porto-cervo-renews-management-agreement", "source2": null, "confirmed": false}, {"date": "2026-04", "label": "Cala di Volpe reopens for the 2026 season", "status": "done", "source": "https://www.costasmeralda.it/en/article/the-hotel-cala-di-volpe-reopens-on-april-16-and-kicks-off-the-2026-season/", "source2": null, "confirmed": false}, {"date": "2027", "label": "Pitrizza reopens as Cheval Blanc Pitrizza (one report says 2026)", "status": "planned", "source": "https://travelsort.com/hotel-romazzino-belmond-cheval-blanc-pitrizza-sardinia/", "source2": "https://www.hospitalitynet.org/news/4114907/smeralda-holding-partners-with-lvmh-hospitality-for-romazzino-pitrizza-hotels", "confirmed": false}], "operators": [{"operator": "Marriott International (Luxury Collection listing)", "parent": "Marriott International", "asset": "Cala di Volpe hotel (121 rooms and suites)", "role": "Hotel", "keys": 121, "status": "open", "since": "1963", "source": "https://www.costasmeralda.it/en/article/the-hotel-cala-di-volpe-reopens-on-april-16-and-kicks-off-the-2026-season/", "confirmed": false}, {"operator": "Belmond", "parent": "LVMH Hospitality", "asset": "Romazzino, A Belmond Hotel (about 100 rooms and suites)", "role": "Hotel", "keys": 100, "status": "open", "since": "2024", "source": "https://mediahub.belmond.com/?p=32367", "confirmed": true}, {"operator": "Cheval Blanc", "parent": "LVMH Hospitality", "asset": "Cheval Blanc Pitrizza (65 rooms, suites and villas)", "role": "Hotel", "keys": 65, "status": "announced", "since": "2027", "source": "https://travelsort.com/hotel-romazzino-belmond-cheval-blanc-pitrizza-sardinia/", "confirmed": true}, {"operator": "Marriott International (brand not confirmed)", "parent": "Marriott International", "asset": "Cervo Hotel, Costa Smeralda Resort (80 rooms and suites)", "role": "Hotel", "keys": 80, "status": "open", "since": "2025", "source": "https://www.costasmeralda.it/en/article/the-hotel-cala-di-volpe-reopens-on-april-16-and-kicks-off-the-2026-season/", "confirmed": false}, {"operator": "IGY Marinas", "parent": "Marina owned by Smeralda Holding", "asset": "Marina di Porto Cervo (about 700 berths, yachts up to 160 m)", "role": "Marina", "keys": null, "status": "open", "since": "1976", "source": "https://www.boatinternational.com/boat-pro/news/igy-marinas-porto-cervo-renews-management-agreement", "confirmed": false}, {"operator": "Smeralda Holding (owner-operator, not confirmed)", "parent": "Qatar Holding", "asset": "Pevero Golf Club", "role": "Golf", "keys": null, "status": "open", "since": null, "source": "https://www.zawya.com/en/business/qatar-swf-inks-deal-to-acquire-smeralda-holding-from-colony-capital-mhzdik2c", "confirmed": false}, {"operator": "Yacht Club Costa Smeralda", "parent": "Independent club founded by the Aga Khan", "asset": "Yacht Club Costa Smeralda, Porto Cervo", "role": "Other", "keys": null, "status": "open", "since": null, "source": "https://www.yccs.it/magazine/2022/i_sessantanni_della_costa_smeralda/we_came_from_the_sea-18.html", "confirmed": false}], "figures": {"area_ha": {"value": null, "source": "https://www.unionesarda.it/en/the-costa-smeralda-turns-60-ptwfgl6r", "note": "Sources conflict: about 3,114 ha in one article, an initial purchase of 1,800 ha, and a coastal area of 55 km2. The 3,300 ha figure was not found. The 2012 Smeralda Holding portfolio included a 51% interest in 2,290 ha of undeveloped land."}, "keys_open": {"value": 366, "source": "https://www.hospitalitynet.org/news/4114907/smeralda-holding-partners-with-lvmh-hospitality-for-romazzino-pitrizza-hotels", "note": "Sum of Cala di Volpe 121, Romazzino about 100, Pitrizza 65 (reopening pending), Cervo 80, taken from sources of different dates. The 2012 portfolio listed 372 rooms in four hotels. Without Pitrizza, open keys are about 301."}, "keys_planned": {"value": 65, "source": "https://travelsort.com/hotel-romazzino-belmond-cheval-blanc-pitrizza-sardinia/", "note": "Pitrizza returning as Cheval Blanc in 2027; these keys are counted in the 366 above."}, "residences": {"value": null, "source": "https://www.zawya.com/en/business/qatar-swf-inks-deal-to-acquire-smeralda-holding-from-colony-capital-mhzdik2c", "note": "No residence count found."}, "investment": {"value": null, "source": "https://www.zawya.com/en/business/qatar-swf-inks-deal-to-acquire-smeralda-holding-from-colony-capital-mhzdik2c", "note": "2012 sale price not disclosed; press reports of about EUR 600 m are unconfirmed. Colony Capital paid reportedly EUR 290 m in 2003."}}, "matrix_check": [{"field": "developer", "current": "Smeralda Holding", "found": "Smeralda Holding owned by Qatar Holding Smeralda Investment S.r.l. (QIA) since 2012; originally the Consorzio Costa Smeralda", "verdict": "ok", "source": "https://www.hospitalitynet.org/news/4114907/smeralda-holding-partners-with-lvmh-hospitality-for-romazzino-pitrizza-hotels"}, {"field": "stage", "current": "Operating, opened 1960s", "found": "Operating; development started 1961, consortium founded March 1962", "verdict": "ok", "source": "https://en.wikipedia.org/wiki/Costa_Smeralda"}, {"field": "area", "current": "3,300 ha", "found": "About 3,114 ha in one article; other sources give different perimeters", "verdict": "differs", "source": "https://www.unionesarda.it/en/the-costa-smeralda-turns-60-ptwfgl6r"}, {"field": "keys", "current": "356", "found": "About 366 (121 + about 100 + 65 + 80) from mixed-date sources; 372 in the 2012 portfolio", "verdict": "differs", "source": "https://www.hospitalitynet.org/news/4114907/smeralda-holding-partners-with-lvmh-hospitality-for-romazzino-pitrizza-hotels"}, {"field": "operators count", "current": "6", "found": "Marriott (Cala di Volpe, Cervo), Belmond (Romazzino), Cheval Blanc (Pitrizza from 2027), IGY (marina), plus owner-run golf and yacht club", "verdict": "not verifiable", "source": "https://www.boatinternational.com/boat-pro/news/igy-marinas-porto-cervo-renews-management-agreement"}, {"field": "operator changes", "current": "Romazzino to Belmond; Pitrizza, Cala di Volpe, Cervo after 2024-2026", "found": "Romazzino: Belmond since 2024. Pitrizza: moving to Cheval Blanc, 2027 per latest source. Cala di Volpe and Cervo stay with Marriott", "verdict": "ok", "source": "https://mediahub.belmond.com/?p=32367"}, {"field": "ownership", "current": "Colony Capital 2003, Qatar 2012", "found": "Colony bought from Starwood in 2003; Qatar Holding deal announced April 2012", "verdict": "ok", "source": "https://www.zawya.com/en/business/qatar-swf-inks-deal-to-acquire-smeralda-holding-from-colony-capital-mhzdik2c"}, {"field": "coordinates", "current": "41.12, 9.53", "found": "Wikipedia gives 41.1, 9.5, a coarse point; no finer source opened", "verdict": "not verifiable", "source": "https://en.wikipedia.org/wiki/Costa_Smeralda"}], "photo_fallback": null, "notes": "Ownership chain rests on the Hospitalitynet article of 10 Feb 2023; the Zawya 2012 page and the Colony 2003 purchase price came from a search summary and the page itself was not opened. Pitrizza reopening conflicts: TravelSort (July 2026) says 2027; a Forbes Romania item claims the transformation finished in May 2026; the 2023 plan said 2026. Cervo brand not confirmed: the Marriott listing exists but the page returned 403, and third-party pages still use the Sheraton name. Cala di Volpe is listed under Marriott's Luxury Collection in search results only; the 1963 opening year is not confirmed by an opened source. The 1976 marina inauguration comes from a Commons file note and the 1962 date from costasmeralda.it, neither fully confirmed. The Yacht Club founding date (around 1967) and Pevero Golf operator and opening date were not confirmed. Romazzino reopening date is unclear (30 May teaser versus Belmond release of 27 June 2024). Area figures conflict; 3,300 ha not found. The Rocco Forte resort opening north of Porto Cervo is a separate project and is not listed. Wikipedia gives coarse coordinates; Porto Cervo village itself was not geocoded from a source. The second photo alternative has no recorded direct image URL (null); use its page URL."}, "photo": {"file": "File:2018 Porto Cervo 3.jpg", "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/ce/2018_Porto_Cervo_3.jpg", "page_url": "https://commons.wikimedia.org/wiki/File:2018_Porto_Cervo_3.jpg", "author": "Klaus Bärwinkel", "licence": "CC BY-SA 4.0", "year": "2018", "width": 4032, "height": 1960, "shows": "Porto Cervo yacht harbour, the central marina of Costa Smeralda.", "viewed": "2026-11-25", "src": "https://commons.wikimedia.org/wiki/Special:FilePath/2018_Porto_Cervo_3.jpg?width=1280"}, "tag": {"code": "MULTI", "name": "Master-planned destination", "c": "#2f4fb5"}, "stage": "Operating", "today": "2026-11-25", "ll": [41.1, 9.5], "zoom": 12, "prev": {"slug": "casa-de-campo", "name": "Casa de Campo Resort & Villas"}, "next": {"slug": "deer-valley", "name": "Deer Valley Resort and East Village"}};
+const m = RESORT.m, r = RESORT.r, $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = v => v == null ? "" : (v >= 100 ? Math.round(v).toLocaleString("en-US") : v.toLocaleString("en-US", {maximumFractionDigits: 1}));
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "source"; } };
+const src = (u, u2) => [u, u2].filter(Boolean).map(x => `<a href="${esc(x)}" target="_blank" rel="noopener">${esc(host(x))}</a>`).join(" · ");
+const STAGE_C = {Design: "#2e9e6b", Construction: "#e07a2f", Expanding: "#2457e6", Operating: "#5b6676"};
+const STAGE_HELP = {
+  Design: "Masterplan or new-build that opens in 2028 or later. Design-phase entry is still open.",
+  Construction: "New-build that opens in 2026–2027, or a rebuild. Specifications are mostly fixed.",
+  Operating: "Running destination with no new phase announced.",
+  Expanding: "Operating destination with new phases in planning or construction. Entry through the new phases.",
+};
+
+// ---- header
+document.title = `RubiqOS · ${r.name || m.name}`;
+$("crumb").textContent = RESORT.tag.name;
+$("name").innerHTML = `<span class="rs-tag" style="--tc:${RESORT.tag.c}">${esc(RESORT.tag.code)}</span>${esc(r.name || m.name)}`;
+const dev = (r.developer && r.developer.name) || m.dev;
+$("sub").innerHTML = `${esc(r.location || m.country)} · Developer: <b>${esc(dev)}</b>${r.developer && r.developer.owner ? ` · Owner: ${esc(r.developer.owner)}` : ""}`;
+$("sum").textContent = r.summary || "";
+const stage = RESORT.stage;
+$("side").innerHTML = `<span class="stg" style="--sc:${STAGE_C[stage]}"><i></i>${esc(stage)}</span>`
+  + (m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">Official website ↗</a>` : "");
+
+// ---- photo
+const ph = RESORT.photo;
+$("photo").innerHTML = ph
+  ? `<img src="${esc(ph.src)}" alt="${esc(ph.shows || r.name)}" loading="eager"><figcaption>${esc(ph.shows || "")}${ph.shows ? " · " : ""}Photo: ${esc(ph.author || "unknown author")}${ph.year ? ", " + esc(ph.year) : ""} · <a href="${esc(ph.page_url)}" target="_blank" rel="noopener">${esc(ph.licence)} · Wikimedia Commons</a></figcaption>`
+  : `<div class="none"><b>No openly licensed photo found</b>${r.photo_fallback ? `<a href="${esc(r.photo_fallback)}" target="_blank" rel="noopener">Official gallery ↗</a>` : ""}</div>`;
+
+// ---- map
+const ll = RESORT.ll, ZOOM = {site: RESORT.zoom, region: 7, world: 3};
+const map = L.map("map", {scrollWheelZoom: false, zoomControl: true}).setView(ll, ZOOM.site);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+L.circleMarker(ll, {radius: 9, color: "#fff", weight: 3, fillColor: "#2457e6", fillOpacity: 1}).addTo(map).bindTooltip(r.name || m.name, {direction: "top", offset: [0, -8]});
+const dms = (v, pos, neg) => `${Math.abs(v).toFixed(4)}° ${v >= 0 ? pos : neg}`;
+$("coords").innerHTML = `${dms(ll[0], "N", "S")}, ${dms(ll[1], "E", "W")}${r.coords && r.coords.what ? " · " + esc(r.coords.what) : ""}`;
+document.querySelectorAll(".zb button").forEach(b => b.addEventListener("click", () => {
+  map.setView(ll, ZOOM[b.dataset.z]);
+  document.querySelectorAll(".zb button").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+
+// ---- basic parameters (market overview values, basis under each)
+const P = [["area", "Site area", "ha"], ["keys", "Keys", ""], ["guests", "Guests per day", ""], ["staff", "Staff", ""], ["ops", "Operators", ""], ["opex", "Operating cost", "$M / yr"]];
+const isEst = b => /estimate|comps|avg|norm|midpoint|knowledge|model|calc|ratio/i.test(b || "");
+const clean = b => String(b || "").replace(/ — stripped '~' — raw:.*$/, "").replace(/ — '\+' dropped — raw:.*$/, "").replace(/^web 2026-10: /, "").replace(/^GL_Target_List note: /, "").replace(/^research note: /, "");
+$("tiles").innerHTML = P.map(([k, label, unit]) => {
+  let v = m.p[k], b = m.p[k + "_b"];
+  if (k === "ops" && (r.operators || []).length) {   // the page lists the operators: count them instead of the overview estimate
+    const open = new Set(r.operators.filter(o => o.status === "open").map(o => o.operator)).size, more = new Set(r.operators.filter(o => o.status !== "open").map(o => o.operator)).size;
+    b = `open today, from the table below${more ? ` · ${more} more under construction or announced` : ""}${v != null && v !== open ? ` · market overview: ${v}` : ""}`; v = open;
+  }
+  return `<div class="tile"><div class="k">${label}</div><div class="v${v != null && isEst(b) ? " est" : ""}">${v == null ? "—" : fmt(v)}${v != null && unit ? `<small>${unit}</small>` : ""}</div><div class="b">${esc(v == null ? "no data" : clean(b))}</div></div>`;
+}).join("") + `<div class="tile"><div class="k">Fit score</div><div class="v">${m.fit ?? "—"}<small>of 100</small></div><div class="b">RubiqOS fit: operators, area, operating cost, stage, labour cost</div></div>`;
+
+const F = r.figures || {}, fact = (k, label, f = x => typeof x === "number" ? fmt(x) : x) => F[k] && F[k].value != null
+  ? `<dt>${label}</dt><dd>${esc(f(F[k].value))} <small>${F[k].note ? esc(F[k].note) + " · " : ""}${src(F[k].source)}</small></dd>` : "";
+$("facts").innerHTML = (fact("area_ha", "Site area", x => fmt(x) + " ha") + fact("keys_open", "Keys open") + fact("keys_planned", "Keys planned") + fact("residences", "Residences") + fact("investment", "Investment")
+  + (m.open_txt ? `<dt>Opening</dt><dd>${esc(m.open_txt)}</dd>` : "") + (m.type ? `<dt>Type</dt><dd>${esc(m.type)}</dd>` : "")) || "<dt>No published figures found</dt><dd></dd>";
+const fams = {}; m.f.forEach(c => (fams[c.fam] = fams[c.fam] || []).push(c.full || c.name));
+$("mix").innerHTML = Object.keys(fams).map(f => `<em>${esc(f)}</em>` + fams[f].map(n => `<span>${esc(n)}</span>`).join("")).join("") || '<span>no data</span>';
+
+// ---- stage and timeline
+$("stages").innerHTML = ["Design", "Construction", "Operating", "Expanding"].map(s => `<span${s === stage ? ` class="on" style="--sc:${STAGE_C[s]}"` : ""}>${s}</span>`).join("");
+$("stageNote").innerHTML = `<b>${esc(stage)}.</b> ${esc(STAGE_HELP[stage])}${r.stage_now && r.stage_now.evidence ? " " + esc(r.stage_now.evidence) + " " + `<span class="muted">(${src(r.stage_now.source)})</span>` : ""}`;
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dnum = d => { const [y, mo, da] = String(d).split("-").map(Number); return y + ((mo || 7) - 1) / 12 + ((da || 15) - 1) / 365; };
+const dtxt = d => { const [y, mo, da] = String(d).split("-"); return (da ? +da + " " : "") + (mo ? MON[+mo - 1] + " " : "") + y; };
+const T = (r.timeline || []).filter(e => e.date).sort((a, b) => dnum(a.date) - dnum(b.date));
+const TN = (r.timeline || []).filter(e => !e.date);   // planned items with no published date: listed last, not on the strip
+const now = dnum(RESORT.today), t0 = Math.floor(Math.min(now, ...T.map(e => dnum(e.date)))), t1 = Math.ceil(Math.max(now, ...T.map(e => dnum(e.date))) + 0.01);
+const pos = x => ((x - t0) / (t1 - t0) * 100).toFixed(2) + "%";
+const step = (t1 - t0) > 40 ? 10 : (t1 - t0) > 16 ? 5 : (t1 - t0) > 8 ? 2 : 1, yrs = [];
+for (let y = Math.ceil(t0 / step) * step; y <= t1; y += step) yrs.push(y);
+$("strip").innerHTML = `<div class="ax"></div><div class="past" style="width:${pos(now)}"></div>`
+  + yrs.map(y => `<span class="yr" style="left:${pos(y)}">${y}</span>`).join("")
+  + T.map(e => `<span class="pt${e.status === "planned" ? " planned" : ""}" style="left:${pos(dnum(e.date))}" title="${esc((e.date_txt || dtxt(e.date)) + " — " + e.label)}"></span>`).join("")
+  + `<span class="now" style="left:${pos(now)}"><b>Today</b></span>`;
+let todayDone = false;
+$("tl").innerHTML = T.map(e => {
+  let h = "";
+  if (!todayDone && (e.status === "planned" || dnum(e.date) > now)) { todayDone = true; h += `<li class="today"><span>${dtxt(RESORT.today.slice(0, 7))}</span><span class="dot"></span><span>Today</span></li>`; }
+  return h + `<li class="${e.status === "planned" ? "planned" : "done"}"><span class="d">${esc(e.date_txt || dtxt(e.date))}</span><span class="dot"></span><span class="l">${esc(e.label)}${e.status === "planned" ? ' <span class="pill ann">planned</span>' : ""}</span><span class="s">${src(e.source, e.source2)}</span></li>`;
+}).join("") + TN.map(e => `<li class="planned"><span class="d">No date</span><span class="dot"></span><span class="l">${esc(e.label)} <span class="pill ann">planned</span></span><span class="s">${src(e.source, e.source2)}</span></li>`).join("")
+  || '<li><span class="d"></span><span></span><span class="l muted">No dated events found</span></li>';
+
+// ---- operators
+const ST = {"open": ["open", "Open"], "under construction": ["uc", "Under construction"], "announced": ["ann", "Announced"]};
+const O = (r.operators || []).slice().sort((a, b) => (Object.keys(ST).indexOf(a.status) - Object.keys(ST).indexOf(b.status)) || (a.role === "Hotel" ? 0 : 1) - (b.role === "Hotel" ? 0 : 1) || String(a.since || "9").localeCompare(String(b.since || "9")));
+const brands = new Set(O.map(o => o.operator));
+$("opLead").textContent = O.length ? `${brands.size} operator${brands.size === 1 ? "" : "s"} and brands on ${O.length} assets: ${O.filter(o => o.status === "open").length} open, ${O.filter(o => o.status !== "open").length} under construction or announced.` : "No operator data found.";
+$("ops").innerHTML = O.length ? `<thead><tr><th>Operator</th><th>Asset</th><th>Role</th><th class="n">Keys</th><th>Status</th><th>Since</th><th>Source</th></tr></thead><tbody>`
+  + O.map(o => `<tr><td>${esc(o.operator)}${o.parent && o.parent !== o.operator ? `<small>${esc(o.parent)}</small>` : ""}</td><td>${esc(o.asset)}</td><td>${esc(o.role)}</td><td class="n">${o.keys ? fmt(o.keys) : ""}</td><td><span class="pill ${(ST[o.status] || ["ann"])[0]}">${esc((ST[o.status] || [0, o.status])[1])}</span></td><td>${esc(o.since ?? "")}</td><td class="muted">${src(o.source)}</td></tr>`).join("") + "</tbody>" : "";
+
+// ---- data check: market overview values against the sources
+const C = r.matrix_check || [], VC = {ok: "v-ok", differs: "v-differs"};
+$("chk").innerHTML = `<summary>Data check against sources (${C.filter(c => c.verdict === "differs").length} of ${C.length} values differ)</summary>`
+  + (C.length ? `<table><tr><th>Value</th><th>Market overview</th><th>Source says</th><th>Verdict</th><th>Source</th></tr>` + C.map(c => `<tr><td>${esc(c.field)}</td><td>${esc(c.current)}</td><td>${esc(c.found)}</td><td class="${VC[c.verdict] || "v-nv"}">${esc(c.verdict)}</td><td>${src(c.source)}</td></tr>`).join("") + "</table>" : "")
+  + (r.notes ? `<p class="muted" style="margin:10px 0 2px">${esc(r.notes)}</p>` : "");
+
+// ---- pager, foot
+$("pager").innerHTML = (RESORT.prev ? `<a class="btn" href="/market/${RESORT.prev.slug}/">← ${esc(RESORT.prev.name)}</a>` : "<span></span>")
+  + `<a class="btn" href="/market/">All resorts</a>` + (RESORT.next ? `<a class="btn" href="/market/${RESORT.next.slug}/">${esc(RESORT.next.name)} →</a>` : "<span></span>");
+$("foot").textContent = `RubiqOS · Resort Market Overview · sources checked ${RESORT.today}. Dates and operators come from the linked sources; values in italics are model estimates.`;
+</script>
+</body>
+</html>

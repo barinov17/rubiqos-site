@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex"><script>(function(){var H='b6e96f84258c1746306bd9e8f4cd9adbccfb35696c7cd4cc4212ff3eac574ff2';try{if(localStorage.getItem('rq.access')===H)return;}catch(e){}location.replace('/access/?to='+encodeURIComponent(location.pathname+location.search+location.hash));})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RubiqOS · AMAALA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="/site.css?v=20261101a">
+<style>
+  /* One page per resort of the Resort Market Overview (2026-11-25). Source: resort.html + destination-matrix-src/resort_pages.json;
+     build_site.py writes /market/<slug>/index.html and puts the resort's data into RESORT below. */
+  body.site .crumb { font-size: 12.5px; color: var(--muted); margin: 18px 0 0; } body.site .crumb a { color: var(--muted); }
+  .rs-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin: 6px 0 14px; }
+  .rs-head h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 4.2vw, 52px); line-height: 1.0; letter-spacing: -0.035em; color: var(--navy); margin: 6px 0 8px; }
+  .rs-head .sub { font-size: 14px; color: var(--text); margin: 0; }
+  .rs-head .sum { font-size: 15.5px; color: var(--text); max-width: 78ch; margin: 10px 0 0; }
+  .rs-tag { display: inline-block; font: 600 10px var(--body); letter-spacing: 0.06em; padding: 4px 7px; border-radius: 4px; color: #fff; background: var(--tc); vertical-align: 2px; margin-right: 8px; }
+  .rs-kind { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .rs-side { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .stg { display: inline-flex; align-items: center; gap: 7px; font: 600 13px var(--body); padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px solid var(--line); color: var(--navy); }
+  .stg i { width: 9px; height: 9px; border-radius: 50%; background: var(--sc); display: inline-block; }
+  .rs-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; }
+  .rs-photo { position: relative; margin: 0; border-radius: 16px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); height: 420px; }
+  .rs-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs-photo figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 10px; font-size: 11.5px; color: #fff; background: linear-gradient(transparent, rgba(10, 18, 32, 0.72)); }
+  .rs-photo figcaption a { color: #fff; }
+  .rs-photo .none { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px; }
+  .rs-mapbox { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); height: 420px; background: var(--panel); display: flex; flex-direction: column; }
+  #map { flex: 1; min-height: 0; z-index: 1; }
+  .rs-mapbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .rs-mapbar .zb { display: flex; gap: 4px; }
+  .rs-mapbar button { font: 500 12px var(--body); border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 8px; padding: 4px 9px; cursor: pointer; }
+  .rs-mapbar button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  body.site section { padding: 22px 0 6px; }
+  body.site section > h2 { font-size: 26px; margin-bottom: 4px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; }
+  .tile .k { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .tile .v { font: 600 27px var(--body); color: var(--navy); line-height: 1.15; letter-spacing: -0.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .tile .v small { font: 500 12px var(--body); color: var(--muted); margin-left: 5px; letter-spacing: 0; }
+  .tile .v.est { font-style: italic; font-weight: 500; }
+  .tile .b { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 12px; }
+  .two .card h3 { margin-bottom: 8px; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13.5px; margin: 0; }
+  .facts dt { color: var(--muted); } .facts dd { margin: 0; color: var(--navy); font-weight: 500; }
+  .facts dd small { font-weight: 400; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { font-size: 12.5px; padding: 4px 9px; border-radius: 999px; background: var(--panel); color: var(--navy); }
+  .chips em { font-style: normal; font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); width: 100%; margin-top: 6px; }
+  .chips em:first-child { margin-top: 0; }
+  /* timeline */
+  .stages { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .stages span { font: 500 12.5px var(--body); padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: transparent; }
+  .stages span.on { background: var(--sc); border-color: var(--sc); color: #fff; font-weight: 600; }
+  .stage-note { font-size: 13px; color: var(--text); margin: 6px 0 0; max-width: 90ch; }
+  .strip { position: relative; height: 54px; margin: 18px 10px 4px; }
+  .strip .ax { position: absolute; left: 0; right: 0; top: 20px; height: 2px; background: var(--line); }
+  .strip .past { position: absolute; left: 0; top: 20px; height: 2px; background: var(--navy); }
+  .strip .pt { position: absolute; top: 14px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--navy); border: 2px solid var(--bg); cursor: default; }
+  .strip .pt.planned { background: var(--bg); border: 2px solid var(--accent); }
+  .strip .pt:hover { transform: scale(1.3); z-index: 2; }
+  .strip .now { position: absolute; top: 4px; bottom: 16px; width: 2px; margin-left: -1px; background: var(--warn); }
+  .strip .now b { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font: 600 10.5px var(--body); color: var(--warn); white-space: nowrap; }
+  .strip .yr { position: absolute; top: 34px; transform: translateX(-50%); font: 500 11px var(--body); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tl { list-style: none; margin: 10px 0 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .tl li { display: grid; grid-template-columns: 104px 18px 1fr auto; gap: 0 12px; align-items: center; padding: 9px 14px; border-bottom: 1px solid rgba(10, 18, 32, 0.06); font-size: 13.5px; }
+  .tl li:last-child { border-bottom: 0; }
+  .tl .d { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tl .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--navy); justify-self: center; }
+  .tl .planned .dot { background: #fff; border: 2px solid var(--accent); }
+  .tl .planned .d, .tl .planned .l { color: var(--accent-ink, #1a3fb0); }
+  .tl .l { color: var(--ink); }
+  .tl .s { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .tl .s a { color: var(--muted); }
+  .tl li.today { background: #fdf3ea; color: var(--warn); font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 14px; }
+  .tl li.today .dot { background: var(--warn); width: 9px; height: 9px; }
+  .pill { display: inline-block; font: 600 10.5px var(--body); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .pill.open { background: #e3f3ec; color: #1f7a51; } .pill.uc { background: #fbeadc; color: #a8551a; } .pill.ann { background: #dfe7fb; color: #1a3fb0; }
+  body.site table.t td:first-child { white-space: normal; }
+  body.site table.t td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body.site table.t th.n { text-align: right; }
+  body.site table.t td small { color: var(--muted); font-weight: 400; display: block; }
+  .tw { overflow-x: auto; }
+  details.chk { margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; font-size: 13px; }
+  details.chk summary { cursor: pointer; font-weight: 600; color: var(--navy); }
+  details.chk table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  details.chk td, details.chk th { text-align: left; padding: 5px 8px 5px 0; border-bottom: 1px solid rgba(10, 18, 32, 0.06); vertical-align: top; }
+  details.chk th { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .v-ok { color: var(--ok); font-weight: 600; } .v-differs { color: var(--warn); font-weight: 600; } .v-nv { color: var(--muted); }
+  .pager { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 26px 0 0; }
+  @media (max-width: 900px) { .rs-top, .two { grid-template-columns: 1fr; } .rs-photo, .rs-mapbox { height: 320px; } .tl li { grid-template-columns: 84px 14px 1fr; } .tl .s { grid-column: 3; } }
+</style>
+</head>
+<body class="site">
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Home</a><a href="/demo/">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/" class="on">Resort Market Overview</a><a href="/robots/">Robots</a><a href="/particles/">Particles</a></nav><span></span></div></div>
+<div class="wrap">
+  <p class="crumb"><a href="/market/">Resort Market Overview</a> · <span id="crumb"></span></p>
+  <div class="rs-head">
+    <div>
+      <h1 id="name"></h1>
+      <p class="sub" id="sub"></p>
+      <p class="sum" id="sum"></p>
+    </div>
+    <div class="rs-side" id="side"></div>
+  </div>
+  <div class="rs-top">
+    <figure class="rs-photo" id="photo"></figure>
+    <div class="rs-mapbox"><div id="map"></div><div class="rs-mapbar"><span id="coords"></span><span class="zb"><button type="button" data-z="site" aria-pressed="true">Site</button><button type="button" data-z="region" aria-pressed="false">Region</button><button type="button" data-z="world" aria-pressed="false">World</button></span></div></div>
+  </div>
+
+  <section>
+    <h2>Basic parameters</h2>
+    <p class="lead">Scale of the destination. Values in italics are model estimates from the market overview; the basis is under each value.</p>
+    <div class="tiles" id="tiles"></div>
+    <div class="two">
+      <div class="card"><h3>Published figures</h3><dl class="facts" id="facts"></dl></div>
+      <div class="card"><h3>Business mix</h3><div class="chips" id="mix"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Stage and key dates</h2>
+    <div class="stages" id="stages"></div>
+    <p class="stage-note" id="stageNote"></p>
+    <div class="strip" id="strip"></div>
+    <ol class="tl" id="tl"></ol>
+  </section>
+
+  <section>
+    <h2>Operators</h2>
+    <p class="lead" id="opLead"></p>
+    <div class="tw"><table class="t" id="ops"></table></div>
+  </section>
+
+  <details class="chk" id="chk"></details>
+  <div class="pager" id="pager"></div>
+  <p class="foot" id="foot"></p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const RESORT = {"m": {"n": "61", "name": "AMAALA", "dev": "Red Sea Global", "country": "Saudi Arabia", "type": "Multi-operator destination", "g": "C", "status": "Operating + expanding", "ops": "9", "biz": "9 resorts (Equinox, Four Seasons, Nammos, Rosewood, Six Senses…), residences, marina, yacht club, Marina Village, marine institute", "q": "A", "f": [{"fam": "Lodging", "name": "Hotel", "full": "Hotel"}, {"fam": "Lodging", "name": "Multi-brand", "full": "Several hotel brands"}, {"fam": "Lodging", "name": "Villas", "full": "Villas / estates"}, {"fam": "Residential", "name": "Residences", "full": "Branded residences"}, {"fam": "Marine", "name": "Marina", "full": "Marina"}, {"fam": "Marine", "name": "Yacht club", "full": "Yacht club"}], "p": {"area": 420000.0, "area_b": "web 2026-10: 4,200 km² incl. royal reserve (Wikipedia, PIF)", "keys": 1600, "keys_b": "research", "guests": 2460, "guests_b": "calc: keys×2×70% + residences×2.5×45% — stripped '~' — raw: ~2,460", "staff": 2460, "staff_b": "ratio estimate — stripped '~' — raw: ~2,460", "ops": 9.0, "ops_b": "research", "opex": 109, "opex_b": "model: 2,460 staff × $20K (MENA) ÷ 45% labour share"}, "open_txt": "opening 2026", "stage": "Expanding", "stage_b": "operating, new phases without a dated opening", "open_y": 2026, "owner": "Red Sea Global", "url": "https://www.redseaglobal.com/en/our-destinations/amaala", "url_kind": "site", "ll": [26.61, 36.21], "fit": 85, "fit_b": "weights 30/20/20/20/10 · operators 1.00 (9, data) · area 1.00 · opex 0.84 · stage 0.75 (Expanding) · labour 0.29 (MENA)"}, "r": {"name": "AMAALA", "summary": "Ultra-luxury wellness and yachting destination on Saudi Arabia's northwest Red Sea coast, developed by Red Sea Global (PIF). Triple Bay, the first phase, opened its first resorts from June 2026; about 1,600 keys are planned across nine resorts.", "location": "Triple Bay, Tabuk Province, Red Sea coast, Saudi Arabia", "coords": {"lat": 26.6436, "lon": 36.2258, "what": "AMAALA destination centre (Wikipedia coordinates 26°38'37\"N 36°13'33\"E)", "source": "https://en.wikipedia.org/wiki/Amaala"}, "developer": {"name": "Red Sea Global", "owner": "Public Investment Fund (PIF), wholly owned", "source": "https://www.hospitalitynet.org/news/4129730.html"}, "stage_now": {"stage": "Expanding", "evidence": "Six resorts have opened between June and September 2026 and the yacht club opened in September 2026, while further resorts are still to come.", "source": "https://travelprnews.com/nammos-opens-full-scale-resort-at-amaala-bringing-its-mykonos-lifestyle-to-the-saudi-red-sea/travel-press-release/2026/09/07/"}, "timeline": [{"date": "2018-09-30", "label": "AMAALA announced as a luxury Red Sea destination", "status": "done", "source": "https://en.wikipedia.org/wiki/Amaala", "source2": null, "confirmed": false}, {"date": "2023-10-02", "label": "Monaco Marina Management signs for the Triple Bay marina (120 berths)", "status": "done", "source": "https://www.hospitalitynet.org/announcement/41010109/amaalas-triple-bay-marina-set-to-become-a-world-renowned-hub-for-luxury-yachting", "source2": null, "confirmed": false}, {"date": "2025-11-11", "label": "Red Sea Global names six launch resorts at TOURISE summit", "status": "done", "source": "https://www.hospitalitynet.org/news/4129730.html", "source2": null, "confirmed": false}, {"date": "2026-06-15", "label": "Four Seasons Resort and Residences opens (202 rooms)", "status": "done", "source": "https://press.fourseasons.com/amaalaredsea/hotel-news/2026/now-open", "source2": null, "confirmed": false}, {"date": "2026-07", "label": "Six Senses Southern Dunes opens to first guests (100 keys)", "status": "done", "source": "https://www.arabnews.com/node/2650108/saudi-arabia", "source2": null, "confirmed": false}, {"date": "2026-08-18", "label": "Rosewood opens for paid stays (110 keys)", "status": "done", "source": "https://vision2030.ai/analysis/rosewood-amaala-operating-resort-delivery-ledger/", "source2": null, "confirmed": false}, {"date": "2026-09", "label": "Equinox Hotels opens its first resort outside the US (128 rooms)", "status": "done", "source": "https://thehospitalitytribune.com/equinox-hotels-opens-first-resort-outside-us-amaala/", "source2": null, "confirmed": false}, {"date": "2026-09-07", "label": "Nammos resort opens (110 keys); described as the sixth resort open", "status": "done", "source": "https://travelprnews.com/nammos-opens-full-scale-resort-at-amaala-bringing-its-mykonos-lifestyle-to-the-saudi-red-sea/travel-press-release/2026/09/07/", "source2": null, "confirmed": false}, {"date": "2026-09-14", "label": "AMAALA Yacht Club officially opens (119 berths)", "status": "done", "source": "https://www.boatinternational.com/boat-pro/news/amaala-yacht-club-red-sea-opening", "source2": "https://www.marineindustrynews.co.uk", "confirmed": false}, {"date": "2027", "label": "Ocean Race Grand Finale hosted at the AMAALA Yacht Club", "status": "planned", "source": "https://www.hospitalitynet.org/news/4129730.html", "source2": null, "confirmed": false}, {"date": "2027", "label": "Remaining resorts due: Clinique La Prairie, Jayasom, Ritz-Carlton (no firm dates)", "status": "planned", "source": "https://travelprnews.com/nammos-opens-full-scale-resort-at-amaala-bringing-its-mykonos-lifestyle-to-the-saudi-red-sea/travel-press-release/2026/09/07/", "source2": "https://en.wikipedia.org/wiki/Amaala", "confirmed": false}], "operators": [{"operator": "Four Seasons", "parent": null, "asset": "Four Seasons Resort and Residences at AMAALA", "role": "Hotel", "keys": 202, "status": "open", "since": "2026", "source": "https://press.fourseasons.com/amaalaredsea/hotel-news/2026/now-open", "confirmed": true}, {"operator": "Six Senses", "parent": "IHG Hotels & Resorts", "asset": "Six Senses Southern Dunes, The Red Sea / AMAALA resort", "role": "Hotel", "keys": 100, "status": "open", "since": "2026", "source": "https://www.arabnews.com/node/2650108/saudi-arabia", "confirmed": false}, {"operator": "Rosewood Hotels & Resorts", "parent": null, "asset": "Rosewood AMAALA", "role": "Hotel", "keys": 110, "status": "open", "since": "2026", "source": "https://vision2030.ai/analysis/rosewood-amaala-operating-resort-delivery-ledger/", "confirmed": false}, {"operator": "Equinox Hotels", "parent": "Equinox Group", "asset": "Equinox Hotel AMAALA", "role": "Hotel", "keys": 128, "status": "open", "since": "2026", "source": "https://thehospitalitytribune.com/equinox-hotels-opens-first-resort-outside-us-amaala/", "confirmed": false}, {"operator": "Nammos", "parent": null, "asset": "Nammos Resort AMAALA", "role": "Hotel", "keys": 110, "status": "open", "since": "2026", "source": "https://travelprnews.com/nammos-opens-full-scale-resort-at-amaala-bringing-its-mykonos-lifestyle-to-the-saudi-red-sea/travel-press-release/2026/09/07/", "confirmed": false}, {"operator": "Red Sea Global", "parent": "PIF", "asset": "AMAALA Hotel (RSG-owned, staff accommodation per RSG release)", "role": "Hotel", "keys": 144, "status": "under construction", "since": "2026", "source": "https://www.hospitalitynet.org/news/4129730.html", "confirmed": false}, {"operator": "Clinique La Prairie", "parent": null, "asset": "Clinique La Prairie longevity resort", "role": "Hotel", "keys": 65, "status": "announced", "since": null, "source": "https://en.wikipedia.org/wiki/Amaala", "confirmed": false}, {"operator": "Jayasom", "parent": null, "asset": "Jayasom wellness resort", "role": "Hotel", "keys": 153, "status": "announced", "since": null, "source": "https://en.wikipedia.org/wiki/Amaala", "confirmed": false}, {"operator": "Ritz-Carlton", "parent": "Marriott International", "asset": "Ritz-Carlton resort", "role": "Hotel", "keys": null, "status": "announced", "since": null, "source": "https://travelprnews.com/nammos-opens-full-scale-resort-at-amaala-bringing-its-mykonos-lifestyle-to-the-saudi-red-sea/travel-press-release/2026/09/07/", "confirmed": false}, {"operator": "Red Sea Global (in-house; general manager Adrian Peet)", "parent": "PIF", "asset": "AMAALA Yacht Club and Triple Bay marina, 119 berths up to 140 m", "role": "Marina", "keys": null, "status": "open", "since": "2026", "source": "https://www.boatinternational.com/boat-pro/news/amaala-yacht-club-red-sea-opening", "confirmed": false}, {"operator": "Monaco Marina Management (M3)", "parent": "Yacht Club de Monaco group", "asset": "Triple Bay marina management partner (signed 2023; not named in the 2026 opening articles)", "role": "Marina", "keys": null, "status": "open", "since": "2026", "source": "https://www.hospitalitynet.org/announcement/41010109/amaalas-triple-bay-marina-set-to-become-a-world-renowned-hub-for-luxury-yachting", "confirmed": false}, {"operator": "Red Sea Global", "parent": "PIF", "asset": "Corallium Marine Life Institute (Foster + Partners), immersive marine exhibits over three levels", "role": "Other", "keys": null, "status": "under construction", "since": null, "source": "https://www.hospitalitynet.org/news/4129730.html", "confirmed": false}], "figures": {"area_ha": {"value": 420000, "source": "https://en.wikipedia.org/wiki/Amaala", "note": "4,200 km2 for the whole destination; Triple Bay, the first phase, is a small fraction of this."}, "keys_open": {"value": 650, "source": "https://travelprnews.com/nammos-opens-full-scale-resort-at-amaala-bringing-its-mykonos-lifestyle-to-the-saudi-red-sea/travel-press-release/2026/09/07/", "note": "Sum of five resorts opened by September 2026 (202 + 100 + 110 + 128 + 110). The sixth open resort is not identified; the 144-key AMAALA Hotel would bring the total to 794 if it is open."}, "keys_planned": {"value": 1600, "source": "https://www.hospitalitynet.org/news/4129730.html", "note": "More than 1,600 keys across nine resorts at Triple Bay. One trade report cited 1,267 rooms; original 2018 plan was about 3,000 rooms in 25 hotels."}, "residences": {"value": null, "source": "https://www.hospitalitynet.org/news/4129730.html", "note": "No destination total found. Branded residences per resort: Equinox 21, Four Seasons 25, Nammos 20, Rosewood 26, Six Senses 25 (about 117 for the five open resorts)."}, "investment": {"value": null, "source": "https://en.wikipedia.org/wiki/Amaala", "note": "No current verified investment figure found for AMAALA alone."}}, "matrix_check": [{"field": "developer", "current": "Red Sea Global (owner PIF)", "found": "Red Sea Global, wholly owned by PIF", "verdict": "ok", "source": "https://www.hospitalitynet.org/news/4129730.html"}, {"field": "stage / opening", "current": "Expanding, opening 2026", "found": "First resorts opened June to September 2026; more resorts and Corallium still to come", "verdict": "ok", "source": "https://travelprnews.com/nammos-opens-full-scale-resort-at-amaala-bringing-its-mykonos-lifestyle-to-the-saudi-red-sea/travel-press-release/2026/09/07/"}, {"field": "area", "current": "420,000 ha", "found": "4,200 km2 = 420,000 ha", "verdict": "ok", "source": "https://en.wikipedia.org/wiki/Amaala"}, {"field": "keys", "current": "1,600", "found": "More than 1,600 planned at Triple Bay; about 650 open as of Nov 2026 (one trade source says 1,267 planned)", "verdict": "ok", "source": "https://www.hospitalitynet.org/news/4129730.html"}, {"field": "operators count", "current": "9", "found": "9 resort brands (Equinox, Four Seasons, Nammos, Rosewood, Six Senses, AMAALA Hotel, Clinique La Prairie, Jayasom, Ritz-Carlton) plus the yacht club and marina partner", "verdict": "ok", "source": "https://www.hospitalitynet.org/news/4129730.html"}, {"field": "coordinates", "current": "26.61, 36.21", "found": "26.6436, 36.2258 (about 4 km south-west of Wikipedia point)", "verdict": "differs", "source": "https://en.wikipedia.org/wiki/Amaala"}], "photo_fallback": "https://www.redseaglobal.com (official media centre; page returned HTTP 403 to automated fetch, exact gallery URL not verified)", "notes": "Nothing suitable on Wikimedia Commons: Category:Amaala is empty and the Wikipedia article carries only a logo and maps. Open resorts: Four Seasons (15 Jun 2026), Six Senses (mid-Jul), Rosewood (18 Aug), Equinox (early Sep), Nammos (7 Sep); most openings rest on a single article, so confirmed is false except Four Seasons (own release plus RSG Nov 2025 list). Nammos release calls it the sixth open resort with three more due and nine planned; the sixth is not identified (possibly the AMAALA Hotel). Key counts differ between sources (Four Seasons 202 per RSG vs 220 on Wikipedia, plus 25 or 26 residences). Yacht club operator: Monaco Marina Management signed in 2023, but the 2026 opening coverage does not name it; treated as unconfirmed. Berths: 119 at opening vs 116 to 120 earlier. Corallium: Foster + Partners design, reported nearing completion in Jan 2025, no opening or public access confirmed. Ritz-Carlton, Clinique La Prairie and Jayasom have no firm opening dates; the 2027 timeline entry is an assumption from the 'three more due' statement. Saudi Gazette, Hotelier Middle East, redseaglobal.com and pif.gov.sa were not readable."}, "photo": null, "tag": {"code": "MULTI", "name": "Master-planned destination", "c": "#2f4fb5"}, "stage": "Expanding", "today": "2026-11-25", "ll": [26.6436, 36.2258], "zoom": 8, "prev": {"slug": "al-marjan-island", "name": "Al Marjan Island"}, "next": {"slug": "andermatt-swiss-alps", "name": "Andermatt Swiss Alps"}};
+const m = RESORT.m, r = RESORT.r, $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = v => v == null ? "" : (v >= 100 ? Math.round(v).toLocaleString("en-US") : v.toLocaleString("en-US", {maximumFractionDigits: 1}));
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "source"; } };
+const src = (u, u2) => [u, u2].filter(Boolean).map(x => `<a href="${esc(x)}" target="_blank" rel="noopener">${esc(host(x))}</a>`).join(" · ");
+const STAGE_C = {Design: "#2e9e6b", Construction: "#e07a2f", Expanding: "#2457e6", Operating: "#5b6676"};
+const STAGE_HELP = {
+  Design: "Masterplan or new-build that opens in 2028 or later. Design-phase entry is still open.",
+  Construction: "New-build that opens in 2026–2027, or a rebuild. Specifications are mostly fixed.",
+  Operating: "Running destination with no new phase announced.",
+  Expanding: "Operating destination with new phases in planning or construction. Entry through the new phases.",
+};
+
+// ---- header
+document.title = `RubiqOS · ${r.name || m.name}`;
+$("crumb").textContent = RESORT.tag.name;
+$("name").innerHTML = `<span class="rs-tag" style="--tc:${RESORT.tag.c}">${esc(RESORT.tag.code)}</span>${esc(r.name || m.name)}`;
+const dev = (r.developer && r.developer.name) || m.dev;
+$("sub").innerHTML = `${esc(r.location || m.country)} · Developer: <b>${esc(dev)}</b>${r.developer && r.developer.owner ? ` · Owner: ${esc(r.developer.owner)}` : ""}`;
+$("sum").textContent = r.summary || "";
+const stage = RESORT.stage;
+$("side").innerHTML = `<span class="stg" style="--sc:${STAGE_C[stage]}"><i></i>${esc(stage)}</span>`
+  + (m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">Official website ↗</a>` : "");
+
+// ---- photo
+const ph = RESORT.photo;
+$("photo").innerHTML = ph
+  ? `<img src="${esc(ph.src)}" alt="${esc(ph.shows || r.name)}" loading="eager"><figcaption>${esc(ph.shows || "")}${ph.shows ? " · " : ""}Photo: ${esc(ph.author || "unknown author")}${ph.year ? ", " + esc(ph.year) : ""} · <a href="${esc(ph.page_url)}" target="_blank" rel="noopener">${esc(ph.licence)} · Wikimedia Commons</a></figcaption>`
+  : `<div class="none"><b>No openly licensed photo found</b>${r.photo_fallback ? `<a href="${esc(r.photo_fallback)}" target="_blank" rel="noopener">Official gallery ↗</a>` : ""}</div>`;
+
+// ---- map
+const ll = RESORT.ll, ZOOM = {site: RESORT.zoom, region: 7, world: 3};
+const map = L.map("map", {scrollWheelZoom: false, zoomControl: true}).setView(ll, ZOOM.site);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+L.circleMarker(ll, {radius: 9, color: "#fff", weight: 3, fillColor: "#2457e6", fillOpacity: 1}).addTo(map).bindTooltip(r.name || m.name, {direction: "top", offset: [0, -8]});
+const dms = (v, pos, neg) => `${Math.abs(v).toFixed(4)}° ${v >= 0 ? pos : neg}`;
+$("coords").innerHTML = `${dms(ll[0], "N", "S")}, ${dms(ll[1], "E", "W")}${r.coords && r.coords.what ? " · " + esc(r.coords.what) : ""}`;
+document.querySelectorAll(".zb button").forEach(b => b.addEventListener("click", () => {
+  map.setView(ll, ZOOM[b.dataset.z]);
+  document.querySelectorAll(".zb button").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+
+// ---- basic parameters (market overview values, basis under each)
+const P = [["area", "Site area", "ha"], ["keys", "Keys", ""], ["guests", "Guests per day", ""], ["staff", "Staff", ""], ["ops", "Operators", ""], ["opex", "Operating cost", "$M / yr"]];
+const isEst = b => /estimate|comps|avg|norm|midpoint|knowledge|model|calc|ratio/i.test(b || "");
+const clean = b => String(b || "").replace(/ — stripped '~' — raw:.*$/, "").replace(/ — '\+' dropped — raw:.*$/, "").replace(/^web 2026-10: /, "").replace(/^GL_Target_List note: /, "").replace(/^research note: /, "");
+$("tiles").innerHTML = P.map(([k, label, unit]) => {
+  let v = m.p[k], b = m.p[k + "_b"];
+  if (k === "ops" && (r.operators || []).length) {   // the page lists the operators: count them instead of the overview estimate
+    const open = new Set(r.operators.filter(o => o.status === "open").map(o => o.operator)).size, more = new Set(r.operators.filter(o => o.status !== "open").map(o => o.operator)).size;
+    b = `open today, from the table below${more ? ` · ${more} more under construction or announced` : ""}${v != null && v !== open ? ` · market overview: ${v}` : ""}`; v = open;
+  }
+  return `<div class="tile"><div class="k">${label}</div><div class="v${v != null && isEst(b) ? " est" : ""}">${v == null ? "—" : fmt(v)}${v != null && unit ? `<small>${unit}</small>` : ""}</div><div class="b">${esc(v == null ? "no data" : clean(b))}</div></div>`;
+}).join("") + `<div class="tile"><div class="k">Fit score</div><div class="v">${m.fit ?? "—"}<small>of 100</small></div><div class="b">RubiqOS fit: operators, area, operating cost, stage, labour cost</div></div>`;
+
+const F = r.figures || {}, fact = (k, label, f = x => typeof x === "number" ? fmt(x) : x) => F[k] && F[k].value != null
+  ? `<dt>${label}</dt><dd>${esc(f(F[k].value))} <small>${F[k].note ? esc(F[k].note) + " · " : ""}${src(F[k].source)}</small></dd>` : "";
+$("facts").innerHTML = (fact("area_ha", "Site area", x => fmt(x) + " ha") + fact("keys_open", "Keys open") + fact("keys_planned", "Keys planned") + fact("residences", "Residences") + fact("investment", "Investment")
+  + (m.open_txt ? `<dt>Opening</dt><dd>${esc(m.open_txt)}</dd>` : "") + (m.type ? `<dt>Type</dt><dd>${esc(m.type)}</dd>` : "")) || "<dt>No published figures found</dt><dd></dd>";
+const fams = {}; m.f.forEach(c => (fams[c.fam] = fams[c.fam] || []).push(c.full || c.name));
+$("mix").innerHTML = Object.keys(fams).map(f => `<em>${esc(f)}</em>` + fams[f].map(n => `<span>${esc(n)}</span>`).join("")).join("") || '<span>no data</span>';
+
+// ---- stage and timeline
+$("stages").innerHTML = ["Design", "Construction", "Operating", "Expanding"].map(s => `<span${s === stage ? ` class="on" style="--sc:${STAGE_C[s]}"` : ""}>${s}</span>`).join("");
+$("stageNote").innerHTML = `<b>${esc(stage)}.</b> ${esc(STAGE_HELP[stage])}${r.stage_now && r.stage_now.evidence ? " " + esc(r.stage_now.evidence) + " " + `<span class="muted">(${src(r.stage_now.source)})</span>` : ""}`;
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dnum = d => { const [y, mo, da] = String(d).split("-").map(Number); return y + ((mo || 7) - 1) / 12 + ((da || 15) - 1) / 365; };
+const dtxt = d => { const [y, mo, da] = String(d).split("-"); return (da ? +da + " " : "") + (mo ? MON[+mo - 1] + " " : "") + y; };
+const T = (r.timeline || []).filter(e => e.date).sort((a, b) => dnum(a.date) - dnum(b.date));
+const TN = (r.timeline || []).filter(e => !e.date);   // planned items with no published date: listed last, not on the strip
+const now = dnum(RESORT.today), t0 = Math.floor(Math.min(now, ...T.map(e => dnum(e.date)))), t1 = Math.ceil(Math.max(now, ...T.map(e => dnum(e.date))) + 0.01);
+const pos = x => ((x - t0) / (t1 - t0) * 100).toFixed(2) + "%";
+const step = (t1 - t0) > 40 ? 10 : (t1 - t0) > 16 ? 5 : (t1 - t0) > 8 ? 2 : 1, yrs = [];
+for (let y = Math.ceil(t0 / step) * step; y <= t1; y += step) yrs.push(y);
+$("strip").innerHTML = `<div class="ax"></div><div class="past" style="width:${pos(now)}"></div>`
+  + yrs.map(y => `<span class="yr" style="left:${pos(y)}">${y}</span>`).join("")
+  + T.map(e => `<span class="pt${e.status === "planned" ? " planned" : ""}" style="left:${pos(dnum(e.date))}" title="${esc((e.date_txt || dtxt(e.date)) + " — " + e.label)}"></span>`).join("")
+  + `<span class="now" style="left:${pos(now)}"><b>Today</b></span>`;
+let todayDone = false;
+$("tl").innerHTML = T.map(e => {
+  let h = "";
+  if (!todayDone && (e.status === "planned" || dnum(e.date) > now)) { todayDone = true; h += `<li class="today"><span>${dtxt(RESORT.today.slice(0, 7))}</span><span class="dot"></span><span>Today</span></li>`; }
+  return h + `<li class="${e.status === "planned" ? "planned" : "done"}"><span class="d">${esc(e.date_txt || dtxt(e.date))}</span><span class="dot"></span><span class="l">${esc(e.label)}${e.status === "planned" ? ' <span class="pill ann">planned</span>' : ""}</span><span class="s">${src(e.source, e.source2)}</span></li>`;
+}).join("") + TN.map(e => `<li class="planned"><span class="d">No date</span><span class="dot"></span><span class="l">${esc(e.label)} <span class="pill ann">planned</span></span><span class="s">${src(e.source, e.source2)}</span></li>`).join("")
+  || '<li><span class="d"></span><span></span><span class="l muted">No dated events found</span></li>';
+
+// ---- operators
+const ST = {"open": ["open", "Open"], "under construction": ["uc", "Under construction"], "announced": ["ann", "Announced"]};
+const O = (r.operators || []).slice().sort((a, b) => (Object.keys(ST).indexOf(a.status) - Object.keys(ST).indexOf(b.status)) || (a.role === "Hotel" ? 0 : 1) - (b.role === "Hotel" ? 0 : 1) || String(a.since || "9").localeCompare(String(b.since || "9")));
+const brands = new Set(O.map(o => o.operator));
+$("opLead").textContent = O.length ? `${brands.size} operator${brands.size === 1 ? "" : "s"} and brands on ${O.length} assets: ${O.filter(o => o.status === "open").length} open, ${O.filter(o => o.status !== "open").length} under construction or announced.` : "No operator data found.";
+$("ops").innerHTML = O.length ? `<thead><tr><th>Operator</th><th>Asset</th><th>Role</th><th class="n">Keys</th><th>Status</th><th>Since</th><th>Source</th></tr></thead><tbody>`
+  + O.map(o => `<tr><td>${esc(o.operator)}${o.parent && o.parent !== o.operator ? `<small>${esc(o.parent)}</small>` : ""}</td><td>${esc(o.asset)}</td><td>${esc(o.role)}</td><td class="n">${o.keys ? fmt(o.keys) : ""}</td><td><span class="pill ${(ST[o.status] || ["ann"])[0]}">${esc((ST[o.status] || [0, o.status])[1])}</span></td><td>${esc(o.since ?? "")}</td><td class="muted">${src(o.source)}</td></tr>`).join("") + "</tbody>" : "";
+
+// ---- data check: market overview values against the sources
+const C = r.matrix_check || [], VC = {ok: "v-ok", differs: "v-differs"};
+$("chk").innerHTML = `<summary>Data check against sources (${C.filter(c => c.verdict === "differs").length} of ${C.length} values differ)</summary>`
+  + (C.length ? `<table><tr><th>Value</th><th>Market overview</th><th>Source says</th><th>Verdict</th><th>Source</th></tr>` + C.map(c => `<tr><td>${esc(c.field)}</td><td>${esc(c.current)}</td><td>${esc(c.found)}</td><td class="${VC[c.verdict] || "v-nv"}">${esc(c.verdict)}</td><td>${src(c.source)}</td></tr>`).join("") + "</table>" : "")
+  + (r.notes ? `<p class="muted" style="margin:10px 0 2px">${esc(r.notes)}</p>` : "");
+
+// ---- pager, foot
+$("pager").innerHTML = (RESORT.prev ? `<a class="btn" href="/market/${RESORT.prev.slug}/">← ${esc(RESORT.prev.name)}</a>` : "<span></span>")
+  + `<a class="btn" href="/market/">All resorts</a>` + (RESORT.next ? `<a class="btn" href="/market/${RESORT.next.slug}/">${esc(RESORT.next.name)} →</a>` : "<span></span>");
+$("foot").textContent = `RubiqOS · Resort Market Overview · sources checked ${RESORT.today}. Dates and operators come from the linked sources; values in italics are model estimates.`;
+</script>
+</body>
+</html>

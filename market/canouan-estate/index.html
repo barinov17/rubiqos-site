@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex"><script>(function(){var H='b6e96f84258c1746306bd9e8f4cd9adbccfb35696c7cd4cc4212ff3eac574ff2';try{if(localStorage.getItem('rq.access')===H)return;}catch(e){}location.replace('/access/?to='+encodeURIComponent(location.pathname+location.search+location.hash));})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RubiqOS · Canouan Estate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="/site.css?v=20261101a">
+<style>
+  /* One page per resort of the Resort Market Overview (2026-11-25). Source: resort.html + destination-matrix-src/resort_pages.json;
+     build_site.py writes /market/<slug>/index.html and puts the resort's data into RESORT below. */
+  body.site .crumb { font-size: 12.5px; color: var(--muted); margin: 18px 0 0; } body.site .crumb a { color: var(--muted); }
+  .rs-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin: 6px 0 14px; }
+  .rs-head h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 4.2vw, 52px); line-height: 1.0; letter-spacing: -0.035em; color: var(--navy); margin: 6px 0 8px; }
+  .rs-head .sub { font-size: 14px; color: var(--text); margin: 0; }
+  .rs-head .sum { font-size: 15.5px; color: var(--text); max-width: 78ch; margin: 10px 0 0; }
+  .rs-tag { display: inline-block; font: 600 10px var(--body); letter-spacing: 0.06em; padding: 4px 7px; border-radius: 4px; color: #fff; background: var(--tc); vertical-align: 2px; margin-right: 8px; }
+  .rs-kind { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .rs-side { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .stg { display: inline-flex; align-items: center; gap: 7px; font: 600 13px var(--body); padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px solid var(--line); color: var(--navy); }
+  .stg i { width: 9px; height: 9px; border-radius: 50%; background: var(--sc); display: inline-block; }
+  .rs-top { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; }
+  .rs-photo { position: relative; margin: 0; border-radius: 16px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); height: 420px; }
+  .rs-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rs-photo figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 10px; font-size: 11.5px; color: #fff; background: linear-gradient(transparent, rgba(10, 18, 32, 0.72)); }
+  .rs-photo figcaption a { color: #fff; }
+  .rs-photo .none { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px; }
+  .rs-mapbox { position: relative; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); height: 420px; background: var(--panel); display: flex; flex-direction: column; }
+  #map { flex: 1; min-height: 0; z-index: 1; }
+  .rs-mapbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .rs-mapbar .zb { display: flex; gap: 4px; }
+  .rs-mapbar button { font: 500 12px var(--body); border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 8px; padding: 4px 9px; cursor: pointer; }
+  .rs-mapbar button[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  body.site section { padding: 22px 0 6px; }
+  body.site section > h2 { font-size: 26px; margin-bottom: 4px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; }
+  .tile .k { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+  .tile .v { font: 600 27px var(--body); color: var(--navy); line-height: 1.15; letter-spacing: -0.02em; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .tile .v small { font: 500 12px var(--body); color: var(--muted); margin-left: 5px; letter-spacing: 0; }
+  .tile .v.est { font-style: italic; font-weight: 500; }
+  .tile .b { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 12px; }
+  .two .card h3 { margin-bottom: 8px; }
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13.5px; margin: 0; }
+  .facts dt { color: var(--muted); } .facts dd { margin: 0; color: var(--navy); font-weight: 500; }
+  .facts dd small { font-weight: 400; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { font-size: 12.5px; padding: 4px 9px; border-radius: 999px; background: var(--panel); color: var(--navy); }
+  .chips em { font-style: normal; font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); width: 100%; margin-top: 6px; }
+  .chips em:first-child { margin-top: 0; }
+  /* timeline */
+  .stages { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .stages span { font: 500 12.5px var(--body); padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: transparent; }
+  .stages span.on { background: var(--sc); border-color: var(--sc); color: #fff; font-weight: 600; }
+  .stage-note { font-size: 13px; color: var(--text); margin: 6px 0 0; max-width: 90ch; }
+  .strip { position: relative; height: 54px; margin: 18px 10px 4px; }
+  .strip .ax { position: absolute; left: 0; right: 0; top: 20px; height: 2px; background: var(--line); }
+  .strip .past { position: absolute; left: 0; top: 20px; height: 2px; background: var(--navy); }
+  .strip .pt { position: absolute; top: 14px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--navy); border: 2px solid var(--bg); cursor: default; }
+  .strip .pt.planned { background: var(--bg); border: 2px solid var(--accent); }
+  .strip .pt:hover { transform: scale(1.3); z-index: 2; }
+  .strip .now { position: absolute; top: 4px; bottom: 16px; width: 2px; margin-left: -1px; background: var(--warn); }
+  .strip .now b { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font: 600 10.5px var(--body); color: var(--warn); white-space: nowrap; }
+  .strip .yr { position: absolute; top: 34px; transform: translateX(-50%); font: 500 11px var(--body); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .tl { list-style: none; margin: 10px 0 0; padding: 0; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .tl li { display: grid; grid-template-columns: 104px 18px 1fr auto; gap: 0 12px; align-items: center; padding: 9px 14px; border-bottom: 1px solid rgba(10, 18, 32, 0.06); font-size: 13.5px; }
+  .tl li:last-child { border-bottom: 0; }
+  .tl .d { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tl .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--navy); justify-self: center; }
+  .tl .planned .dot { background: #fff; border: 2px solid var(--accent); }
+  .tl .planned .d, .tl .planned .l { color: var(--accent-ink, #1a3fb0); }
+  .tl .l { color: var(--ink); }
+  .tl .s { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .tl .s a { color: var(--muted); }
+  .tl li.today { background: #fdf3ea; color: var(--warn); font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 14px; }
+  .tl li.today .dot { background: var(--warn); width: 9px; height: 9px; }
+  .pill { display: inline-block; font: 600 10.5px var(--body); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .pill.open { background: #e3f3ec; color: #1f7a51; } .pill.uc { background: #fbeadc; color: #a8551a; } .pill.ann { background: #dfe7fb; color: #1a3fb0; }
+  body.site table.t td:first-child { white-space: normal; }
+  body.site table.t td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body.site table.t th.n { text-align: right; }
+  body.site table.t td small { color: var(--muted); font-weight: 400; display: block; }
+  .tw { overflow-x: auto; }
+  details.chk { margin-top: 12px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; font-size: 13px; }
+  details.chk summary { cursor: pointer; font-weight: 600; color: var(--navy); }
+  details.chk table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  details.chk td, details.chk th { text-align: left; padding: 5px 8px 5px 0; border-bottom: 1px solid rgba(10, 18, 32, 0.06); vertical-align: top; }
+  details.chk th { font: 600 10.5px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .v-ok { color: var(--ok); font-weight: 600; } .v-differs { color: var(--warn); font-weight: 600; } .v-nv { color: var(--muted); }
+  .pager { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 26px 0 0; }
+  @media (max-width: 900px) { .rs-top, .two { grid-template-columns: 1fr; } .rs-photo, .rs-mapbox { height: 320px; } .tl li { grid-template-columns: 84px 14px 1fr; } .tl .s { grid-column: 3; } }
+</style>
+</head>
+<body class="site">
+<div class="sitenav"><div class="in"><a class="brand" href="/">RubiqOS</a><nav><a href="/">Home</a><a href="/demo/">Live demo</a><a href="/proforma/">Proforma</a><a href="/simulation/">Simulation</a><a href="/market/" class="on">Resort Market Overview</a><a href="/robots/">Robots</a><a href="/particles/">Particles</a></nav><span></span></div></div>
+<div class="wrap">
+  <p class="crumb"><a href="/market/">Resort Market Overview</a> · <span id="crumb"></span></p>
+  <div class="rs-head">
+    <div>
+      <h1 id="name"></h1>
+      <p class="sub" id="sub"></p>
+      <p class="sum" id="sum"></p>
+    </div>
+    <div class="rs-side" id="side"></div>
+  </div>
+  <div class="rs-top">
+    <figure class="rs-photo" id="photo"></figure>
+    <div class="rs-mapbox"><div id="map"></div><div class="rs-mapbar"><span id="coords"></span><span class="zb"><button type="button" data-z="site" aria-pressed="true">Site</button><button type="button" data-z="region" aria-pressed="false">Region</button><button type="button" data-z="world" aria-pressed="false">World</button></span></div></div>
+  </div>
+
+  <section>
+    <h2>Basic parameters</h2>
+    <p class="lead">Scale of the destination. Values in italics are model estimates from the market overview; the basis is under each value.</p>
+    <div class="tiles" id="tiles"></div>
+    <div class="two">
+      <div class="card"><h3>Published figures</h3><dl class="facts" id="facts"></dl></div>
+      <div class="card"><h3>Business mix</h3><div class="chips" id="mix"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Stage and key dates</h2>
+    <div class="stages" id="stages"></div>
+    <p class="stage-note" id="stageNote"></p>
+    <div class="strip" id="strip"></div>
+    <ol class="tl" id="tl"></ol>
+  </section>
+
+  <section>
+    <h2>Operators</h2>
+    <p class="lead" id="opLead"></p>
+    <div class="tw"><table class="t" id="ops"></table></div>
+  </section>
+
+  <details class="chk" id="chk"></details>
+  <div class="pager" id="pager"></div>
+  <p class="foot" id="foot"></p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const RESORT = {"m": {"n": "97", "name": "Canouan Estate", "dev": "Canouan / Mandarin", "country": "Saint Vincent", "type": "Multi-operator destination", "g": "C", "status": "Operating", "ops": "3", "biz": "Mandarin Oriental (26), residences, marina (Sandy Lane YC, 29 superyacht), golf, airport", "q": "A", "f": [{"fam": "Lodging", "name": "Multi-brand", "full": "Several hotel brands"}, {"fam": "Residential", "name": "Residences", "full": "Branded residences"}, {"fam": "Marine", "name": "Marina", "full": "Marina"}, {"fam": "Marine", "name": "Yacht club", "full": "Yacht club"}, {"fam": "Sport", "name": "Golf", "full": "Golf"}, {"fam": "Access", "name": "Airstrip", "full": "Airstrip / airport"}], "p": {"area": 486.0, "area_b": "web 2026-10: 1,200-acre estate (LHW, Successful Meetings)", "keys": 26, "keys_b": "research", "guests": 93, "guests_b": "calc: keys×2×70% + residences×2.5×45% — stripped '~' — raw: ~93", "staff": 300, "staff_b": "estimate: hotel + marina + golf + airport — stripped '~' — raw: ~300", "ops": 3.0, "ops_b": "research", "opex": 23, "opex_b": "model: 300 staff × $35K (Caribbean) ÷ 45% labour share"}, "open_txt": "opened 2018", "stage": "Operating", "stage_b": "operating", "open_y": null, "owner": "Canouan / Mandarin", "url": "https://www.mandarinoriental.com/en/canouan", "url_kind": "site", "ll": [12.71, -61.33], "fit": 59, "fit_b": "weights 30/20/20/20/10 · operators 0.80 (3, data) · area 0.84 · opex 0.41 · stage 0.25 (Operating) · labour 0.50 (Caribbean)"}, "r": {"name": "Canouan Estate", "summary": "Private resort estate of about 1,200 acres on Canouan island, with Mandarin Oriental, Soho Beach House, an 18-hole Fazio golf course, a superyacht marina and a jet-capable airport. Backed by Dermot Desmond and Andrea Pignataro.", "location": "Canouan, Grenadines, Saint Vincent and the Grenadines", "coords": {"lat": 12.7158, "lon": -61.3253, "what": "Canouan island centre (OpenStreetMap island object); Wikipedia gives 12.717, -61.333", "source": "https://nominatim.openstreetmap.org/search?q=Canouan&format=json&limit=5"}, "developer": {"name": "Canouan Resorts Development (founded by Antonio Saladino, Dermot Desmond and Andrea Pignataro); estate today run as Canouan Estate", "owner": "Andrea Pignataro (ION Group) controls the northern half and the estate; Dermot Desmond owns the marina (Sandy Lane Yacht Club) and holds a stake; the government of Saint Vincent and the Grenadines held about 15% of the marina in 2017. Current split is from press, not filings.", "source": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/"}, "stage_now": {"stage": "Operating", "evidence": "Mandarin Oriental Canouan is open and appointed a new general manager in late 2026; Soho Beach House and the marina operate.", "source": "https://www.hotel-online.com/news/jonathan-payne-appointed-general-manager-of-mandarin-oriental-canouan"}, "timeline": [{"date": "1990", "date_txt": "1990s", "label": "Saladino gets 99-year lease on two-thirds of Canouan", "status": "done", "source": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "source2": "https://en.wikipedia.org/wiki/Canouan", "confirmed": false}, {"date": "1999", "label": "First resort launches on Carenage Bay (Raffles era follows)", "status": "done", "source": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "source2": null, "confirmed": false}, {"date": "2003", "label": "Trump organisation brought in to run Fazio golf course and casino", "status": "done", "source": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "source2": null, "confirmed": false}, {"date": "2008", "label": "Canouan Airport runway lengthened to almost 6,000 ft", "status": "done", "source": "https://en.wikipedia.org/wiki/Canouan", "source2": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "confirmed": true}, {"date": "2010", "label": "Raffles/Fairmont management ends; resort reverts to Carenage Bay Resort", "status": "done", "source": "https://en.wikipedia.org/wiki/Canouan", "source2": null, "confirmed": false}, {"date": "2010-11", "label": "Dermot Desmond forms a USD 100 million partnership for Canouan", "status": "done", "source": "https://www.searchlight.vc/news/2010/11/05/crd-forms-100-million-partnership-with-desmond", "source2": null, "confirmed": false}, {"date": "2016", "label": "Former Raffles site reopens as Pink Sands Club (26 suites)", "status": "done", "source": "https://en.wikipedia.org/wiki/Canouan", "source2": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "confirmed": true}, {"date": "2017-04", "label": "Sandy Lane Yacht Club marina (120 berths) opens", "status": "done", "source": "https://www.irishtimes.com/business/commercial-property/dermot-desmond-backed-caribbean-marina-opens-for-business-1.3050987", "source2": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "confirmed": true}, {"date": "2018-07", "label": "Mandarin Oriental, Canouan debuts as the group's first Caribbean resort", "status": "done", "source": "https://www.journaldespalaces.com/en/pressrelease-53229-mandarin-oriental-canouan-makes-its-debut-in-the-caribbean.html", "source2": "https://en.wikipedia.org/wiki/Canouan", "confirmed": true}, {"date": "2021", "label": "Soho Beach House Canouan opens on Grand Bay", "status": "done", "source": "https://canouan.com/", "source2": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "confirmed": true}, {"date": "2026-10", "label": "Jonathan Payne named general manager of Mandarin Oriental, Canouan", "status": "done", "source": "https://www.hotel-online.com/news/jonathan-payne-appointed-general-manager-of-mandarin-oriental-canouan", "source2": "https://www.journaldespalaces.com/en/pressrelease-80038-st-vincent-and-the-grenadines-appointments-jonathan-payne-appointed-general-manager-of-mandarin-oriental-canouan.html", "confirmed": true}], "operators": [{"operator": "Mandarin Oriental Hotel Group", "parent": "Jardine Matheson", "asset": "Mandarin Oriental, Canouan (suites and villas above Godahl Beach)", "role": "Hotel", "keys": 26, "status": "open", "since": "2018", "source": "https://www.journaldespalaces.com/en/pressrelease-53229-mandarin-oriental-canouan-makes-its-debut-in-the-caribbean.html", "confirmed": false}, {"operator": "Soho House & Co", "parent": null, "asset": "Soho Beach House Canouan", "role": "Hotel", "keys": null, "status": "open", "since": "2021", "source": "https://canouan.com/", "confirmed": true}, {"operator": "Canouan Estate Resort & Villas", "parent": "Canouan Estate (Pignataro)", "asset": "Carenage Suites, Maison villas and residences (rental)", "role": "Hotel", "keys": null, "status": "open", "since": null, "source": "https://canouan.com/", "confirmed": false}, {"operator": "Sandy Lane Yacht Club & Residences (day-to-day manager not found)", "parent": "Dermot Desmond interests", "asset": "Sandy Lane Yacht Club marina, 120 berths, up to 100 m yachts", "role": "Marina", "keys": null, "status": "open", "since": "2017", "source": "https://www.irishtimes.com/business/commercial-property/dermot-desmond-backed-caribbean-marina-opens-for-business-1.3050987", "confirmed": true}, {"operator": "Canouan Estate (course operator not named)", "parent": null, "asset": "Canouan Estate golf course, 18 holes, designed by Fazio", "role": "Golf", "keys": null, "status": "open", "since": "2000s", "source": "https://en.wikipedia.org/wiki/Canouan", "confirmed": true}, {"operator": "Canouan Airport (operator not found)", "parent": null, "asset": "Canouan Airport (CIW), runway about 6,000 ft", "role": "Airport", "keys": null, "status": "open", "since": "2008 (runway extension)", "source": "https://en.wikipedia.org/wiki/Canouan", "confirmed": true}], "figures": {"area_ha": {"value": 486, "source": "https://en.wikipedia.org/wiki/Canouan", "note": "1,200 acres is about 486 ha. Same acreage in Mandarin Oriental's own description; estate is about two-thirds of the island."}, "keys_open": {"value": 26, "source": "https://www.journaldespalaces.com/en/pressrelease-53229-mandarin-oriental-canouan-makes-its-debut-in-the-caribbean.html", "note": "26 Mandarin Oriental suites, per press coverage; Soho Beach House rooms not found. Estate also lists Carenage Suites, 10 villas and four residences."}, "keys_planned": {"value": null, "source": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "note": "A rumoured Aman resort was reported in 2022 and not confirmed by Aman. No planned keys found."}, "residences": {"value": null, "source": "https://canouan.com/", "note": "Eight private rental villas listed on the estate site; sail-in villas planned at the marina (2022). No total found."}, "investment": {"value": "Marina about USD 250 million (2022 press); Desmond/Saladino USD 100 million partnership 2010", "source": "https://www.stvincenttimes.com/inside-this-caribbean-islands-decades-long-saga-to-become-the-next-mustique/", "note": "Irish Times (2017) gave Desmond's marina spend as about USD 60 million to date plus USD 30 million a year; figures conflict."}}, "matrix_check": [{"field": "developer", "current": "Canouan / Mandarin", "found": "Canouan Resorts Development (Saladino, Desmond, Pignataro); Mandarin Oriental is only the hotel operator", "verdict": "differs", "source": "https://en.wikipedia.org/wiki/Canouan"}, {"field": "stage / opened", "current": "Operating, opened 2018", "found": "Estate dates from the 1990s; Mandarin Oriental opened 2018 (canouan.com says managed since 2017)", "verdict": "differs", "source": "https://www.journaldespalaces.com/en/pressrelease-53229-mandarin-oriental-canouan-makes-its-debut-in-the-caribbean.html"}, {"field": "area", "current": "486 ha (1,200-acre estate)", "found": "1,200 acres", "verdict": "ok", "source": "https://en.wikipedia.org/wiki/Canouan"}, {"field": "keys", "current": "26 (Mandarin Oriental)", "found": "26 Mandarin Oriental suites; Soho Beach House and Carenage Suites extra, counts not found", "verdict": "differs", "source": "https://canouan.com/"}, {"field": "operators count", "current": "3", "found": "At least 5: Mandarin Oriental, Soho House, estate rental brand, marina, golf, plus airport", "verdict": "differs", "source": "https://canouan.com/"}, {"field": "marina", "current": "Sandy Lane Yacht Club (superyacht berths)", "found": "120 berths, opened April 2017, formerly Glossy Bay Marina; manager not found", "verdict": "ok", "source": "https://www.irishtimes.com/business/commercial-property/dermot-desmond-backed-caribbean-marina-opens-for-business-1.3050987"}, {"field": "golf course", "current": "golf course", "found": "18 holes, designed by Fazio (Wikipedia and Mandarin Oriental say Jim Fazio; 2022 press says Tom Fazio)", "verdict": "ok", "source": "https://en.wikipedia.org/wiki/Canouan"}, {"field": "coordinates", "current": "12.71, -61.33", "found": "12.7158, -61.3253 (island centre, OSM)", "verdict": "ok", "source": "https://nominatim.openstreetmap.org/search?q=Canouan&format=json&limit=5"}], "photo_fallback": "https://www.mandarinoriental.com/en/canouan/caribbean/gallery", "notes": "No suitable Commons image: files found show only the airport, a town view or maps. Commons has no Canouan resort photo at 1200 px or wider that shows the estate. Ownership is the weakest point: the 2022 St Vincent Times / Robb Report piece says Pignataro took the northern half and Desmond kept the marina, and Saladino took back Pink Sands before Mandarin; one other article says Pignataro owns the estate and both hotels. No filing or press release confirms the current split. Marina opening: Irish Times says April 2017; a Boat International piece from January 2020 also describes it as new, so the exact date may vary. Mandarin Oriental key count (26) comes from a search summary of Robb Report, not opened. Mandarin start year differs: press release July 2018, canouan.com says 2017. Soho Beach House key count and marina day-to-day operator not found. Golf: 2022 press credits Tom Fazio; Wikipedia and Mandarin Oriental say Jim Fazio; Trump organisation ran it from 2003 and later partners replaced it; current operator not found. No 2025-2026 development news found apart from the October/November 2026 general manager appointment (sources give 31 Oct and 6 Nov). Searches for a Soho Beach House, golf renovation or Aman update in 2026 returned nothing new."}, "photo": null, "tag": {"code": "MULTI", "name": "Master-planned destination", "c": "#2f4fb5"}, "stage": "Operating", "today": "2026-11-25", "ll": [12.7158, -61.3253], "zoom": 13, "prev": {"slug": "big-sky-resort", "name": "Big Sky Resort"}, "next": {"slug": "cap-cana", "name": "Cap Cana"}};
+const m = RESORT.m, r = RESORT.r, $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = v => v == null ? "" : (v >= 100 ? Math.round(v).toLocaleString("en-US") : v.toLocaleString("en-US", {maximumFractionDigits: 1}));
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return "source"; } };
+const src = (u, u2) => [u, u2].filter(Boolean).map(x => `<a href="${esc(x)}" target="_blank" rel="noopener">${esc(host(x))}</a>`).join(" · ");
+const STAGE_C = {Design: "#2e9e6b", Construction: "#e07a2f", Expanding: "#2457e6", Operating: "#5b6676"};
+const STAGE_HELP = {
+  Design: "Masterplan or new-build that opens in 2028 or later. Design-phase entry is still open.",
+  Construction: "New-build that opens in 2026–2027, or a rebuild. Specifications are mostly fixed.",
+  Operating: "Running destination with no new phase announced.",
+  Expanding: "Operating destination with new phases in planning or construction. Entry through the new phases.",
+};
+
+// ---- header
+document.title = `RubiqOS · ${r.name || m.name}`;
+$("crumb").textContent = RESORT.tag.name;
+$("name").innerHTML = `<span class="rs-tag" style="--tc:${RESORT.tag.c}">${esc(RESORT.tag.code)}</span>${esc(r.name || m.name)}`;
+const dev = (r.developer && r.developer.name) || m.dev;
+$("sub").innerHTML = `${esc(r.location || m.country)} · Developer: <b>${esc(dev)}</b>${r.developer && r.developer.owner ? ` · Owner: ${esc(r.developer.owner)}` : ""}`;
+$("sum").textContent = r.summary || "";
+const stage = RESORT.stage;
+$("side").innerHTML = `<span class="stg" style="--sc:${STAGE_C[stage]}"><i></i>${esc(stage)}</span>`
+  + (m.url ? `<a class="btn" href="${esc(m.url)}" target="_blank" rel="noopener">Official website ↗</a>` : "");
+
+// ---- photo
+const ph = RESORT.photo;
+$("photo").innerHTML = ph
+  ? `<img src="${esc(ph.src)}" alt="${esc(ph.shows || r.name)}" loading="eager"><figcaption>${esc(ph.shows || "")}${ph.shows ? " · " : ""}Photo: ${esc(ph.author || "unknown author")}${ph.year ? ", " + esc(ph.year) : ""} · <a href="${esc(ph.page_url)}" target="_blank" rel="noopener">${esc(ph.licence)} · Wikimedia Commons</a></figcaption>`
+  : `<div class="none"><b>No openly licensed photo found</b>${r.photo_fallback ? `<a href="${esc(r.photo_fallback)}" target="_blank" rel="noopener">Official gallery ↗</a>` : ""}</div>`;
+
+// ---- map
+const ll = RESORT.ll, ZOOM = {site: RESORT.zoom, region: 7, world: 3};
+const map = L.map("map", {scrollWheelZoom: false, zoomControl: true}).setView(ll, ZOOM.site);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+L.circleMarker(ll, {radius: 9, color: "#fff", weight: 3, fillColor: "#2457e6", fillOpacity: 1}).addTo(map).bindTooltip(r.name || m.name, {direction: "top", offset: [0, -8]});
+const dms = (v, pos, neg) => `${Math.abs(v).toFixed(4)}° ${v >= 0 ? pos : neg}`;
+$("coords").innerHTML = `${dms(ll[0], "N", "S")}, ${dms(ll[1], "E", "W")}${r.coords && r.coords.what ? " · " + esc(r.coords.what) : ""}`;
+document.querySelectorAll(".zb button").forEach(b => b.addEventListener("click", () => {
+  map.setView(ll, ZOOM[b.dataset.z]);
+  document.querySelectorAll(".zb button").forEach(x => x.setAttribute("aria-pressed", x === b));
+}));
+
+// ---- basic parameters (market overview values, basis under each)
+const P = [["area", "Site area", "ha"], ["keys", "Keys", ""], ["guests", "Guests per day", ""], ["staff", "Staff", ""], ["ops", "Operators", ""], ["opex", "Operating cost", "$M / yr"]];
+const isEst = b => /estimate|comps|avg|norm|midpoint|knowledge|model|calc|ratio/i.test(b || "");
+const clean = b => String(b || "").replace(/ — stripped '~' — raw:.*$/, "").replace(/ — '\+' dropped — raw:.*$/, "").replace(/^web 2026-10: /, "").replace(/^GL_Target_List note: /, "").replace(/^research note: /, "");
+$("tiles").innerHTML = P.map(([k, label, unit]) => {
+  let v = m.p[k], b = m.p[k + "_b"];
+  if (k === "ops" && (r.operators || []).length) {   // the page lists the operators: count them instead of the overview estimate
+    const open = new Set(r.operators.filter(o => o.status === "open").map(o => o.operator)).size, more = new Set(r.operators.filter(o => o.status !== "open").map(o => o.operator)).size;
+    b = `open today, from the table below${more ? ` · ${more} more under construction or announced` : ""}${v != null && v !== open ? ` · market overview: ${v}` : ""}`; v = open;
+  }
+  return `<div class="tile"><div class="k">${label}</div><div class="v${v != null && isEst(b) ? " est" : ""}">${v == null ? "—" : fmt(v)}${v != null && unit ? `<small>${unit}</small>` : ""}</div><div class="b">${esc(v == null ? "no data" : clean(b))}</div></div>`;
+}).join("") + `<div class="tile"><div class="k">Fit score</div><div class="v">${m.fit ?? "—"}<small>of 100</small></div><div class="b">RubiqOS fit: operators, area, operating cost, stage, labour cost</div></div>`;
+
+const F = r.figures || {}, fact = (k, label, f = x => typeof x === "number" ? fmt(x) : x) => F[k] && F[k].value != null
+  ? `<dt>${label}</dt><dd>${esc(f(F[k].value))} <small>${F[k].note ? esc(F[k].note) + " · " : ""}${src(F[k].source)}</small></dd>` : "";
+$("facts").innerHTML = (fact("area_ha", "Site area", x => fmt(x) + " ha") + fact("keys_open", "Keys open") + fact("keys_planned", "Keys planned") + fact("residences", "Residences") + fact("investment", "Investment")
+  + (m.open_txt ? `<dt>Opening</dt><dd>${esc(m.open_txt)}</dd>` : "") + (m.type ? `<dt>Type</dt><dd>${esc(m.type)}</dd>` : "")) || "<dt>No published figures found</dt><dd></dd>";
+const fams = {}; m.f.forEach(c => (fams[c.fam] = fams[c.fam] || []).push(c.full || c.name));
+$("mix").innerHTML = Object.keys(fams).map(f => `<em>${esc(f)}</em>` + fams[f].map(n => `<span>${esc(n)}</span>`).join("")).join("") || '<span>no data</span>';
+
+// ---- stage and timeline
+$("stages").innerHTML = ["Design", "Construction", "Operating", "Expanding"].map(s => `<span${s === stage ? ` class="on" style="--sc:${STAGE_C[s]}"` : ""}>${s}</span>`).join("");
+$("stageNote").innerHTML = `<b>${esc(stage)}.</b> ${esc(STAGE_HELP[stage])}${r.stage_now && r.stage_now.evidence ? " " + esc(r.stage_now.evidence) + " " + `<span class="muted">(${src(r.stage_now.source)})</span>` : ""}`;
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dnum = d => { const [y, mo, da] = String(d).split("-").map(Number); return y + ((mo || 7) - 1) / 12 + ((da || 15) - 1) / 365; };
+const dtxt = d => { const [y, mo, da] = String(d).split("-"); return (da ? +da + " " : "") + (mo ? MON[+mo - 1] + " " : "") + y; };
+const T = (r.timeline || []).filter(e => e.date).sort((a, b) => dnum(a.date) - dnum(b.date));
+const TN = (r.timeline || []).filter(e => !e.date);   // planned items with no published date: listed last, not on the strip
+const now = dnum(RESORT.today), t0 = Math.floor(Math.min(now, ...T.map(e => dnum(e.date)))), t1 = Math.ceil(Math.max(now, ...T.map(e => dnum(e.date))) + 0.01);
+const pos = x => ((x - t0) / (t1 - t0) * 100).toFixed(2) + "%";
+const step = (t1 - t0) > 40 ? 10 : (t1 - t0) > 16 ? 5 : (t1 - t0) > 8 ? 2 : 1, yrs = [];
+for (let y = Math.ceil(t0 / step) * step; y <= t1; y += step) yrs.push(y);
+$("strip").innerHTML = `<div class="ax"></div><div class="past" style="width:${pos(now)}"></div>`
+  + yrs.map(y => `<span class="yr" style="left:${pos(y)}">${y}</span>`).join("")
+  + T.map(e => `<span class="pt${e.status === "planned" ? " planned" : ""}" style="left:${pos(dnum(e.date))}" title="${esc((e.date_txt || dtxt(e.date)) + " — " + e.label)}"></span>`).join("")
+  + `<span class="now" style="left:${pos(now)}"><b>Today</b></span>`;
+let todayDone = false;
+$("tl").innerHTML = T.map(e => {
+  let h = "";
+  if (!todayDone && (e.status === "planned" || dnum(e.date) > now)) { todayDone = true; h += `<li class="today"><span>${dtxt(RESORT.today.slice(0, 7))}</span><span class="dot"></span><span>Today</span></li>`; }
+  return h + `<li class="${e.status === "planned" ? "planned" : "done"}"><span class="d">${esc(e.date_txt || dtxt(e.date))}</span><span class="dot"></span><span class="l">${esc(e.label)}${e.status === "planned" ? ' <span class="pill ann">planned</span>' : ""}</span><span class="s">${src(e.source, e.source2)}</span></li>`;
+}).join("") + TN.map(e => `<li class="planned"><span class="d">No date</span><span class="dot"></span><span class="l">${esc(e.label)} <span class="pill ann">planned</span></span><span class="s">${src(e.source, e.source2)}</span></li>`).join("")
+  || '<li><span class="d"></span><span></span><span class="l muted">No dated events found</span></li>';
+
+// ---- operators
+const ST = {"open": ["open", "Open"], "under construction": ["uc", "Under construction"], "announced": ["ann", "Announced"]};
+const O = (r.operators || []).slice().sort((a, b) => (Object.keys(ST).indexOf(a.status) - Object.keys(ST).indexOf(b.status)) || (a.role === "Hotel" ? 0 : 1) - (b.role === "Hotel" ? 0 : 1) || String(a.since || "9").localeCompare(String(b.since || "9")));
+const brands = new Set(O.map(o => o.operator));
+$("opLead").textContent = O.length ? `${brands.size} operator${brands.size === 1 ? "" : "s"} and brands on ${O.length} assets: ${O.filter(o => o.status === "open").length} open, ${O.filter(o => o.status !== "open").length} under construction or announced.` : "No operator data found.";
+$("ops").innerHTML = O.length ? `<thead><tr><th>Operator</th><th>Asset</th><th>Role</th><th class="n">Keys</th><th>Status</th><th>Since</th><th>Source</th></tr></thead><tbody>`
+  + O.map(o => `<tr><td>${esc(o.operator)}${o.parent && o.parent !== o.operator ? `<small>${esc(o.parent)}</small>` : ""}</td><td>${esc(o.asset)}</td><td>${esc(o.role)}</td><td class="n">${o.keys ? fmt(o.keys) : ""}</td><td><span class="pill ${(ST[o.status] || ["ann"])[0]}">${esc((ST[o.status] || [0, o.status])[1])}</span></td><td>${esc(o.since ?? "")}</td><td class="muted">${src(o.source)}</td></tr>`).join("") + "</tbody>" : "";
+
+// ---- data check: market overview values against the sources
+const C = r.matrix_check || [], VC = {ok: "v-ok", differs: "v-differs"};
+$("chk").innerHTML = `<summary>Data check against sources (${C.filter(c => c.verdict === "differs").length} of ${C.length} values differ)</summary>`
+  + (C.length ? `<table><tr><th>Value</th><th>Market overview</th><th>Source says</th><th>Verdict</th><th>Source</th></tr>` + C.map(c => `<tr><td>${esc(c.field)}</td><td>${esc(c.current)}</td><td>${esc(c.found)}</td><td class="${VC[c.verdict] || "v-nv"}">${esc(c.verdict)}</td><td>${src(c.source)}</td></tr>`).join("") + "</table>" : "")
+  + (r.notes ? `<p class="muted" style="margin:10px 0 2px">${esc(r.notes)}</p>` : "");
+
+// ---- pager, foot
+$("pager").innerHTML = (RESORT.prev ? `<a class="btn" href="/market/${RESORT.prev.slug}/">← ${esc(RESORT.prev.name)}</a>` : "<span></span>")
+  + `<a class="btn" href="/market/">All resorts</a>` + (RESORT.next ? `<a class="btn" href="/market/${RESORT.next.slug}/">${esc(RESORT.next.name)} →</a>` : "<span></span>");
+$("foot").textContent = `RubiqOS · Resort Market Overview · sources checked ${RESORT.today}. Dates and operators come from the linked sources; values in italics are model estimates.`;
+</script>
+</body>
+</html>
